@@ -4,8 +4,7 @@ import { useState } from 'react';
 
 import { useAppStore } from '../data/store';
 import { useAppActions } from '../data/useAppData';
-import { duesThroughPreview, type DueTarget } from '../domain/dues';
-import { monthKey } from '../domain/dates';
+import { duesThroughPreview, type ClearDueTarget, type DueTarget } from '../domain/dues';
 import { pendingActionLabel, pendingItems, pendingTransactionType, type PendingItem } from '../domain/pending';
 import { formatAmount } from '../lib/amountDisplay';
 import { useUIStore } from '../data/uiStore';
@@ -75,16 +74,16 @@ export function PendingItemActions({
     let clearedAmount = item.amount;
     if (item.source.kind === 'budget' || item.source.kind === 'income') {
       const budget = useAppStore.getState().data;
-      const monthItems = budget.monthBudgets
-        ?.find((snapshot) => snapshot.month === monthKey(today))
-        ?.items;
-      const linkedItem = monthItems?.find((candidate) => candidate.name === item.category)
-        ?? budget.budgetPlan?.items.find((candidate) => candidate.name === item.category);
-      const linkedHolding = linkedItem
-        ? budget.holdings.find((holding) => holding.id === linkedItem.holdingId)
+      const budgetSource = item.source.kind === 'budget' ? item.source : undefined;
+      const linkedHolding = budgetSource?.holdingId
+        ? budget.holdings.find((holding) => holding.id === budgetSource.holdingId)
         : undefined;
-      if (linkedHolding?.kind === 'plan') {
-        const linkedDue = pendingItems(budget, monthKey(today), today).find((candidate) =>
+      if (budgetSource?.holdingId && !linkedHolding) {
+        Alert.alert('Could not clear planned item', 'The linked holding could not be found.');
+        return;
+      }
+      if (linkedHolding?.kind === 'plan' && budgetSource) {
+        const linkedDue = pendingItems(budget, budgetSource.month, today).find((candidate) =>
           candidate.source.kind === 'plan'
           && candidate.source.parentId === linkedHolding.id
           && candidate.actionable,
@@ -115,30 +114,29 @@ export function PendingItemActions({
           if (error) Alert.alert('Could not undo planned item', error);
         };
       } else if (linkedHolding?.kind === 'manual') {
-        actions.addInvestmentEntry(linkedHolding.id, {
-          date: today,
-          amount: actualAmount,
-          kind: 'Deposit',
-          note: item.title,
-        });
+        const target: ClearDueTarget = { kind: 'holding', id: linkedHolding.id };
+        const entryId = actions.clearDue(target, undefined, actualAmount, item.title);
         const state = useAppStore.getState();
-        if (state.lastError) {
-          Alert.alert('Could not clear planned item', state.lastError);
+        if (!entryId || state.lastError) {
+          Alert.alert(
+            'Could not clear planned item',
+            state.lastError ?? 'The linked holding entry could not be created.',
+          );
           return;
         }
-        const transaction = state.data.transactions.findLast((row) =>
+        const transaction = state.data.transactions.find((row) =>
           row.source?.kind === 'holding-entry'
           && row.source.parentId === linkedHolding.id
-          && row.date === today
-          && row.amount === actualAmount);
+          && row.source.entryId === entryId);
         if (!transaction) {
           Alert.alert('Could not clear planned item', 'The linked holding entry was not created.');
           return;
         }
         clearedAmount = actualAmount;
         undo = () => {
-          if (!transaction.source || transaction.source.kind !== 'holding-entry') return;
-          actions.deleteInvestmentEntry(linkedHolding.id, transaction.source.entryId);
+          actions.undoClearDue(target, entryId);
+          const error = useAppStore.getState().lastError;
+          if (error) Alert.alert('Could not undo planned item', error);
         };
       } else {
         actions.addTransaction({

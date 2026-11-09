@@ -1,14 +1,48 @@
-<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-08 | Updates: owner and AI agents -->
+<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-09 | Updates: owner and AI agents -->
 
 # Open items
 
 ## Recently resolved
 
+- **Owner roadmap decisions (2026-11-09):** accessibility is the planned
+  statement and audit checklist, not new app features. Use Device Hub.app for
+  screenshots, not Android tooling; capture synthetic demo data only, keep a
+  one-off script outside the repository and delete it after use. The owner
+  explicitly requests version-specific feature screenshots in README,
+  release Markdown and GitHub Release bodies, attached to each release,
+  including v1.0.0 and v1.1.0.
+  Widgets, quick capture (shake, double-tap back or key combination) and
+  notification/SMS detection are Held for later. Notes includes text, voice/
+  audio recordings, photos and videos. Skeleton loading is planned in Phase
+  38. See [PROGRESS.md](../PROGRESS.md) for the recorded acceptance scope.
+- **Release screenshots and APK handoff:** all 23 owner-supplied screenshots
+  (7 for v1.0.0, 8 for v1.1.0 and 8 for v1.1.1) are attached to their
+  matching GitHub releases as `WealthWise-vX.Y.Z-screenshot-<screen>.png`.
+  The local screenshot folder is removed; Markdown embeds absolute asset
+  URLs. Public v1.0.0/v1.1.0 screenshot URLs are verified. The v1.1.1 draft's
+  assets are verified but not anonymously downloadable until publication.
+  The owner-provided APK for EAS build
+  `ecc97480-7229-41ac-8aad-64ea2cd255b5` is byte-verified against EAS
+  (app 1.1.1, `android-apk`, `versionCode` 2) and attached to the GitHub
+  draft. v1.1.0 remains latest-published until separate publication approval;
+  the APK and screenshot URLs, README gallery, and Download block must be
+  rolled over only after approval. Release notes and README reference the
+  latest published screenshot set. The latest/versioned APK links and release
+  publication remain pending the approval/merge workflow.
+- **Owner-edit handling:** P20-S-R1-R1 records R5 in root
+  [AGENTS.md](../../AGENTS.md): ask before changing a file with owner edits
+  made after agent changes, and revert or overwrite those edits only when
+  explicitly requested. Task PR #44 is merged; phase PR #45 promotes the
+  revision to `develop`. See [PROGRESS.md](../PROGRESS.md).
 - **Release 2 device checks N39-N43:** the owner reported all five checks Pass
   on 2026-11-08. The device checklist records Pass for income recurrence and
   backup restore, immediate edit refresh, aggregate Pace, linked paid sync and
   Undo, and Entries counts/schedule caps. Device model, Android version and
   tester remain blank as requested.
+- **P20-A-R2 device check N44:** the owner reported Pass on 2026-11-09 for
+  marking a linked one-time savings item Paid from Transactions, verifying
+  that a holding entry is created, and confirming Undo removes it. The
+  checklist records Pass; device identity fields remain blank.
 - **P28-F-R1 GitHub sync:** owner-reported N39-N43 results are included in
   merged PRs #1-#3. Phase 28 was integrated into develop, the release branch
   into main, and main back into develop. The merged PRs and remote tips are
@@ -64,6 +98,30 @@
   annotated phase completion tags were pushed and verified. `main`, `develop`,
   and the v1.0.0 tag were also verified; v1.0.0 was not changed. No force push
   was used.
+- **P28-E-R4 history graph integration:** task PR #49 merged into Phase 28
+  (`7f9221a`), then Phase 28 PR #50 merged into `develop` (`b5dbe5f`). The
+  `history/by-phase` tip and every remote branch tip are reachable from
+  `develop`. `main` and `release/v1.1.0` remain at
+  `7bea8e62c10f641f1fe9aeb9e3ef605b3620250a`, with tree
+  `207ed97e541e55919d5cb58afbd25c4b0ed835c0`. The task branch was deleted;
+  Phase 28 is retained. Verification is in [PROGRESS.md](../PROGRESS.md).
+- **P28-E-R5 historical main commit audit:** the 403 non-merge commits after
+  the initial commit are already integrated into `main` and `develop`; 84
+  legacy subjects fail the current Conventional Commit hook. Do not rewrite
+  these original commits: a PR cannot change commit provenance or subjects
+  retroactively. The owner-selected `release/v1.0.0` branch was created at
+  the existing v1.0.0 tag target and is already an ancestor of `main` and
+  `develop`. Task PR #52 merged into Phase 28 as `f9bb715`, and Phase 28 PR
+  #53 merged into `develop` as `0402592`. P28-E-R5-R1 records this final
+  integration; no application code or protected branch tip changes.
+  Evidence is in [PROGRESS.md](../PROGRESS.md).
+- **P28-E-R3 ancestry reconciliation:** owner-authorized `ours` merges record
+  `f994457`, `7bea8e6` and `b779c21` as ancestry on the task branch without
+  changing the captured `develop` tree. The accompanying changes are limited
+  to ledger/memory documentation and a ledger test. At R3 completion, the
+  archive was still separate; P28-E-R4 is connecting it. `main` and its
+  v1.1.0 tag remain untouched. Task PR #47 merged into Phase 28 and PR #48
+  promoted R3 to `develop`. Details are in [PROGRESS.md](../PROGRESS.md).
 - **P28-F-R3 GitHub integration:** PR #11 merged the publication task into
   Phase 28 (`a2f9db2`), #12 promoted Phase 28 to develop (`3e2a5a8`), #13
   merged develop to `release/v1.1.0` (`d4d69fa`), #14 merged that release to
@@ -73,6 +131,43 @@
 
 ## Unresolved
 
+- **P20-S-R1 device check:** physical-device rendering remains unverified.
+  Owner approved commit/merge; SegmentedControl labels removed by the owner
+  remain absent. Final gate results and PR integration are in
+  [`PROGRESS.md`](../PROGRESS.md). Implementation commit `d36103e` is in
+  task-to-phase PR #42; phase-to-develop PR #43.
+- **Phase 32 screenshots:** supplied screenshots are embedded in README and
+  versioned Markdown. The owner supplied 23 versioned screenshots, visually
+  showing synthetic demo content. Their version-specific assets are attached
+  to the corresponding v1.0.0, v1.1.0 and v1.1.1 GitHub releases. The
+  v1.1.1 draft body and release note use its versioned asset URLs; draft assets
+  are not publicly downloadable until publication. The local screenshot
+  folder has been removed. All galleries use 150-pixel thumbnails, with at
+  most four screenshots per row. README contains only the latest published
+  set under the generic Screenshots heading; historical galleries remain in
+  their release notes. Galleries follow the requested Home, Assets,
+  Liabilities, Emergency Fund, Goals, Insurance, Budget, Transactions order,
+  omitting unavailable screens.
+  The v1.1.1 note contains all template sections, has owner approval and is
+  moved to `published/`; task PR #64 is merged, and Phase PR #65 promotes the
+  screenshot/documentation update to `develop`.
+  No capture script is in the repository; any future one-off script must stay
+  outside it, never be uploaded or included in an app build, and be deleted
+  after use.
+- **v1.1.1 release candidate:** the owner approved the patch-release Markdown
+  draft on 2026-11-09. App, package and lockfile versions are aligned to 1.1.1.
+  Task PR #56 and Phase 28 PR #57 are merged; `release/v1.1.1` is based on
+  merged `develop`. The GitHub Release draft was created before the revised
+  note-approval rule and remains at its original target. The owner approved
+  the complete note, which is now in `published/`; task PR #64 is merged, and
+  Phase PR #65 promotes the screenshot/documentation update to `develop`. The
+  owner-run EAS APK build is complete, the artifact was verified against EAS
+  and attached to the draft; publication remains pending separate approval.
+  N44 is owner-reported Pass.
+  Direct source-tree comparison confirms v1.1.0
+  contains the P30 SQLite persistence repair; v1.0.0 predates that repair.
+  Neither release should be described as bug-free, and user impact is not
+  established by the available checks.
 - **Branching baseline exception:** the initial `develop` baseline
   `a258579c4b580d6f3a157b8d13de53334aa8d34d` was created from current main,
   which contains legacy unreleased Release 2 work. Branch protection and

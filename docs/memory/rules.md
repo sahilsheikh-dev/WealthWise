@@ -1,4 +1,4 @@
-<!-- Purpose: Engineering invariants, protected surfaces and verification commands. | Last updated: 2026-11-08 | Updates: owner and AI agents -->
+<!-- Purpose: Engineering invariants, protected surfaces and verification commands. | Last updated: 2026-11-09 | Updates: owner and AI agents -->
 
 # Rules
 
@@ -39,8 +39,11 @@
   task branches, and keep phase branches.
 - The ordered six gates are `npm test -- --coverage`, `npx tsc --noEmit`,
   `npx expo lint`, `npx expo-doctor`, `npx expo export --platform android`,
-  and `npx expo export --platform ios`. Expo exports are allowed; EAS and
-  Gradle builds are not unless explicitly authorized.
+  and `npx expo export --platform ios`. Expo exports are allowed. EAS Android
+  APK builds are authorized after owner Markdown approval, code merge to
+  `develop`, and GitHub Release draft creation; use the `android-apk` profile
+  and upload/verify the result. Other EAS builds and local Gradle builds need
+  explicit authorization.
 - No cloud/network runtime behavior. Keep `src/domain/` pure: no React/Expo,
   ambient clock or randomness; inject dates, IDs and digests.
 - React Compiler is enabled. Forms use React Hook Form `Controller` and
@@ -53,16 +56,24 @@
   Release content, including checklists, belongs in `docs/releases/` and never
   in `/tmp`.
 - Anyone starting or continuing release work creates or reuses
-  `docs/releases/drafts/vX.Y.Z.md` and commits it as
-  `docs: draft vX.Y.Z release notes`. After publication is verified, move the
-  file into `docs/releases/published/` and commit the move. Never leave a
-  published file in drafts or a draft in published.
-- Name the current release APK `WealthWise-android-latest-vX.Y.Z.apk` and use
-  that filename on the latest download route. On supersession, remove
-  `latest` from the old asset name, rename it to
-  `WealthWise-android-vX.Y.Z.apk`, and update that release's Download block
-  and history link. Each older release must use its own versioned URL and
-  filename; never use `/latest/` for an older release.
+  `docs/releases/drafts/vX.Y.Z.md`. Do not commit it before owner approval of
+  the Markdown draft; then include it in the approved task -> phase ->
+  `develop` PR path with subject `docs: draft vX.Y.Z release notes`. After
+  approval, finalize the note and move it to `docs/releases/published/` before
+  creating the GitHub Release draft. Never leave a published file in drafts
+  or an unapproved draft in published.
+- After approved changes merge to `develop`, create the GitHub Release draft.
+  Then build the APK from the release branch with EAS profile `android-apk`,
+  upload it to the draft, and verify the artifact. Do not wait for the owner
+  to build or upload it manually. Publication still requires separate
+  explicit approval.
+- The latest **published** release alone may use `Latest version`,
+  `/latest/`, and `WealthWise-android-latest-vX.Y.Z.apk`; a draft does not
+  become latest until publication. Older release notes use `Version`, their
+  own versioned APK filename, and a direct version URL, with no `latest`
+  wording or route. When a newer version is published, rename the previous
+  APK to `WealthWise-android-vX.Y.Z.apk` and update only that release's
+  Download block and history link.
 - Verify each APK digest privately against the artifact before release; never
   include it in human-authored release material. GitHub may expose a
   platform-generated asset digest that cannot be removed by editing the
@@ -72,6 +83,11 @@
   affected versioned link with `curl -I -L`; require HTTP 200 and expected
   artifact size. The Builds table records EAS build ID, profile, Android
   `versionCode`, date and status, but no source commit or digest.
+- Name each screenshot `WealthWise-vX.Y.Z-screenshot-<screen>.png` and attach
+  it only to its matching GitHub Release. Use absolute release-asset URLs in
+  the README and release notes; do not retain image files under
+  `docs/releases/screenshots/`. Keep the README gallery limited to the latest
+  published release.
 - No null-silencing `!` or `as` in `app/` or `src/components/`.
 - Format monetary values through `AmountText`/`formatAmount` with an explicit
   display tier.
@@ -83,9 +99,11 @@
   links. Preserve demo constraints and domain integrity tests; never introduce
   private user financial data.
 - For each GitHub release, attach its APK with the version in the filename.
-  Name the current asset `WealthWise-android-latest-vX.Y.Z.apk`; on
-  supersession, remove `latest` and rename it
-  `WealthWise-android-vX.Y.Z.apk`, updating the old note and history URL.
+  Only the latest published asset is named
+  `WealthWise-android-latest-vX.Y.Z.apk`; on supersession, remove `latest`
+  and rename it `WealthWise-android-vX.Y.Z.apk`, updating the old note and
+  history URL. The latest status belongs to the newest published release;
+  creating a draft does not change it.
   Verify
   APK digests privately; never include them in human-authored release
   material. GitHub may expose a platform-generated asset digest that cannot
@@ -93,6 +111,11 @@
   Download blocks identical; update README Download/What's new and the
   releases-page link for every release. Verify the current latest URL and
   every affected versioned link with `curl -I -L`, HTTP 200 and expected size.
+  Name screenshots `WealthWise-vX.Y.Z-screenshot-<screen>.png`, attach them
+  to the corresponding GitHub Release, and reference those assets directly
+  in Markdown; remove `docs/releases/screenshots/` from the repository after
+  verifying the uploaded assets. README screenshots come from the latest
+  published release only.
   Record EAS build ID, profile, Android `versionCode`, date and status in
   Builds, omitting source commits and digests.
   Production Android AABs go to Google Play and APKs to GitHub; iOS

@@ -5,6 +5,7 @@ import { Controller, useForm, useWatch } from 'react-hook-form';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
+import { FieldTitle } from '../src/components/form/FieldTitle';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { IntegerField } from '../src/components/form/IntegerField';
 import { MoneyField } from '../src/components/form/MoneyField';
@@ -128,12 +129,15 @@ export default function GoalFormScreen() {
         </>
       ) : (
         <Controller control={control} name="name" render={({ field }) => (
-          <TextField label="Name" accessibilityLabel="Goal name" maxLength={40} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.name?.message} />
+          <FieldTitle title="Name">
+            <TextField label="Name" accessibilityLabel="Goal name" maxLength={40} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.name?.message} />
+          </FieldTitle>
         )} />
       )}
       <Controller control={control} name="target" render={({ field }) => (
-        <View style={{ gap: 6 }}>
-          <MoneyField label="Target amount" accessibilityLabel="Goal target" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.target?.message} />
+        <FieldTitle title="Target amount">
+          <View style={{ gap: 6 }}>
+            <MoneyField label="Target amount" accessibilityLabel="Goal target" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.target?.message} />
           {locked ? (
             <AppText style={{ color: colors.text3 }}>
               {minimumTarget > 0
@@ -141,7 +145,8 @@ export default function GoalFormScreen() {
                 : 'Add your monthly income to see cover'}
             </AppText>
           ) : null}
-        </View>
+          </View>
+        </FieldTitle>
       )} />
       {links.length > 0 ? (
         <View style={styles.linkSection}>
@@ -175,7 +180,9 @@ export default function GoalFormScreen() {
       {links.length === 0 && !locked ? (
         <>
           <Controller control={control} name="saved" render={({ field }) => (
-            <MoneyField label="Saved amount" accessibilityLabel="Goal saved amount" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.saved?.message} />
+            <FieldTitle title="Saved amount">
+              <MoneyField label="Saved amount" accessibilityLabel="Goal saved amount" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.saved?.message} />
+            </FieldTitle>
           )} />
           <Button label="Link an asset" icon="plus" onPress={() => setPickerVisible(true)} />
         </>
@@ -184,7 +191,9 @@ export default function GoalFormScreen() {
         <Button label="Link an asset" icon="plus" onPress={() => setPickerVisible(true)} />
       ) : null}
       <Controller control={control} name="year" render={({ field }) => (
-        <IntegerField label="Target year" accessibilityLabel="Goal target year" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.year?.message} icon="calendar-outline" />
+        <FieldTitle title="Target year">
+          <IntegerField label="Target year" accessibilityLabel="Goal target year" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.year?.message} icon="calendar-outline" />
+        </FieldTitle>
       )} />
       <TopAnchoredSheet
         visible={pickerVisible}

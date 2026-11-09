@@ -94,11 +94,13 @@ Never assume that the newest Git tag is necessarily the latest published GitHub 
 
 Use the actual GitHub Release records to establish the baseline.
 
-Create `release/vX.Y.Z` from `develop` as the release candidate branch. The
-approved target is the verified release-branch commit; do not silently release
-`develop` or another development branch. Merge the approved release branch
-into `main` with `--no-ff`, create the approved version tag, and back-merge
-into `develop`.
+Merge owner-approved changes through task -> phase -> `develop` using PRs.
+Then create `release/vX.Y.Z` from the merged `develop` commit and create the
+GitHub Release draft at that exact release-branch commit. Draft creation may
+create the version tag; do not retarget it. After the draft exists, build the
+APK with EAS using the `android-apk` profile, upload and verify it, and obtain
+separate publication approval. Only then merge the release branch into `main`
+with `--no-ff`, verify the tag target and back-merge into `develop`.
 
 If the repository, baseline, or target commit is ambiguous, stop and explain the problem.
 
@@ -350,19 +352,7 @@ If versioning is uncertain, request clarification.
 
 ---
 
-## 9. Contributor Identification
-
-Identify first-time contributors included in this release.
-
-Verify contribution history through GitHub.
-
-Do not assume that someone is a new contributor merely because they appear for the first time in the current release.
-
-Include the New Contributors section only when verified.
-
----
-
-## 10. Generate Release Notes
+## 9. Generate Release Notes
 
 Use the reusable release-notes skeleton defined in:
 
@@ -376,7 +366,6 @@ Follow these requirements:
 - User-focused descriptions.
 - Accurate PR links.
 - Breaking changes and migration steps.
-- New contributors when verified.
 - Correct full changelog URL.
 
 Write in clear, professional, straightforward English.
@@ -403,17 +392,21 @@ Never invent PR numbers, issue numbers, usernames, or URLs.
 
 ---
 
-## 11. Save Release Draft
+## 10. Save Release Draft
 
 Store unpublished release notes in:
 
 `docs/releases/drafts/vX.Y.Z.md`
 
 Anyone starting or continuing release work must create or reuse this file and
-commit it with subject `docs: draft vX.Y.Z release notes`. Release content
-belongs in Git, never in `/tmp`. After publication is verified, move the file
-to `docs/releases/published/` and commit the move. Never leave a published
-file in drafts or a draft in published.
+request the owner's approval before committing it. After approval, finalize
+all release details and screenshots, move the note to
+`docs/releases/published/vX.Y.Z.md`, then include it with the approved work in
+the task -> phase -> `develop` PR path, using subject
+`docs: draft vX.Y.Z release notes`. The finalized note must be in
+`published/` before GitHub Release draft creation. Release content belongs in
+Git, never in `/tmp`. Never leave an approved release note in `drafts/` or an
+unapproved draft in `published/`.
 
 The file must contain the complete release notes in publication-ready Markdown.
 
@@ -435,7 +428,7 @@ Do not publish at this stage.
 
 ---
 
-## 12. Mandatory Approval Gate
+## 11. Mandatory Approval Gate
 
 Present the following to the user:
 
@@ -458,9 +451,9 @@ Never create tags or GitHub Releases without approval.
 
 ---
 
-## 13. Publish the GitHub Release
+## 12. Merge, build and publish the GitHub Release
 
-After explicit approval:
+After the owner explicitly approves the Markdown release draft:
 
 1. Verify GitHub authentication.
 2. Verify repository ownership.
@@ -468,11 +461,29 @@ After explicit approval:
 4. Recheck the approved target commit.
 5. Confirm the version does not already exist.
 6. Verify the final Markdown draft.
-7. Create a GitHub Release draft at the approved target commit.
-8. Complete the post-build artifact, Download block, link-verification, README
-   and build-history checklist below while the release is still a draft.
-9. Publish the approved notes only after the checklist passes.
-10. Verify successful publication and retrieve the actual GitHub Release URL.
+7. Commit the approved release work on its task branch and merge task ->
+   phase -> `develop` through pull requests, following the repository branch
+   rules. Run all six gates and complete required device checks before merge.
+8. Create `release/vX.Y.Z` from the merged `develop` commit. Create the
+   GitHub Release draft at that exact release-branch commit, attach every
+   supplied screenshot and use each absolute asset URL in the draft body.
+   Then run `eas build --platform android --profile android-apk` from the
+   release branch, wait for success, download the APK outside the repository,
+   and upload it to the draft as `WealthWise-android-latest-vX.Y.Z.apk`.
+   Do not wait for the owner to build or upload it manually.
+9. Privately verify the uploaded APK against its EAS build artifact and
+   complete the post-build artifact, Download block, link, README and
+   build-history checks below while the release remains a draft.
+10. After explicit publication approval and successful verification, merge
+    the release branch `--no-ff` into `main`, verify its tag target and publish.
+    The fully reviewed note is already in `published/` before draft creation;
+    record final publication details there without moving or duplicating it.
+11. Verify successful publication and retrieve the actual GitHub Release URL.
+
+Do not commit a release candidate before approval of its Markdown draft.
+Building and uploading the APK after merge is part of the approved release
+workflow; it does not authorize publication. Publication still requires
+separate explicit owner approval.
 
 ### Required post-build checklist (before publication)
 
@@ -487,7 +498,11 @@ For every GitHub release:
 
 2. Add the version, release date, asset link, iOS availability message and
    releases-page link to the Download block in the published Markdown and
-   GitHub release body. Verify the APK digest privately against the build
+   GitHub release body. The latest **published** version alone may say
+   `Latest version` or use `/latest/`; a draft does not become latest until
+   publication. Previous release notes say `Version`, use their direct
+   version-specific URL and filename, and contain no `latest` wording. Verify
+   the APK digest privately against the build
    artifact, but never include it in human-authored release material. GitHub
    may expose a platform-generated asset digest that cannot be removed by
    editing the release. The latest published block must match the README and
@@ -499,11 +514,11 @@ For every GitHub release:
    published note, add or replace only that block; do not otherwise rewrite
    the file.
 
-3. Keep the README Download section and the latest release Download block
-   byte-identical. When a newer version is published, rename only the previous
-   release asset by removing `latest` from its filename, then replace only
-   that release's Download block with its version-specific URL and filename;
-   do not change anything else in that old note.
+3. Keep the README Download section and the latest published release Download
+   block byte-identical. When a newer version is published, rename only the
+   previous release asset by removing `latest` from its filename, then replace
+   only that release's Download block with its version-specific URL and
+   filename; do not change anything else in that old note.
 4. Verify the current latest link and every affected versioned direct Android
    link with `curl -I -L`; record final HTTP status and `Content-Length`. Each
    must return HTTP 200 with the expected artifact size. Verify digests
@@ -522,13 +537,34 @@ For every GitHub release:
    published release Download block must be identical; older notes use their
    matching versioned release URL and filename, never the latest route. State
    unavailable artifacts plainly; do not publish an invented URL.
-6. Record the EAS build ID, Android `versionCode`, profile, date and status in
-   the `release-history.md` Builds table. Do not record source commits or
-   digests there. Production Android AABs are for Google Play; `android-apk`
-   builds are for GitHub downloads; iOS distribution is not offered.
+6. Record the verified EAS build ID, Android `versionCode`,
+   profile, date and status in the `release-history.md` Builds table. Do not
+   record source commits or digests there. Production Android AABs are for
+   Google Play; `android-apk` builds are for GitHub downloads; iOS distribution
+   is not offered.
 7. Confirm both links return HTTP 200 with the expected size and that the
    README, published Markdown, `release-history.md` and GitHub release assets
    agree. The release remains incomplete until every check passes.
+8. Add every supplied screenshot to the release's published Markdown and
+   GitHub Release body. Name assets
+   `WealthWise-vX.Y.Z-screenshot-<screen>.png` and attach them to the
+   matching GitHub Release only; do not retain screenshot files in the
+   repository.
+   Keep only the latest published release's complete screenshot set in the
+   README Screenshots section, without a version title. Use absolute URLs for
+   the attached release assets and verify that each rendered image link
+   works. Display thumbnails at 150 pixels wide, with no more than four per
+   row, ordered Home, Assets, Liabilities, Emergency Fund, Goals, Insurance,
+   Budget, Transactions; omit unavailable screens. For v1.0.0, v1.1.0 and future releases, use screenshots from
+   the matching release build, not a newer app. Exception: the owner has
+   explicitly confirmed that the same supplied image is intentional for
+   v1.0.0, v1.1.0 and approved v1.1.1; preserve that image for those versions.
+   Capture with synthetic demo data on the owner-designated test setup; never
+   capture personal phone data. Keep any one-off capture script outside the
+   repository, do not upload or package it, and delete it after capture. The
+   owner explicitly authorizes screenshot-only additions to the existing
+   v1.0.0 and v1.1.0 published notes and GitHub Release bodies; make no other
+   historical edits.
 
 After verification and approval, publish the draft:
 
@@ -558,11 +594,12 @@ Never claim success unless GitHub confirms publication.
 
 ---
 
-## 14. Archive Published Release
+## 13. Pre-draft Release Note Finalization
 
-After verifying successful publication:
+Complete this section after Markdown approval and before the PR integration
+and GitHub Release draft steps in Section 12.
 
-1. Move the final release notes to:
+1. Move the complete, final release notes to:
 
    `docs/releases/published/vX.Y.Z.md`
 
@@ -577,10 +614,12 @@ After verifying successful publication:
 4. Confirm the draft was moved, with no duplicate left in `drafts/` or at the
    `docs/releases/` root.
 
-5. Commit the move with a descriptive message. Never leave a published file
-   in drafts or a draft in published.
+5. Commit the approved note with the release work. Never leave an approved
+   release note in drafts or an unapproved draft in published.
 
-6. Verify the release URL, tag, and target commit.
+6. Verify the target commit and that the note is ready to serve as the
+   canonical GitHub release-body source. Record final release URL and
+   publication details only after the release is published.
 
 7. Preserve all historical release records.
 
@@ -594,12 +633,13 @@ gh release edit vX.Y.Z --notes-file docs/releases/published/vX.Y.Z.md
 Never overwrite an existing release record.
 Keep all published release Markdown files under `docs/releases/published/`;
 never store a published record at the `docs/releases/` root or in `drafts/`.
-Do not push a branch. Commit the draft and the post-publication move as
-described above.
+Push branches only with the owner's explicit authorization. Never force-push.
+Commit the approved, finalized note with its release task. There is no
+post-publication note move.
 
 ---
 
-## 15. Safety Requirements
+## 14. Safety Requirements
 
 - Never force-push.
 - Never rewrite Git history.
@@ -620,7 +660,7 @@ If the working tree contains unrelated changes, do not overwrite them.
 
 ---
 
-## 16. Final Validation
+## 15. Final Validation
 
 Before considering the release complete, verify:
 
@@ -641,11 +681,13 @@ Before considering the release complete, verify:
 - Correct release tag.
 - Permanent release record.
 - Updated release history.
-- Attached `WealthWise-android-latest-vX.Y.Z.apk` to the current release; the `/latest/`
-  route and each affected version-specific route return HTTP 200 with the
-  expected artifact size. When superseding a release, rename that older asset
-  to `WealthWise-android-vX.Y.Z.apk` and update its Download block. Verify the
-  APK digest privately; do not include it in human-authored release material.
+- Attached `WealthWise-android-latest-vX.Y.Z.apk` to the latest published
+  release; the `/latest/` route and each affected version-specific route
+  return HTTP 200 with the expected artifact size. A draft does not become
+  latest until publication. When superseding a release, rename that older
+  asset to `WealthWise-android-vX.Y.Z.apk` and update its Download block.
+  Verify the APK digest privately; do not include it in human-authored release
+  material.
 - Download block in published Markdown and release body; the latest block
   matches the README and older release blocks use versioned links.
 - The current `/latest/` link and each affected version-specific link checked
@@ -655,10 +697,21 @@ Before considering the release complete, verify:
   no source commit or digest is published.
 - Matching README, published Markdown, release-history build record and GitHub
   release assets.
+- Every supplied version-specific screenshot appears in that release's
+  published Markdown and GitHub Release body and is attached to that GitHub
+  Release under `WealthWise-vX.Y.Z-screenshot-<screen>.png` names. The README
+  Screenshots section contains only the latest published release's complete
+  screenshot set and has no version title. Do not retain screenshots in the
+  repository. If none were supplied, reuse the previous published release's
+  complete screenshot set for the new release and README. Order thumbnails
+  Home, Assets, Liabilities, Emergency Fund,
+  Goals, Insurance, Budget, Transactions. Each image renders. Release notes
+  and GitHub release bodies omit a Contributors section. No capture script or
+  personal data is included.
 
 ---
 
-## 17. Final Report
+## 16. Final Report
 
 Return:
 

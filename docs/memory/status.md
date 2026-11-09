@@ -1,9 +1,88 @@
-<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-08 | Updates: owner and AI agents -->
+<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-09 | Updates: owner and AI agents -->
 
 # Status
+- The owner approved the v1.1.1 patch-release note on 2026-11-09. The app,
+  package and lockfile versions are aligned to 1.1.1. The original release
+  task passed all six gates; the same ordered gates passed after the prior
+  screenshot/documentation revision: 98 suites, 1,269 passed, 1 skipped;
+  TypeScript, lint, Expo Doctor 21/21, Android export and iOS export also
+  passed. Task PRs #56, #58, #60 and #62 and Phase 28 PRs #57, #59, #61 and
+  #63 are merged to `develop`. `release/v1.1.1` and its GitHub Release draft
+  remain at the original target.
+- The owner-provided APK for EAS build
+  `ecc97480-7229-41ac-8aad-64ea2cd255b5` finished with app version 1.1.1,
+  Android `versionCode` 2 and profile `android-apk`. Its bytes match the EAS
+  artifact; the 112,150,605-byte APK is attached to the v1.1.1 draft as
+  `WealthWise-android-latest-v1.1.1.apk`. No publication or tag change was
+  made; v1.1.0 remains the latest published release until separate
+  publication approval.
+- N44 is owner-reported Pass. Screenshots are attached to each matching
+  GitHub release using `WealthWise-vX.Y.Z-screenshot-<screen>.png` names;
+  `docs/releases/screenshots/` is removed from the repository. The README
+  gallery points to the latest published v1.1.0 asset set until v1.1.1 is
+  published. The v1.1.0 and v1.0.0 screenshot URLs are public and verified;
+  v1.1.1 draft assets were verified through GitHub asset metadata and remain
+  unavailable to anonymous download until publication. The release prompt
+  heading sequence is corrected, including “Generate Release Notes” as 9.
+  Focused tests and this task's verification results are in the progress
+  ledger; the six app gates are not rerun for this docs/assets revision.
+- Direct comparison confirms the v1.1.0 source tree contains the P30
+  persistence repair and its SQLite storage implementation matches current
+  develop; v1.0.0 predates that repair.
+- Owner roadmap decisions: accessibility means a statement plus audit
+  checklist, not new app features. Screenshot capture is planned with
+  Device Hub.app, synthetic demo data and a one-off script kept outside the
+  repository and deleted after use. The owner requests every supplied
+  versioned screenshot in README, its release note and matching GitHub
+  release, with all images attached. All 23 supplied screenshots are attached
+  to v1.0.0, v1.1.0 and the v1.1.1 draft; no screenshot files remain in the
+  repository.
+  Release-note Contributors sections were removed. The updated rule requires
+  owner approval, full note completion and moving the note to `published/`
+  before GitHub draft creation; after draft creation, the agent builds with
+  EAS `android-apk`, uploads and verifies the APK. The owner-run v1.1.1 build
+  already in progress is handled as an exception without starting a duplicate.
+  Widgets, quick capture and SMS/notification
+  detection are Held; Notes now includes text, recordings, photos and videos;
+  skeleton loading is planned as Phase 38. Details and safeguards are in
+  [open-items.md](open-items.md) and [PROGRESS.md](../PROGRESS.md).
+- P28-F-R4-R1-R1-R1-R1-R1 release-asset revision: the release naming and
+  latest-published rules, screenshot embeds and release bodies are aligned;
+  the local screenshot folder and temporary asset/APK copies are removed.
+  The focused documentation tests and all six ordered gates pass. Task PR
+  #64 merged into Phase 28 as `dd8c6b6`; Phase PR #65 carries the change to
+  `develop`. v1.1.1 remains a GitHub draft; v1.1.0 remains latest published,
+  and publication/tag rollover was not performed.
+- Current instruction update: P20-S-R1-R1 adds R5 to
+  [AGENTS.md](../../AGENTS.md) at the owner's request. When owner edits follow
+  agent changes, ask before changing the affected file; revert or overwrite
+  those edits only on explicit request. Commit `e955021` is merged by task PR
+  #44 into Phase 20; phase PR #45 is the promotion to `develop`. Details are
+  recorded in [PROGRESS.md](../PROGRESS.md).
+- P28-E-R3 records the selected P25-F, v1.1.0 merge and Phase 1 commits as
+  ancestry through `task/P28-E-R3-record-selected-ancestry` and
+  `phase/28-qa-and-release`. The ancestry merges preserve the captured
+  `develop` tree; the task adds only ledger/memory documentation and a ledger
+  test. PR #47 merged to Phase 28 and PR #48 merged to `develop`; no
+  application source or `main` changes were included.
+- P28-E-R4 connected the complete `history/by-phase` ancestry through task PR
+  #49 (`7f9221a`) and Phase 28 PR #50 (`b5dbe5f`) to `develop`. The `ours`
+  merge preserves the captured application tree; every remote branch tip is
+  reachable from `develop`. `main` and `release/v1.1.0` remain unchanged.
+- P28-E-R5 audits the 403 non-merge first-parent commits after the initial
+  commit: all are already present in `main` and `develop`, and 84 legacy
+  subjects do not match the current Conventional Commit hook. No historical
+  messages or hashes were changed because that requires rewriting history.
+  The new `release/v1.0.0` branch points to the existing tag target
+  `cac6fed`; it is already an ancestor of `main` and `develop`. The audit
+  record's task PR #52 merged into Phase 28 as `f9bb715`, and Phase 28 PR #53
+  merged into `develop` as `0402592`. P28-E-R5-R1 records the completed
+  integration and verifies `main` and both release branch refs remain
+  unchanged.
 - Current integration: P28-D, P28-C-R4, P28-E, P20-A-R1, P20-N-R2,
   P29-AB-R2, P29-O1-R1, P29-W-R1, P28-F-R1/R2 and the Phase 30 work are
-  integrated into GitHub `main` and `develop`. `develop` began at main baseline
+  integrated into GitHub `main` and `develop`. P28-E-R4 is integrated into
+  `develop` only and did not change `main`. `develop` began at main baseline
   `a258579c4b580d6f3a157b8d13de53334aa8d34d`, which contains legacy
   unreleased Release 2 history; the stable-main rule applies prospectively.
   The earlier P28-E authorized pushes verified `main`, `develop`, all 30 phase
@@ -15,21 +94,59 @@
   to develop (#7). The contributor-credit correction and owner-reported
   N39-N43 results are on main and develop; the audit records are carried
   through the same release/back-merge path.
-- GitHub branch audit found 34 remote heads: main, develop, the read-only
-  `history/by-phase` archive, all 30 phase branches, and `release/v1.1.0`.
+- GitHub branch audit found 35 remote heads after P28-E-R5: main, develop, the
+  read-only `history/by-phase` archive, all 30 phase branches, and release
+  branches `release/v1.0.0` and `release/v1.1.0`.
   Publication PRs #11-#15 are merged in order; their task branch was deleted
   and `phase/28-qa-and-release` was retained.
   `phase/25-release-and-backups` remains outside this Release 2 PR chain.
   P28-E's final-verification commit was reconciled in P28-E-R2; the separate
   `codex-changes` branch remains under review.
-- Latest six ordered gates on the verified v1.1.0 source tree all exit 0.
-  Gate 1 has 98 suites, 1,244 passed, 1 skipped; coverage is
-  95.96/92.01/98.01/97.62% overall,
-  `src/data` 91.03/87.39/94.46/94.17%, `src/domain`
-  96.95/92.85/98.80/98.32%, and `src/lib` 100% in all four measures.
-  TypeScript, lint and Expo Doctor (21/21) pass; Android and iOS exports
-  succeed. The owner-provided EAS build is verified; no local EAS or Gradle
-  build was run.
+- The v1.1.0 release-tree gates passed before publication. The clean
+  2026-11-09 develop preflight at `c939458` passed all six ordered gates;
+  Gate 1 had 98 suites, 1,268 passed and 1 skipped, with 95.96/92.04/98.02/
+  97.63% overall coverage (statements/branches/functions/lines),
+  `src/data` 91.03/87.41/94.46/94.17%, `src/domain`
+  96.94/92.87/98.80/98.33%, and `src/lib` 100% in all four measures.
+  TypeScript and lint pass; Expo Doctor is 21/21; Android and iOS exports
+  succeed. No new EAS or Gradle build was run.
+- Previous task P20-S-R1 applied the owner-requested form-control conversion
+  and visible-title pass. App-form ChoiceField usages are Dropdowns;
+  ChoiceField remains and filters are unchanged. Editable text, money, number
+  and percent controls without a visible title now have persistent
+  single-line titles; existing Dropdown, SwitchRow, ReadOnlyRow and already
+  titled date controls are preserved. SegmentedControl title props remain
+  absent at the owner's direction; no editable input was replaced with
+  ReadOnlyRow. Owner approved commit/merge. Working branch:
+  `task/P20-S-R1-form-choicefields-labels`. Final gates, test totals and
+  integration PRs are recorded in `docs/PROGRESS.md`. Implementation commit
+  `d36103e` is in PR #42 (task to phase); PR #43 promotes the phase to develop.
+  Physical-device rendering remains unverified.
+- P20-S-R1 final-tree validation: all six ordered gates exit 0. Coverage:
+  98 suites, 1,267 passed, 1 skipped; 95.96/92.04/98.02/97.63% overall
+  (statements/branches/functions/lines), `src/data`
+  91.03/87.41/94.46/94.17%, `src/domain` 96.94/92.87/98.80/98.33%,
+  and `src/lib` 100% in all measures. Expo Doctor is 21/21.
+- Previous task: P20-A-R2 repairs Paid on a linked one-time manual savings
+  Budget row. The pre-fix component reproduction confirmed that a link present
+  only in a viewed-month snapshot fell through to a generic transaction;
+  category-matched actuals hid the missing holding entry. The shared
+  clearDue/undoClearDue path now creates one Deposit and one linked invest
+  transaction in one persisted write, and exact Undo removes both in one
+  write. Store tests cover Savings account, Cash and Other manual holdings at
+  exact, lower and higher amounts. No schema/version/release change was made.
+  Final ordered gates on the develop-synced phase tree all exit 0: 98 suites,
+  1,267 passed and 1 skipped; overall coverage 95.96/92.04/98.02/97.63%
+  (statements/branches/functions/lines). `src/data`:
+  91.03/87.41/94.46/94.17%; `src/domain`: 96.94/92.87/98.80/98.33%;
+  `src/lib`: 100% in all four measures.
+  TypeScript, lint, Expo Doctor 21/21, Android export and iOS export pass.
+  N44 is owner-reported Pass on a physical device; no feature from planned or
+  held Phases 31-38 has been started. Owner decisions are listed in
+  [open-items.md](./open-items.md), with full evidence in
+  [PROGRESS.md](../PROGRESS.md). Integration route: task PR #40 merged into
+  Phase 20; phase PR #41 carries the synchronized branch to develop after
+  sync merge `6982ff2`.
 - Ordered release-branch gates on `release/v1.1.0`: all six exit 0. Gate 1
   has 98 suites, 1,242 passed, 1 skipped; coverage is 95.96/92.01/98.01/97.62%
   overall, `src/data` 91.03/87.39/94.46/94.17%, `src/domain`
@@ -48,9 +165,11 @@
   parity, release notes and build-history record. The owner-approved
   `preview` profile and reused versionCode 1 exceptions are documented.
 - P28-E archive evidence: 337 direct plus 175 date-fallback mappings; zero
-  unmapped hashes, 512 unique original commits, 131 synthetic archive commits,
-  and a final tree equal to main. The later route-diagnostic and ledger
-  revisions are outside the read-only snapshot. Full details are in
+  unmapped hashes, 512 unique original commits, and 131 synthetic archive
+  commits. Its tree matched `main` at the original verification point; the
+  current archive tree is an older snapshot, not the current `main` tree. The
+  later route-diagnostic and ledger revisions are outside the read-only
+  snapshot. Full details are in
   [PROGRESS.md](../PROGRESS.md).
 - P28-F-R3-R2 corrected historical downloads: the v1.0.0 asset is now
   `WealthWise-android-v1.0.0.apk` at its version-specific URL, and the GitHub
@@ -269,10 +388,9 @@
   tests (1194 passed; one opt-in stress benchmark skipped). P29-M2's
   1120-test run, P29-N's 1104-test run and P29-M's blocked reproduction remain
   historical records in [PROGRESS.md](../PROGRESS.md).
-- Test counts: 98 suites, 1231 tests (1230 passed; one opt-in stress benchmark
-  skipped) in the P28-D run.
-- Latest validated run: 98 suites, 1231 tests (1230 passed, 1 skipped) on
-  2026-11-08; all six gates exit 0. Coverage and exact commands are recorded
+- Test counts: 98 suites, 1270 tests (1269 passed, 1 skipped) on 2026-11-09.
+- Latest validated run: 98 suites, 1270 tests (1269 passed, 1 skipped) on
+  2026-11-09; all six gates exit 0. Coverage and exact commands are recorded
   in [PROGRESS.md](../PROGRESS.md).
 - All six P29-L gates exit 0: Jest coverage, TypeScript, Expo lint with zero
   warnings, Expo Doctor 21/21, Android export and iOS export. Exact commands

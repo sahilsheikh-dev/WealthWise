@@ -5,6 +5,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { View } from 'react-native';
 
 import { FormScreen } from '../src/components/form/FormScreen';
+import { FieldTitle } from '../src/components/form/FieldTitle';
 import { TextField } from '../src/components/form/TextField';
 import { Button, EmptyState } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
@@ -99,15 +100,17 @@ export default function LiabilityClosureNoteFormScreen() {
       )}
     >
       <Controller control={control} name="note" render={({ field }) => (
-        <TextField
-          label="Closure note"
-          accessibilityLabel="Closure note"
-          maxLength={200}
-          value={field.value}
-          onChangeText={field.onChange}
-          onBlur={field.onBlur}
-          error={errors.note?.message}
-        />
+        <FieldTitle title="Closure note">
+          <TextField
+            label="Closure note"
+            accessibilityLabel="Closure note"
+            maxLength={200}
+            value={field.value}
+            onChangeText={field.onChange}
+            onBlur={field.onBlur}
+            error={errors.note?.message}
+          />
+        </FieldTitle>
       )} />
     </FormScreen>
   );
