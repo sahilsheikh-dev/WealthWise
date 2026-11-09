@@ -92,6 +92,25 @@ Exclude:
 | Automatic Git Commit | No (draft and archive commits are required) |
 | Automatic Git Push | No |
 
+## Owner-led release sequence
+
+1. Prepare the versioned Markdown release draft and ask the owner to approve
+   it. Do not commit the candidate before that approval.
+2. After approval, commit the approved code and release notes on the task
+   branch and merge task -> phase -> `develop` using PRs and the required
+   gates. Never build from an unmerged branch.
+3. After the changes merge to `develop`, create `release/vX.Y.Z` at that
+   source and create the GitHub Release draft at the release-branch commit.
+   The draft may create the version tag; do not retarget it. Attach the
+   matching screenshot asset and use its absolute URL in the draft body, then
+   notify the owner. The owner builds from that merged source and uploads the
+   APK to the GitHub draft using the exact versioned latest filename. Agents
+   do not start EAS or Gradle builds.
+4. Wait for the owner's upload confirmation. Then verify the APK, digest,
+   links, release notes and build-history record. After separate explicit
+   publication approval, merge the release branch `--no-ff` into `main`,
+   verify the tag target, then publish.
+
 Build targets and EAS profiles are documented in
 [`build-config.md`](./build-config.md): production Android AAB for Google Play,
 `android-apk` for the GitHub download. iOS distribution is not currently
@@ -111,11 +130,13 @@ Naming conventions:
 - History: `release-history.md`
 
 Anyone starting or continuing release work creates or reuses
-`docs/releases/drafts/vX.Y.Z.md` and commits it with subject
-`docs: draft vX.Y.Z release notes`. Release content belongs in Git, never in
-`/tmp`. After verifying successful GitHub publication, move the draft into
-`published/` and commit the move. Never leave a published file in drafts or a
-draft in published.
+`docs/releases/drafts/vX.Y.Z.md`. Do not commit the candidate before the owner
+approves the Markdown draft. After approval, commit it with the approved work
+on the task branch using subject `docs: draft vX.Y.Z release notes`, then
+merge task -> phase -> `develop` through PRs. Release content belongs in Git,
+never in `/tmp`. After verifying successful GitHub publication, move the
+draft into `published/` and commit the move. Never leave a published file in
+drafts or a draft in published.
 
 ## 7. Safety Policies
 
@@ -133,11 +154,12 @@ Follow the shared repository rules in [`AGENTS.md`](../../AGENTS.md),
 - Never overwrite or delete published release records or tags.
 - Never expose secrets or commit EAS credentials.
 - Anyone starting or continuing release work creates or reuses
-  `docs/releases/drafts/vX.Y.Z.md` and commits it as
-  `docs: draft vX.Y.Z release notes`. After publication is verified, move the
-  file to `docs/releases/published/` and commit the move; never leave a
-  published file in drafts or a draft in published. Release content is never
-  stored in `/tmp`.
+  `docs/releases/drafts/vX.Y.Z.md`. Do not commit before owner approval of the
+  Markdown draft; then include it with approved work in the task -> phase ->
+  `develop` PR path. Use subject `docs: draft vX.Y.Z release notes`. After
+  publication is verified, move the file to `docs/releases/published/` and
+  commit the move; never leave a published file in drafts or a draft in
+  published. Release content is never stored in `/tmp`.
 - For every GitHub release:
   - Attach the current/latest Android APK as
     `WealthWise-android-latest-vX.Y.Z.apk`; use that filename on the
@@ -153,18 +175,33 @@ Follow the shared repository rules in [`AGENTS.md`](../../AGENTS.md),
     releases use their versioned asset link and versioned download filename.
   - Update the README Download and What's new sections and its releases-page
     link for every release.
-  - Add or replace only the Download block in an existing published note; do
-    not otherwise rewrite the file.
+  - Include release-specific screenshots for new features in README, the
+    release Markdown and the GitHub Release body. Store only approved images
+    under versioned paths in `docs/releases/screenshots/vX.Y.Z/`; attach the
+    same images to the matching GitHub Release and test every rendered URL.
+  - Capture screenshots with deterministic synthetic demo data on the
+    owner-designated test setup. Never capture personal phone data. Keep any
+    one-off capture script outside the repository, do not package or upload
+    it, and delete it after use. Upload only reviewed screenshots. If the
+    owner explicitly designates the same image for multiple versions, record
+    that approval and reuse the exact file without implying separate captures.
+  - For an existing published note, change only its Download block unless the
+    owner explicitly authorizes another specific change. The owner has
+    explicitly authorized adding release-specific screenshots to v1.0.0,
+    v1.1.0 and future release records; make no unrelated historical edits.
   - When a newer version is published, replace only the previous release's
-    Download block with its versioned link and filename.
+    Download block with its versioned link and filename, except for
+    separately owner-authorized screenshot additions.
   - Verify latest and versioned links with `curl -I -L`; both must return
     HTTP 200 with the expected artifact size.
   - Record EAS build ID, Android `versionCode`, profile, date and status in
     the release-history Builds table; omit source commits and digests.
-  - Confirm the README, published Markdown, release history and GitHub assets
-    agree. The release remains incomplete until every check passes.
-  - For old published records, change only that version's Download block; do
-    not otherwise rewrite the file.
+  - Confirm the README, published Markdown, release history, version-specific
+    screenshots and GitHub release body agree. The release remains incomplete
+    until every check passes.
+  - For old published records, change only that version's Download block,
+    except for screenshot additions explicitly authorized by the owner; do not
+    otherwise rewrite the file.
 
 Use the published Markdown as the release-body source. For v1.0.0, the owner
 command is `gh release edit v1.0.0 --notes-file docs/releases/published/v1.0.0.md`.

@@ -60,10 +60,14 @@ apply only that exception and preserve all other rules.
   completed phase reopens its existing phase branch from `develop` (R2).
 - Create `task/ID-slug` branches from their phase branch, one per subtask or
   revision. Example: `task/P29-AB-R2-income-rows`.
-- Create `release/vX.Y.Z` from `develop` for versioning, changelog and draft
-  notes. Merge it `--no-ff` into `main`, tag it, then back-merge into
-  `develop`. Create `hotfix/vX.Y.Z` from `main`, then merge to `main`, tag,
-  and merge to `develop`.
+- After approved task/phase work is merged to `develop`, create
+  `release/vX.Y.Z` from `develop` and create the GitHub Release draft at that
+  exact candidate commit. Creating the draft may create its version tag; do
+  not retarget it. After owner APK upload/confirmation, artifact verification
+  and separate publication approval, merge the release branch `--no-ff` into
+  `main`, verify the tag target, and back-merge into `develop`. Create
+  `hotfix/vX.Y.Z` from `main`, then merge to `main`, tag, and merge to
+  `develop`.
 - External contributors fork and use `contrib/ISSUE-slug`, submitting a PR
   into `develop`. Contributor PRs are squash-merged with a Conventional
   Commit title.
@@ -122,20 +126,33 @@ are not authorized unless explicitly requested.
   previous asset name and rename it to `WealthWise-android-vX.Y.Z.apk` before
   linking it. Each non-latest release uses its own version-specific asset.
   Never use the `/latest/` route for an older release. Anyone starting or
-  continuing release work
-  creates or reuses `docs/releases/drafts/vX.Y.Z.md` and commits it with
-  subject `docs: draft vX.Y.Z release notes`. After publication is verified,
+  continuing release work creates or reuses
+  `docs/releases/drafts/vX.Y.Z.md`. Do not commit the candidate before the
+  owner approves the Markdown draft; then commit it with the approved release
+  work and merge through the required PR path. After publication is verified,
   move it to `docs/releases/published/` and commit the move; never leave a
   published file in drafts or a draft in published. Before each release,
   verify the APK digest against the artifact privately; never include the
   digest in human-authored release material. GitHub may expose a
   platform-generated asset digest that cannot be removed by editing the
   release.
+  Release sequence: obtain approval of the Markdown draft first, then commit
+  the approved code/notes on the task branch and merge task -> phase ->
+  `develop` through PRs. After the merge, create the GitHub Release as a draft
+  at the merged code, attach the matching screenshot and add its absolute URL
+  to the draft body, then notify the owner. The owner builds from that merged
+  source and uploads the APK to that GitHub draft using the exact filename;
+  agents do not build it. Continue only after the owner confirms the upload.
+  Then privately verify the artifact and links, finish the release records,
+  and publish only after explicit publication approval.
   The README Download block and latest published release Download block must
   be identical.
   Every release updates the README Download and What's new sections and its
-  releases-page link. When updating an existing published note, change only
-  its Download block. Verify the current latest URL and every affected
+  releases-page link. Include version-specific screenshots in README, notes
+  and the matching GitHub Release; keep capture scripts outside the app and
+  repository. When updating an existing published note, change only its
+  Download block except for screenshot additions explicitly authorized by the
+  owner. Verify the current latest URL and every affected
   versioned URL with `curl -I -L`; each must return HTTP 200 and the expected
   artifact size. Record EAS build
   ID, profile, Android `versionCode`, date and status in the release-history

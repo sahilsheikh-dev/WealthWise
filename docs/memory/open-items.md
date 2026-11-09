@@ -4,6 +4,25 @@
 
 ## Recently resolved
 
+- **Owner roadmap decisions (2026-11-09):** accessibility is the planned
+  statement and audit checklist, not new app features. Use Device Hub.app for
+  screenshots, not Android tooling; capture synthetic demo data only, keep a
+  one-off script outside the repository and delete it after use. The owner
+  explicitly requests version-specific feature screenshots in README,
+  release Markdown and GitHub Release bodies, attached to each release,
+  including v1.0.0 and v1.1.0.
+  Widgets, quick capture (shake, double-tap back or key combination) and
+  notification/SMS detection are Held for later. Notes includes text, voice/
+  audio recordings, photos and videos. Skeleton loading is planned in Phase
+  38. See [PROGRESS.md](../PROGRESS.md) for the recorded acceptance scope.
+- **Release screenshots and owner handoff:** the owner supplied one identical
+  PNG for v1.0.0, v1.1.0 and approved v1.1.1 and explicitly confirmed reuse is
+  intentional. The first two screenshot assets are uploaded to the matching
+  published GitHub releases; the v1.1.1 screenshot is only in the local
+  release-draft worktree until its draft is approved and merged. The
+  release process now waits for draft approval and PR integration before
+  creating a GitHub Release draft; the owner then builds/uploads the APK and
+  confirms before artifact verification and separate publication approval.
 - **Owner-edit handling:** P20-S-R1-R1 records R5 in root
   [AGENTS.md](../../AGENTS.md): ask before changing a file with owner edits
   made after agent changes, and revert or overwrite those edits only when
@@ -14,6 +33,10 @@
   backup restore, immediate edit refresh, aggregate Pace, linked paid sync and
   Undo, and Entries counts/schedule caps. Device model, Android version and
   tester remain blank as requested.
+- **P20-A-R2 device check N44:** the owner reported Pass on 2026-11-09 for
+  marking a linked one-time savings item Paid from Transactions, verifying
+  that a holding entry is created, and confirming Undo removes it. The
+  checklist records Pass; device identity fields remain blank.
 - **P28-F-R1 GitHub sync:** owner-reported N39-N43 results are included in
   merged PRs #1-#3. Phase 28 was integrated into develop, the release branch
   into main, and main back into develop. The merged PRs and remote tips are
@@ -107,18 +130,22 @@
   remain absent. Final gate results and PR integration are in
   [`PROGRESS.md`](../PROGRESS.md). Implementation commit `d36103e` is in
   task-to-phase PR #42; phase-to-develop PR #43.
-- **Owner decisions for planned Phases 31-37:** clarify what the accessibility
-  statement/audit should mean; decide whether screenshots should be committed
-  to Git; decide whether notification/SMS transaction detection is worth its
-  permission and policy cost; decide whether widgets and foreground shake
-  justify native-build overhead; and decide whether this P20-A-R2 fix ships as
-  v1.1.1. These phases remain planning-only; no new feature implementation or
-  release work has started.
-- **P20-A-R2 device re-test:** run N44 in
-  [`device-test-checklist.md`](../releases/device-test-checklist.md): mark a
-  linked one-time savings item Paid from Transactions, confirm a holding entry
-  is created, then confirm one-step Undo removes it. No physical-device
-  validation has been performed.
+- **Phase 32 screenshots:** supplied screenshots are embedded in README and
+  versioned Markdown. The v1.0.0 and v1.1.0 assets are attached to their
+  GitHub releases. The v1.1.1 screenshot is in its owner-approved release
+  draft; attach it to the matching GitHub Release after code is merged. The
+  temporary capture script remains outside the
+  repository and must be deleted after use; it must never be uploaded or
+  included in an app build.
+- **v1.1.1 release candidate:** the owner approved the patch-release Markdown
+  draft on 2026-11-09. App, package and lockfile versions are aligned to 1.1.1.
+  The approved work is being integrated through task -> Phase 28 -> `develop`;
+  the GitHub Release draft, APK build/upload, artifact verification and
+  publication remain pending. The owner will build from merged source and
+  confirm the APK upload before verification. Direct source-tree comparison
+  confirms v1.1.0 contains the P30 SQLite persistence repair; v1.0.0 predates
+  that repair. Neither release should be described as bug-free, and user
+  impact is not established by the available checks.
 - **Branching baseline exception:** the initial `develop` baseline
   `a258579c4b580d6f3a157b8d13de53334aa8d34d` was created from current main,
   which contains legacy unreleased Release 2 work. Branch protection and
