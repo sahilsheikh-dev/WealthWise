@@ -76,6 +76,16 @@
   `7bea8e62c10f641f1fe9aeb9e3ef605b3620250a`, with tree
   `207ed97e541e55919d5cb58afbd25c4b0ed835c0`. The task branch was deleted;
   Phase 28 is retained. Verification is in [PROGRESS.md](../PROGRESS.md).
+- **P28-E-R5 historical main commit audit:** the 403 non-merge commits after
+  the initial commit are already integrated into `main` and `develop`; 84
+  legacy subjects fail the current Conventional Commit hook. Do not rewrite
+  these original commits: a PR cannot change commit provenance or subjects
+  retroactively. The owner-selected `release/v1.0.0` branch was created at
+  the existing v1.0.0 tag target and is already an ancestor of `main` and
+  `develop`. Task PR #52 merged into Phase 28 as `f9bb715`; remaining work is
+  the Phase 28 -> `develop` PR. No application code or protected branch tip
+  changes.
+  Evidence is in [PROGRESS.md](../PROGRESS.md).
 - **P28-E-R3 ancestry reconciliation:** owner-authorized `ours` merges record
   `f994457`, `7bea8e6` and `b779c21` as ancestry on the task branch without
   changing the captured `develop` tree. The accompanying changes are limited
