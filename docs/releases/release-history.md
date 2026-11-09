@@ -8,7 +8,8 @@ or checksums.
 
 | Version | Date | Type | Android download | Release notes | Status |
 |---|---|---|---|---|---|
-| v1.1.0 | 2026-11-08 | Minor | [APK](https://github.com/sahilsheikh-dev/WealthWise/releases/download/v1.1.0/WealthWise-android-latest-v1.1.0.apk) | [v1.1.0 notes](./published/v1.1.0.md) | Published |
+| v1.1.1 | 2026-11-09 | Patch | [APK](https://github.com/sahilsheikh-dev/WealthWise/releases/download/v1.1.1/WealthWise-android-latest-v1.1.1.apk) | [v1.1.1 notes](./published/v1.1.1.md) | Published |
+| v1.1.0 | 2026-11-08 | Minor | [APK](https://github.com/sahilsheikh-dev/WealthWise/releases/download/v1.1.0/WealthWise-android-v1.1.0.apk) | [v1.1.0 notes](./published/v1.1.0.md) | Published |
 | v1.0.0 | 2026-11-07 | Initial | [APK](https://github.com/sahilsheikh-dev/WealthWise/releases/download/v1.0.0/WealthWise-android-v1.0.0.apk) | [v1.0.0 notes](./published/v1.0.0.md) | Published |
 
 More versions are listed on the [WealthWise releases page](https://github.com/sahilsheikh-dev/WealthWise/releases).
@@ -17,17 +18,19 @@ More versions are listed on the [WealthWise releases page](https://github.com/sa
 
 | EAS build ID | Profile | Android versionCode | Date | Status |
 |---|---|---:|---|---|
-| `ecc97480-7229-41ac-8aad-64ea2cd255b5` | android-apk | 2 | 2026-11-09 | Artifact verified against EAS; attached to v1.1.1 GitHub draft, not published |
+| `ecc97480-7229-41ac-8aad-64ea2cd255b5` | android-apk | 2 | 2026-11-09 | Published; artifact verified against EAS |
 | `e45392bd-8146-4077-b76b-fe139993b141` | preview | 1 | 2026-11-08 | Published; artifact verified; owner-approved release exceptions |
 | `7addde9a-34df-4f00-a54a-b695c1578859` | preview | 1 | 2026-11-07 | Complete; artifact verified |
 
-The v1.1.0 Android APK matched the EAS artifact and published asset
-`WealthWise-android-latest-v1.1.0.apk`. Its latest-route and versioned
-release URLs returned HTTP 200 with a
-content length of 112,147,677 bytes. The owner explicitly approved using the
-`preview` profile and reusing Android `versionCode` 1 for this release. The
-artifact digest was checked privately and is not included in human-authored
-release material.
+The v1.1.1 Android APK matched the owner-supplied EAS artifact and is published
+as `WealthWise-android-latest-v1.1.1.apk`. Its latest URL returns HTTP 200 with
+a content length of 112,150,605 bytes.
+
+The v1.1.0 Android APK matched the EAS artifact and is published as
+`WealthWise-android-v1.1.0.apk`. Its versioned URL returns HTTP 200 with a
+content length of 112,147,677 bytes. The former latest-named asset was
+replaced after v1.1.1 publication. The owner explicitly approved using the
+`preview` profile and reusing Android `versionCode` 1 for this release.
 
 The v1.0.0 Android APK artifact was verified against its published download.
 After v1.1.0 became latest, the v1.0.0 asset was renamed to
