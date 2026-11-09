@@ -88,9 +88,9 @@
 - **P28-E-R4 history graph integration:** the `history/by-phase` tip is merged
   into the task branch with `ours`; the archive tip is now an ancestor while
   the develop tree is preserved. Complete the task -> Phase 28 -> `develop`
-  PRs, then confirm every remote branch tip is reachable from `develop` and
-  `main`/`release/v1.1.0` trees remain unchanged. Evidence is in
-  [PROGRESS.md](../PROGRESS.md).
+  route (task PR #49 is merged; phase PR is pending), then confirm every
+  remote branch tip is reachable from `develop` and `main`/`release/v1.1.0`
+  trees remain unchanged. Evidence is in [PROGRESS.md](../PROGRESS.md).
 
 - **P20-S-R1 device check:** physical-device rendering remains unverified.
   Owner approved commit/merge; SegmentedControl labels removed by the owner

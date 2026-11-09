@@ -196,7 +196,7 @@ Phase 37         ░░░░░░░░░░ 0% (0/3)
 | P28-E-R1 | — | Done | Close out the phase-history evidence and record final integrated Release 2 gates, branch integrations, and remaining device/release follow-ups. | 2026-11-08 |
 | P28-E-R2 | — | Done | Preserve the local final-remote-verification commit in GitHub history while reconciling its stale status text with the current ledger. Final remote branch/tag and archive checks are recorded; no tag was changed. | 2026-11-08 |
 | P28-E-R3 | — | Done | Added ancestry-only merge records for P25-F, the v1.1.0 merge and the Phase 1 refactor on the task branch. Application source is unchanged; historical archive PR #46 remains isolated to `history/by-phase`. PR #47 merged to Phase 28 and PR #48 merged to `develop`. | 2026-11-09 |
-| P28-E-R4 | — | In progress | Connect the complete `history/by-phase` archive ancestry through the Phase 28 task/phase PR route to `develop`, preserving the existing application tree and leaving `main` and `release/v1.1.0` unchanged. | 2026-11-09 |
+| P28-E-R4 | — | In progress | Connect the complete `history/by-phase` archive ancestry through the Phase 28 task/phase PR route to `develop`, preserving the existing application tree and leaving `main` and `release/v1.1.0` unchanged. Task PR #49 is merged into Phase 28; the phase -> `develop` PR is pending. | 2026-11-09 |
 | P28-F | — | Done; Revised by P28-F-R1, P28-F-R2, P28-F-R2-R1, P28-F-R3, P28-F-R3-R1, P28-F-R3-R2, P28-F-R3-R3 and P28-F-R3-R3-R1 | Prepared v1.1.0 on `release/v1.1.0`; all six gates passed. PR #2 merged the release into main and PR #3 back-merged main into develop. Revised by P28-F-R3 for verified EAS build, tag and publication evidence, P28-F-R3-R1 for the completed publication PR chain, P28-F-R3-R2 for historical asset rollover and checksum removal, P28-F-R3-R3 for versioned latest-asset naming, and P28-F-R3-R3-R1 for the merged filename-policy PR chain. | 2026-11-08 |
 | P28-F-R1 | — | Done | Recorded owner-reported Pass results for device checklist N39-N43; device identification fields remain blank. | 2026-11-08 |
 | P28-F-R2 | — | Done; Revised by P28-F-R2-R1 | Corrected the v1.1.0 draft contributor credits using the published v1.0.0 format, added contributor guidance, and verified the PR integration path. | 2026-11-08 |
@@ -10065,8 +10065,8 @@ The phase branch tips contain task/phase integration commits; completion tags
 point to the phase's last identified original subtask commit. `history/by-phase`
 remains a read-only synthetic archive; P28-E-R4 records its complete ancestry
 on the task branch with a tree-preserving merge, without checking out the
-archive tree. The task -> Phase 28 -> `develop` PRs are pending. Subtask counts
-are derived from the dashboard and are guarded by
+archive tree. Task PR #49 is merged into Phase 28; the Phase 28 -> `develop`
+PR is pending. Subtask counts are derived from the dashboard and are guarded by
 `progressLedger.test.ts`.
 
 | Phase | Branch | Tag | Last original commit | Subtask count |
