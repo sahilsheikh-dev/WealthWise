@@ -1,31 +1,28 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-09 | Updates: owner and AI agents -->
 
 # Status
-- The owner approved the v1.1.1 patch-release note on 2026-11-09. The app,
-  package and lockfile versions are aligned to 1.1.1. The original release
-  task passed all six gates; the same ordered gates passed after the prior
-  screenshot/documentation revision: 98 suites, 1,269 passed, 1 skipped;
+- The owner-approved v1.1.1 patch release was published on 2026-11-09. The
+  app, package and lockfile versions are aligned to 1.1.1. All six ordered
+  gates passed on the release candidate: 98 suites, 1,271 passed, 1 skipped;
   TypeScript, lint, Expo Doctor 21/21, Android export and iOS export also
-  passed. Task PRs #56, #58, #60 and #62 and Phase 28 PRs #57, #59, #61 and
-  #63 are merged to `develop`. `release/v1.1.1` and its GitHub Release draft
-  remain at the original target.
+  passed. Release PR #69 merged to `main`; back-merge PR #70 integrated it
+  into `develop`. Tag `v1.1.1` points to the main merge commit.
 - The owner-provided APK for EAS build
   `ecc97480-7229-41ac-8aad-64ea2cd255b5` finished with app version 1.1.1,
   Android `versionCode` 2 and profile `android-apk`. Its bytes match the EAS
-  artifact; the 112,150,605-byte APK is attached to the v1.1.1 draft as
-  `WealthWise-android-latest-v1.1.1.apk`. No publication or tag change was
-  made; v1.1.0 remains the latest published release until separate
-  publication approval.
-- N44 is owner-reported Pass. Screenshots are attached to each matching
-  GitHub release using `WealthWise-vX.Y.Z-screenshot-<screen>.png` names;
-  `docs/releases/screenshots/` is removed from the repository. The README
-  gallery points to the latest published v1.1.0 asset set until v1.1.1 is
-  published. The v1.1.0 and v1.0.0 screenshot URLs are public and verified;
-  v1.1.1 draft assets were verified through GitHub asset metadata and remain
-  unavailable to anonymous download until publication. The release prompt
-  heading sequence is corrected, including “Generate Release Notes” as 9.
-  Focused tests and this task's verification results are in the progress
-  ledger; the six app gates are not rerun for this docs/assets revision.
+  artifact, owner-provided APK and published 112,150,605-byte asset
+  `WealthWise-android-latest-v1.1.1.apk`. The latest URL returns HTTP 200 at
+  the expected size; no digest is recorded here.
+- N44 is owner-reported Pass. All 23 screenshots are attached to their
+  matching public GitHub releases as `WealthWise-vX.Y.Z-screenshot-<screen>.png`;
+  `docs/releases/screenshots/` is removed. The README gallery points to the
+  v1.1.1 screenshots. All eight screenshot URLs return HTTP 200. The v1.1.0
+  APK was renamed to its versioned filename after publication; the v1.1.0 and
+  v1.0.0 versioned APK URLs return HTTP 200 at their expected sizes. The
+  release prompt heading sequence is corrected, including “Generate Release
+  Notes” as 9. Focused documentation tests and release evidence are recorded
+  in the progress ledger; the six app gates were not rerun for this
+  docs/assets revision.
 - Direct comparison confirms the v1.1.0 source tree contains the P30
   persistence repair and its SQLite storage implementation matches current
   develop; v1.0.0 predates that repair.
@@ -35,7 +32,7 @@
   repository and deleted after use. The owner requests every supplied
   versioned screenshot in README, its release note and matching GitHub
   release, with all images attached. All 23 supplied screenshots are attached
-  to v1.0.0, v1.1.0 and the v1.1.1 draft; no screenshot files remain in the
+  to v1.0.0, v1.1.0 and the v1.1.1 release; no screenshot files remain in the
   repository.
   Release-note Contributors sections were removed. The updated rule requires
   owner approval, full note completion and moving the note to `published/`
@@ -51,8 +48,8 @@
   the local screenshot folder and temporary asset/APK copies are removed.
   The focused documentation tests and all six ordered gates pass. Task PR
   #64 merged into Phase 28 as `dd8c6b6`; Phase PR #65 carries the change to
-  `develop`. v1.1.1 remains a GitHub draft; v1.1.0 remains latest published,
-  and publication/tag rollover was not performed.
+  `develop`. The follow-up release workflow is now complete: v1.1.1 is
+  published and latest, and v1.1.0 uses its versioned APK asset.
 - Current instruction update: P20-S-R1-R1 adds R5 to
   [AGENTS.md](../../AGENTS.md) at the owner's request. When owner edits follow
   agent changes, ask before changing the affected file; revert or overwrite
