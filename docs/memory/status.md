@@ -9,8 +9,9 @@
   recorded in [PROGRESS.md](../PROGRESS.md).
 - P28-E-R3 records the selected P25-F, v1.1.0 merge and Phase 1 commits as
   ancestry through `task/P28-E-R3-record-selected-ancestry` and
-  `phase/28-qa-and-release`. The task tree matches the captured `develop`
-  baseline; no application source or `main` changes are included. The intended
+  `phase/28-qa-and-release`. The ancestry merges preserve the captured
+  `develop` tree; the task adds only ledger/memory documentation and a ledger
+  test. No application source or `main` changes are included. The intended
   integration route remains task -> Phase 28 -> `develop`.
 - Current integration: P28-D, P28-C-R4, P28-E, P20-A-R1, P20-N-R2,
   P29-AB-R2, P29-O1-R1, P29-W-R1, P28-F-R1/R2 and the Phase 30 work are

@@ -3333,7 +3333,7 @@ phase counts remain derived from ledger statuses and check the active P28-F row
 as open, then closed after integration. Reason: preserve accurate progress and
 completion checks without hardcoding totals.
 
-| P28-E-R3 | Phase 28 | P28-E | current | 2026-11-09 | Record selected historical commit ancestry on `develop` without changing application source. | Done; all six gates exit 0. Gate 1: 98 suites, 1,267 passed, 1 skipped; coverage 95.96/92.04/98.02/97.63% overall, `src/data` 91.03/87.41/94.46/94.17%, `src/domain` 96.94/92.87/98.80/98.33%, `src/lib` 100%; Expo Doctor 21/21. Baseline `origin/develop` tip/tree `825636564a4af5568e84911e34198157fd5427ea` / `dba012ebe61de2796960711ed9948b2fad1352f1`; baseline `origin/main` tip/tree `7bea8e62c10f641f1fe9aeb9e3ef605b3620250a` / `207ed97e541e55919d5cb58afbd25c4b0ed835c0`. `f994457`, `7bea8e6` and `b779c21` are ancestry parents via merge commits `a654f66`, `be7b394` and `0697d88`; the task tree remains identical to the develop baseline. Historical PR #46 remains isolated to `history/by-phase`; its `f5f1086` tree is not the current main tree. | Task branch `task/P28-E-R3-record-selected-ancestry`; task -> Phase 28 -> `develop` PRs. | Old: the three selected commits were represented only on the archive branch, and the archive was described as matching the current main tree. New: record their ancestry through `ours` merges while keeping the develop source tree; clarify that the archived tree is a historical snapshot, not current main. Reason: use the requested develop target and correct the stale tree comparison without changing application source or main. Updated ledger guard: old assertion required P28-E to be revised only by R1; new assertion requires R1/R2/R3 and exactly one dashboard/log row for R3. Reason: track this revision without weakening progress/branch-index count checks. | current request |
+| P28-E-R3 | Phase 28 | P28-E | current | 2026-11-09 | Record selected historical commit ancestry on `develop` without changing application source. | Done; all six gates exit 0. Gate 1: 98 suites, 1,267 passed, 1 skipped; coverage 95.96/92.04/98.02/97.63% overall, `src/data` 91.03/87.41/94.46/94.17%, `src/domain` 96.94/92.87/98.80/98.33%, `src/lib` 100%; Expo Doctor 21/21. Baseline `origin/develop` tip/tree `825636564a4af5568e84911e34198157fd5427ea` / `dba012ebe61de2796960711ed9948b2fad1352f1`; baseline `origin/main` tip/tree `7bea8e62c10f641f1fe9aeb9e3ef605b3620250a` / `207ed97e541e55919d5cb58afbd25c4b0ed835c0`. `f994457`, `7bea8e6` and `b779c21` are ancestry parents via merge commits `a654f66`, `be7b394` and `0697d88`; those ancestry commits preserve the develop tree, while the task adds only ledger/memory documentation and a ledger test. Historical PR #46 remains isolated to `history/by-phase`; its `f5f1086` tree is not the current main tree. | Task branch `task/P28-E-R3-record-selected-ancestry`; task -> Phase 28 -> `develop` PRs. | Old: the three selected commits were represented only on the archive branch, and the archive was described as matching the current main tree. New: record their ancestry through `ours` merges while keeping the develop source tree; clarify that the archived tree is a historical snapshot, not current main. Reason: use the requested develop target and correct the stale tree comparison without changing application source or main. Updated ledger guard: old assertion required P28-E to be revised only by R1; new assertion requires R1/R2/R3 and exactly one dashboard/log row for R3. Reason: track this revision without weakening progress/branch-index count checks. | current request |
 
 ## 7. Change-request register
 
@@ -3770,7 +3770,7 @@ evidence for the fixes.
 
 | Area | Status | Evidence |
 |---|---|---|
-| Ancestry and tree preservation | Verified on task branch | `f994457`, `7bea8e6` and `b779c21` are ancestors via `a654f66`, `be7b394` and `0697d88`. The committed task tree is exactly `dba012ebe61de2796960711ed9948b2fad1352f1`, matching the captured `origin/develop` baseline; no application source paths changed. `main` remains at baseline `7bea8e62c10f641f1fe9aeb9e3ef605b3620250a`. |
+| Ancestry and tree preservation | Verified on task branch | `f994457`, `7bea8e6` and `b779c21` are ancestors via `a654f66`, `be7b394` and `0697d88`. These ancestry commits preserve the captured `origin/develop` tree `dba012ebe61de2796960711ed9948b2fad1352f1`; subsequent changes are limited to ledger/memory documentation and a ledger test. No application source paths changed. `main` remains at baseline `7bea8e62c10f641f1fe9aeb9e3ef605b3620250a`. |
 | Archive clarification | Recorded | PR #46 changed only `history/by-phase`; its tree `f5f10867771cf74d03071f4c8d8a5cbfd7941156` is an older snapshot, not the current main tree. |
 | Progress-ledger assertions | Updated | Old: the dashboard assertion required only `Revised by P28-E-R1`, and the ID lists omitted P28-E-R2/R3. New: the assertion requires `Revised by P28-E-R1, P28-E-R2 and P28-E-R3`, and both ID lists include R2/R3. Reason: ensure the new revision is tracked exactly once while retaining count and branch-index guards. |
 
@@ -9322,9 +9322,10 @@ Gradle build, version bump, or release preparation was performed.
 
 - Added three `ours` merge commits on
   `task/P28-E-R3-record-selected-ancestry` for `f994457`, `7bea8e6` and
-  `b779c21`. The committed task tree remains identical to the captured
-  `origin/develop` tree; application source, `main`, and release tags are
-  unchanged. PR #46 remains isolated to `history/by-phase`.
+  `b779c21`. The ancestry merges preserve the captured `origin/develop` tree;
+  subsequent changes are limited to ledger/memory documentation and a ledger
+  test. Application source, `main`, and release tags are unchanged. PR #46
+  remains isolated to `history/by-phase`.
 - Gate 1: 98 suites, 1,267 passed, 1 skipped; coverage 95.96/92.04/98.02/97.63%
   overall, `src/data` 91.03/87.41/94.46/94.17%, `src/domain`
   96.94/92.87/98.80/98.33%, and `src/lib` 100% in all measures. Gates 2-6 exit
