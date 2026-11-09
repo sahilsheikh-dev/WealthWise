@@ -3,7 +3,6 @@
 | Field | Value |
 |---|---|
 | App version | 1.0.0 |
-| APK SHA-256 | `ddaac3222cd4069d1c2121b3fcb9410724b9ee23649ddcc2603cd7c90a796af3` |
 | Device model | |
 | Android version | |
 | Tester | |
@@ -11,13 +10,12 @@
 
 ## Results
 
-Use only `Pass`, `Fail`, or `Blocked` after running each check. Every result
-below is initially **Not run**.
+Use only `Pass`, `Fail`, or `Blocked` after running each check.
 
 | ID | Test | Result | Notes |
 |---|---|---|---|
 | X1 | Download the APK from the README link. | Pass | |
-| X2 | Verify the APK SHA-256 matches the README. | Pass | |
+| X2 | Verify the APK SHA-256 against the retained build artifact before installation. | Pass | |
 | X3 | Install the APK and open the app. | Pass | |
 | X4 | Confirm About/version shows 1.0.0. | Pass | |
 | A1 | Confirm data remains intact after install or restore. | Pass | |
@@ -58,26 +56,27 @@ below is initially **Not run**.
 | K36 | Restore a backup and compare net worth; verify Erase all clears data. | Pass | |
 | L37 | Load 50-year data from the dev menu and verify smooth use and Undo; confirm larger export is refused with a message. | Pass | |
 | M38 | Verify dark theme, font scales 1.3 and 2.0, Android back, and lock screen. | Pass | |
-| N39 | Add quarterly and yearly income with a first-due month; check planned income, Received dues, and projected cash flow in due and non-due months. Export a backup, erase all, restore it, and verify frequencies survive. | Fail | Release 2 bug: quarterly/yearly income appears every month (P29-AB-R1) |
-| N40 | Edit a value and verify it refreshes immediately without restarting the app. | Fail | Release 2 bug: edited values do not refresh immediately (P30-A/B/C) |
-| N41 | Verify Budget overview shows the per-section Pace graph and no stacked bar. | Not run | P20-N-R1 |
+| N39 | Add quarterly and yearly income with a first-due month; check planned income, Received dues, and projected cash flow in due and non-due months. Export a backup, erase all, restore it, and verify frequencies survive. | Pass | |
+| N40 | Edit a value and verify it refreshes immediately without restarting the app. | Pass | |
+| N41 | Verify Budget overview shows the aggregate Pace graph and no stacked bar. | Pass | |
+| N42 | Mark linked recurring-plan dues and liability EMIs as Paid from Transactions, Home, Budget and reminder confirmation; verify linked ledgers update and Undo restores all changes. | Pass | |
+| N43 | Verify recurring investment and liability Entries show completed/pending counts, collapsed paid rows, and no installments after maturity or the final EMI date. | Pass | |
 | N44 | Linked one-time savings item marked Paid from Transactions creates a holding entry; Undo removes it. | Not run | P20-A-R2; verify on device |
 
 ## Owner follow-up
 
-The prior owner-entered report marked 43 checks Pass; this task supersedes
-that report for N39-N41. The owner confirms the Release 2 income and edited-
-value bugs reproduce. N41 remains Not run because the Pace graph has not been
-retested on device. The device model, Android version, tester, and test date
-fields remain blank. N44 is added to the owner re-test list; verify that Paid
-creates the linked holding entry and one-step Undo removes it on a physical
-device.
+The owner reports N39-N43 passed on 2026-11-08, superseding the earlier
+Fail/Not run results. The Release 2 recurrence, edit-refresh, aggregate Pace,
+paid-sync/Undo, and Entries checks are recorded as passed. N44 is added to the
+owner re-test list; verify that Paid creates the linked holding entry and
+one-step Undo removes it on a physical device. Device model, Android version,
+and tester fields remain blank.
 
 ## How to run
 
 1. Download the APK using the README Download link and verify its SHA-256
-   before installing. Allow installs from this source in Android settings if
-   prompted.
+   against the retained build artifact before installing. Do not publish the
+   digest. Allow installs from this source in Android settings if prompted.
 2. Fill in the device and tester fields above, run each scenario, and replace
    `Not run` only with `Pass`, `Fail`, or `Blocked`. Record steps and observed
    behavior in Notes; do not infer a pass from an automated test.

@@ -94,9 +94,11 @@ Never assume that the newest Git tag is necessarily the latest published GitHub 
 
 Use the actual GitHub Release records to establish the baseline.
 
-Use the default branch's latest intended remote commit as the release target unless another target is explicitly configured or approved.
-
-Do not silently release the current development branch.
+Create `release/vX.Y.Z` from `develop` as the release candidate branch. The
+approved target is the verified release-branch commit; do not silently release
+`develop` or another development branch. Merge the approved release branch
+into `main` with `--no-ff`, create the approved version tag, and back-merge
+into `develop`.
 
 If the repository, baseline, or target commit is ambiguous, stop and explain the problem.
 
@@ -111,8 +113,8 @@ The release scope is the range between:
 For example:
 
 ```text
-Previous release: v1.0.0
-Target release:   v1.1.0
+Previous release: v1.1.0
+Target release:   v1.2.0
 Base:             Previous release tag
 Head:             Approved target commit
 ```
@@ -422,8 +424,7 @@ Prepare release metadata containing:
 - Previous version.
 - Release type.
 - Release date.
-- Base commit SHA.
-- Target commit SHA.
+- Base and target commit identifiers for internal range analysis only.
 - Included commits.
 - Included PRs.
 - Breaking changes.
@@ -477,45 +478,57 @@ After explicit approval:
 
 For every GitHub release:
 
-1. Attach the Android APK under the exact filename `WealthWise-android.apk`:
+1. Attach the current release Android APK under the versioned latest filename
+   `WealthWise-android-latest-vX.Y.Z.apk`:
 
    ```bash
-   gh release upload vX.Y.Z /path/to/WealthWise-android.apk
+   gh release upload vX.Y.Z /path/to/WealthWise-android-latest-vX.Y.Z.apk
    ```
 
-2. Add the Download block containing the version, release date, asset link,
-   verified SHA-256, iOS availability message and releases-page link to both
-   the published Markdown and GitHub release body. The latest published block
-   must match the README and use the latest route. Older releases use their
-   own versioned asset link. When adding a block to an existing published
-   note, add or replace only that block; do not otherwise rewrite the file.
+2. Add the version, release date, asset link, iOS availability message and
+   releases-page link to the Download block in the published Markdown and
+   GitHub release body. Verify the APK digest privately against the build
+   artifact, but never include it in human-authored release material. GitHub
+   may expose a platform-generated asset digest that cannot be removed by
+   editing the release. The latest published block must match the README and
+   use the latest route.
+   When a newer version is published, remove `latest` from the previous
+   release asset name, using `WealthWise-android-vX.Y.Z.apk`, and update the
+   old Download block to its matching versioned asset URL. Never use
+   `/latest/` for an older release. When adding a block to an existing
+   published note, add or replace only that block; do not otherwise rewrite
+   the file.
 
 3. Keep the README Download section and the latest release Download block
-   byte-identical. When a newer version is published, replace only the
-   previous release's Download block with that version's versioned link; do
-   not change anything else in that old file.
-4. Verify both the latest and versioned direct Android links with
-   `curl -I -L`; record the final HTTP status and `Content-Length`. Both must
-   return HTTP 200, and the downloaded APK's SHA-256 must match:
+   byte-identical. When a newer version is published, rename only the previous
+   release asset by removing `latest` from its filename, then replace only
+   that release's Download block with its version-specific URL and filename;
+   do not change anything else in that old note.
+4. Verify the current latest link and every affected versioned direct Android
+   link with `curl -I -L`; record final HTTP status and `Content-Length`. Each
+   must return HTTP 200 with the expected artifact size. Verify digests
+   privately against the build artifact and never include them in
+   human-authored release material:
 
    ```bash
-   curl -I https://github.com/sahilsheikh-dev/WealthWise/releases/latest/download/WealthWise-android.apk
-   curl -I -L https://github.com/sahilsheikh-dev/WealthWise/releases/latest/download/WealthWise-android.apk
-   curl -I https://github.com/sahilsheikh-dev/WealthWise/releases/download/vX.Y.Z/WealthWise-android.apk
-   curl -I -L https://github.com/sahilsheikh-dev/WealthWise/releases/download/vX.Y.Z/WealthWise-android.apk
+   curl -I https://github.com/sahilsheikh-dev/WealthWise/releases/latest/download/WealthWise-android-latest-vX.Y.Z.apk
+   curl -I -L https://github.com/sahilsheikh-dev/WealthWise/releases/latest/download/WealthWise-android-latest-vX.Y.Z.apk
+   curl -I https://github.com/sahilsheikh-dev/WealthWise/releases/download/vX.Y.Z/WealthWise-android-vX.Y.Z.apk
+   curl -I -L https://github.com/sahilsheikh-dev/WealthWise/releases/download/vX.Y.Z/WealthWise-android-vX.Y.Z.apk
    ```
 
-5. Update the root README `Download` section with latest version and release
-   date, a version-labelled latest link, verified SHA-256, the iOS
-   availability message and the older-versions link. State unavailable
-   artifacts or owner-provided links plainly; do not publish an invented URL.
-6. Record the EAS build ID, Android `versionCode`, source commit, profile,
-   exact artifact name, build date and status in the `release-history.md`
-   Builds table. Production Android AABs are for Google Play; `android-apk`
-   builds are for GitHub downloads; iOS builds are for TestFlight/App Store.
-7. Confirm both links return HTTP 200, the SHA-256 matches, and the README,
-   published Markdown, `release-history.md` and GitHub release assets agree.
-   The release remains incomplete until every check passes.
+5. Update the root README Download and What's new sections and its
+   releases-page link for every release. The latest README Download block and
+   published release Download block must be identical; older notes use their
+   matching versioned release URL and filename, never the latest route. State
+   unavailable artifacts plainly; do not publish an invented URL.
+6. Record the EAS build ID, Android `versionCode`, profile, date and status in
+   the `release-history.md` Builds table. Do not record source commits or
+   digests there. Production Android AABs are for Google Play; `android-apk`
+   builds are for GitHub downloads; iOS distribution is not offered.
+7. Confirm both links return HTTP 200 with the expected size and that the
+   README, published Markdown, `release-history.md` and GitHub release assets
+   agree. The release remains incomplete until every check passes.
 
 After verification and approval, publish the draft:
 
@@ -628,15 +641,18 @@ Before considering the release complete, verify:
 - Correct release tag.
 - Permanent release record.
 - Updated release history.
-- Attached `WealthWise-android.apk`; both download routes return HTTP 200 and
-  the APK SHA-256 matches.
-- Download block with SHA-256 in published Markdown and release body; the
-  latest block matches the README and older release blocks use versioned links.
-- Both latest and versioned links checked with `curl -I -L`, including final
-  status and `Content-Length`.
-- README Download version/date, version-labelled latest link, SHA-256, iOS
-  message and older-versions link.
-- EAS build ID, Android `versionCode`, source commit and artifact in Builds.
+- Attached `WealthWise-android-latest-vX.Y.Z.apk` to the current release; the `/latest/`
+  route and each affected version-specific route return HTTP 200 with the
+  expected artifact size. When superseding a release, rename that older asset
+  to `WealthWise-android-vX.Y.Z.apk` and update its Download block. Verify the
+  APK digest privately; do not include it in human-authored release material.
+- Download block in published Markdown and release body; the latest block
+  matches the README and older release blocks use versioned links.
+- The current `/latest/` link and each affected version-specific link checked
+  with `curl -I -L`, including final status and `Content-Length`.
+- README Download and What's new sections and releases-page link are current.
+- EAS build ID, Android `versionCode`, profile, date and status in Builds;
+  no source commit or digest is published.
 - Matching README, published Markdown, release-history build record and GitHub
   release assets.
 

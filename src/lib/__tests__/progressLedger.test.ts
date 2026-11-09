@@ -16,7 +16,7 @@ describe('permanent progress ledger', () => {
     expect(sections.map(({ number }) => number)).toEqual(
       Array.from({ length: sections.length }, (_, index) => String(index + 1)),
     );
-    expect(sections[sections.length - 1]?.title).toBe('Session and release log');
+    expect(sections[sections.length - 1]?.title).toBe('Phase branch index');
   });
 
   it('lists every fix and CR in the dashboard or register', () => {
@@ -70,11 +70,11 @@ describe('permanent progress ledger', () => {
       'P18-R0', 'P18-R1', 'P18-R2', 'P18-R3', 'P18-R4', 'P18-R5',
       'P18-R6', 'P18-LEDGER', 'P18-R7',
       'P19-A', 'P19-B', 'P20-A', 'P20-A-R1', 'P20-A-R2', 'P20-B', 'P20-C', 'P20-D', 'P20-E', 'P20-F',
-      'P20-G', 'P20-H', 'P20-I', 'P20-J', 'P20-K', 'P20-L', 'P20-M', 'P20-N', 'P20-N-R1', 'P20-O', 'P20-P', 'P20-Q', 'P20-R', 'P20-S', 'P20-T', 'P20-U', 'P21-A', 'P21-B', 'P21-C', 'P21-C1', 'P21-D', 'P22-A', 'P23-A', 'P23-B', 'P24-A', 'P25-A', 'P25-B', 'P25-C', 'P25-D', 'P25-E', 'P26-A', 'P27-A',
+      'P20-G', 'P20-H', 'P20-I', 'P20-J', 'P20-K', 'P20-L', 'P20-M', 'P20-N', 'P20-N-R1', 'P20-N-R2', 'P20-O', 'P20-P', 'P20-Q', 'P20-R', 'P20-S', 'P20-T', 'P20-U', 'P21-A', 'P21-B', 'P21-C', 'P21-C1', 'P21-D', 'P22-A', 'P23-A', 'P23-B', 'P24-A', 'P25-A', 'P25-B', 'P25-C', 'P25-D', 'P25-E', 'P26-A', 'P27-A',
       'P23-C', 'P23-D', 'P25-F',
-      'P28-A', 'P28-A-R1', 'P28-B', 'P28-C', 'P28-C-R1', 'P28-C-R2', 'P28-C-R3', 'P28-D',
-      'P29-A', 'P29-B', 'P29-C', 'P29-D', 'P29-E', 'P29-F', 'P29-F2', 'P29-F3', 'P29-F4', 'P29-G', 'P29-H', 'P29-I', 'P29-J', 'P29-K', 'P29-L', 'P29-M', 'P29-N', 'P29-M2', 'P29-O', 'P29-O2', 'P29-Q', 'P29-R', 'P29-S', 'P29-T', 'P29-U', 'P29-V',       'P29-W', 'P29-X', 'P29-Y', 'P29-Z',
-      'P29-AA', 'P29-AB', 'P29-AB-R1', 'P30-A', 'P30-B', 'P30-C',
+      'P28-A', 'P28-A-R1', 'P28-B', 'P28-C', 'P28-C-R1', 'P28-C-R2', 'P28-C-R3', 'P28-C-R4', 'P28-D', 'P28-E', 'P28-E-R1', 'P28-F', 'P28-F-R1', 'P28-F-R2', 'P28-F-R2-R1', 'P28-F-R3', 'P28-F-R3-R1',
+      'P29-A', 'P29-B', 'P29-C', 'P29-D', 'P29-E', 'P29-F', 'P29-F2', 'P29-F3', 'P29-F4', 'P29-G', 'P29-H', 'P29-I', 'P29-J', 'P29-K', 'P29-L', 'P29-M', 'P29-N', 'P29-M2', 'P29-O', 'P29-O-R1', 'P29-O1-R1', 'P29-O1-R2', 'P29-O2', 'P29-Q', 'P29-R', 'P29-S', 'P29-T', 'P29-U', 'P29-V', 'P29-W', 'P29-W-R1', 'P29-W-R2', 'P29-X', 'P29-Y', 'P29-Z',
+      'P29-AA', 'P29-AB', 'P29-AB-R1', 'P29-AB-R2', 'P29-AB-R2-R1', 'P30-A', 'P30-B', 'P30-C',
       'CR-92', 'CR-93', 'CR-94', 'CR-95', 'CR-96',
     ];
 
@@ -97,11 +97,11 @@ describe('permanent progress ledger', () => {
       'P18-R0', 'P18-R1', 'P18-R2', 'P18-R3', 'P18-R4', 'P18-R5',
       'P18-R6', 'P18-LEDGER', 'P18-R7',
       'P19-A', 'P19-B', 'P20-A', 'P20-A-R1', 'P20-A-R2', 'P20-B', 'P20-C', 'P20-D', 'P20-E', 'P20-F',
-      'P20-G', 'P20-H', 'P20-I', 'P20-J', 'P20-K', 'P20-L', 'P20-M', 'P20-N', 'P20-N-R1', 'P20-O', 'P20-P', 'P20-Q', 'P20-R', 'P20-S', 'P20-T', 'P20-U', 'P21-A', 'P21-B', 'P21-C', 'P21-C1', 'P21-D', 'P22-A', 'P23-A', 'P23-B', 'P24-A', 'P25-A', 'P25-B', 'P25-C', 'P25-D', 'P25-E', 'P26-A', 'P27-A',
+      'P20-G', 'P20-H', 'P20-I', 'P20-J', 'P20-K', 'P20-L', 'P20-M', 'P20-N', 'P20-N-R1', 'P20-N-R2', 'P20-O', 'P20-P', 'P20-Q', 'P20-R', 'P20-S', 'P20-T', 'P20-U', 'P21-A', 'P21-B', 'P21-C', 'P21-C1', 'P21-D', 'P22-A', 'P23-A', 'P23-B', 'P24-A', 'P25-A', 'P25-B', 'P25-C', 'P25-D', 'P25-E', 'P26-A', 'P27-A',
       'P23-C', 'P23-D', 'P25-F',
-      'P28-A', 'P28-A-R1', 'P28-B', 'P28-C', 'P28-C-R1', 'P28-C-R2', 'P28-C-R3', 'P28-D',
-      'P29-A', 'P29-B', 'P29-C', 'P29-D', 'P29-E', 'P29-F', 'P29-F2', 'P29-F3', 'P29-F4', 'P29-G', 'P29-H', 'P29-I', 'P29-J', 'P29-K', 'P29-L', 'P29-M', 'P29-N', 'P29-M2', 'P29-O', 'P29-O2', 'P29-Q', 'P29-R', 'P29-S', 'P29-T',       'P29-U', 'P29-V', 'P29-W', 'P29-X', 'P29-Y', 'P29-Z',
-      'P29-AA', 'P29-AB', 'P29-AB-R1', 'P30-A', 'P30-B', 'P30-C',
+      'P28-A', 'P28-A-R1', 'P28-B', 'P28-C', 'P28-C-R1', 'P28-C-R2', 'P28-C-R3', 'P28-C-R4', 'P28-D', 'P28-E', 'P28-E-R1', 'P28-F', 'P28-F-R1', 'P28-F-R2', 'P28-F-R2-R1', 'P28-F-R3', 'P28-F-R3-R1',
+      'P29-A', 'P29-B', 'P29-C', 'P29-D', 'P29-E', 'P29-F', 'P29-F2', 'P29-F3', 'P29-F4', 'P29-G', 'P29-H', 'P29-I', 'P29-J', 'P29-K', 'P29-L', 'P29-M', 'P29-N', 'P29-M2', 'P29-O', 'P29-O-R1', 'P29-O1-R1', 'P29-O1-R2', 'P29-O2', 'P29-Q', 'P29-R', 'P29-S', 'P29-T', 'P29-U', 'P29-V', 'P29-W', 'P29-W-R1', 'P29-W-R2', 'P29-X', 'P29-Y', 'P29-Z',
+      'P29-AA', 'P29-AB', 'P29-AB-R1', 'P29-AB-R2', 'P29-AB-R2-R1', 'P30-A', 'P30-B', 'P30-C',
     ];
 
     for (const id of newPartIds) {
@@ -209,6 +209,40 @@ describe('permanent progress ledger', () => {
       expect(count?.total).toBeGreaterThan(0);
       expect(count?.done).toBe(count?.total);
     }
+    const phase28 = counts.get(28);
+    const phase28Total = phase28?.total ?? 0;
+    const phase28Done = phase28?.done ?? 0;
+    const phase28Rows = rows.filter((row) => row.split('|')[1]?.trim().startsWith('P28-'));
+    const releaseRevision = phase28Rows.find((row) => row.split('|')[1]?.trim() === 'P28-F-R2');
+    const incompleteRows = phase28Rows.filter((row) => {
+      const status = row.split('|')[3]?.trim() ?? '';
+      return !['Done', 'Superseded', 'Cancelled'].some((closed) => status.startsWith(closed));
+    });
+    expect(phase28Total).toBeGreaterThan(0);
+    expect(releaseRevision).toBeDefined();
+    expect(phase28Done).toBe(phase28Total - incompleteRows.length);
+  });
+
+  it('keeps the phase branch index aligned with dashboard subtask counts', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const index = ledger.split('## 12. Phase branch index')[1] ?? '';
+    const counts = new Map<number, number>();
+    for (const line of dashboard.split('\n')) {
+      const id = line.split('|')[1]?.trim();
+      const phase = id?.match(/^Phase (\d+)$/) ?? id?.match(/^P(\d+)-/);
+      if (phase) counts.set(Number(phase[1]), (counts.get(Number(phase[1])) ?? 0) + 1);
+    }
+
+    const rows = index.split('\n').filter((line) => /^\| \d{2} \|/.test(line));
+    expect(rows).toHaveLength(30);
+    for (const line of rows) {
+      const [, phase, branch, tag, commit, count] = line.split('|').map((cell) => cell.trim().replaceAll('`', ''));
+      const number = Number(phase);
+      expect(branch).toMatch(new RegExp(`^phase/${phase}-[a-z0-9-]+$`));
+      expect(tag).toBe(`phase-${phase}-complete`);
+      expect(commit).toMatch(/^[0-9a-f]{40}$/);
+      expect(Number(count)).toBe(counts.get(number));
+    }
   });
 
   it('records the unchanged FX/CH IDs, CR-4 through CR-97 and current phase work', () => {
@@ -289,7 +323,9 @@ describe('permanent progress ledger', () => {
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-M |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-N |')))
       .toContain('Done; Revised by P20-N-R1');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-N-R1 |'))).toContain('| Done |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-N-R1 |')))
+      .toContain('| Done; Revised by P20-N-R2 |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-N-R2 |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-O |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-P |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-Q |'))).toContain('| Done |');
@@ -357,28 +393,37 @@ describe('permanent progress ledger', () => {
     expect(ledger).not.toContain('P22-B spreadsheet importer');
     expect(dashboard.split('\n').some((line) => line.includes('| P15-SEED |'))).toBe(false);
     for (const id of [
-      'P26-A', 'P27-A',       'P28-A', 'P28-A-R1', 'P28-B', 'P28-C', 'P28-C-R1', 'P28-C-R2', 'P28-C-R3', 'P29-AA', 'P29-AB', 'P29-AB-R1',
+      'P26-A', 'P27-A',       'P28-A', 'P28-A-R1', 'P28-B', 'P28-C', 'P28-C-R1', 'P28-C-R2', 'P28-C-R3', 'P28-C-R4', 'P28-D', 'P28-E', 'P28-E-R1', 'P29-AA', 'P29-AB', 'P29-AB-R1', 'P29-AB-R2', 'P29-AB-R2-R1',
     ]) {
       expect(dashboard.split('\n').filter((line) => line.startsWith(`| ${id} |`))).toHaveLength(1);
     }
     expect(dashboard.split('\n').find((line) => line.startsWith('| P26-A |'))).toContain('| Done');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P27-A |'))).toContain('| Done');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P28-A |'))).toContain('Revised by P28-A-R1');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P28-C |'))).toContain('Revised by P28-C-R3 and earlier revisions');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P28-C |'))).toContain('Revised by P28-C-R4 and earlier revisions');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P28-A-R1 |'))).toContain('| Done');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P28-C-R1 |'))).toContain('| Done');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P28-C-R2 |'))).toContain('| Done');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P28-C-R3 |'))).toContain('| Done');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P28-C-R4 |'))).toContain('| Done');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P28-E |'))).toContain('Revised by P28-E-R1');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P28-E-R1 |'))).toContain('| Done |');
+    expect(promptLog.split('\n').find((line) => line.startsWith('| P28-E-R1 |'))).toContain('| Done;');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P29-AB |'))).toContain('Revised by P29-AB-R1');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P29-AB-R1 |'))).toContain('| Done |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P29-AB-R1 |'))).toContain('| Done; Revised by P29-AB-R2 |');
     expect(promptLog.split('\n').find((line) => line.startsWith('| P29-AB-R1 |'))).toContain('| Done;');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-A |'))).toContain('Revised by P20-A-R1; Revised by P20-A-R2');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-A-R2 |'))).toContain('| Done |');
     expect(promptLog.split('\n').find((line) => line.startsWith('| P20-A-R2 |'))).toContain('| Done;');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P29-AB-R1 |')))
+      .toContain('| Done; Revised by P29-AB-R2 |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P29-AB-R2 |'))).toContain('Revised by P29-AB-R2-R1');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P29-AB-R2-R1 |'))).toContain('| Done |');
+    expect(promptLog.split('\n').find((line) => line.startsWith('| P29-AB-R2 |'))).toContain('Done; Revised by P29-AB-R2-R1');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-N |'))).toContain('Revised by P20-N-R1');
     expect(promptLog.split('\n').find((line) => line.startsWith('| P20-N-R1 |'))).toContain('| current request |');
     expect(ledger).toContain('Revised by P28-A-R1');
-    expect(ledger).toContain('Revised by P28-C-R3 and earlier revisions');
+    expect(ledger).toContain('Revised by P28-C-R4 and earlier revisions');
     expect(dashboard).toContain('Revised by P28-B');
     expect(ledger).toContain('Phase 30 — Release 2 stabilization');
     const release2Roadmap = ledger.split('## 9. Upcoming roadmap')[1]?.split('## 10. Verification matrix')[0] ?? '';
@@ -387,11 +432,17 @@ describe('permanent progress ledger', () => {
     expect(release2Roadmap).toContain('P30-C — Memo-input/cache source guard');
     expect(release2Roadmap).not.toContain('[placeholder]');
     for (const id of [
-      'P29-B', 'P29-C', 'P29-D', 'P29-E', 'P29-F', 'P29-F2', 'P29-F3', 'P29-F4', 'P29-G', 'P29-H', 'P29-I', 'P29-J', 'P29-K', 'P29-L', 'P29-N', 'P29-M2', 'P29-Q', 'P29-R', 'P29-S', 'P29-T', 'P29-U', 'P29-V', 'P29-W', 'P29-X', 'P29-Y', 'P29-Z', 'P29-AA',
+      'P29-B', 'P29-C', 'P29-D', 'P29-E', 'P29-F', 'P29-F2', 'P29-F3', 'P29-F4', 'P29-G', 'P29-H', 'P29-I', 'P29-J', 'P29-K', 'P29-L', 'P29-N', 'P29-M2', 'P29-Q', 'P29-R', 'P29-S', 'P29-T', 'P29-U', 'P29-V', 'P29-X', 'P29-Y', 'P29-Z', 'P29-AA',
     ]) {
       expect(dashboard.split('\n').find((line) => line.startsWith(`| ${id} |`))).toContain('| Done |');
     }
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P29-W |')))
+      .toContain('Done; Revised by P29-W-R1 and P29-W-R2');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P29-W-R1 |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P29-M |'))).toContain('| Superseded by P29-M2 |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P29-O |')))
+      .toContain('Superseded by P29-O1 and P29-S; Revised by P29-O-R1');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P29-O-R1 |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P29-Q |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P29-R |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P29-O2 |'))).toContain('| Cancelled by owner |');
@@ -399,7 +450,13 @@ describe('permanent progress ledger', () => {
     expect(dashboard.split('\n').find((line) => line.startsWith('| P29-T |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P29-U |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P29-V |'))).toContain('| Done |');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P29-W |'))).toContain('| Done |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P29-O1 |')))
+      .toContain('Done; Revised by P29-O1-R1 and P29-O1-R2');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P29-O1-R2 |'))).toContain('| Done |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P29-W |')))
+      .toContain('Done; Revised by P29-W-R1 and P29-W-R2');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P29-W-R1 |'))).toContain('| Done |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P29-W-R2 |'))).toContain('| Done |');
     expect(ledger).toContain('DEC-P29E-HOLDING-DELETE');
     expect(ledger).toContain('DEC-P29T-HISTORICAL-ENTRY-SNAPSHOT');
     expect(ledger).toContain('DEC-P29U-LEGACY-VALUATION-COMPAT');

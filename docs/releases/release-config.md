@@ -139,21 +139,30 @@ Follow the shared repository rules in [`AGENTS.md`](../../AGENTS.md),
   published file in drafts or a draft in published. Release content is never
   stored in `/tmp`.
 - For every GitHub release:
-  - Attach the Android APK under the exact name `WealthWise-android.apk`.
-  - Include the Download block and SHA-256 in both the published Markdown and
-    GitHub release body. The latest published block matches the README and
-    uses the latest route; older releases use their versioned asset link.
+  - Attach the current/latest Android APK as
+    `WealthWise-android-latest-vX.Y.Z.apk`; use that filename on the
+    `/latest/` download URL.
+  - When publishing a newer version, remove `latest` from the previous
+    release asset name, rename it to `WealthWise-android-vX.Y.Z.apk`, and
+    update the previous release link to the matching versioned filename.
+    Never use `/latest/` for an older release.
+  - Verify the APK digest privately before publication, but never include it
+    in human-authored release material. GitHub may expose a platform-generated
+    asset digest that cannot be removed by editing the release.
+  - Keep the latest published Download block identical to README; older
+    releases use their versioned asset link and versioned download filename.
+  - Update the README Download and What's new sections and its releases-page
+    link for every release.
   - Add or replace only the Download block in an existing published note; do
     not otherwise rewrite the file.
   - When a newer version is published, replace only the previous release's
-    Download block with its versioned link.
-  - Verify both latest and versioned links with `curl -I -L`; both must return
-    HTTP 200, and the downloaded APK's SHA-256 must match.
-  - Record EAS build ID, Android `versionCode`, source commit, exact artifact
-    name, profile, date and status in the release-history Builds table.
-  - Confirm both links return HTTP 200, the SHA-256 matches, and the README,
-    published Markdown, release history and GitHub assets agree. The release
-    remains incomplete until every check passes.
+    Download block with its versioned link and filename.
+  - Verify latest and versioned links with `curl -I -L`; both must return
+    HTTP 200 with the expected artifact size.
+  - Record EAS build ID, Android `versionCode`, profile, date and status in
+    the release-history Builds table; omit source commits and digests.
+  - Confirm the README, published Markdown, release history and GitHub assets
+    agree. The release remains incomplete until every check passes.
   - For old published records, change only that version's Download block; do
     not otherwise rewrite the file.
 

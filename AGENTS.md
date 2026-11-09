@@ -112,24 +112,30 @@ are not authorized unless explicitly requested.
 - Check the installed Expo major version before using Expo APIs and consult
   matching Expo documentation. Keep native changes in app config/plugins;
   do not hand-edit generated native files.
-- For every GitHub release, attach the Android APK named exactly
-  `WealthWise-android.apk`. Anyone starting or continuing release work
+- For the current/latest GitHub release, attach the APK as
+  `WealthWise-android-latest-vX.Y.Z.apk`; the `/latest/` URL uses this exact
+  filename. When a newer version is published, remove `latest` from the
+  previous asset name and rename it to `WealthWise-android-vX.Y.Z.apk` before
+  linking it. Each non-latest release uses its own version-specific asset.
+  Never use the `/latest/` route for an older release. Anyone starting or
+  continuing release work
   creates or reuses `docs/releases/drafts/vX.Y.Z.md` and commits it with
   subject `docs: draft vX.Y.Z release notes`. After publication is verified,
   move it to `docs/releases/published/` and commit the move; never leave a
-  published file in drafts or a draft in published. Include the Download
-  block and SHA-256 in published Markdown and the GitHub release body. The
-  README Download section and latest release Download block must be identical
-  and use the latest route; older releases use their own versioned link. When
-  adding a Download block to an existing published note, add or replace only
-  that block; do not otherwise rewrite the file. When a newer version is
-  published, change only the previous release's Download block to its
-  versioned link. Verify both download links
-  with `curl -I -L`; both must return HTTP 200 and the APK hash must match.
-  Record EAS build ID, Android `versionCode`, source commit and artifact in
-  the `release-history.md` Builds table. A release is incomplete until both
-  links return 200, the hash matches, and the README, published Markdown,
-  release history and GitHub assets agree. Follow
+  published file in drafts or a draft in published. Before each release,
+  verify the APK digest against the artifact privately; never include the
+  digest in human-authored release material. GitHub may expose a
+  platform-generated asset digest that cannot be removed by editing the
+  release.
+  The README Download block and latest published release Download block must
+  be identical.
+  Every release updates the README Download and What's new sections and its
+  releases-page link. When updating an existing published note, change only
+  its Download block. Verify the current latest URL and every affected
+  versioned URL with `curl -I -L`; each must return HTTP 200 and the expected
+  artifact size. Record EAS build
+  ID, profile, Android `versionCode`, date and status in the release-history
+  Builds table; do not include source commits or digests. Follow
   `docs/releases/build-config.md`; production Android AABs go to Google Play
   and APKs to GitHub. iOS distribution is not currently offered.
 

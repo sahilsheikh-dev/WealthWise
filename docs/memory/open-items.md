@@ -4,11 +4,72 @@
 
 ## Recently resolved
 
+- **Release 2 device checks N39-N43:** the owner reported all five checks Pass
+  on 2026-11-08. The device checklist records Pass for income recurrence and
+  backup restore, immediate edit refresh, aggregate Pace, linked paid sync and
+  Undo, and Entries counts/schedule caps. Device model, Android version and
+  tester remain blank as requested.
+- **P28-F-R1 GitHub sync:** owner-reported N39-N43 results are included in
+  merged PRs #1-#3. Phase 28 was integrated into develop, the release branch
+  into main, and main back into develop. The merged PRs and remote tips are
+  recorded in [PROGRESS.md](../PROGRESS.md).
+- **P28-F-R2 contributor correction:** the v1.1.0 draft matches the linked
+  contributor credits in v1.0.0, and the template requires release-specific,
+  verified contributors. This correction is included in PRs #1-#3.
+- **P28-F-R3 v1.1.0 publication:** the owner-approved release is published
+  with its versioned latest APK asset. The tag points to the
+  verified EAS source commit; the uploaded artifact matched the EAS build,
+  and latest/versioned links returned HTTP 200 at 112,147,677 bytes. The
+  owner-approved `preview` profile and reused versionCode 1 exceptions are
+  recorded in the release history. PRs #11-#15 merged task -> Phase 28 ->
+  develop -> release -> main -> develop; all four remote trees match and the
+  v1.1.0 tag remains unchanged.
+- **P28-F-R3-R2 historical asset rollover:** v1.0.0 now downloads from its
+  own versioned APK filename and URL; the generic old URL returns 404. Its
+  GitHub release body matches the checksum-free published note. Latest and
+  affected versioned URLs return HTTP 200 with the expected sizes.
+- **P28-F-R3-R3 latest APK filename:** v1.1.0 now uses
+  `WealthWise-android-latest-v1.1.0.apk`; the README, published note, release
+  history and GitHub release body match. Latest and versioned v1.1.0 routes
+  return HTTP 200 at 112,147,677 bytes. The old v1.0.0 filename has no
+  `latest` marker and returns HTTP 200 at 112,133,413 bytes. PRs #21-#25
+  merged task -> Phase 28 -> develop -> release -> main -> develop. The four
+  remote trees match; the v1.1.0 tag was not changed.
+- **P28-F-R2-R1 audit correction:** task PR #4 merged into Phase 28 and PR #5
+  merged Phase 28 into develop; PR #6 carries the release branch to main and
+  PR #7 is the main-to-develop back-merge. The full sequence preserves
+  task -> phase -> develop -> release -> main -> develop.
+- **P29-O-R1 scope close-out:** P29-O is superseded by the accepted P29-O1
+  holding workflow and the explicit P29-S cancellation of the separate
+  ledger-only migration. No app implementation remains in scope; Phase 29 is
+  41/41. The P29-O1 physical-device checks below remain open.
+- **Local `codex-changes` branch:** deleted on 2026-11-08 at the owner's
+  direction. Its sole commit (`d033d6a`) was an October schema-v2 alternative
+  with checked-in coverage output and an unsafe migration; current schema-v22
+  loan/liability behavior supersedes its source changes. Nothing was ported.
+- **P29-O1-R2 / P29-W-R2 Entries layout:** completed/pending month counts now
+  use paired summary cells on Assets and Liabilities; pending schedule rows
+  are sorted together with dated entries. Focused route tests pass at font
+  scales 1.0, 1.3 and 2.0. No schema change.
 - **CM-1 commit-subject enforcement:** old subjects could be non-descriptive;
   the new hook requires supported Conventional Commit types and rejects
   placeholders. The reason is to keep scope explicit and unrelated changes
   separate; proposed subjects and staged diff-stats are shown before commit.
   The hook and docs tests pass.
+- **P28-C-R4 release documentation:** completed; the README and latest
+  published Download blocks match, public digest/commit identifiers are
+  absent, and the task is integrated into `develop`. The authorized refs were
+  pushed and verified. The release body remains intentionally unchanged.
+- **P28-E remote history:** all 30 phase branches, `history/by-phase`, and 30
+  annotated phase completion tags were pushed and verified. `main`, `develop`,
+  and the v1.0.0 tag were also verified; v1.0.0 was not changed. No force push
+  was used.
+- **P28-F-R3 GitHub integration:** PR #11 merged the publication task into
+  Phase 28 (`a2f9db2`), #12 promoted Phase 28 to develop (`3e2a5a8`), #13
+  merged develop to `release/v1.1.0` (`d4d69fa`), #14 merged that release to
+  main (`b0aeef9`), and #15 back-merged main into develop (`6f5df18`). The
+  publication task branch was deleted; the phase branch remains at its
+  recorded tip. Main, develop, release and Phase 28 have identical trees.
 
 ## Unresolved
 
@@ -28,29 +89,30 @@
   `a258579c4b580d6f3a157b8d13de53334aa8d34d` was created from current main,
   which contains legacy unreleased Release 2 work. Branch protection and
   release-only main merges apply prospectively; no history rewrite was made.
-- **v1.0.0 GitHub release body (owner action):** the canonical body is
-  [`published/v1.0.0.md`](../releases/published/v1.0.0.md). Owner command:
-  `gh release edit v1.0.0 --notes-file docs/releases/published/v1.0.0.md`.
-  No release edit was made in P28-C-R3.
-- **Release 2 device re-test:** the owner confirms the income recurrence and
-  edited-value refresh bugs reproduce. [`device-test-checklist.md`](../releases/device-test-checklist.md)
-  now marks N39 and N40 Fail and N41 Not run. Device model, Android version,
-  tester and date remain blank. Physical-device re-test is pending.
-- **Local checklist commit is not pushed:** its subject was corrected at the
-  owner's request, and the report commit was replayed unchanged. See the
-  old-to-new hash mapping and tree verification in
-  [PROGRESS.md](../PROGRESS.md). The branch remains ahead of `origin/main`.
-- **v1.1.0 release preparation:** pending because the per-section Pace graph is
-  a visible feature. This task made no version change and performed no release
-  preparation, build, export or push.
-- **P29-AB-R1 physical-device check:** N39 is now Fail because recurring
-  quarterly/yearly income appears every month; device re-test of due/non-due
-  months, Received dues, projected cash flow and backup restore remains open.
-- **P30-A/B/C physical-device check:** N40 is Fail because edited values do
-  not refresh immediately. Verify the repaired persistence path and immediate
-  screen updates across relevant flows on device.
-- **P20-N-R1 physical-device check:** N41 remains Not run; verify the section
-  Pace graph, per-section controls, contrast and scalable layout on device.
+- **Local-only branch audit:** the release-policy commits are integrated
+  through PRs #21-#25; their merged task branch was deleted as required.
+  Other local task branches whose commits are already in `main` remain local
+  only because merged task branches are deleted by policy. P28-E's final
+  verification commit `72fb325` is preserved and its stale status text is
+  reconciled on the P28-E-R2 task branch for chronological PR integration.
+  `codex-changes` is not safe to publish as-is: it is based on schema v2
+  rather than current v22, includes generated coverage files, and review
+  found a persisted-data migration bug, a failing migration assertion, and
+  merge conflicts with current `main`. It remains local pending a decision
+  to port any still-needed changes.
+- **v1.1.0 release integrity:** the owner explicitly approved the `preview`
+  profile and reused versionCode 1 for this release. For future releases,
+  restore the configured `android-apk` profile and increment versionCode.
+- **Stale phase tags (owner decision):** `phase-28-complete` and
+  `phase-29-complete` target commits behind their current phase branch tips.
+  No tag was moved. Decide whether to retain or update them in a separately
+  authorized change.
+- **P29-O1-R2 / P29-W-R2 integration:** task and phase merges are included in
+  the v1.1.0 release on GitHub main and develop through the merged PR chain.
+- **P29-O1-R2 / P29-W-R2 physical-device check:** verify paired count-cell
+  layout and date ordering on Assets and Liabilities at font scales 1.3 and
+  2.0 on devices. TestRenderer checks are simulated. The six ordered
+  repository gates pass locally; integration is complete on `develop`.
 - **Pre-build synthetic v13 equality:** automated coverage now imports a
   deterministic, checksummed v13 backup through `parseBackup` and compares
   source-derived net worth, every goal's saved amount and Emergency Fund
@@ -124,7 +186,7 @@
   ledger-only schema-v19 storage redesign. Its converter, alternate v19
   schemas/types and prototype tests had no production callers and have been
   removed. The cancelled storage design does not affect the current schema
-  v20; P29-O1's unified holding actions remain supported. Historical
+  v22; P29-O1's unified holding actions remain supported. Historical
   preparation commits are retained; see
   DEC-P29S-CANCEL-LEDGER-ONLY-STORAGE in [PROGRESS.md](../PROGRESS.md).
 - **P29-O1 physical-device checks:** verify manual and recurring holding
