@@ -47,7 +47,9 @@
   N44 remains unverified on a physical device; no feature from planned
   Phases 31-37 has been started. Owner decisions are listed in
   [open-items.md](./open-items.md), with full evidence in
-  [PROGRESS.md](../PROGRESS.md).
+  [PROGRESS.md](../PROGRESS.md). Integration route: task PR #40 merged into
+  Phase 20; phase PR #41 carries the synchronized branch to develop after
+  sync merge `6982ff2`.
 - Ordered release-branch gates on `release/v1.1.0`: all six exit 0. Gate 1
   has 98 suites, 1,242 passed, 1 skipped; coverage is 95.96/92.01/98.01/97.62%
   overall, `src/data` 91.03/87.39/94.46/94.17%, `src/domain`
