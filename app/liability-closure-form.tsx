@@ -5,6 +5,7 @@ import { Controller, useForm, useWatch } from 'react-hook-form';
 import { View } from 'react-native';
 
 import { DateField } from '../src/components/form/DateField';
+import { FieldTitle } from '../src/components/form/FieldTitle';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { MoneyField } from '../src/components/form/MoneyField';
 import { ReadOnlyRow } from '../src/components/form/ReadOnlyRow';
@@ -134,25 +135,29 @@ export default function LiabilityClosureFormScreen() {
         accessibilityLabel="Loan closure date"
       />
       <Controller control={control} name="amountPaid" render={({ field }) => (
-        <MoneyField
-          label="Amount paid to lender"
-          value={field.value}
-          onChangeText={field.onChange}
-          onBlur={field.onBlur}
-          error={errors.amountPaid?.message}
-          accessibilityLabel="Amount paid to lender"
-        />
+        <FieldTitle title="Amount paid to lender">
+          <MoneyField
+            label="Amount paid to lender"
+            value={field.value}
+            onChangeText={field.onChange}
+            onBlur={field.onBlur}
+            error={errors.amountPaid?.message}
+            accessibilityLabel="Amount paid to lender"
+          />
+        </FieldTitle>
       )} />
       <Controller control={control} name="note" render={({ field }) => (
-        <TextField
-          label="Note (optional)"
-          accessibilityLabel="Loan closure note"
-          maxLength={200}
-          value={field.value}
-          onChangeText={field.onChange}
-          onBlur={field.onBlur}
-          error={errors.note?.message}
-        />
+        <FieldTitle title="Note (optional)">
+          <TextField
+            label="Note (optional)"
+            accessibilityLabel="Loan closure note"
+            maxLength={200}
+            value={field.value}
+            onChangeText={field.onChange}
+            onBlur={field.onBlur}
+            error={errors.note?.message}
+          />
+        </FieldTitle>
       )} />
       <ReadOnlyRow label="Outstanding on this date" value={formatAmount(outstanding, 'exact', 2)} />
     </FormScreen>

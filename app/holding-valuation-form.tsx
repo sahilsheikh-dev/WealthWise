@@ -10,6 +10,7 @@ import { FormScreen } from '../src/components/form/FormScreen';
 import { HelperText } from '../src/components/form/HelperText';
 import { MoneyField } from '../src/components/form/MoneyField';
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
+import { FieldTitle } from '../src/components/form/FieldTitle';
 import { Button, EmptyState } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useAppActions } from '../src/data/useAppData';
@@ -79,14 +80,18 @@ export default function HoldingValuationFormScreen() {
         />
       </View>}>
       <FormErrorBanner message={error} />
-      <Controller control={form.control} name="value" render={({ field }) => <MoneyField
-        label={method === 'unitsPrice' ? 'Latest price per unit' : 'Confirmed value'}
-        accessibilityLabel={method === 'unitsPrice' ? 'Latest price per unit' : 'Confirmed holding value'}
-        value={field.value}
-        onChangeText={field.onChange}
-        onBlur={field.onBlur}
-        error={form.formState.errors.value?.message}
-      />} />
+      <Controller control={form.control} name="value" render={({ field }) => (
+        <FieldTitle title={method === 'unitsPrice' ? 'Latest price per unit' : 'Confirmed value'}>
+          <MoneyField
+            label={method === 'unitsPrice' ? 'Latest price per unit' : 'Confirmed value'}
+            accessibilityLabel={method === 'unitsPrice' ? 'Latest price per unit' : 'Confirmed holding value'}
+            value={field.value}
+            onChangeText={field.onChange}
+            onBlur={field.onBlur}
+            error={form.formState.errors.value?.message}
+          />
+        </FieldTitle>
+      )} />
       <Controller control={form.control} name="date" render={({ field }) => <DateField
         label={method === 'unitsPrice' ? 'Price date' : 'Value date'}
         accessibilityLabel={method === 'unitsPrice' ? 'Price date' : 'Value date'}

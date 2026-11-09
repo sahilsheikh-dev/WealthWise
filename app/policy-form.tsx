@@ -6,6 +6,7 @@ import { z } from 'zod';
 
 import { Dropdown, type DropdownOption } from '../src/components/Dropdown';
 import { DateField } from '../src/components/form/DateField';
+import { FieldTitle } from '../src/components/form/FieldTitle';
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { FormSection } from '../src/components/form/FormSection';
@@ -184,30 +185,34 @@ export default function PolicyFormScreen() {
           control={control}
           name="name"
           render={({ field }) => (
-            <TextField
-              label="Name"
-              accessibilityLabel="Policy name"
-              value={field.value}
-              onChangeText={field.onChange}
-              onBlur={field.onBlur}
-              error={errors.name?.message}
-              maxLength={40}
-            />
+            <FieldTitle title="Name">
+              <TextField
+                label="Name"
+                accessibilityLabel="Policy name"
+                value={field.value}
+                onChangeText={field.onChange}
+                onBlur={field.onBlur}
+                error={errors.name?.message}
+                maxLength={40}
+              />
+            </FieldTitle>
           )}
         />
         <Controller
           control={control}
           name="insurer"
           render={({ field }) => (
-            <TextField
-              label="Insurer"
-              accessibilityLabel="Insurer"
-              value={field.value}
-              onChangeText={field.onChange}
-              onBlur={field.onBlur}
-              error={errors.insurer?.message}
-              maxLength={40}
-            />
+            <FieldTitle title="Insurer">
+              <TextField
+                label="Insurer"
+                accessibilityLabel="Insurer"
+                value={field.value}
+                onChangeText={field.onChange}
+                onBlur={field.onBlur}
+                error={errors.insurer?.message}
+                maxLength={40}
+              />
+            </FieldTitle>
           )}
         />
         <Controller
@@ -230,14 +235,16 @@ export default function PolicyFormScreen() {
           control={control}
           name="premium"
           render={({ field }) => (
-            <MoneyField
-              label="Premium"
-              accessibilityLabel="Premium"
-              value={field.value}
-              onChangeText={field.onChange}
-              onBlur={field.onBlur}
-              error={errors.premium?.message}
-            />
+            <FieldTitle title="Premium">
+              <MoneyField
+                label="Premium"
+                accessibilityLabel="Premium"
+                value={field.value}
+                onChangeText={field.onChange}
+                onBlur={field.onBlur}
+                error={errors.premium?.message}
+              />
+            </FieldTitle>
           )}
         />
         <Controller
@@ -261,14 +268,16 @@ export default function PolicyFormScreen() {
             control={control}
             name="customIntervalMonths"
             render={({ field }) => (
-              <TextField
-                label="Custom interval (months)"
-                accessibilityLabel="Custom interval in months"
-                value={field.value}
-                onChangeText={field.onChange}
-                onBlur={field.onBlur}
-                error={errors.customIntervalMonths?.message}
-              />
+              <FieldTitle title="Custom interval (months)">
+                <TextField
+                  label="Custom interval (months)"
+                  accessibilityLabel="Custom interval in months"
+                  value={field.value}
+                  onChangeText={field.onChange}
+                  onBlur={field.onBlur}
+                  error={errors.customIntervalMonths?.message}
+                />
+              </FieldTitle>
             )}
           />
         ) : null}
@@ -290,44 +299,50 @@ export default function PolicyFormScreen() {
           control={control}
           name="sumAssured"
           render={({ field }) => (
-            <MoneyField
-              label="Sum assured"
-              accessibilityLabel="Sum assured"
-              value={field.value}
-              onChangeText={field.onChange}
-              onBlur={field.onBlur}
-              error={errors.sumAssured?.message}
-            />
+            <FieldTitle title="Sum assured">
+              <MoneyField
+                label="Sum assured"
+                accessibilityLabel="Sum assured"
+                value={field.value}
+                onChangeText={field.onChange}
+                onBlur={field.onBlur}
+                error={errors.sumAssured?.message}
+              />
+            </FieldTitle>
           )}
         />
         <Controller
           control={control}
           name="policyNumber"
           render={({ field }) => (
-            <TextField
-              label="Policy number"
-              accessibilityLabel="Policy number"
-              value={field.value}
-              onChangeText={field.onChange}
-              onBlur={field.onBlur}
-              error={errors.policyNumber?.message}
-              maxLength={30}
-            />
+            <FieldTitle title="Policy number">
+              <TextField
+                label="Policy number"
+                accessibilityLabel="Policy number"
+                value={field.value}
+                onChangeText={field.onChange}
+                onBlur={field.onBlur}
+                error={errors.policyNumber?.message}
+                maxLength={30}
+              />
+            </FieldTitle>
           )}
         />
         <Controller
           control={control}
           name="note"
           render={({ field }) => (
-            <TextField
-              label="Note"
-              accessibilityLabel="Policy note"
-              value={field.value}
-              onChangeText={field.onChange}
-              onBlur={field.onBlur}
-              error={errors.note?.message}
-              maxLength={120}
-            />
+            <FieldTitle title="Note">
+              <TextField
+                label="Note"
+                accessibilityLabel="Policy note"
+                value={field.value}
+                onChangeText={field.onChange}
+                onBlur={field.onBlur}
+                error={errors.note?.message}
+                maxLength={120}
+              />
+            </FieldTitle>
           )}
         />
         {kind === 'life-savings' || kind === 'ulip' ? (
