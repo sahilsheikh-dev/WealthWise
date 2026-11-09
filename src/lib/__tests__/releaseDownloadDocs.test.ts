@@ -121,7 +121,7 @@ describe('published release download documentation', () => {
       },
       'v1.1.1': {
         type: 'Patch',
-        date: 'TBD',
+        date: '2026-11-09',
         previous: 'v1.1.0',
       },
     } as const;
