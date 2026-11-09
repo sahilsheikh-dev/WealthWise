@@ -3818,6 +3818,13 @@ order. Physical-device checks do not apply to this history-only change.
 | Protected branches | Verified | `main`, `develop`, and `release/v1.1.0` were not moved or modified by creating the historical alias branch. The tag was not moved. |
 | PR feasibility | No PR for original commits | All requested commits are already ancestors of the intended integration branches. GitHub would offer no new diff to merge; retroactively changing their PR provenance or subjects is not possible without rewriting history. |
 
+Ordered task-branch gates before PR: `npm test -- --coverage` 0 (98 suites,
+1,267 passed, 1 skipped; 95.96% statements, 92.04% branches, 98.02% functions,
+97.63% lines); `npx tsc --noEmit` 0; `npx expo lint` 0; `npx expo-doctor` 0
+(21/21); `npx expo export --platform android` 0; and
+`npx expo export --platform ios` 0. Physical-device checks do not apply to
+this history-only change.
+
 ### P20-S-R1 — form Dropdowns and visible titles
 
 | Area | Status | Evidence |
@@ -9355,7 +9362,7 @@ Gradle build, version bump, or release preparation was performed.
 ### P28-E-R5 historical commit audit and v1.0.0 branch (2026-11-09)
 
 - Audited the 403 first-parent non-merge commits after the initial commit.
-  All are already in `main` and `develop`; 325 subjects match the current
+  All are already in `main` and `develop`; 319 subjects match the current
   Conventional Commit hook and 84 legacy subjects do not pass the hook.
 - No PRs were opened for those commits: their existing ancestry is already
   integrated, so a PR would have no new commit to merge. Rewording historic
@@ -9365,7 +9372,9 @@ Gradle build, version bump, or release preparation was performed.
   `develop`, and `release/v1.1.0` refs/trees were not modified. The new
   release branch is already an ancestor of `main` and `develop`.
 - The documentation/test record is proceeding through the Phase 28 task and
-  phase PR route. Final ordered gate results are recorded after validation.
+  phase PR route. The task-branch gates all exit 0: 98 suites, 1,267 passed,
+  1 skipped; coverage 95.96/92.04/98.02/97.63%; TypeScript, lint, Expo Doctor
+  21/21, Android export and iOS export all pass.
 
 ### P28-E-R4 history archive ancestry (2026-11-09)
 
