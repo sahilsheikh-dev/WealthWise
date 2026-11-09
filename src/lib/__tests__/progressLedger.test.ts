@@ -70,7 +70,7 @@ describe('permanent progress ledger', () => {
       'P18-R0', 'P18-R1', 'P18-R2', 'P18-R3', 'P18-R4', 'P18-R5',
       'P18-R6', 'P18-LEDGER', 'P18-R7',
       'P19-A', 'P19-B', 'P20-A', 'P20-A-R1', 'P20-A-R2', 'P20-B', 'P20-C', 'P20-D', 'P20-E', 'P20-F',
-      'P20-G', 'P20-H', 'P20-I', 'P20-J', 'P20-K', 'P20-L', 'P20-M', 'P20-N', 'P20-N-R1', 'P20-N-R2', 'P20-O', 'P20-P', 'P20-Q', 'P20-R', 'P20-S', 'P20-S-R1', 'P20-T', 'P20-U', 'P21-A', 'P21-B', 'P21-C', 'P21-C1', 'P21-D', 'P22-A', 'P23-A', 'P23-B', 'P24-A', 'P25-A', 'P25-B', 'P25-C', 'P25-D', 'P25-E', 'P26-A', 'P27-A',
+      'P20-G', 'P20-H', 'P20-I', 'P20-J', 'P20-K', 'P20-L', 'P20-M', 'P20-N', 'P20-N-R1', 'P20-N-R2', 'P20-O', 'P20-P', 'P20-Q', 'P20-R', 'P20-S', 'P20-S-R1', 'P20-S-R1-R1', 'P20-T', 'P20-U', 'P21-A', 'P21-B', 'P21-C', 'P21-C1', 'P21-D', 'P22-A', 'P23-A', 'P23-B', 'P24-A', 'P25-A', 'P25-B', 'P25-C', 'P25-D', 'P25-E', 'P26-A', 'P27-A',
       'P23-C', 'P23-D', 'P25-F',
       'P28-A', 'P28-A-R1', 'P28-B', 'P28-C', 'P28-C-R1', 'P28-C-R2', 'P28-C-R3', 'P28-C-R4', 'P28-D', 'P28-E', 'P28-E-R1', 'P28-F', 'P28-F-R1', 'P28-F-R2', 'P28-F-R2-R1', 'P28-F-R3', 'P28-F-R3-R1',
       'P29-A', 'P29-B', 'P29-C', 'P29-D', 'P29-E', 'P29-F', 'P29-F2', 'P29-F3', 'P29-F4', 'P29-G', 'P29-H', 'P29-I', 'P29-J', 'P29-K', 'P29-L', 'P29-M', 'P29-N', 'P29-M2', 'P29-O', 'P29-O-R1', 'P29-O1-R1', 'P29-O1-R2', 'P29-O2', 'P29-Q', 'P29-R', 'P29-S', 'P29-T', 'P29-U', 'P29-V', 'P29-W', 'P29-W-R1', 'P29-W-R2', 'P29-X', 'P29-Y', 'P29-Z',
@@ -97,7 +97,7 @@ describe('permanent progress ledger', () => {
       'P18-R0', 'P18-R1', 'P18-R2', 'P18-R3', 'P18-R4', 'P18-R5',
       'P18-R6', 'P18-LEDGER', 'P18-R7',
       'P19-A', 'P19-B', 'P20-A', 'P20-A-R1', 'P20-A-R2', 'P20-B', 'P20-C', 'P20-D', 'P20-E', 'P20-F',
-      'P20-G', 'P20-H', 'P20-I', 'P20-J', 'P20-K', 'P20-L', 'P20-M', 'P20-N', 'P20-N-R1', 'P20-N-R2', 'P20-O', 'P20-P', 'P20-Q', 'P20-R', 'P20-S', 'P20-S-R1', 'P20-T', 'P20-U', 'P21-A', 'P21-B', 'P21-C', 'P21-C1', 'P21-D', 'P22-A', 'P23-A', 'P23-B', 'P24-A', 'P25-A', 'P25-B', 'P25-C', 'P25-D', 'P25-E', 'P26-A', 'P27-A',
+      'P20-G', 'P20-H', 'P20-I', 'P20-J', 'P20-K', 'P20-L', 'P20-M', 'P20-N', 'P20-N-R1', 'P20-N-R2', 'P20-O', 'P20-P', 'P20-Q', 'P20-R', 'P20-S', 'P20-S-R1', 'P20-S-R1-R1', 'P20-T', 'P20-U', 'P21-A', 'P21-B', 'P21-C', 'P21-C1', 'P21-D', 'P22-A', 'P23-A', 'P23-B', 'P24-A', 'P25-A', 'P25-B', 'P25-C', 'P25-D', 'P25-E', 'P26-A', 'P27-A',
       'P23-C', 'P23-D', 'P25-F',
       'P28-A', 'P28-A-R1', 'P28-B', 'P28-C', 'P28-C-R1', 'P28-C-R2', 'P28-C-R3', 'P28-C-R4', 'P28-D', 'P28-E', 'P28-E-R1', 'P28-F', 'P28-F-R1', 'P28-F-R2', 'P28-F-R2-R1', 'P28-F-R3', 'P28-F-R3-R1',
       'P29-A', 'P29-B', 'P29-C', 'P29-D', 'P29-E', 'P29-F', 'P29-F2', 'P29-F3', 'P29-F4', 'P29-G', 'P29-H', 'P29-I', 'P29-J', 'P29-K', 'P29-L', 'P29-M', 'P29-N', 'P29-M2', 'P29-O', 'P29-O-R1', 'P29-O1-R1', 'P29-O1-R2', 'P29-O2', 'P29-Q', 'P29-R', 'P29-S', 'P29-T', 'P29-U', 'P29-V', 'P29-W', 'P29-W-R1', 'P29-W-R2', 'P29-X', 'P29-Y', 'P29-Z',
@@ -208,9 +208,11 @@ describe('permanent progress ledger', () => {
       const count = counts.get(phase);
       expect(count?.total).toBeGreaterThan(0);
       if (phase === 20) {
-        expect(count?.done).toBe(27);
-        expect(count?.total).toBe(27);
+        expect(count?.done).toBe(28);
+        expect(count?.total).toBe(28);
         expect(dashboard.split('\n').find((line) => line.startsWith('| P20-S-R1 |')))
+          .toContain('Done; Revised by P20-S-R1-R1');
+        expect(dashboard.split('\n').find((line) => line.startsWith('| P20-S-R1-R1 |')))
           .toContain('| Done |');
       } else {
         expect(count?.done).toBe(count?.total);
@@ -339,6 +341,10 @@ describe('permanent progress ledger', () => {
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-R |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-S |')))
       .toContain('| Done; Revised by P20-S-R1 |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-S-R1 |')))
+      .toContain('Done; Revised by P20-S-R1-R1');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-S-R1-R1 |')))
+      .toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-T |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-U |'))).toContain('| Done |');
     for (const id of ['CR-27', 'CR-28', 'CR-31']) {

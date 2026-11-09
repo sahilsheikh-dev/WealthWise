@@ -52,7 +52,7 @@ parts count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress █████████░ 87% (148/170)
+Overall progress █████████░ 87% (149/171)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -72,7 +72,7 @@ Phase 16         ██████████ 100% (3/3)
 Phase 17         ██████████ 100% (3/3)
 Phase 18         ██████████ 100% (9/9)
 Phase 19         ██████████ 100% (3/3)
-Phase 20         ██████████ 100% (27/27)
+Phase 20         ██████████ 100% (28/28)
 Phase 21         ██████████ 100% (6/6)
 Phase 22         ██████████ 100% (1/1)
 Phase 23         ██████████ 100% (4/4)
@@ -153,7 +153,8 @@ Phase 37         ░░░░░░░░░░ 0% (0/3)
 | P20-Q | `55f9eaa` | Done | CR-62–CR-65: in-screen budget management and responsive overview; 75 suites/857 tests and all six required gates pass. Simulated layouts pass; native device checks remain. | 2026-10-19 |
 | P20-R | `391a227` | Done | CR-66–CR-69: top-anchored sheets, edit-mode header trash, and responsive per-section Budget cards. 75 suites/857 tests; all six gates exit 0. Simulated layout passes; physical-device checks remain. | 2026-10-19 |
 | P20-S | — | Done; Revised by P20-S-R1 | CR-70–CR-75: accessible dropdowns, shared sheet shell, actual-first values, custom budget item categories and manageable transaction-derived rows; Insurance manual items reconcile separately from linked policies. All six final gates pass; physical-device checks remain unverified. | 2026-10-19 |
-| P20-S-R1 | — | Done | Convert all non-filter app-form ChoiceField uses to Dropdown and add persistent single-line titles to eligible editable controls. SegmentedControl titles are intentionally absent per owner direction. All six final-tree gates pass; owner approved commit/merge. Physical-device rendering remains unverified. Implementation commit `d36103e`; task-to-phase PR #42; phase-to-develop PR #43. | 2026-11-09 |
+| P20-S-R1 | — | Done; Revised by P20-S-R1-R1 | Convert all non-filter app-form ChoiceField uses to Dropdown and add persistent single-line titles to eligible editable controls. SegmentedControl titles are intentionally absent per owner direction. All six final-tree gates pass; physical-device rendering remains unverified. Implementation commit `d36103e`; task-to-phase PR #42; phase-to-develop PR #43. | 2026-11-09 |
+| P20-S-R1-R1 | — | Done | Add the owner-requested rule to ask before reverting or overwriting owner edits made after agent changes. Documented in root `AGENTS.md` as R5; merge evidence recorded below. | 2026-11-09 |
 | P20-T | `e432034` | Done | CR-76–CR-77: one shared FormShell header/body/footer core for full-screen and sheet forms; all data-entry forms converted with route-param coverage. Six gates pass; native keyboard/font-scale behavior remains unverified. | 2026-10-19 |
 | P20-U | `02bfbb1` | Done | CR-86–CR-87: replace BudgetManagementSheet with section, item and income FormScreen routes; scoped save/delete Undo and route coverage. Focused suites pass; final gates and device limitations recorded below. | 2026-10-21 |
 | P20-V | `6d3feab`, `82793e8`, `1afac16`, `139230d` | Done | CR-88/CR-89: schema v13 and migration, recurrence-aware Budget planning/dues, route form, row display, demo and tests. All six automated gates pass; native-device checks remain unverified. | 2026-10-21 |
@@ -1171,6 +1172,11 @@ changes.
   Test assertions move from ChoiceField/choices to Dropdown/options and retain
   option-value and behavior checks. Title assertions do not require
   SegmentedControl labels; no behavior assertion is weakened.
+- DEC-P20S-R1-R1: if the owner edits a file after agent changes, ask whether
+  they want those edits reverted before changing that file further. Revert or
+  overwrite owner edits only on explicit request; otherwise preserve them and
+  work around them. This project-wide instruction is recorded as R5 in
+  `AGENTS.md`.
 - DEC-P20T: the user explicitly authorizes changing only
   `src/components/form/FormScreen.tsx` among frozen inputs, and requires its
   updated SHA-256 in `frozen-manifest.json` and `formComponentsFrozen.test.ts`.
@@ -3149,7 +3155,8 @@ evidence present in exports/checkpoints.
 | P20-Q | Phase 20 | `55f9eaa` | `94297e1` | 2026-10-19 | Manage budget sections/items in Budget and make overview responsive (CR-62–CR-65). | Implementation, 75-suite/857-test coverage run, and six gates complete; simulated layouts pass. | Preflight `17f5ee4`; CR-62 `93a5356`; CR-63–CR-65 `55f9eaa`; assertion update `94297e1`. | Assumed: section rows start collapsed on each screen mount; current/future actions use P20-P scope semantics; create budget applies an empty current-month snapshot for immediate management; the stacked chart visualizes planned allocation. | current request |
 | P20-R | Phase 20 | — | — | 2026-10-19 | Top-anchored Budget and bottom-sheet form surfaces; section Cards and accessible icon actions (CR-66–CR-69). | Done; 75 suites/857 tests; full coverage, TypeScript, lint, Expo Doctor and Android/iOS exports pass. | Preflight `5049ab8`; checkpoint `75e9097`; implementation `391a227`. | Assumed: see DEC-P20R; simulated keyboard and layout contracts do not verify native rendering. | current request |
 | P20-S | Phase 20 | — | — | 2026-10-19 | Dropdowns, shared sheet form shell, Budget category selection, Actual/Planned order, and manual Insurance items (CR-70–CR-75). | Done; Revised by P20-S-R1. Original gates and implementation remain historical. | Preflight `a8a95db`; CR-70 `b7e0d53`; CR-71 `b340416`; CR-72 `aa9f050`; CR-73/74 `4134844`; CR-75 `d612e2b`; correction `4d898c6`. | Assumed: see DEC-P20S; simulated keyboard, dropdown, hint wrapping and icon layout do not establish native-device behavior. | current request |
-| P20-S-R1 | Phase 20 | P20-S | current | 2026-11-09 | Replace form ChoiceField controls with Dropdown except filters; add persistent single-line titles to eligible editable controls. | 98 suites/1,267 passed/1 skipped and all six ordered gates exit 0; physical-device rendering remains unverified. | Implementation `d36103e`; task-to-phase PR #42; phase-to-develop PR #43. | Old: preserve non-designated ChoiceField uses and assert the Amount placeholder prop plus SegmentedControl titles. New: all app-form ChoiceFields use Dropdown except filters; Amount checks visible title text; transaction type options and manual Investment type selection remain asserted without requiring a SegmentedControl title. Reason: owner broadened Dropdown scope, requested visible input titles, and explicitly removed SegmentedControl titles. | current request |
+| P20-S-R1 | Phase 20 | P20-S | current | 2026-11-09 | Replace form ChoiceField controls with Dropdown except filters; add persistent single-line titles to eligible editable controls. | 98 suites/1,267 passed/1 skipped and all six ordered gates exit 0; physical-device rendering remains unverified. Revised by P20-S-R1-R1. | Implementation `d36103e`; task-to-phase PR #42; phase-to-develop PR #43. | Old: preserve non-designated ChoiceField uses and assert the Amount placeholder prop plus SegmentedControl titles. New: all app-form ChoiceFields use Dropdown except filters; Amount checks visible title text; transaction type options and manual Investment type selection remain asserted without requiring a SegmentedControl title. Reason: owner broadened Dropdown scope, requested visible input titles, and explicitly removed SegmentedControl titles. | current request |
+| P20-S-R1-R1 | Phase 20 | P20-S-R1 | current | 2026-11-09 | Add a shared rule for preserving owner edits: ask before changing a file with owner edits made after agent changes, and only revert/overwrite on explicit owner request. | Documentation-only update to `AGENTS.md`, `docs/PROGRESS.md`, and shared memory; no code behavior changed. | Pending task/phase PR integration. | Old: R1 required preserving owner edits but did not require asking before further changes. New: ask first, and revert or overwrite only on explicit request. Reason: owner requested a clear safeguard after an agent restored owner-removed labels. | current request |
 | P20-T | Phase 20 | — | — | 2026-10-19 | Consolidate full-screen and sheet forms on one header/body/footer core; convert all data-entry forms (CR-76–CR-77). | Done; 76 suites/873 tests, focused form/route tests, and all six required gates pass; native keyboard and font-scale rendering remain unverified. | Preflight `b449d9d`; implementation `e432034`. | Assumed: see DEC-P20T; onboarding retains no-back exit behavior and selection/information surfaces remain non-forms. | current request |
 | P20-U | Phase 20 | — | 2 | 2026-10-21 | Replace the Budget management sheet with route forms for sections, items and income (CR-86/CR-87). | Done; 6 focused suites / 264 tests pass; full suite and final gates pass as recorded below. | Preflight/spec `47a2bd8`; route implementation `02bfbb1`; tests and final ledger are in the close-out commit. | Assumed: preserve the Spend/Invest selector on section creation; use explicit month/following scope from Budget context. Schema v12 and protected files remain unchanged. | current request |
 | P21-A | Phase 21 | — | — | 2026-10-16 | Emergency-fund goal links; remove EF entries and exclude EF from net worth; schema v7 (CR-8, CR-13, CR-20; split from P19-D). | Done; final required gates including Expo Doctor 21/21 pass. | `3ac13a7` | Migrated positive ledger balances into a manual holding; bucket links gain emergency-goal shares or are dropped if fully allocated. | current request |
@@ -3620,8 +3627,8 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
    P19-B investment/income reconciliation and Budget actions (CR-9, CR-16), and
    P19-C header icons, user-owned inputs and balance card (CR-17–CR-19).
 2. **Phase 20 — Pending items, Home, navigation and Budget management**
-   (P20-A through P20-V Done; P20-A-R1/R2 revisions Done; P20-S-R1 pending
-   owner review): P20-A pending
+   (P20-A through P20-V Done; P20-A-R1/R2 and P20-S-R1-R1 revisions Done):
+   P20-A pending
    Transactions with Pay/Clear due (CR-6), P20-B Home due actions and collapsed
    spending plan (CR-7, CR-10), P20-C main-screen-only tabs (CR-11), P20-E
    balance normalization/Home confirmations/demo-load popup (CR-27, CR-28,
@@ -9290,6 +9297,20 @@ Gradle build, version bump, or release preparation was performed.
 
 ## 11. Session and release log
 
+### Owner-edit preservation instruction (2026-11-09)
+
+- P20-S-R1-R1 adds R5 to root `AGENTS.md` at the owner's explicit request:
+  when owner edits follow agent changes, ask before changing the affected
+  file, and revert or overwrite those edits only on explicit request.
+- Documentation-only change; no code behavior changed. The focused permanent
+  progress-ledger test passes; full six-gate validation is not applicable.
+- Updated the Phase 20 dashboard and branch-index counts from 27 to 28 and
+  added the revision ID guard. Old assertion: Phase 20 had 27 subtasks. New:
+  Phase 20 has 28, including P20-S-R1-R1. Reason: ledger now tracks this
+  completed revision in its existing phase; no new phase or branch row was
+  added.
+- Commit and task/phase PR integration evidence will be recorded here.
+
 ### P20-S-R1 form controls (2026-11-09)
 
 - Replaced app-form/settings ChoiceField controls with Dropdown, excluding
@@ -9989,7 +10010,7 @@ branches. Subtask counts are derived from the dashboard and are guarded by
 | 17 | `phase/17-cash-flow-budgets-sorting` | `phase-17-complete` | `1e206ad754e95cd53f7cc06e9cba4d2d9b151a68` | 3 |
 | 18 | `phase/18-ui-fix-rounds` | `phase-18-complete` | `3e28f763502fa09b32c00fce1bae95c71285f556` | 9 |
 | 19 | `phase/19-budget-model-and-sync` | `phase-19-complete` | `d3477f2e1266e686b611aa819be90dba113a7a5f` | 3 |
-| 20 | `phase/20-budget` | `phase-20-complete` | `eed40750f68bebc9168907f79f74a67c1f301b83` | 27 |
+| 20 | `phase/20-budget` | `phase-20-complete` | `eed40750f68bebc9168907f79f74a67c1f301b83` | 28 |
 | 21 | `phase/21-emergency-fund` | `phase-21-complete` | `96b85d72e401215a0f17864b9f8099e5452e3a66` | 6 |
 | 22 | `phase/22-demo-data` | `phase-22-complete` | `6cb4fa0a42be2c60ee3d4bf162bb41d6a2f0ea58` | 1 |
 | 23 | `phase/23-insurance` | `phase-23-complete` | `04988e8366949c0cde04912ca1f472c4b31c227f` | 4 |

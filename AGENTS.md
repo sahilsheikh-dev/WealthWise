@@ -45,6 +45,10 @@ apply only that exception and preserve all other rules.
   `SECURITY.md`, and `.github/**`. Change other documentation only when
   explicitly authorized. Reports and generated output belong in chat or
   `/tmp`; release content must remain in Git, never `/tmp`.
+- **R5 — Preserve owner edits:** when the owner edits a file after agent
+  changes, ask whether they want those owner edits reverted before changing
+  the affected file further. Revert or overwrite owner edits only when the
+  owner explicitly requests it; otherwise preserve them and work around them.
 
 ### Branching
 
