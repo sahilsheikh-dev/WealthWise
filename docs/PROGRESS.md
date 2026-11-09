@@ -52,7 +52,7 @@ parts count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ██████████ 100% (146/146)
+Overall progress █████████░ 87% (147/169)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -72,7 +72,7 @@ Phase 16         ██████████ 100% (3/3)
 Phase 17         ██████████ 100% (3/3)
 Phase 18         ██████████ 100% (9/9)
 Phase 19         ██████████ 100% (3/3)
-Phase 20         ██████████ 100% (25/25)
+Phase 20         ██████████ 100% (26/26)
 Phase 21         ██████████ 100% (6/6)
 Phase 22         ██████████ 100% (1/1)
 Phase 23         ██████████ 100% (4/4)
@@ -83,6 +83,13 @@ Phase 27         ██████████ 100% (1/1)
 Phase 28         ██████████ 100% (21/21)
 Phase 29         ██████████ 100% (41/41)
 Phase 30         ██████████ 100% (3/3)
+Phase 31         ░░░░░░░░░░ 0% (0/3)
+Phase 32         ░░░░░░░░░░ 0% (0/3)
+Phase 33         ░░░░░░░░░░ 0% (0/3)
+Phase 34         ░░░░░░░░░░ 0% (0/3)
+Phase 35         ░░░░░░░░░░ 0% (0/3)
+Phase 36         ░░░░░░░░░░ 0% (0/4)
+Phase 37         ░░░░░░░░░░ 0% (0/3)
 ```
 
 | ID | Legacy ID | Status | Evidence | Last updated |
@@ -123,8 +130,9 @@ Phase 30         ██████████ 100% (3/3)
 | P19-A | — | Done | Five-group model and category mapping; five-group suggestions; grouped setup/month editors with compact controls, subtotals and recurring-items summary; v6 schema compatibility and demo data. Commits `acc94df`, `af885c1`; see the Phase 19 gate record. | 2026-10-15 |
 | P19-B | — | Done | Invest category and earned-income sync, reconciliation, Month review sources, and History/Month review/Templates actions with no Budget header menu; commit `221d2ed` and the Phase 19 gate record. | 2026-10-15 |
 | P19-C | — | Done (automated gates pass; device checks outstanding) | Restore/freeze user-owned inputs; Budget header icons; compact expandable Transactions balance card. See the Phase 19-C gate record. | 2026-10-15 |
-| P20-A | — | Done; Revised by P20-A-R1 | Derived pending rows for unpaid plan/liability dues and remaining budget lines; Pay/Clear due actions, FIFO and Undo; mock data covers overdue, upcoming and applied-budget rows. | 2026-10-15 |
+| P20-A | — | Done; Revised by P20-A-R1; Revised by P20-A-R2 | Derived pending rows for unpaid plan/liability dues and remaining budget lines; Pay/Clear due actions, FIFO and Undo; mock data covers overdue, upcoming and applied-budget rows. | 2026-10-15 |
 | P20-A-R1 | — | Done | Linked recurring-plan Budget rows and liability EMI confirmations now use shared clearDue/Undo, preserving linked ledgers and one-write behavior across entry points. | 2026-11-08 |
+| P20-A-R2 | — | Done | Linked one-time manual savings now create one Deposit entry and linked invest transaction through clearDue; one-write Undo, frozen snapshot link resolution, category duplicate suppression and exact/lower/higher payments are covered. | 2026-11-09 |
 | P20-B | — | Done | Home due action sheet and collapsed category spending with conditional Apply budget (CR-7, CR-10; formerly P19-C). | 2026-10-16 |
 | P20-C | — | Done | Restrict bottom tabs to Home, Transactions, Goals and Budget; remove detail-screen tab bars (CR-11). | 2026-10-16 |
 | P20-D | — | Done | CR-21–CR-26 delivered; focused 12 suites/294 tests and all final coverage, TypeScript, lint, Doctor and platform-export gates pass. | 2026-10-16 |
@@ -238,6 +246,28 @@ Phase 30         ██████████ 100% (3/3)
 | P30-A | — | Done | Real-store action persistence/hydration and eight screen refresh checks pass; three SQLite fallback/restart tests reproduce stale-value restoration. Source scan finds no module-level Map caches; the prior-state mutation harness passes. | 2026-11-08 |
 | P30-B | — | Done | Durable legacy authority markers win over stale SQLite after failed writes, read-back mismatch and fallback; deletion tombstones prevent removed values returning. Restart regressions now pass, and a mounted banner test verifies persistence failures are visible. | 2026-11-08 |
 | P30-C | — | Done | TypeScript source scan guards hook closure inputs, explicit memo dependencies and module-level Map caches; a dev-only diagnostic reports hydration source and last-write verification. | 2026-11-08 |
+| P31-A | — | Planned | CODE_OF_CONDUCT.md; root-document changes require explicit owner authorization when executed. Dependencies: none. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P31-B | — | Planned | YAML bug, feature and question issue forms plus config.yml; warn contributors not to include financial data. Dependencies: none. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P31-C | — | Planned | Accessibility statement and audit checklist; obtain explicit owner authorization before writing a root-level document. Dependencies: none. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P32-A | — | Planned | Decide screenshot feasibility: emulator, Maestro, adb screencap, demo data, image location and framing owner. Dependencies: none. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P32-B | — | Planned | Script core-screen captures at font scales 1.0 and 2.0 in light and dark themes. Dependencies: P32-A. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P32-C | — | Planned | Add a README Screenshots section after capture scope/location are approved; README root-document change requires explicit owner authorization when executed. Dependencies: P32-B. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P33-A | — | Planned | Research SDK 57 widget options, config plugin, dev-build need, privacy and hide-previews behavior. Dependencies: none. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P33-B | — | Planned | Implement Android widget only after research approval. Dependencies: P33-A. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P33-C | — | Planned | Implement iOS widget only if iOS distribution exists. Dependencies: P33-A and iOS distribution. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P34-A | — | Planned | Research and decide quick-capture scope and native/platform constraints. Dependencies: none. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P34-B | — | Planned | Add app shortcuts, Quick Settings tile and notification action opening a prefilled quick-add form. Dependencies: P34-A. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P34-C | — | Planned | Add an opt-in foreground shake gesture; background gestures remain out of scope unless research proves a policy-safe route. Dependencies: P34-A. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P35-A | — | Planned | Report Android notification-listener vs SMS permission, iOS impossibility, Play policy, prominent disclosure, local-only parsing and no raw-message storage. Dependencies: none. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P35-B | — | Planned | Owner go/no-go gate for transaction auto-detection. Dependencies: P35-A. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P35-C | — | Planned | Continue auto-detect implementation only after explicit owner approval; all later parts remain gated too. Dependencies: P35-B approval. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P36-A | — | Planned | Design Notes scope, links to transactions/holdings/goals, schema-v23 plan and backup/migration impact. Dependencies: none. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P36-B | — | Planned | Implement Notes schema and pure domain behavior. Dependencies: P36-A. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P36-C | — | Planned | Implement Notes UI. Dependencies: P36-B. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P36-D | — | Planned | Add deterministic Notes demo data. Dependencies: P36-C. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P37-A | — | Planned | Design per-feature skippable coach marks, replay from menu, meta-store flags rather than AppData, and accessibility. Dependencies: none. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P37-B | — | Planned | Implement the tutorial framework. Dependencies: P37-A. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P37-C | — | Planned | Implement per-feature tours. Dependencies: P37-B. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
 DEC-P29AA-EF-LINK-INTEGRITY: Assumed valid Emergency Fund links are holding IDs
@@ -2709,11 +2739,65 @@ through shared clearDue/Undo. Old: linked planned dues could create only a plain
 transaction. New: linked entries/payments are recorded with the transaction and
 reversed through Undo. Reason: keep the instrument/payment ledger in sync
 atomically. Real-store tests verify all entry points and one persisted write.
-P20-N-R2 restores the aggregate actual-versus-planned Pace graph
+P20-A-R2 repairs linked
+one-time manual savings: the component previously searched the current-month
+snapshot and base plan instead of using the viewed-month source, so a link
+present only in a frozen snapshot fell through to addTransaction. A
+category-matched transaction still counted as Budget actual, making the
+remaining amount zero and removing the pending row even though the holding had
+no entry; the observed Budget status enum was `near`, not a literal Paid
+label. The pending-row duplicate filter also suppressed explicitly linked
+manual items when their category matched an instrument category.
+
+The committed red component regression expected clearDue for a snapshot-only
+link but observed no call. The createAppStore baseline for Savings account,
+Cash and Other manual holdings recorded one generic invest transaction, zero
+holding entries and one persisted write; with a $10,000 starting holding and a
+$5,000 planned item, Invested/value stayed $10,000 while Budget actual became
+$5,000, remaining became zero and the pending row disappeared. The exact
+Budget enum status was `near`. The reproduction was committed before
+production edits (`4cfa20c`); the real-store output was recorded separately
+(`4107494`).
+
+The fix carries the viewed month and holding ID in the pending Budget source,
+does not suppress an explicitly linked manual item, and routes its Paid/Undo
+through clearDue/undoClearDue. The shared pure action creates one Deposit and
+one linked invest transaction; clear and exact one-step Undo each perform one
+persisted write. Store tests cover Savings account, Cash and Other holdings at
+exact ($5,000), lower ($3,500) and higher ($6,500) amounts, with Budget actuals
+counted once and Invested/value verified. Domain tests cover the P29-T
+historical valuation-snapshot adjustment and Fixed Deposit rejection; plan-only
+and virtual-future-month tests verify link context. No schema change or Cash/
+Savings return-display change is intended.
+
+Hypotheses: (a) confirmed, the old lookup missed a link in the viewed-month
+snapshot; (b) confirmed, category-matched transactions drive Budget actuals
+independently of holding entries; (c) section type still determines the
+transaction type, while a valid explicit holding link selects the holding
+ledger path; linked holdings are valid only in non-system investment sections;
+(d) confirmed, category duplicate suppression could hide the linked manual
+row. The old Budget-source assertion contained only `kind`, `category` and
+`type`; the new assertion also requires the viewed `month`, because the action
+must preserve the frozen snapshot context. No assertion was weakened.
+
+The snapshot-only PendingItemActions regression now passes; Transactions and
+Budget use this shared component, and `/payment-confirm` also mounts it.
+Home exposes only `kind: 'due'` rows, not Budget rows; the user-owned
+`app/(tabs)/index.tsx` was not edited. Asset/Entries behavior is verified at
+the real-store ledger level, not on a physical device. Physical-device checks
+remain in N44. P20-N-R2 restores the aggregate actual-versus-planned Pace graph
 above the Income/Spending/Investing/Left table. Old section-specific line,
 toggle and marker assertions are replaced by aggregate Pace behavior and route
 assertions at font scales 1.0, 1.3 and 2.0 because the requested presentation
-is aggregate, not per-section. Phase 20 is 25/25.
+is aggregate, not per-section. Phase 20 is 26/26.
+
+After syncing Phase 20 with `develop`, all six required gates passed in order:
+`npm test -- --coverage` (98 suites, 1,267 passed, 1 skipped; overall coverage
+95.96/92.04/98.02/97.63% statements/branches/functions/lines; `src/data`
+91.03/87.41/94.46/94.17%; `src/domain` 96.94/92.87/98.80/98.33%; `src/lib`
+100% in all four measures), `npx tsc --noEmit`, `npx expo lint`,
+`npx expo-doctor` (21/21), `npx expo export --platform android`, and
+`npx expo export --platform ios`; each exited 0.
 
 ### Phase 21 — Emergency fund as a goal-linked model and allocation editor
 
@@ -3029,8 +3113,9 @@ evidence present in exports/checkpoints.
 | P19-A | Phase 19 | — | — | 2026-10-15 | Five-group budget model, categories, suggestion, compact setup, subtotals and recurring items (CR-5). | Done; focused and full gates pass. | `acc94df`, `af885c1` | Assumed starter split and within-group weights are recorded in Section 4; schema remains v6. | current request |
 | P19-B | Phase 19 | — | — | 2026-10-15 | Investment category and earned-income sync; History, Month review and Templates buttons; no Budget header menu (CR-9, CR-16). | Done; focused and full gates pass, including 500-case reconciliation. | `221d2ed` | Assumed the entire Budget header menu is removed. | current request |
 | P19-C | Phase 19 | — | — | 2026-10-15 | Restore and freeze user-owned input components; Budget header icons (CR-17); compact Transactions balance card (CR-18); user-owned components (CR-19). | Done; focused and full gates pass; physical-device layout remains unverified. | `d3477f2` | Assumed commits without a Copilot co-author trailer are user-authored; current field files already matched `bf4adf3`, so no restore-only commit was needed. | current request |
-| P20-A | Phase 20 | — | — | 2026-10-15 | Derived pending rows, FIFO Pay/Clear due and Undo, Transactions section and balance caption; applied budgets and recurring schedule slots (CR-6). | Done; focused 10 suites/246 tests and full 70 suites/720 tests pass; coverage, TypeScript, lint, Doctor and Android/iOS exports exit 0. | `8545909` | No new assumptions. | current request |
+| P20-A | Phase 20 | — | — | 2026-10-15 | Derived pending rows, FIFO Pay/Clear due and Undo, Transactions section and balance caption; applied budgets and recurring schedule slots (CR-6). | Done; Revised by P20-A-R1; Revised by P20-A-R2. Original focused/full gates are historical. | `8545909` | Linked-plan and linked-manual plain-transaction behaviors are superseded by P20-A-R1/R2. | current request |
 | P20-A-R1 | Phase 20 | P20-A | current | 2026-11-08 | Route paid linked recurring-plan and liability EMI actions through the shared clearDue path. | Reproduced before implementation: a linked planned investment row created only a plain transaction. Real-store tests cover Transactions, Home, Budget and reminder entry points, one write and Undo; the fixed route regressions pass. | `0778b8b740a2980fa5d08a3e60ba66cad80f63aa` (`fix(P20-A-R1): sync linked planned payments`) | Old: linked plan payment skipped the holding entry/payment ledger. New: shared clearDue/undoClearDue preserves linked ledgers. Reason: keep the payment ledger and transaction atomic. | current request |
+| P20-A-R2 | Phase 20 | P20-A | current | 2026-11-09 | Fix one-time manual savings paid from a linked Budget row through clearDue and exact one-step Undo. | Done; red snapshot-only component reproduction committed before production edits. Real-store baseline: one generic transaction, zero holding entries, one write; $10,000 Invested/value unchanged while the $5,000 Budget actual consumed the plan. Focused tests: 6 suites/267 tests; all six final gates pass. | Red regression `4cfa20c`; store baseline `4107494`; implementation `d2acde3`. | Old: lookup only current-month snapshot/base plan and generic addTransaction fallback; category actuals hid missing entries; linked manual rows could be duplicate-suppressed. New: pending source carries month/holding ID and clearDue/undoClearDue writes both linked ledger records once. Budget assertion now requires month; reason: preserve viewed frozen-snapshot context. Home has no Budget-kind due row and its user-owned screen was not edited. | current request |
 | P20-B | Phase 20 | — | — | 2026-10-16 | Home due action sheet and collapsed category spending with conditional Apply budget (CR-7, CR-10; formerly P19-C). | Done; focused Home/route tests pass; full 70-suite/720-test coverage run and all final gates pass. | `1c596e0` | Assumed Home's existing five-item due preview cap remains unchanged. | current request |
 | P20-C | Phase 20 | — | — | 2026-10-16 | Bottom tabs only on Home, Transactions, Goals and Budget; no detail-route tab bars (CR-11). | Done; focused route/tab tests pass; full 70-suite/720-test coverage run and all final gates pass. | `4d3f117` | Replaced the P18-R5 test that expected one Budget-selected bar on history/review with route-registry no-bar checks and exactly one correctly selected bar on each main tab; DEC-TABS supersedes the old behavior. | current request |
 | P20-D | Phase 20 | — | — | 2026-10-16 | Due-payment clearing, the user-kept always-visible balance card, Home due sheet position, Budget menu and due formatting (CR-21–CR-26). | Done; focused 12 suites/294 tests and final full coverage, TypeScript, lint, Doctor and Android/iOS export gates pass. | `8590a4a`, `13fbae8`, `1c596e0` (Home due-sheet implementation; CR-21), `54bcabf`, `d58ef45`, `5caf2aa`, `ae8ad7e`, `8f27f4b`, `7ec7ce0`, `c899a6d`, close-out `5bd3c41` | Assumed sheet max height is 60% of window height and bottom inset is added to 12pt spacing; FIFO clear-through is required because installments have no stored per-payment association. | current request |
@@ -3520,7 +3605,7 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
    P19-B investment/income reconciliation and Budget actions (CR-9, CR-16), and
    P19-C header icons, user-owned inputs and balance card (CR-17–CR-19).
 2. **Phase 20 — Pending items, Home, navigation and Budget management**
-   (P20-A through P20-V Done): P20-A pending
+   (P20-A through P20-V Done; P20-A-R1/R2 revisions Done): P20-A pending
    Transactions with Pay/Clear due (CR-6), P20-B Home due actions and collapsed
    spending plan (CR-7, CR-10), P20-C main-screen-only tabs (CR-11), P20-E
    balance normalization/Home confirmations/demo-load popup (CR-27, CR-28,
@@ -3573,6 +3658,75 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
       the newest persisted value win and expose failed writes.
     - P30-C — Memo-input/cache source guard and development-only hydration/write
       verification diagnostic.
+13. **Phase 31 — Project health and community** (Planned):
+    - P31-A — Add `CODE_OF_CONDUCT.md`. Dependencies: none. This root document
+      requires explicit owner authorization when executed. Demo data and tests
+      are required per DEC-DEMO.
+    - P31-B — Upgrade bug, feature and question issue templates to YAML issue
+      forms and add `config.yml`; warn users not to include financial data.
+      Dependencies: none. Demo data and tests are required per DEC-DEMO.
+    - P31-C — Write an accessibility statement and accessibility-audit
+      checklist. Dependencies: none. Any root-level document requires explicit
+      owner authorization when executed. Demo data and tests are required per
+      DEC-DEMO.
+14. **Phase 32 — Screenshots** (Planned):
+    - P32-A — Decide feasibility and workflow: emulator, Maestro, adb
+      screencap, demo data, image location and who frames screenshots.
+      Dependencies: none. Demo data and tests are required per DEC-DEMO.
+    - P32-B — Script core-screen captures at font scales 1.0 and 2.0 in light
+      and dark themes. Dependencies: P32-A. Demo data and tests are required
+      per DEC-DEMO.
+    - P32-C — Add a README Screenshots section after scope and image location
+      are approved; this root-document change requires explicit owner
+      authorization when executed. Dependencies: P32-B. Demo data and tests
+      are required per DEC-DEMO.
+15. **Phase 33 — Widgets** (Planned):
+    - P33-A — Research SDK 57 options, config plugin, dev-build need, privacy
+      and hide-previews behavior. Dependencies: none. Demo data and tests are
+      required per DEC-DEMO.
+    - P33-B — Implement the Android widget. Dependencies: P33-A. Demo data and
+      tests are required per DEC-DEMO.
+    - P33-C — Implement the iOS widget only if iOS distribution exists.
+      Dependencies: P33-A and iOS distribution. Demo data and tests are
+      required per DEC-DEMO.
+16. **Phase 34 — Quick capture** (Planned):
+    - P34-A — Research and decide quick-capture scope and native/platform
+      constraints. Dependencies: none. Demo data and tests are required per
+      DEC-DEMO.
+    - P34-B — Add app shortcuts, a Quick Settings tile and a notification
+      action that opens a prefilled quick-add form. Dependencies: P34-A. Demo
+      data and tests are required per DEC-DEMO.
+    - P34-C — Add an opt-in foreground shake gesture. Background gestures are
+      out of scope unless research proves a policy-safe route. Dependencies:
+      P34-A. Demo data and tests are required per DEC-DEMO.
+17. **Phase 35 — Transaction auto-detect** (Planned; gated):
+    - P35-A — Report Android notification-listener vs SMS-permission options,
+      iOS impossibility, Play policy, prominent disclosure, local-only parsing
+      and no raw-message storage. Dependencies: none. Demo data and tests are
+      required per DEC-DEMO.
+    - P35-B — Obtain the owner's explicit go/no-go decision. Dependencies:
+      P35-A. Demo data and tests are required per DEC-DEMO.
+    - P35-C — Continue only after approval; no implementation here or in later
+      parts before the owner go/no-go. Dependencies: P35-B
+      approval. Demo data and tests are required per DEC-DEMO.
+18. **Phase 36 — Notes** (Planned):
+    - P36-A — Design scope, links to transactions/holdings/goals, schema-v23
+      plan and backup/migration impact. Dependencies: none. Demo data and tests
+      are required per DEC-DEMO.
+    - P36-B — Implement schema and pure domain behavior. Dependencies: P36-A.
+      Demo data and tests are required per DEC-DEMO.
+    - P36-C — Implement the Notes UI. Dependencies: P36-B. Demo data and tests
+      are required per DEC-DEMO.
+    - P36-D — Add deterministic Notes demo data. Dependencies: P36-C. Demo
+      data and tests are required per DEC-DEMO.
+19. **Phase 37 — First-run tutorials** (Planned):
+    - P37-A — Design per-feature skippable coach marks, replay from the menu,
+      flags in the meta store rather than AppData, and accessibility.
+      Dependencies: none. Demo data and tests are required per DEC-DEMO.
+    - P37-B — Implement the tutorial framework. Dependencies: P37-A. Demo
+      data and tests are required per DEC-DEMO.
+    - P37-C — Implement per-feature tours. Dependencies: P37-B. Demo data and
+      tests are required per DEC-DEMO.
 
 **Superseded (2026-11-08):** the earlier roadmap ended at Phase 28 and marked
 Phases 24, 26, 27 and 28 as in progress or planned. Those entries have been
@@ -3585,6 +3739,30 @@ work remain in their original phase and use `<ID>-R<n>` (for example,
 An item is `Done` only when its named source and test evidence are available.
 Paths below are repository-relative. Baseline results are not completion
 evidence for the fixes.
+
+### P20-A-R2 — linked one-time manual savings
+
+| Area | Status | Evidence |
+|---|---|---|
+| Before-fix screen reproduction | Reproduced | `PendingItemActions.test.tsx` failed before production edits when a Budget link existed only in the viewed-month snapshot: expected `clearDue`, observed no call. Red reproduction commit: `4cfa20c`. |
+| Before-fix real-store output | Reproduced | For Savings account, Cash and Other manual holdings: one generic invest transaction, zero holding entries, one persisted write. With $10,000 starting Invested/value and a $5,000 planned item, Budget actual became $5,000, remaining became zero and the pending row disappeared; holding values stayed $10,000 and Budget enum status was `near`. Recorded in `4107494`. |
+| After-fix atomic action and Undo | Done (focused tests) | `dues.test.ts` and `createAppStore.test.ts`: one Deposit plus one linked invest transaction; one persisted write on clear and one on exact Undo; original data is restored. Exact/lower/higher amounts ($5,000/$3,500/$6,500) run for Savings account, Cash and Other. Missing targets, invalid amounts and omitted note handling are also covered. |
+| Budget source and duplicate suppression | Done (focused tests) | `pending.test.ts` verifies explicit manual links survive category suppression and carry month/holding ID for frozen and virtual future months. `budget.test.ts` now expects the `month` field in Budget source metadata. |
+| Holding invariants | Done (focused tests) | P29-T historical valuation-snapshot adjustment is retained; Fixed Deposit is rejected; Cash/Savings return-display code is unchanged. |
+| Entry-point boundaries | Automated scope recorded | Transactions and Budget share `PendingItemActions`; `/payment-confirm` mounts the same component. Home exposes only due-kind rows, so a Budget-kind row is not available there; `app/(tabs)/index.tsx` remains untouched. Asset Entries are covered through the real store, not a physical-device run. Reminder delivery was not separately exercised with this Budget scenario. |
+| Physical-device check | Not run | N44 is added to the release device checklist and owner re-test list. |
+
+Final ordered gates (real exit codes): `npm test -- --coverage` 0 (98 suites,
+1,255 passed, 1 skipped; 95.96% statements, 92.04% branches, 98.02% functions,
+97.63% lines); `npx tsc --noEmit` 0; `npx expo lint` 0; `npx expo-doctor` 0
+(21/21); `npx expo export --platform android` 0; and
+`npx expo export --platform ios` 0. Gate 1 coverage by `src/` directory:
+`data` 91.03/87.41/94.46/94.17%, `domain` 96.94/92.88/98.80/98.33%, and
+`lib` 100% in all four measures (statements/branches/functions/lines). Earlier
+Gate 1 attempts exited 1: the initial run found `dues.ts` branch coverage at
+89.89%, then two parallel retries hit Jest's 5-second timeout under load. Guard
+tests were added without lowering thresholds; the serial diagnostic and final
+required Gate 1 command both passed. The focused 6-suite run passed 267 tests.
 
 ### Current P20-L / P21-D work
 
@@ -9735,7 +9913,7 @@ branches. Subtask counts are derived from the dashboard and are guarded by
 | 17 | `phase/17-cash-flow-budgets-sorting` | `phase-17-complete` | `1e206ad754e95cd53f7cc06e9cba4d2d9b151a68` | 3 |
 | 18 | `phase/18-ui-fix-rounds` | `phase-18-complete` | `3e28f763502fa09b32c00fce1bae95c71285f556` | 9 |
 | 19 | `phase/19-budget-model-and-sync` | `phase-19-complete` | `d3477f2e1266e686b611aa819be90dba113a7a5f` | 3 |
-| 20 | `phase/20-budget` | `phase-20-complete` | `eed40750f68bebc9168907f79f74a67c1f301b83` | 25 |
+| 20 | `phase/20-budget` | `phase-20-complete` | `eed40750f68bebc9168907f79f74a67c1f301b83` | 26 |
 | 21 | `phase/21-emergency-fund` | `phase-21-complete` | `96b85d72e401215a0f17864b9f8099e5452e3a66` | 6 |
 | 22 | `phase/22-demo-data` | `phase-22-complete` | `6cb4fa0a42be2c60ee3d4bf162bb41d6a2f0ea58` | 1 |
 | 23 | `phase/23-insurance` | `phase-23-complete` | `04988e8366949c0cde04912ca1f472c4b31c227f` | 4 |

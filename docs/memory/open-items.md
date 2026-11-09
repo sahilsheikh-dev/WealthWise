@@ -1,4 +1,4 @@
-<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-08 | Updates: owner and AI agents -->
+<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-09 | Updates: owner and AI agents -->
 
 # Open items
 
@@ -73,6 +73,18 @@
 
 ## Unresolved
 
+- **Owner decisions for planned Phases 31-37:** clarify what the accessibility
+  statement/audit should mean; decide whether screenshots should be committed
+  to Git; decide whether notification/SMS transaction detection is worth its
+  permission and policy cost; decide whether widgets and foreground shake
+  justify native-build overhead; and decide whether this P20-A-R2 fix ships as
+  v1.1.1. These phases remain planning-only; no new feature implementation or
+  release work has started.
+- **P20-A-R2 device re-test:** run N44 in
+  [`device-test-checklist.md`](../releases/device-test-checklist.md): mark a
+  linked one-time savings item Paid from Transactions, confirm a holding entry
+  is created, then confirm one-step Undo removes it. No physical-device
+  validation has been performed.
 - **Branching baseline exception:** the initial `develop` baseline
   `a258579c4b580d6f3a157b8d13de53334aa8d34d` was created from current main,
   which contains legacy unreleased Release 2 work. Branch protection and

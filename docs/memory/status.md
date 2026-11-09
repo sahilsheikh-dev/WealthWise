@@ -1,4 +1,4 @@
-<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-08 | Updates: owner and AI agents -->
+<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-09 | Updates: owner and AI agents -->
 
 # Status
 - Current integration: P28-D, P28-C-R4, P28-E, P20-A-R1, P20-N-R2,
@@ -30,6 +30,26 @@
   TypeScript, lint and Expo Doctor (21/21) pass; Android and iOS exports
   succeed. The owner-provided EAS build is verified; no local EAS or Gradle
   build was run.
+- Current task: P20-A-R2 repairs Paid on a linked one-time manual savings
+  Budget row. The pre-fix component reproduction confirmed that a link present
+  only in a viewed-month snapshot fell through to a generic transaction;
+  category-matched actuals hid the missing holding entry. The shared
+  clearDue/undoClearDue path now creates one Deposit and one linked invest
+  transaction in one persisted write, and exact Undo removes both in one
+  write. Store tests cover Savings account, Cash and Other manual holdings at
+  exact, lower and higher amounts. No schema/version/release change was made.
+  Final ordered gates on the develop-synced phase tree all exit 0: 98 suites,
+  1,267 passed and 1 skipped; overall coverage 95.96/92.04/98.02/97.63%
+  (statements/branches/functions/lines). `src/data`:
+  91.03/87.41/94.46/94.17%; `src/domain`: 96.94/92.87/98.80/98.33%;
+  `src/lib`: 100% in all four measures.
+  TypeScript, lint, Expo Doctor 21/21, Android export and iOS export pass.
+  N44 remains unverified on a physical device; no feature from planned
+  Phases 31-37 has been started. Owner decisions are listed in
+  [open-items.md](./open-items.md), with full evidence in
+  [PROGRESS.md](../PROGRESS.md). Integration route: task PR #40 merged into
+  Phase 20; phase PR #41 carries the synchronized branch to develop after
+  sync merge `6982ff2`.
 - Ordered release-branch gates on `release/v1.1.0`: all six exit 0. Gate 1
   has 98 suites, 1,242 passed, 1 skipped; coverage is 95.96/92.01/98.01/97.62%
   overall, `src/data` 91.03/87.39/94.46/94.17%, `src/domain`

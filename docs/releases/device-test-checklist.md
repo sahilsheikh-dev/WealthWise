@@ -61,13 +61,16 @@ Use only `Pass`, `Fail`, or `Blocked` after running each check.
 | N41 | Verify Budget overview shows the aggregate Pace graph and no stacked bar. | Pass | |
 | N42 | Mark linked recurring-plan dues and liability EMIs as Paid from Transactions, Home, Budget and reminder confirmation; verify linked ledgers update and Undo restores all changes. | Pass | |
 | N43 | Verify recurring investment and liability Entries show completed/pending counts, collapsed paid rows, and no installments after maturity or the final EMI date. | Pass | |
+| N44 | Linked one-time savings item marked Paid from Transactions creates a holding entry; Undo removes it. | Not run | P20-A-R2; verify on device |
 
 ## Owner follow-up
 
 The owner reports N39-N43 passed on 2026-11-08, superseding the earlier
 Fail/Not run results. The Release 2 recurrence, edit-refresh, aggregate Pace,
-paid-sync/Undo, and Entries checks are recorded as passed. Device model,
-Android version, and tester fields remain blank.
+paid-sync/Undo, and Entries checks are recorded as passed. N44 is added to the
+owner re-test list; verify that Paid creates the linked holding entry and
+one-step Undo removes it on a physical device. Device model, Android version,
+and tester fields remain blank.
 
 ## How to run
 

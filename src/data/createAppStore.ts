@@ -93,6 +93,7 @@ import {
   clearPastDues,
   undoClearDue,
   undoClearDuesThrough,
+  type ClearDueTarget,
   type AddPolicyInput,
   type DueTarget,
   type PastDuesMode,
@@ -137,14 +138,14 @@ export type AppActions = {
   addInvestmentEntry: (holdingId: string, input: InvestmentEntryInput) => void;
   updateInvestmentEntry: (holdingId: string, entryId: string, patch: InvestmentEntryPatch) => void;
   deleteInvestmentEntry: (holdingId: string, entryId: string) => void;
-  clearDue: (target: DueTarget, rowId?: string, actualAmount?: number) => string | undefined;
+  clearDue: (target: ClearDueTarget, rowId?: string, actualAmount?: number, note?: string) => string | undefined;
   clearDuesThrough: (target: DueTarget, dueDate: ISODate, actualAmount?: number) => string[] | undefined;
   clearPastDues: (target: DueTarget, options: {
     mode: 'settle' | 'record';
     balance?: number;
     addSkippedToOpening?: boolean;
   }) => { count: number; amount: number; months: { month: string; amount: number }[] } | undefined;
-  undoClearDue: (target: DueTarget, entryId: string) => void;
+  undoClearDue: (target: ClearDueTarget, entryId: string) => void;
   undoClearDuesThrough: (target: DueTarget, entryIds: string[]) => void;
   addPlanWithHistory: (input: AddPlanInput, mode: PastDuesMode, addSkippedToOpening?: boolean) => void;
   addLiabilityWithHistory: (input: AddLiabilityInput, mode: PastDuesMode, balance?: number) => void;
@@ -412,7 +413,7 @@ export function createAppStore(
             'Investment entry deleted.',
           );
         },
-        clearDue(target, rowId, actualAmount) {
+        clearDue(target, rowId, actualAmount, note) {
           let entryId: string | undefined;
           applyDataAction((data) => {
             const result = clearDue(data, target, {
@@ -420,6 +421,7 @@ export function createAppStore(
               newId: deps.newId,
               ...(rowId ? { rowId } : {}),
               ...(actualAmount !== undefined ? { actualAmount } : {}),
+              ...(note !== undefined ? { note } : {}),
             });
             entryId = result.entryId;
             return result.data;
