@@ -17,6 +17,14 @@
   #49 (`7f9221a`) and Phase 28 PR #50 (`b5dbe5f`) to `develop`. The `ours`
   merge preserves the captured application tree; every remote branch tip is
   reachable from `develop`. `main` and `release/v1.1.0` remain unchanged.
+- P28-E-R5 audits the 403 non-merge first-parent commits after the initial
+  commit: all are already present in `main` and `develop`, and 84 legacy
+  subjects do not match the current Conventional Commit hook. No historical
+  messages or hashes were changed because that requires rewriting history.
+  The new `release/v1.0.0` branch points to the existing tag target
+  `cac6fed`; it is already an ancestor of `main` and `develop`. The audit
+  record is being integrated via `task/P28-E-R5-record-v1.0-release-branch`
+  -> Phase 28 -> `develop`.
 - Current integration: P28-D, P28-C-R4, P28-E, P20-A-R1, P20-N-R2,
   P29-AB-R2, P29-O1-R1, P29-W-R1, P28-F-R1/R2 and the Phase 30 work are
   integrated into GitHub `main` and `develop`. P28-E-R4 is integrated into
@@ -32,8 +40,9 @@
   to develop (#7). The contributor-credit correction and owner-reported
   N39-N43 results are on main and develop; the audit records are carried
   through the same release/back-merge path.
-- GitHub branch audit found 34 remote heads: main, develop, the read-only
-  `history/by-phase` archive, all 30 phase branches, and `release/v1.1.0`.
+- GitHub branch audit found 35 remote heads after P28-E-R5: main, develop, the
+  read-only `history/by-phase` archive, all 30 phase branches, and release
+  branches `release/v1.0.0` and `release/v1.1.0`.
   Publication PRs #11-#15 are merged in order; their task branch was deleted
   and `phase/28-qa-and-release` was retained.
   `phase/25-release-and-backups` remains outside this Release 2 PR chain.
