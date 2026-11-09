@@ -28,6 +28,11 @@
   and affected versioned APK URLs return HTTP 200 with expected sizes.
   README, latest release notes, screenshot gallery and release history are
   aligned.
+- **Remote branch audit (2026-11-09):** fetched all 36 remote branches and
+  checked their ancestry against `develop` and `main`. Every remote branch is
+  integrated into `develop`; `release/v1.1.1` is integrated into `main`;
+  `main`, `develop` and the release branch have identical trees. No open PRs
+  or pending merge work remain. The stale local `main` was fast-forwarded.
 - **Owner-edit handling:** P20-S-R1-R1 records R5 in root
   [AGENTS.md](../../AGENTS.md): ask before changing a file with owner edits
   made after agent changes, and revert or overwrite those edits only when
