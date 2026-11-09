@@ -3907,10 +3907,11 @@ evidence for the fixes.
 
 - Focused release/memory/ledger verification passed 3 suites / 19 tests;
   `git diff --check` passed. No EAS or Gradle build was run.
-- N44 remains owner-reported Pass; the new APK/device verification cannot
-  occur until the owner builds from merged source and uploads the APK.
-  GitHub Release draft creation follows task -> phase -> `develop` PR
-  integration; publication requires separate approval after artifact checks.
+- Task PR #56 and Phase 28 PR #57 merged; the pushed `release/v1.1.1` branch
+  is at `cbb8454`, based on merged candidate `d16886d`. The GitHub draft
+  targets `cbb8454` and includes the screenshot asset. N44 remains
+  owner-reported Pass; APK/device verification awaits owner build and upload.
+  Publication requires separate approval after artifact checks.
 
 ### P28-F-R4-R1-R1-R1 — expanded screenshots and clarified release handoff (2026-11-09)
 
