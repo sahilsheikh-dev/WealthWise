@@ -39,8 +39,11 @@
   task branches, and keep phase branches.
 - The ordered six gates are `npm test -- --coverage`, `npx tsc --noEmit`,
   `npx expo lint`, `npx expo-doctor`, `npx expo export --platform android`,
-  and `npx expo export --platform ios`. Expo exports are allowed; EAS and
-  Gradle builds are not unless explicitly authorized.
+  and `npx expo export --platform ios`. Expo exports are allowed. EAS Android
+  APK builds are authorized after owner Markdown approval, code merge to
+  `develop`, and GitHub Release draft creation; use the `android-apk` profile
+  and upload/verify the result. Other EAS builds and local Gradle builds need
+  explicit authorization.
 - No cloud/network runtime behavior. Keep `src/domain/` pure: no React/Expo,
   ambient clock or randomness; inject dates, IDs and digests.
 - React Compiler is enabled. Forms use React Hook Form `Controller` and
@@ -56,13 +59,14 @@
   `docs/releases/drafts/vX.Y.Z.md`. Do not commit it before owner approval of
   the Markdown draft; then include it in the approved task -> phase ->
   `develop` PR path with subject `docs: draft vX.Y.Z release notes`. After
-  publication is verified, move the file into `docs/releases/published/` and
-  commit the move. Never leave a published file in drafts or a draft in
-  published.
-- After approved changes merge to `develop`, create a GitHub Release draft
-  and notify the owner. The owner builds from the merged source, uploads the
-  APK and confirms; only then verify the artifact and continue. Publication
-  still requires separate explicit approval.
+  approval, finalize the note and move it to `docs/releases/published/` before
+  creating the GitHub Release draft. Never leave a published file in drafts
+  or an unapproved draft in published.
+- After approved changes merge to `develop`, create the GitHub Release draft.
+  Then build the APK from the release branch with EAS profile `android-apk`,
+  upload it to the draft, and verify the artifact. Do not wait for the owner
+  to build or upload it manually. Publication still requires separate
+  explicit approval.
 - Name the current release APK `WealthWise-android-latest-vX.Y.Z.apk` and use
   that filename on the latest download route. On supersession, remove
   `latest` from the old asset name, rename it to

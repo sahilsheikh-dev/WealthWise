@@ -3,27 +3,29 @@
 # Status
 - The owner approved the v1.1.1 patch-release draft on 2026-11-09. The app,
   package and lockfile versions are aligned to 1.1.1. The original release
-  task passed all six gates; the same ordered gates passed again after this
+  task passed all six gates; the same ordered gates passed after the
   screenshot/documentation revision: 98 suites, 1,269 passed, 1 skipped;
   TypeScript, lint, Expo Doctor 21/21, Android export and iOS export also
-  passed. Task PR #56 and Phase 28 PR #57 are merged; `release/v1.1.1` is
-  based on merged develop. The GitHub Release draft remains a draft at its
-  original release target; all eight v1.1.1 screenshots are attached, and its
-  body uses public screenshot assets so the gallery renders before
-  publication. The owner approved the complete v1.1.1 note; its move to
-  `published/` is complete; the screenshot/documentation revision is awaiting
-  task/phase/develop PR integration.
-  N44 is owner-reported Pass; no new release APK has been built or tested.
-  Wait for the owner's APK path/upload confirmation before
-  verification and separate publication approval. README shows only the latest
-  screenshot set under the unversioned Screenshots heading; all README,
-  release-note and GitHub release galleries use 150-pixel thumbnails with at
-  most four per row, in the owner-specified order: Home, Assets, Liabilities,
-  Emergency Fund, Goals, Insurance, Budget, Transactions. The v1.1.1 note now
-  includes every template section and no APK-upload status message. The
-  focused release, ledger and memory tests pass (3 suites, 19 tests); all 23
-  screenshot assets remain attached to their corresponding releases, and all
-  image links in release bodies return HTTP 200. No EAS or Gradle build was run.
+  passed. Task PRs #56 and #58 and Phase 28 PRs #57 and #59 are merged to
+  `develop`. `release/v1.1.1` and its GitHub Release draft remain at their
+  original release target; all eight screenshots are attached.
+- The owner started an EAS `android-apk` build for v1.1.1; it was in progress
+  at 19:46 on 2026-11-09, and no APK is attached to the GitHub draft yet. Do
+  not start a duplicate build. For this already-running build, the owner will
+  provide the downloaded APK path for private verification and draft upload.
+  For future releases, the release agent builds with `android-apk` and uploads
+  after Markdown approval, merge to `develop`, and GitHub draft creation;
+  publication still requires separate explicit approval.
+- N44 is owner-reported Pass. README shows only the latest screenshot set
+  under the unversioned Screenshots heading; README, release-note and GitHub
+  release galleries use 150-pixel thumbnails, at most four per row, in the
+  owner-specified order: Home, Assets, Liabilities, Emergency Fund, Goals,
+  Insurance, Budget, Transactions. The v1.1.1 note includes every template
+  section and no APK-upload status message. The focused release, ledger and
+  memory tests pass (3 suites, 19 tests); all 23 screenshot assets remain
+  attached to their corresponding releases, and all image links in release
+  bodies return HTTP 200. This documentation-only change does not rerun the
+  six app gates.
 - Direct comparison confirms the v1.1.0 source tree contains the P30
   persistence repair and its SQLite storage implementation matches current
   develop; v1.0.0 predates that repair.
@@ -36,9 +38,9 @@
   under versioned paths and attached to v1.0.0, v1.1.0 and the v1.1.1 draft.
   Release-note Contributors sections were removed. The updated rule requires
   owner approval, full note completion and moving the note to `published/`
-  before GitHub draft creation; immediately after draft creation, use an
-  ask-user dialogue to request the absolute APK path or manual-upload
-  confirmation.
+  before GitHub draft creation; after draft creation, the agent builds with
+  EAS `android-apk`, uploads and verifies the APK. The owner-run v1.1.1 build
+  already in progress is handled as an exception without starting a duplicate.
   Widgets, quick capture and SMS/notification
   detection are Held; Notes now includes text, recordings, photos and videos;
   skeleton loading is planned as Phase 38. Details and safeguards are in

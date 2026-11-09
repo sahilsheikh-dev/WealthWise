@@ -97,10 +97,10 @@ Use the actual GitHub Release records to establish the baseline.
 Merge owner-approved changes through task -> phase -> `develop` using PRs.
 Then create `release/vX.Y.Z` from the merged `develop` commit and create the
 GitHub Release draft at that exact release-branch commit. Draft creation may
-create the version tag; do not retarget it. Wait for the owner's APK upload
-and confirmation, verify the artifact, and obtain separate publication
-approval. Only then merge the release branch into `main` with `--no-ff`,
-verify the tag target and back-merge into `develop`.
+create the version tag; do not retarget it. After the draft exists, build the
+APK with EAS using the `android-apk` profile, upload and verify it, and obtain
+separate publication approval. Only then merge the release branch into `main`
+with `--no-ff`, verify the tag target and back-merge into `develop`.
 
 If the repository, baseline, or target commit is ambiguous, stop and explain the problem.
 
@@ -468,32 +468,30 @@ After the owner explicitly approves the Markdown release draft:
 8. Create `release/vX.Y.Z` from the merged `develop` commit. Create the
    GitHub Release draft at that exact release-branch commit, attach every
    supplied screenshot and use each absolute asset URL in the draft body.
-   Immediately use the ask-user dialogue to request the absolute local path
-   to the owner's built APK and state its exact required filename. Wait for
-   the owner to provide the path or confirm manual upload. Do not start EAS
-   or Gradle builds.
-9. The owner builds the application from that merged source and uploads the
-   APK to this GitHub Release draft under the exact versioned filename, then
-   confirms the upload is complete.
-10. After confirmation, verify the uploaded APK privately against its build
-    artifact and complete the post-build artifact, Download block, link,
-    README and build-history checks below while the release remains a draft.
-11. After explicit publication approval and successful verification, merge
+   Then run `eas build --platform android --profile android-apk` from the
+   release branch, wait for success, download the APK outside the repository,
+   and upload it to the draft as `WealthWise-android-latest-vX.Y.Z.apk`.
+   Do not wait for the owner to build or upload it manually.
+9. Privately verify the uploaded APK against its EAS build artifact and
+   complete the post-build artifact, Download block, link, README and
+   build-history checks below while the release remains a draft.
+10. After explicit publication approval and successful verification, merge
     the release branch `--no-ff` into `main`, verify its tag target and publish.
     The fully reviewed note is already in `published/` before draft creation;
     record final publication details there without moving or duplicating it.
-12. Verify successful publication and retrieve the actual GitHub Release URL.
+11. Verify successful publication and retrieve the actual GitHub Release URL.
 
-Do not commit a release candidate before approval of its Markdown draft. The
-owner's APK build/upload confirmation is a separate gate and does not by itself
-authorize publication.
+Do not commit a release candidate before approval of its Markdown draft.
+Building and uploading the APK after merge is part of the approved release
+workflow; it does not authorize publication. Publication still requires
+separate explicit owner approval.
 
 ### Required post-build checklist (before publication)
 
 For every GitHub release:
 
-1. The owner attaches the current release Android APK under the versioned
-   latest filename `WealthWise-android-latest-vX.Y.Z.apk`:
+1. Attach the current release Android APK under the versioned latest filename
+   `WealthWise-android-latest-vX.Y.Z.apk`:
 
    ```bash
    gh release upload vX.Y.Z /path/to/WealthWise-android-latest-vX.Y.Z.apk
@@ -536,7 +534,7 @@ For every GitHub release:
    published release Download block must be identical; older notes use their
    matching versioned release URL and filename, never the latest route. State
    unavailable artifacts plainly; do not publish an invented URL.
-6. Record the verified owner-supplied build ID, Android `versionCode`,
+6. Record the verified EAS build ID, Android `versionCode`,
    profile, date and status in the `release-history.md` Builds table. Do not
    record source commits or digests there. Production Android AABs are for
    Google Play; `android-apk` builds are for GitHub downloads; iOS distribution

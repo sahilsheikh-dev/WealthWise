@@ -116,7 +116,7 @@ describe('published release download documentation', () => {
     }
   });
 
-  it('documents version-specific screenshots without retaining the capture script', () => {
+  it('documents screenshot safety and the approved EAS APK release workflow', () => {
     const template = readFileSync(join(root, 'docs', 'releases', 'TEMPLATE.md'), 'utf8')
       .replace(/\s+/g, ' ');
     const releaseConfig = readFileSync(join(root, 'docs', 'releases', 'release-config.md'), 'utf8')
@@ -125,6 +125,9 @@ describe('published release download documentation', () => {
       .replace(/\s+/g, ' ');
     const buildConfig = readFileSync(join(root, 'docs', 'releases', 'build-config.md'), 'utf8')
       .replace(/\s+/g, ' ');
+    const releaseOverview = readFileSync(join(root, 'docs', 'releases', 'README.md'), 'utf8')
+      .replace(/\s+/g, ' ');
+    const agents = readFileSync(join(root, 'AGENTS.md'), 'utf8').replace(/\s+/g, ' ');
     const readme = readFileSync(join(root, 'README.md'), 'utf8');
     const readmeScreenshotTables = [...readme.matchAll(/<table>([\s\S]*?)<\/table>/g)];
     const screenshotSets = {
@@ -146,19 +149,23 @@ describe('published release download documentation', () => {
     expect(releaseConfig).toContain('one-off capture script outside the repository');
     expect(releaseConfig).toContain('owner has explicitly authorized adding release-specific screenshots');
     expect(releaseConfig).toContain('reuse the previous release\'s complete screenshot set');
-    expect(releaseConfig).toContain('ask-user dialogue to request the absolute local path');
-    expect(releaseConfig).toContain('before GitHub Release draft creation');
+    expect(releaseConfig).toContain('eas build --platform android --profile android-apk');
+    expect(releaseConfig).toContain('Do not wait for the owner to build or upload it manually');
     expect(releasePrompt).toContain('existing v1.0.0 and v1.1.0 published notes');
     expect(releasePrompt).toContain('attach them to the matching GitHub Release');
     expect(releasePrompt).toContain('delete it after capture');
     expect(releasePrompt).toContain('the owner explicitly approves the Markdown release draft');
-    expect(releasePrompt).toContain('The owner builds the application from that merged source');
-    expect(releasePrompt).toContain('confirms the upload is complete');
-    expect(releasePrompt).toContain('ask-user dialogue to request the absolute local path');
+    expect(releasePrompt).toContain('eas build --platform android --profile android-apk');
+    expect(releasePrompt).toContain('Do not wait for the owner to build or upload it manually');
     expect(releasePrompt).toContain('move the note to `docs/releases/published/vX.Y.Z.md`');
+    expect(releaseOverview).toContain('eas build --platform android --profile android-apk');
+    expect(releaseOverview).toContain('Do not wait for the owner to build');
     expect(releaseConfig).toContain('Include every supplied screenshot');
-    expect(buildConfig).toContain('The owner builds the Android APK');
-    expect(buildConfig).toContain('Do not start the build on the owner\'s behalf');
+    expect(buildConfig).toContain('builds the Android APK from the release branch');
+    expect(buildConfig).toContain('eas build --platform android --profile android-apk');
+    expect(buildConfig).toContain('Do not wait for the owner to build or upload the APK');
+    expect(agents).toContain('EAS builds and local Gradle builds are not authorized unless explicitly requested');
+    expect(agents).toContain('EAS Android APK build is authorized for an owner-approved release');
     expect(readme).toContain('### Screenshots');
     expect(readme).not.toMatch(/^#### v\d+\.\d+\.\d+/m);
     expect(readmeScreenshotTables).toHaveLength(1);

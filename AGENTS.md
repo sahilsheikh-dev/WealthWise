@@ -63,11 +63,11 @@ apply only that exception and preserve all other rules.
 - After approved task/phase work is merged to `develop`, create
   `release/vX.Y.Z` from `develop` and create the GitHub Release draft at that
   exact candidate commit. Creating the draft may create its version tag; do
-  not retarget it. After owner APK upload/confirmation, artifact verification
-  and separate publication approval, merge the release branch `--no-ff` into
-  `main`, verify the tag target, and back-merge into `develop`. Create
-  `hotfix/vX.Y.Z` from `main`, then merge to `main`, tag, and merge to
-  `develop`.
+  not retarget it. Then build the APK with EAS using `android-apk`, upload
+  it to the draft, and verify the artifact. Only after separate publication
+  approval, merge the release branch `--no-ff` into `main`, verify the tag
+  target, and back-merge into `develop`. Create `hotfix/vX.Y.Z` from `main`,
+  then merge to `main`, tag, and merge to `develop`.
 - External contributors fork and use `contrib/ISSUE-slug`, submitting a PR
   into `develop`. Contributor PRs are squash-merged with a Conventional
   Commit title.
@@ -91,7 +91,13 @@ npx expo export --platform ios
 ```
 
 Expo exports are allowed when required. EAS builds and local Gradle builds
-are not authorized unless explicitly requested.
+are not authorized unless explicitly requested, except that an EAS Android
+APK build is authorized for an owner-approved release after the approved
+code is merged to `develop` and the GitHub Release draft exists. Use the
+`android-apk` profile, upload and verify the artifact before requesting
+separate publication approval. Do not wait for the owner to build or upload
+the APK. Builds outside this release sequence and local Gradle builds still
+require explicit authorization.
 
 ## Project rules
 
@@ -142,12 +148,13 @@ are not authorized unless explicitly requested.
   task branch and merge task -> phase -> `develop` through PRs. After the
   merge, create the GitHub Release as a draft at the merged code, attach every
   version screenshot and use each absolute asset URL in the draft body.
-  Immediately use the ask-user dialogue to request the absolute local path to
-  the owner's built APK, state the required filename, and wait for the owner
-  to provide the path or confirm manual upload. Agents do not build APKs.
-  Continue only after owner upload confirmation. Then privately verify the
-  artifact and links, finish the release records, and publish only after
-  explicit publication approval.
+  Run `eas build --platform android --profile android-apk`, wait for
+  successful completion, download and upload the APK to the draft as
+  `WealthWise-android-latest-vX.Y.Z.apk`, and privately verify the artifact
+  and links. Record the build details, then publish only after separate
+  explicit publication approval. Do not ask the owner to build or upload the
+  APK; an owner-supplied artifact is used only if the owner explicitly elects
+  that alternative.
   The README Download block and latest published release Download block must
   be identical.
   Every release updates the README Download and What's new sections and its
