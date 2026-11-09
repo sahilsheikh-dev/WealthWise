@@ -164,16 +164,28 @@ jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
 }));
 
-function item(source: PendingItem['source'], category = 'Food'): PendingItem {
+type TestPendingSource = Exclude<PendingItem['source'], { kind: 'budget' }>
+  | {
+    kind: 'budget';
+    category: string;
+    type: 'expense' | 'invest';
+    month?: string;
+    holdingId?: string;
+  };
+
+function item(source: TestPendingSource, category = 'Food'): PendingItem {
+  const pendingSource = source.kind === 'budget'
+    ? { ...source, month: source.month ?? '2026-10' }
+    : source;
   return {
     id: 'pending',
-    kind: source.kind === 'budget' ? 'budget' : 'due',
+    kind: pendingSource.kind === 'budget' ? 'budget' : 'due',
     title: 'Scheduled item',
     category,
     amount: 125,
     dueDate: '2026-10-10',
     status: 'upcoming',
-    source,
+    source: pendingSource,
     actionable: true,
   };
 }
@@ -269,7 +281,13 @@ describe('later due and planned item actions', () => {
       });
       return 'cleared-entry';
     });
-    const planned = item({ kind: 'budget', category: 'Monthly SIP', type: 'invest' }, 'Monthly SIP');
+    const planned = item({
+      kind: 'budget',
+      category: 'Monthly SIP',
+      type: 'invest',
+      month: '2026-10',
+      holdingId: 'sip-1',
+    }, 'Monthly SIP');
     let renderer: TestRenderer.ReactTestRenderer | undefined;
     act(() => {
       renderer = TestRenderer.create(
@@ -480,12 +498,43 @@ describe('later due and planned item actions', () => {
       ...holding,
       logs: [...holding.logs],
     }));
+    mockActions.clearDue.mockImplementation((_target, _rowId, amount, note) => {
+      const holding = mockStoreState.data.holdings[0];
+      if (!holding) return undefined;
+      const entryId = 'investment-entry-1';
+      holding.logs.push({
+        id: entryId,
+        date: '2026-10-12',
+        amount: Number(amount),
+        kind: 'Deposit',
+        note: String(note),
+      });
+      mockStoreState.data.transactions.push({
+        id: 'investment-transaction-1',
+        type: 'invest',
+        amount: Number(amount),
+        category: 'Other investments',
+        note: 'Cash reserve deposit',
+        date: '2026-10-12',
+        source: { kind: 'holding-entry', parentId: 'manual-cash', entryId },
+      });
+      return entryId;
+    });
+    mockActions.undoClearDue.mockImplementation((_target, entryId) => {
+      mockActions.deleteInvestmentEntry('manual-cash', String(entryId));
+    });
 
     let renderer: TestRenderer.ReactTestRenderer | undefined;
     act(() => {
       renderer = TestRenderer.create(
         <PendingItemActions
-          item={item({ kind: 'budget', category: 'Emergency cash', type: 'invest' }, 'Emergency cash')}
+          item={item({
+            kind: 'budget',
+            category: 'Emergency cash',
+            type: 'invest',
+            month: '2026-10',
+            holdingId: 'manual-cash',
+          }, 'Emergency cash')}
           today="2026-10-12"
           compact
         />,
@@ -496,13 +545,13 @@ describe('later due and planned item actions', () => {
       renderer?.root.findByProps({ children: 'Marked as paid' }).props.onPress();
     });
 
-    expect(mockActions.addInvestmentEntry).toHaveBeenCalledTimes(1);
-    expect(mockActions.addInvestmentEntry).toHaveBeenCalledWith('manual-cash', {
-      date: '2026-10-12',
-      amount: 125,
-      kind: 'Deposit',
-      note: 'Scheduled item',
-    });
+    expect(mockActions.clearDue).toHaveBeenCalledTimes(1);
+    expect(mockActions.clearDue).toHaveBeenCalledWith(
+      { kind: 'holding', id: 'manual-cash' },
+      undefined,
+      125,
+      'Scheduled item',
+    );
     expect(mockActions.addTransaction).not.toHaveBeenCalled();
     expect(mockStoreState.data.holdings[0]?.logs).toMatchObject([{
       kind: 'Deposit', amount: 125, date: '2026-10-12', note: 'Scheduled item',
@@ -514,9 +563,61 @@ describe('later due and planned item actions', () => {
 
     const toast = mockSetActionToast.mock.calls[0]?.[0] as { onAction: () => void };
     act(() => toast.onAction());
-    expect(mockActions.deleteInvestmentEntry).toHaveBeenCalledTimes(1);
-    expect(mockActions.deleteInvestmentEntry).toHaveBeenCalledWith('manual-cash', 'investment-entry-1');
+    expect(mockActions.undoClearDue).toHaveBeenCalledTimes(1);
+    expect(mockActions.undoClearDue).toHaveBeenCalledWith(
+      { kind: 'holding', id: 'manual-cash' },
+      'investment-entry-1',
+    );
     expect(mockStoreState.data).toEqual(original);
+  });
+
+  it('routes a snapshot-only manual holding budget row through clearDue', () => {
+    mockStoreState.data.monthBudgets = [{
+      month: '2026-09',
+      items: [{ name: 'Emergency cash', holdingId: 'manual-cash' }],
+    }];
+    mockStoreState.data.holdings = [{
+      id: 'manual-cash',
+      kind: 'manual',
+      name: 'Cash reserve',
+      type: 'Cash',
+      logs: [],
+    }];
+    mockActions.clearDue.mockReturnValue('entry-1');
+    mockStoreState.data.transactions.push({
+      id: 'linked-transaction',
+      amount: 125,
+      date: '2026-09-10',
+      source: { kind: 'holding-entry', parentId: 'manual-cash', entryId: 'entry-1' },
+    });
+
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    act(() => {
+      renderer = TestRenderer.create(
+        <PendingItemActions
+          item={item({
+            kind: 'budget',
+            category: 'Emergency cash',
+            type: 'invest',
+            month: '2026-09',
+            holdingId: 'manual-cash',
+          }, 'Emergency cash')}
+          today="2026-10-12"
+          compact
+          actionLabel="Paid"
+        />,
+      );
+    });
+    if (!renderer) throw new Error('Snapshot-only linked budget actions did not render.');
+    act(() => renderer?.root.findByType('button').props.onPress());
+
+    expect(mockActions.clearDue).toHaveBeenCalledWith(
+      { kind: 'holding', id: 'manual-cash' },
+      undefined,
+      125,
+      'Scheduled item',
+    );
+    expect(mockActions.addTransaction).not.toHaveBeenCalled();
   });
 
   it('records an income due as one Received transaction with undo', () => {

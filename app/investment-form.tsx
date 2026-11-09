@@ -5,9 +5,9 @@ import { Controller, useForm, useWatch, type Control, type FieldErrors } from 'r
 import { Modal, View } from 'react-native';
 
 import { AmountText } from '../src/components/AmountText';
-import { ChoiceField } from '../src/components/form/ChoiceField';
 import { Dropdown } from '../src/components/Dropdown';
 import { DateField } from '../src/components/form/DateField';
+import { FieldTitle } from '../src/components/form/FieldTitle';
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { FormSection } from '../src/components/form/FormSection';
@@ -262,7 +262,6 @@ function PlanEditor({
       />
       {!plan && startDate < today ? (
         <View style={{ gap: 8 }}>
-          <AppText weight="semibold">Past deposits</AppText>
           <SegmentedControl
             value={pastDepositsMode}
             options={[
@@ -382,29 +381,38 @@ function ManualEditor({
           onChange={field.onChange}
           error={errors.valuationMethod?.message}
         />} />
-        <Controller control={control} name="ratePct" render={({ field }) => <PercentField
-          label="Annual rate"
-          accessibilityLabel="Annual accrual rate"
-          value={field.value ?? ''}
-          onChangeText={field.onChange}
-          onBlur={field.onBlur}
-          error={errors.ratePct?.message}
-        />} />
-        <Controller control={control} name="compounding" render={({ field }) => <ChoiceField
+        <Controller control={control} name="ratePct" render={({ field }) => (
+          <FieldTitle title="Annual rate">
+            <PercentField
+              label="Annual rate"
+              accessibilityLabel="Annual accrual rate"
+              value={field.value ?? ''}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              error={errors.ratePct?.message}
+            />
+          </FieldTitle>
+        )} />
+        <Controller control={control} name="compounding" render={({ field }) => <Dropdown
           label="Compounding"
-          choices={compoundingOptions}
+          accessibilityLabel="Compounding"
+          options={compoundingOptions.map((option) => ({ value: option, title: option }))}
           value={field.value ?? 'yearly'}
           onChange={field.onChange}
           error={errors.compounding?.message}
         />} />
-        <Controller control={control} name="maturityDate" render={({ field }) => <TextField
-          label="Maturity date (YYYY-MM-DD)"
-          accessibilityLabel="Maturity date"
-          value={field.value ?? ''}
-          onChangeText={field.onChange}
-          onBlur={field.onBlur}
-          error={errors.maturityDate?.message}
-        />} />
+        <Controller control={control} name="maturityDate" render={({ field }) => (
+          <FieldTitle title="Maturity date">
+            <TextField
+              label="Maturity date (YYYY-MM-DD)"
+              accessibilityLabel="Maturity date"
+              value={field.value ?? ''}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              error={errors.maturityDate?.message}
+            />
+          </FieldTitle>
+        )} />
         <HelperText>Suggested: {suggestedValuationMethod(holdingType, Boolean(holding?.logs.some((entry) => entry.price)), ratePct === '' ? undefined : Number(ratePct))}. Changing the suggestion configures this method.</HelperText>
       </FormSection>
       {keepsEarlierEntries ? <HelperText>Entries from earlier are kept.</HelperText> : null}
@@ -440,15 +448,35 @@ function PlanFields({
   return (
     <>
       <FormSection title="Basics">
-        <Controller control={control} name="name" render={({ field }) => <TextField label="Name" accessibilityLabel="Investment name" maxLength={40} value={field.value} onChangeText={(value) => { field.onChange(value); onNameChange(value); }} onBlur={field.onBlur} error={errors.name?.message} />} />
+        <Controller control={control} name="name" render={({ field }) => (
+          <FieldTitle title="Name">
+            <TextField label="Name" accessibilityLabel="Investment name" maxLength={40} value={field.value} onChangeText={(value) => { field.onChange(value); onNameChange(value); }} onBlur={field.onBlur} error={errors.name?.message} />
+          </FieldTitle>
+        )} />
         <Controller control={control} name="type" render={({ field }) => <Dropdown label="Holding type" accessibilityLabel="Holding type" options={HOLDING_TYPES.filter((type) => holdingCapabilities(type).recurring).map((type) => ({ value: type, title: type }))} value={field.value} onChange={field.onChange} error={errors.type?.message} />} />
-        <Controller control={control} name="frequency" render={({ field }) => <ChoiceField label="Frequency" choices={frequencies} value={field.value} onChange={field.onChange} error={errors.frequency?.message} />} />
+        <Controller control={control} name="frequency" render={({ field }) => <Dropdown label="Frequency" accessibilityLabel="Frequency" options={frequencies.map((frequency) => ({ value: frequency, title: frequency }))} value={field.value} onChange={field.onChange} error={errors.frequency?.message} />} />
       </FormSection>
       <FormSection title="Contribution">
-        <Controller control={control} name="amount" render={({ field }) => <MoneyField label="Contribution amount" accessibilityLabel="Contribution amount" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.amount?.message} />} />
-        <Controller control={control} name="ratePct" render={({ field }) => <PercentField label="Annual return" accessibilityLabel="Annual return percentage" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.ratePct?.message} />} />
-        <Controller control={control} name="stepUpPct" render={({ field }) => <PercentField label="Annual step-up" accessibilityLabel="Annual step-up percentage" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.stepUpPct?.message} />} />
-        <Controller control={control} name="tenureYears" render={({ field }) => <IntegerField label="Tenure (years)" accessibilityLabel="Tenure in years" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.tenureYears?.message} icon="calendar-outline" />} />
+        <Controller control={control} name="amount" render={({ field }) => (
+          <FieldTitle title="Contribution amount">
+            <MoneyField label="Contribution amount" accessibilityLabel="Contribution amount" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.amount?.message} />
+          </FieldTitle>
+        )} />
+        <Controller control={control} name="ratePct" render={({ field }) => (
+          <FieldTitle title="Annual return">
+            <PercentField label="Annual return" accessibilityLabel="Annual return percentage" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.ratePct?.message} />
+          </FieldTitle>
+        )} />
+        <Controller control={control} name="stepUpPct" render={({ field }) => (
+          <FieldTitle title="Annual step-up">
+            <PercentField label="Annual step-up" accessibilityLabel="Annual step-up percentage" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.stepUpPct?.message} />
+          </FieldTitle>
+        )} />
+        <Controller control={control} name="tenureYears" render={({ field }) => (
+          <FieldTitle title="Tenure (years)">
+            <IntegerField label="Tenure (years)" accessibilityLabel="Tenure in years" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.tenureYears?.message} icon="calendar-outline" />
+          </FieldTitle>
+        )} />
       </FormSection>
       <FormSection title="Dates">
         <Controller control={control} name="startDate" render={({ field }) => <DateField
@@ -473,19 +501,27 @@ function PlanFields({
         <HelperText>For an existing SIP, choose when you want WealthWise to start counting expected deposits.</HelperText>
       </FormSection>
       <FormSection title="Opening and value">
-        <Controller control={control} name="opening" render={({ field }) => <MoneyField label="Opening balance" accessibilityLabel="Opening balance" value={field.value ?? ''} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.opening?.message} />} />
+        <Controller control={control} name="opening" render={({ field }) => (
+          <FieldTitle title="Opening balance">
+            <MoneyField label="Opening balance" accessibilityLabel="Opening balance" value={field.value ?? ''} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.opening?.message} />
+          </FieldTitle>
+        )} />
         <HelperText accessibilityHint={openingBalanceHint}>{openingBalanceHint}</HelperText>
-        <Controller control={control} name="actualValue" render={({ field }) => <MoneyField
-          label="Latest actual value"
-          accessibilityLabel="Latest actual value"
-          value={field.value ?? ''}
-          onChangeText={(value) => {
-            field.onChange(value);
-            if (value.trim()) onActualValueEntered();
-          }}
-          onBlur={field.onBlur}
-          error={errors.actualValue?.message}
-        />} />
+        <Controller control={control} name="actualValue" render={({ field }) => (
+          <FieldTitle title="Latest actual value">
+            <MoneyField
+              label="Latest actual value"
+              accessibilityLabel="Latest actual value"
+              value={field.value ?? ''}
+              onChangeText={(value) => {
+                field.onChange(value);
+                if (value.trim()) onActualValueEntered();
+              }}
+              onBlur={field.onBlur}
+              error={errors.actualValue?.message}
+            />
+          </FieldTitle>
+        )} />
         <HelperText accessibilityHint={actualValueHint}>{actualValueHint}</HelperText>
         <Controller control={control} name="actualValueDate" render={({ field }) => <DateField
           label="Actual value date"
@@ -531,21 +567,26 @@ function PlanFields({
           onChange={field.onChange}
           error={errors.valuationMethod?.message}
         />} />
-        <Controller control={control} name="compounding" render={({ field }) => <ChoiceField
+        <Controller control={control} name="compounding" render={({ field }) => <Dropdown
           label="Compounding"
-          choices={compoundingOptions}
+          accessibilityLabel="Compounding"
+          options={compoundingOptions.map((option) => ({ value: option, title: option }))}
           value={field.value ?? 'yearly'}
           onChange={field.onChange}
           error={errors.compounding?.message}
         />} />
-        <Controller control={control} name="maturityDate" render={({ field }) => <TextField
-          label="Maturity date (YYYY-MM-DD)"
-          accessibilityLabel="Maturity date"
-          value={field.value ?? ''}
-          onChangeText={field.onChange}
-          onBlur={field.onBlur}
-          error={errors.maturityDate?.message}
-        />} />
+        <Controller control={control} name="maturityDate" render={({ field }) => (
+          <FieldTitle title="Maturity date">
+            <TextField
+              label="Maturity date (YYYY-MM-DD)"
+              accessibilityLabel="Maturity date"
+              value={field.value ?? ''}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              error={errors.maturityDate?.message}
+            />
+          </FieldTitle>
+        )} />
         <HelperText>
           Accrual uses this plan&apos;s annual return rate. Suggested: {suggestedMethod}.
         </HelperText>
@@ -565,10 +606,22 @@ function ManualFields({
 }) {
   return (
     <FormSection title="Investment">
-      <Controller control={control} name="name" render={({ field }) => <TextField label="Name" accessibilityLabel="Holding name" maxLength={40} value={field.value} onChangeText={(value) => { field.onChange(value); onNameChange(value); }} onBlur={field.onBlur} error={errors.name?.message} />} />
-      <Controller control={control} name="type" render={({ field }) => <ChoiceField label="Type" choices={HOLDING_TYPES} value={field.value} onChange={field.onChange} error={errors.type?.message} />} />
-      <Controller control={control} name="invested" render={({ field }) => <MoneyField label="Invested" accessibilityLabel="Holding invested amount" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.invested?.message} />} />
-      <Controller control={control} name="value" render={({ field }) => <MoneyField label="Current value" accessibilityLabel="Holding current value" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.value?.message} />} />
+      <Controller control={control} name="name" render={({ field }) => (
+        <FieldTitle title="Name">
+          <TextField label="Name" accessibilityLabel="Holding name" maxLength={40} value={field.value} onChangeText={(value) => { field.onChange(value); onNameChange(value); }} onBlur={field.onBlur} error={errors.name?.message} />
+        </FieldTitle>
+      )} />
+      <Controller control={control} name="type" render={({ field }) => <Dropdown label="Type" accessibilityLabel="Holding type" options={HOLDING_TYPES.map((type) => ({ value: type, title: type }))} value={field.value} onChange={field.onChange} error={errors.type?.message} />} />
+      <Controller control={control} name="invested" render={({ field }) => (
+        <FieldTitle title="Invested">
+          <MoneyField label="Invested" accessibilityLabel="Holding invested amount" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.invested?.message} />
+        </FieldTitle>
+      )} />
+      <Controller control={control} name="value" render={({ field }) => (
+        <FieldTitle title="Current value">
+          <MoneyField label="Current value" accessibilityLabel="Holding current value" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.value?.message} />
+        </FieldTitle>
+      )} />
     </FormSection>
   );
 }

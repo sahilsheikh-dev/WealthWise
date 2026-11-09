@@ -52,7 +52,7 @@ parts count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ██████████ 99% (144/145)
+Overall progress █████████░ 87% (150/172)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -72,7 +72,7 @@ Phase 16         ██████████ 100% (3/3)
 Phase 17         ██████████ 100% (3/3)
 Phase 18         ██████████ 100% (9/9)
 Phase 19         ██████████ 100% (3/3)
-Phase 20         ██████████ 100% (25/25)
+Phase 20         ██████████ 100% (28/28)
 Phase 21         ██████████ 100% (6/6)
 Phase 22         ██████████ 100% (1/1)
 Phase 23         ██████████ 100% (4/4)
@@ -80,9 +80,16 @@ Phase 24         ██████████ 100% (1/1)
 Phase 25         ██████████ 100% (6/6)
 Phase 26         ██████████ 100% (1/1)
 Phase 27         ██████████ 100% (1/1)
-Phase 28         ██████████ 100% (21/21)
-Phase 29         ██████████ 98% (39/40)
+Phase 28         ██████████ 100% (22/22)
+Phase 29         ██████████ 100% (41/41)
 Phase 30         ██████████ 100% (3/3)
+Phase 31         ░░░░░░░░░░ 0% (0/3)
+Phase 32         ░░░░░░░░░░ 0% (0/3)
+Phase 33         ░░░░░░░░░░ 0% (0/3)
+Phase 34         ░░░░░░░░░░ 0% (0/3)
+Phase 35         ░░░░░░░░░░ 0% (0/3)
+Phase 36         ░░░░░░░░░░ 0% (0/4)
+Phase 37         ░░░░░░░░░░ 0% (0/3)
 ```
 
 | ID | Legacy ID | Status | Evidence | Last updated |
@@ -123,8 +130,9 @@ Phase 30         ██████████ 100% (3/3)
 | P19-A | — | Done | Five-group model and category mapping; five-group suggestions; grouped setup/month editors with compact controls, subtotals and recurring-items summary; v6 schema compatibility and demo data. Commits `acc94df`, `af885c1`; see the Phase 19 gate record. | 2026-10-15 |
 | P19-B | — | Done | Invest category and earned-income sync, reconciliation, Month review sources, and History/Month review/Templates actions with no Budget header menu; commit `221d2ed` and the Phase 19 gate record. | 2026-10-15 |
 | P19-C | — | Done (automated gates pass; device checks outstanding) | Restore/freeze user-owned inputs; Budget header icons; compact expandable Transactions balance card. See the Phase 19-C gate record. | 2026-10-15 |
-| P20-A | — | Done; Revised by P20-A-R1 | Derived pending rows for unpaid plan/liability dues and remaining budget lines; Pay/Clear due actions, FIFO and Undo; mock data covers overdue, upcoming and applied-budget rows. | 2026-10-15 |
+| P20-A | — | Done; Revised by P20-A-R1; Revised by P20-A-R2 | Derived pending rows for unpaid plan/liability dues and remaining budget lines; Pay/Clear due actions, FIFO and Undo; mock data covers overdue, upcoming and applied-budget rows. | 2026-10-15 |
 | P20-A-R1 | — | Done | Linked recurring-plan Budget rows and liability EMI confirmations now use shared clearDue/Undo, preserving linked ledgers and one-write behavior across entry points. | 2026-11-08 |
+| P20-A-R2 | — | Done | Linked one-time manual savings now create one Deposit entry and linked invest transaction through clearDue; one-write Undo, frozen snapshot link resolution, category duplicate suppression and exact/lower/higher payments are covered. | 2026-11-09 |
 | P20-B | — | Done | Home due action sheet and collapsed category spending with conditional Apply budget (CR-7, CR-10; formerly P19-C). | 2026-10-16 |
 | P20-C | — | Done | Restrict bottom tabs to Home, Transactions, Goals and Budget; remove detail-screen tab bars (CR-11). | 2026-10-16 |
 | P20-D | — | Done | CR-21–CR-26 delivered; focused 12 suites/294 tests and all final coverage, TypeScript, lint, Doctor and platform-export gates pass. | 2026-10-16 |
@@ -144,7 +152,9 @@ Phase 30         ██████████ 100% (3/3)
 | P20-P | — | Done | CR-60/CR-61 schema-v10 user-managed budget sections/items, v9 migration, scoped mutations, and custom-category transaction integration. 76 suites/865 tests; all six final gates pass. Device checks remain unverified. | 2026-10-18 |
 | P20-Q | `55f9eaa` | Done | CR-62–CR-65: in-screen budget management and responsive overview; 75 suites/857 tests and all six required gates pass. Simulated layouts pass; native device checks remain. | 2026-10-19 |
 | P20-R | `391a227` | Done | CR-66–CR-69: top-anchored sheets, edit-mode header trash, and responsive per-section Budget cards. 75 suites/857 tests; all six gates exit 0. Simulated layout passes; physical-device checks remain. | 2026-10-19 |
-| P20-S | — | Done | CR-70–CR-75: accessible dropdowns, shared sheet shell, actual-first values, custom budget item categories and manageable transaction-derived rows; Insurance manual items reconcile separately from linked policies. All six final gates pass; physical-device checks remain unverified. | 2026-10-19 |
+| P20-S | — | Done; Revised by P20-S-R1 | CR-70–CR-75: accessible dropdowns, shared sheet shell, actual-first values, custom budget item categories and manageable transaction-derived rows; Insurance manual items reconcile separately from linked policies. All six final gates pass; physical-device checks remain unverified. | 2026-10-19 |
+| P20-S-R1 | — | Done; Revised by P20-S-R1-R1 | Convert all non-filter app-form ChoiceField uses to Dropdown and add persistent single-line titles to eligible editable controls. SegmentedControl titles are intentionally absent per owner direction. All six final-tree gates pass; physical-device rendering remains unverified. Implementation commit `d36103e`; task-to-phase PR #42; phase-to-develop PR #43. | 2026-11-09 |
+| P20-S-R1-R1 | — | Done | Add the owner-requested rule to ask before reverting or overwriting owner edits made after agent changes. Documented in root `AGENTS.md` as R5; task-to-phase PR #44 merged, phase-to-develop PR #45. | 2026-11-09 |
 | P20-T | `e432034` | Done | CR-76–CR-77: one shared FormShell header/body/footer core for full-screen and sheet forms; all data-entry forms converted with route-param coverage. Six gates pass; native keyboard/font-scale behavior remains unverified. | 2026-10-19 |
 | P20-U | `02bfbb1` | Done | CR-86–CR-87: replace BudgetManagementSheet with section, item and income FormScreen routes; scoped save/delete Undo and route coverage. Focused suites pass; final gates and device limitations recorded below. | 2026-10-21 |
 | P20-V | `6d3feab`, `82793e8`, `1afac16`, `139230d` | Done | CR-88/CR-89: schema v13 and migration, recurrence-aware Budget planning/dues, route form, row display, demo and tests. All six automated gates pass; native-device checks remain unverified. | 2026-10-21 |
@@ -182,9 +192,10 @@ Phase 30         ██████████ 100% (3/3)
 | P28-C-R3 | — | Done | Finalized release rules, Download parity and its derived Jest regression; verified both public APK links and SHA-256, matched the EAS build, aligned the approved v1.0.0 tag, and added the owner-run device checklist. No app behavior changed; GitHub release-body edit and physical-device tests remain owner actions. | 2026-11-08 |
 | P28-C-R4 | — | Done | Reorganized README user/developer/documentation sections; removed public APK digest and commit identifiers; aligned release notes, history, release rules and verification tests. GitHub release body was not edited per instruction. | 2026-11-08 |
 | P28-D | — | Done | Established shared branching, commit and gate rules; added contributor/security guidance and GitHub templates. `develop` bootstrapped at `a258579c4b580d6f3a157b8d13de53334aa8d34d`; rule applies prospectively to legacy unreleased history. All six gates pass; Gate 1: 98 suites, 1,230 passed, 1 skipped. | 2026-11-08 |
-| P28-E | — | Done; Revised by P28-E-R1 and P28-E-R2 | Reconstructed phase/task history, established 30 phase branches and annotated tags, and verified the read-only 131-commit archive. 512 original commits are mapped exactly once; final archive tree equals main. | 2026-11-08 |
+| P28-E | — | Done; Revised by P28-E-R1, P28-E-R2 and P28-E-R3 | Reconstructed phase/task history, established 30 phase branches and annotated tags, and verified the 131-commit archive. 512 original commits are mapped exactly once. P28-E-R3 records the selected historical commits as ancestry on `develop` without changing application code. | 2026-11-08 |
 | P28-E-R1 | — | Done | Close out the phase-history evidence and record final integrated Release 2 gates, branch integrations, and remaining device/release follow-ups. | 2026-11-08 |
 | P28-E-R2 | — | Done | Preserve the local final-remote-verification commit in GitHub history while reconciling its stale status text with the current ledger. Final remote branch/tag and archive checks are recorded; no tag was changed. | 2026-11-08 |
+| P28-E-R3 | — | Done | Added ancestry-only merge records for P25-F, the v1.1.0 merge and the Phase 1 refactor on the task branch. Application source is unchanged; historical archive PR #46 remains isolated to `history/by-phase`. PR integrations are recorded below. | 2026-11-09 |
 | P28-F | — | Done; Revised by P28-F-R1, P28-F-R2, P28-F-R2-R1, P28-F-R3, P28-F-R3-R1, P28-F-R3-R2, P28-F-R3-R3 and P28-F-R3-R3-R1 | Prepared v1.1.0 on `release/v1.1.0`; all six gates passed. PR #2 merged the release into main and PR #3 back-merged main into develop. Revised by P28-F-R3 for verified EAS build, tag and publication evidence, P28-F-R3-R1 for the completed publication PR chain, P28-F-R3-R2 for historical asset rollover and checksum removal, P28-F-R3-R3 for versioned latest-asset naming, and P28-F-R3-R3-R1 for the merged filename-policy PR chain. | 2026-11-08 |
 | P28-F-R1 | — | Done | Recorded owner-reported Pass results for device checklist N39-N43; device identification fields remain blank. | 2026-11-08 |
 | P28-F-R2 | — | Done; Revised by P28-F-R2-R1 | Corrected the v1.1.0 draft contributor credits using the published v1.0.0 format, added contributor guidance, and verified the PR integration path. | 2026-11-08 |
@@ -212,7 +223,8 @@ Phase 30         ██████████ 100% (3/3)
 | P29-M | — | Superseded by P29-M2 | The schema prohibition that blocked P29-M was superseded by explicit v18 authorization; see P29-M2. | 2026-11-04 |
 | P29-N | — | Done | Transactions' Review-month section and dead reviewableMonths helper removed without affecting independent month routing. First-launch reminders prompt uses the existing meta store, is mounted inside LockGate, reuses the permission flow and defaults, and is cleared by erase-all. Focused tests and all six ordered gates pass. | 2026-11-04 |
 | P29-M2 | — | Done | PolicyPayment dueDate, shared exact-slot schedule matching and v17-to-v18 migration; store, backup, selector and Undo tests pass. All six gates pass. | 2026-11-04 |
-| P29-O | — | Inventory committed; superseded in part by P29-O1 | Report-only inventory committed before source changes. Current v18 model and dependency map are recorded below; its planned v19 unified-ledger migration is not part of P29-O1. | 2026-11-04 |
+| P29-O | — | Superseded by P29-O1 and P29-S; Revised by P29-O-R1 | Report-only inventory is retained as historical evidence. The owner later confirmed the ledger-only migration was neither authorized nor needed: P29-O1 provides the accepted unified holding workflow, and P29-S removed the cancelled prototype. | 2026-11-08 |
+| P29-O-R1 | — | Done | Closed P29-O against the explicit P29-S owner decision; no code/schema migration remains in scope. P29-O1 device checks remain open separately. Progress-ledger assertions pass (10 tests). | 2026-11-08 |
 | P29-O1 | P29-O | Done; Revised by P29-O1-R1 and P29-O1-R2 | Shared Deposit/Withdraw/Entries presentation and net-invested display on the existing v18 model; 90 suites/1140 tests and all six ordered gates pass, with no schema change. | 2026-11-04 |
 | P29-O1-R1 | — | Done | Recurring entries show completed/pending month counts, visible pending installments and collapsed paid investments; schedules stop at maturity. Domain and route tests pass at font scales 1.0, 1.3 and 2.0. No schema change. | 2026-11-08 |
 | P29-O1-R2 | — | Done | Completed and pending month counts use adjacent two-column summary cells. Visible plan installments and entries follow the selected date order, with newest first by default. Route regressions pass at font scales 1.0, 1.3 and 2.0; schema unchanged. | 2026-11-08 |
@@ -237,6 +249,28 @@ Phase 30         ██████████ 100% (3/3)
 | P30-A | — | Done | Real-store action persistence/hydration and eight screen refresh checks pass; three SQLite fallback/restart tests reproduce stale-value restoration. Source scan finds no module-level Map caches; the prior-state mutation harness passes. | 2026-11-08 |
 | P30-B | — | Done | Durable legacy authority markers win over stale SQLite after failed writes, read-back mismatch and fallback; deletion tombstones prevent removed values returning. Restart regressions now pass, and a mounted banner test verifies persistence failures are visible. | 2026-11-08 |
 | P30-C | — | Done | TypeScript source scan guards hook closure inputs, explicit memo dependencies and module-level Map caches; a dev-only diagnostic reports hydration source and last-write verification. | 2026-11-08 |
+| P31-A | — | Planned | CODE_OF_CONDUCT.md; root-document changes require explicit owner authorization when executed. Dependencies: none. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P31-B | — | Planned | YAML bug, feature and question issue forms plus config.yml; warn contributors not to include financial data. Dependencies: none. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P31-C | — | Planned | Accessibility statement and audit checklist; obtain explicit owner authorization before writing a root-level document. Dependencies: none. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P32-A | — | Planned | Decide screenshot feasibility: emulator, Maestro, adb screencap, demo data, image location and framing owner. Dependencies: none. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P32-B | — | Planned | Script core-screen captures at font scales 1.0 and 2.0 in light and dark themes. Dependencies: P32-A. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P32-C | — | Planned | Add a README Screenshots section after capture scope/location are approved; README root-document change requires explicit owner authorization when executed. Dependencies: P32-B. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P33-A | — | Planned | Research SDK 57 widget options, config plugin, dev-build need, privacy and hide-previews behavior. Dependencies: none. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P33-B | — | Planned | Implement Android widget only after research approval. Dependencies: P33-A. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P33-C | — | Planned | Implement iOS widget only if iOS distribution exists. Dependencies: P33-A and iOS distribution. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P34-A | — | Planned | Research and decide quick-capture scope and native/platform constraints. Dependencies: none. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P34-B | — | Planned | Add app shortcuts, Quick Settings tile and notification action opening a prefilled quick-add form. Dependencies: P34-A. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P34-C | — | Planned | Add an opt-in foreground shake gesture; background gestures remain out of scope unless research proves a policy-safe route. Dependencies: P34-A. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P35-A | — | Planned | Report Android notification-listener vs SMS permission, iOS impossibility, Play policy, prominent disclosure, local-only parsing and no raw-message storage. Dependencies: none. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P35-B | — | Planned | Owner go/no-go gate for transaction auto-detection. Dependencies: P35-A. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P35-C | — | Planned | Continue auto-detect implementation only after explicit owner approval; all later parts remain gated too. Dependencies: P35-B approval. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P36-A | — | Planned | Design Notes scope, links to transactions/holdings/goals, schema-v23 plan and backup/migration impact. Dependencies: none. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P36-B | — | Planned | Implement Notes schema and pure domain behavior. Dependencies: P36-A. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P36-C | — | Planned | Implement Notes UI. Dependencies: P36-B. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P36-D | — | Planned | Add deterministic Notes demo data. Dependencies: P36-C. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P37-A | — | Planned | Design per-feature skippable coach marks, replay from menu, meta-store flags rather than AppData, and accessibility. Dependencies: none. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P37-B | — | Planned | Implement the tutorial framework. Dependencies: P37-A. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P37-C | — | Planned | Implement per-feature tours. Dependencies: P37-B. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
 DEC-P29AA-EF-LINK-INTEGRITY: Assumed valid Emergency Fund links are holding IDs
@@ -1126,6 +1160,24 @@ changes.
   visible remaining/over-budget hints and unbudgeted read-only assertions are
   superseded by titles-only Dropdown options and transaction-derived edit
   affordances; reason: CR-70 and CR-75.
+- DEC-P20S-R1: the owner broadens P20-S's ChoiceField scope to all form
+  controls, including security settings, while keeping filters unchanged and
+  retaining the ChoiceField component. Replace missing persistent titles on
+  editable text, money, number, percent and date controls without changing
+  frozen components. SegmentedControl title props are intentionally omitted
+  per the owner's follow-up. Existing Dropdown titles and selected
+  values/options must be preserved when converting to Dropdown.
+  Superseded assertion: DEC-P20S's instruction to preserve other ChoiceField
+  uses. New: every non-filter ChoiceField usage in app form/settings controls
+  uses Dropdown. Reason: the owner explicitly broadened the conversion scope.
+  Test assertions move from ChoiceField/choices to Dropdown/options and retain
+  option-value and behavior checks. Title assertions do not require
+  SegmentedControl labels; no behavior assertion is weakened.
+- DEC-P20S-R1-R1: if the owner edits a file after agent changes, ask whether
+  they want those edits reverted before changing that file further. Revert or
+  overwrite owner edits only on explicit request; otherwise preserve them and
+  work around them. This project-wide instruction is recorded as R5 in
+  `AGENTS.md`.
 - DEC-P20T: the user explicitly authorizes changing only
   `src/components/form/FormScreen.tsx` among frozen inputs, and requires its
   updated SHA-256 in `frozen-manifest.json` and `formComponentsFrozen.test.ts`.
@@ -2708,11 +2760,65 @@ through shared clearDue/Undo. Old: linked planned dues could create only a plain
 transaction. New: linked entries/payments are recorded with the transaction and
 reversed through Undo. Reason: keep the instrument/payment ledger in sync
 atomically. Real-store tests verify all entry points and one persisted write.
-P20-N-R2 restores the aggregate actual-versus-planned Pace graph
+P20-A-R2 repairs linked
+one-time manual savings: the component previously searched the current-month
+snapshot and base plan instead of using the viewed-month source, so a link
+present only in a frozen snapshot fell through to addTransaction. A
+category-matched transaction still counted as Budget actual, making the
+remaining amount zero and removing the pending row even though the holding had
+no entry; the observed Budget status enum was `near`, not a literal Paid
+label. The pending-row duplicate filter also suppressed explicitly linked
+manual items when their category matched an instrument category.
+
+The committed red component regression expected clearDue for a snapshot-only
+link but observed no call. The createAppStore baseline for Savings account,
+Cash and Other manual holdings recorded one generic invest transaction, zero
+holding entries and one persisted write; with a $10,000 starting holding and a
+$5,000 planned item, Invested/value stayed $10,000 while Budget actual became
+$5,000, remaining became zero and the pending row disappeared. The exact
+Budget enum status was `near`. The reproduction was committed before
+production edits (`4cfa20c`); the real-store output was recorded separately
+(`4107494`).
+
+The fix carries the viewed month and holding ID in the pending Budget source,
+does not suppress an explicitly linked manual item, and routes its Paid/Undo
+through clearDue/undoClearDue. The shared pure action creates one Deposit and
+one linked invest transaction; clear and exact one-step Undo each perform one
+persisted write. Store tests cover Savings account, Cash and Other holdings at
+exact ($5,000), lower ($3,500) and higher ($6,500) amounts, with Budget actuals
+counted once and Invested/value verified. Domain tests cover the P29-T
+historical valuation-snapshot adjustment and Fixed Deposit rejection; plan-only
+and virtual-future-month tests verify link context. No schema change or Cash/
+Savings return-display change is intended.
+
+Hypotheses: (a) confirmed, the old lookup missed a link in the viewed-month
+snapshot; (b) confirmed, category-matched transactions drive Budget actuals
+independently of holding entries; (c) section type still determines the
+transaction type, while a valid explicit holding link selects the holding
+ledger path; linked holdings are valid only in non-system investment sections;
+(d) confirmed, category duplicate suppression could hide the linked manual
+row. The old Budget-source assertion contained only `kind`, `category` and
+`type`; the new assertion also requires the viewed `month`, because the action
+must preserve the frozen snapshot context. No assertion was weakened.
+
+The snapshot-only PendingItemActions regression now passes; Transactions and
+Budget use this shared component, and `/payment-confirm` also mounts it.
+Home exposes only `kind: 'due'` rows, not Budget rows; the user-owned
+`app/(tabs)/index.tsx` was not edited. Asset/Entries behavior is verified at
+the real-store ledger level, not on a physical device. Physical-device checks
+remain in N44. P20-N-R2 restores the aggregate actual-versus-planned Pace graph
 above the Income/Spending/Investing/Left table. Old section-specific line,
 toggle and marker assertions are replaced by aggregate Pace behavior and route
 assertions at font scales 1.0, 1.3 and 2.0 because the requested presentation
-is aggregate, not per-section. Phase 20 is 25/25.
+is aggregate, not per-section. Phase 20 is 26/26.
+
+After syncing Phase 20 with `develop`, all six required gates passed in order:
+`npm test -- --coverage` (98 suites, 1,267 passed, 1 skipped; overall coverage
+95.96/92.04/98.02/97.63% statements/branches/functions/lines; `src/data`
+91.03/87.41/94.46/94.17%; `src/domain` 96.94/92.87/98.80/98.33%; `src/lib`
+100% in all four measures), `npx tsc --noEmit`, `npx expo lint`,
+`npx expo-doctor` (21/21), `npx expo export --platform android`, and
+`npx expo export --platform ios`; each exited 0.
 
 ### Phase 21 — Emergency fund as a goal-linked model and allocation editor
 
@@ -3028,8 +3134,9 @@ evidence present in exports/checkpoints.
 | P19-A | Phase 19 | — | — | 2026-10-15 | Five-group budget model, categories, suggestion, compact setup, subtotals and recurring items (CR-5). | Done; focused and full gates pass. | `acc94df`, `af885c1` | Assumed starter split and within-group weights are recorded in Section 4; schema remains v6. | current request |
 | P19-B | Phase 19 | — | — | 2026-10-15 | Investment category and earned-income sync; History, Month review and Templates buttons; no Budget header menu (CR-9, CR-16). | Done; focused and full gates pass, including 500-case reconciliation. | `221d2ed` | Assumed the entire Budget header menu is removed. | current request |
 | P19-C | Phase 19 | — | — | 2026-10-15 | Restore and freeze user-owned input components; Budget header icons (CR-17); compact Transactions balance card (CR-18); user-owned components (CR-19). | Done; focused and full gates pass; physical-device layout remains unverified. | `d3477f2` | Assumed commits without a Copilot co-author trailer are user-authored; current field files already matched `bf4adf3`, so no restore-only commit was needed. | current request |
-| P20-A | Phase 20 | — | — | 2026-10-15 | Derived pending rows, FIFO Pay/Clear due and Undo, Transactions section and balance caption; applied budgets and recurring schedule slots (CR-6). | Done; focused 10 suites/246 tests and full 70 suites/720 tests pass; coverage, TypeScript, lint, Doctor and Android/iOS exports exit 0. | `8545909` | No new assumptions. | current request |
+| P20-A | Phase 20 | — | — | 2026-10-15 | Derived pending rows, FIFO Pay/Clear due and Undo, Transactions section and balance caption; applied budgets and recurring schedule slots (CR-6). | Done; Revised by P20-A-R1; Revised by P20-A-R2. Original focused/full gates are historical. | `8545909` | Linked-plan and linked-manual plain-transaction behaviors are superseded by P20-A-R1/R2. | current request |
 | P20-A-R1 | Phase 20 | P20-A | current | 2026-11-08 | Route paid linked recurring-plan and liability EMI actions through the shared clearDue path. | Reproduced before implementation: a linked planned investment row created only a plain transaction. Real-store tests cover Transactions, Home, Budget and reminder entry points, one write and Undo; the fixed route regressions pass. | `0778b8b740a2980fa5d08a3e60ba66cad80f63aa` (`fix(P20-A-R1): sync linked planned payments`) | Old: linked plan payment skipped the holding entry/payment ledger. New: shared clearDue/undoClearDue preserves linked ledgers. Reason: keep the payment ledger and transaction atomic. | current request |
+| P20-A-R2 | Phase 20 | P20-A | current | 2026-11-09 | Fix one-time manual savings paid from a linked Budget row through clearDue and exact one-step Undo. | Done; red snapshot-only component reproduction committed before production edits. Real-store baseline: one generic transaction, zero holding entries, one write; $10,000 Invested/value unchanged while the $5,000 Budget actual consumed the plan. Focused tests: 6 suites/267 tests; all six final gates pass. | Red regression `4cfa20c`; store baseline `4107494`; implementation `d2acde3`. | Old: lookup only current-month snapshot/base plan and generic addTransaction fallback; category actuals hid missing entries; linked manual rows could be duplicate-suppressed. New: pending source carries month/holding ID and clearDue/undoClearDue writes both linked ledger records once. Budget assertion now requires month; reason: preserve viewed frozen-snapshot context. Home has no Budget-kind due row and its user-owned screen was not edited. | current request |
 | P20-B | Phase 20 | — | — | 2026-10-16 | Home due action sheet and collapsed category spending with conditional Apply budget (CR-7, CR-10; formerly P19-C). | Done; focused Home/route tests pass; full 70-suite/720-test coverage run and all final gates pass. | `1c596e0` | Assumed Home's existing five-item due preview cap remains unchanged. | current request |
 | P20-C | Phase 20 | — | — | 2026-10-16 | Bottom tabs only on Home, Transactions, Goals and Budget; no detail-route tab bars (CR-11). | Done; focused route/tab tests pass; full 70-suite/720-test coverage run and all final gates pass. | `4d3f117` | Replaced the P18-R5 test that expected one Budget-selected bar on history/review with route-registry no-bar checks and exactly one correctly selected bar on each main tab; DEC-TABS supersedes the old behavior. | current request |
 | P20-D | Phase 20 | — | — | 2026-10-16 | Due-payment clearing, the user-kept always-visible balance card, Home due sheet position, Budget menu and due formatting (CR-21–CR-26). | Done; focused 12 suites/294 tests and final full coverage, TypeScript, lint, Doctor and Android/iOS export gates pass. | `8590a4a`, `13fbae8`, `1c596e0` (Home due-sheet implementation; CR-21), `54bcabf`, `d58ef45`, `5caf2aa`, `ae8ad7e`, `8f27f4b`, `7ec7ce0`, `c899a6d`, close-out `5bd3c41` | Assumed sheet max height is 60% of window height and bottom inset is added to 12pt spacing; FIFO clear-through is required because installments have no stored per-payment association. | current request |
@@ -3048,7 +3155,9 @@ evidence present in exports/checkpoints.
 | P20-P | Phase 20 | — | — | 2026-10-18 | Schema-v10 user-managed budget sections/items, v9 migration, scoped actions and custom-category integration (CR-60–CR-61). | Done; 76 suites/865 tests; final coverage, TypeScript, lint, Doctor and Android/iOS exports exit 0. Device criteria remain unverified. | Preflight `1e4fdce`; implementation and ledger are included in this delivery. | Assumed: an ungrouped v9 category migrates into the first spend section; non-built-in investment category strings remain custom after item deletion. See DEC-BUDGET-V10 and DEC-P20P-CR60-61. | current request |
 | P20-Q | Phase 20 | `55f9eaa` | `94297e1` | 2026-10-19 | Manage budget sections/items in Budget and make overview responsive (CR-62–CR-65). | Implementation, 75-suite/857-test coverage run, and six gates complete; simulated layouts pass. | Preflight `17f5ee4`; CR-62 `93a5356`; CR-63–CR-65 `55f9eaa`; assertion update `94297e1`. | Assumed: section rows start collapsed on each screen mount; current/future actions use P20-P scope semantics; create budget applies an empty current-month snapshot for immediate management; the stacked chart visualizes planned allocation. | current request |
 | P20-R | Phase 20 | — | — | 2026-10-19 | Top-anchored Budget and bottom-sheet form surfaces; section Cards and accessible icon actions (CR-66–CR-69). | Done; 75 suites/857 tests; full coverage, TypeScript, lint, Expo Doctor and Android/iOS exports pass. | Preflight `5049ab8`; checkpoint `75e9097`; implementation `391a227`. | Assumed: see DEC-P20R; simulated keyboard and layout contracts do not verify native rendering. | current request |
-| P20-S | Phase 20 | — | — | 2026-10-19 | Dropdowns, shared sheet form shell, Budget category selection, Actual/Planned order, and manual Insurance items (CR-70–CR-75). | Done; 76 suites/865 tests and all six required gates pass. Directory coverage: domain 98.76% lines/93.37% branches; data excluding hooks 93.14%/86.75%; pure lib 100%/100%. | Preflight `a8a95db`; CR-70 `b7e0d53`; CR-71 `b340416`; CR-72 `aa9f050`; CR-73/74 `4134844`; CR-75 `d612e2b`; correction `4d898c6`. | Assumed: see DEC-P20S; simulated keyboard, dropdown, hint wrapping and icon layout do not establish native-device behavior. | current request |
+| P20-S | Phase 20 | — | — | 2026-10-19 | Dropdowns, shared sheet form shell, Budget category selection, Actual/Planned order, and manual Insurance items (CR-70–CR-75). | Done; Revised by P20-S-R1. Original gates and implementation remain historical. | Preflight `a8a95db`; CR-70 `b7e0d53`; CR-71 `b340416`; CR-72 `aa9f050`; CR-73/74 `4134844`; CR-75 `d612e2b`; correction `4d898c6`. | Assumed: see DEC-P20S; simulated keyboard, dropdown, hint wrapping and icon layout do not establish native-device behavior. | current request |
+| P20-S-R1 | Phase 20 | P20-S | current | 2026-11-09 | Replace form ChoiceField controls with Dropdown except filters; add persistent single-line titles to eligible editable controls. | 98 suites/1,267 passed/1 skipped and all six ordered gates exit 0; physical-device rendering remains unverified. Revised by P20-S-R1-R1. | Implementation `d36103e`; task-to-phase PR #42; phase-to-develop PR #43. | Old: preserve non-designated ChoiceField uses and assert the Amount placeholder prop plus SegmentedControl titles. New: all app-form ChoiceFields use Dropdown except filters; Amount checks visible title text; transaction type options and manual Investment type selection remain asserted without requiring a SegmentedControl title. Reason: owner broadened Dropdown scope, requested visible input titles, and explicitly removed SegmentedControl titles. | current request |
+| P20-S-R1-R1 | Phase 20 | P20-S-R1 | current | 2026-11-09 | Add a shared rule for preserving owner edits: ask before changing a file with owner edits made after agent changes, and only revert/overwrite on explicit owner request. | Documentation-only update; focused progress-ledger test passes; full six gates not applicable. | Task commit `e955021`; task-to-phase PR #44 merged as `93dfb6acacca296ff7ef5c4629721efd5e0d3995`; phase-to-develop PR #45. | Old: R1 required preserving owner edits but did not require asking before further changes. New: ask first, and revert or overwrite only on explicit request. Reason: owner requested a clear safeguard after an agent restored owner-removed labels. | current request |
 | P20-T | Phase 20 | — | — | 2026-10-19 | Consolidate full-screen and sheet forms on one header/body/footer core; convert all data-entry forms (CR-76–CR-77). | Done; 76 suites/873 tests, focused form/route tests, and all six required gates pass; native keyboard and font-scale rendering remain unverified. | Preflight `b449d9d`; implementation `e432034`. | Assumed: see DEC-P20T; onboarding retains no-back exit behavior and selection/information surfaces remain non-forms. | current request |
 | P20-U | Phase 20 | — | 2 | 2026-10-21 | Replace the Budget management sheet with route forms for sections, items and income (CR-86/CR-87). | Done; 6 focused suites / 264 tests pass; full suite and final gates pass as recorded below. | Preflight/spec `47a2bd8`; route implementation `02bfbb1`; tests and final ledger are in the close-out commit. | Assumed: preserve the Spend/Invest selector on section creation; use explicit month/following scope from Budget context. Schema v12 and protected files remain unchanged. | current request |
 | P21-A | Phase 21 | — | — | 2026-10-16 | Emergency-fund goal links; remove EF entries and exclude EF from net worth; schema v7 (CR-8, CR-13, CR-20; split from P19-D). | Done; final required gates including Expo Doctor 21/21 pass. | `3ac13a7` | Migrated positive ledger balances into a manual holding; bucket links gain emergency-goal shares or are dropped if fully allocated. | current request |
@@ -3096,7 +3205,8 @@ evidence present in exports/checkpoints.
 | P29-M | Phase 29 | — | — | 2026-11-04 | Fix insurance premium payments so the exact scheduled slot clears across all surfaces, with one-write persistence and Undo. | Superseded by P29-M2 after the owner authorized schema v18 and froze the dueDate migration rule. The original store reproduction and blocker remain recorded below. | Initial reproduction from P29-M; supersession and implementation evidence recorded in P29-M2. | Assumed: P29-M's no-schema-change constraint was superseded only by the explicit P29-M2 authorization. | current request |
 | P29-N | Phase 29 | — | — | 2026-11-04 | Remove Transactions' Review-month link and add a one-time first-launch reminders prompt. | Done; Review-month UI, strings, tests and the now-unused `reviewableMonths` helper are removed. Prompt is root-mounted inside LockGate, only eligible on the Home route, persists dismissal in `wealthwise.meta.v1`, reuses the shared permission flow, and is reset by erase-all clearing metadata. Six ordered gates pass. | Focused Transactions, cash-flow, prompt, permission-helper, metadata, LockGate and route tests; final six-gate run and assertion audit recorded below. | Assumed: P29-N is new Phase 29 work. This supersedes DEC-P24A's "no prompt until reminders are switched on": an in-app setup prompt is shown once, while the operating-system permission prompt still appears only after the user taps Turn on reminders. No AppData schema or protected Home/Budget screen change. | current request |
 | P29-M2 | Phase 29 | — | — | 2026-11-04 | Replace blocked P29-M with exact policy-payment slot identity, shared due derivation, and a schema-v18 migration. | Done; early/on-time/late payments, all frequencies, consecutive slots, month-boundary timing, schedule edits, Undo, shared surface selectors, v17 migration/archive, older backup import and encrypted v18 round trip are verified. See the P29-M2 evidence below. | Six ordered gates, acceptance evidence and coverage are recorded below; commit object verification is reported in task close-out. | DEC-P29M2-POLICY-DUE-IDENTITY; Assumed: the settled slot ceases to be actionable while the generic Paid action remains for the next unpaid slot, since hiding it would prevent the required early Insurance-card payment. No Home/Budget screen edits. | current request |
-| P29-O | Phase 29 | — | — | 2026-11-04 | Inventory the split holding models, entry/schedule semantics, value calculations, and all connected UI/domain/test surfaces before implementing the owner-approved unified ledger and schema-v19 migration. | Step 1 report-only inventory is committed first; implementation remains pending after this inventory commit. Inventory includes exact current value and plan-slot matching behavior, dependency map, migration fixtures, and documented schema-version correction. | Inventory commit verified with `git cat-file -t`; implementation commit to follow separately. | DEC-P29O-LEDGER-INVENTORY; owner-approved schema v19 and valuation/ledger decisions. Assumed: this is new Phase 29 work; `app/(tabs)/index.tsx` remains user-owned and will be read-only; preserve Budget cash-flow labels. | current request |
+| P29-O | Phase 29 | — | — | 2026-11-04 | Inventory the split holding models, entry/schedule semantics, value calculations, and connected UI/domain/test surfaces before the proposed unified ledger. | Superseded by P29-O1 and closed by P29-O-R1 under the P29-S owner decision: no schema-v19 migration or ledger-only redesign is authorized or needed. The report-only inventory remains historical evidence. | Inventory commit verified with `git cat-file -t`; close-out recorded by P29-O-R1. | DEC-P29O-LEDGER-INVENTORY is historical; DEC-P29S-CANCEL-LEDGER-ONLY-STORAGE is the controlling decision. No code, schema, migration, or device work was added. | current request |
+| P29-O-R1 | Phase 29 | P29-O | current | 2026-11-08 | Resolve the remaining P29-O dashboard item after the owner-directed cancellation of the ledger-only migration. | Done; P29-O1 already supplies the accepted unified Deposit/Withdraw/Entries experience. P29-S explicitly says no schema change, runtime behavior change or migration is authorized or needed. P29-O1 device checks remain open separately. Updated status and progress guards; focused progress-ledger tests pass (10/10). | Documentation-only close-out on `task/P29-O-R1-closeout`; no application code changed. | Old: P29-O appeared pending because the proposed v19 migration was not implemented. New: P29-O is superseded by P29-O1 and P29-S; reason: the owner cancelled the separate storage redesign and confirmed no migration is needed. | current request |
 | P29-O1-R1 | Phase 29 | P29-O1 | current | 2026-11-08 | Show recurring-plan schedule progress and group paid investments in Entries; cap schedule at maturity. | Focused domain and route tests pass (2 suites, 174 tests); route checks counts, pending rows, collapsed/expanded paid entries, and maturity/final-date caps at font scales 1.0, 1.3 and 2.0. TypeScript exits 0. | Implementation and regression tests in its task commit. | Old: Entries showed only stored logs, had no month counts or collapsed paid group, and generated plan slots through tenure regardless of maturity. New: pending rows stay visible, matched paid entries are collapsed, and only scheduled slots on/before maturity are generated. Reason: make schedule status inspectable without showing installments after maturity. Old plan-list test asserted a fixed seven rows; new assertion derives pending rows from the schedule because those rows are now part of the list. | current request |
 | P29-O1-R2 | Phase 29 | P29-O1 | current | 2026-11-08 | Align recurring asset completed/pending month counts in two columns and show entries chronologically. | Red route test failed at font scales 1.0, 1.3 and 2.0 because the two count cells were absent; after adding the grid, a mixed pending/withdrawal fixture exposed non-chronological output (pending dates preceded the later-dated withdrawal). Both assertions pass after the screen change; route test also preserves count, paid-group and maturity assertions. | Asset Entries screen, route regression and derived ledger guard are in this task commit. | Old: counts were inline text rather than two summary cells, and pending plan slots were prepended separately from dated entries. New: Completed/Pending are paired summary cells; visible dated entries are sorted with the selected sort, date descending by default. Reason: align metrics with other summary pairs and keep dated rows chronologically ordered. | current request |
 | P29-W-R2 | Phase 29 | P29-W | current | 2026-11-08 | Put completed/pending liability month counts in two columns and chronologically sort dated entries. | The focused Assets/Liabilities route regression passes (1 suite; 3 font-scale cases at 1.0, 1.3 and 2.0). It checks the count-cell layout, accessible count labels, pending schedule cap, collapsed Paid EMIs state and descending chronology across pending rows and a payment after the final EMI date. | Liability Entries screen, route regression and derived ledger guard are in this task commit. | Old: Completed/Pending counts were inline text in one row, and pending EMI rows were prepended separately from dated payments. New: counts use two summary cells and pending/dated rows share newest-first date sorting; Paid EMIs remain in the existing collapsed group. Reason: make status metrics match other paired summaries and keep dated entries in chronological order. | current request |
@@ -3222,6 +3332,8 @@ row was closed, which could not represent a release workflow in progress. New:
 phase counts remain derived from ledger statuses and check the active P28-F row
 as open, then closed after integration. Reason: preserve accurate progress and
 completion checks without hardcoding totals.
+
+| P28-E-R3 | Phase 28 | P28-E | current | 2026-11-09 | Record selected historical commit ancestry on `develop` without changing application source. | Done; all six gates exit 0. Gate 1: 98 suites, 1,267 passed, 1 skipped; coverage 95.96/92.04/98.02/97.63% overall, `src/data` 91.03/87.41/94.46/94.17%, `src/domain` 96.94/92.87/98.80/98.33%, `src/lib` 100%; Expo Doctor 21/21. Baseline `origin/develop` tip/tree `825636564a4af5568e84911e34198157fd5427ea` / `dba012ebe61de2796960711ed9948b2fad1352f1`; baseline `origin/main` tip/tree `7bea8e62c10f641f1fe9aeb9e3ef605b3620250a` / `207ed97e541e55919d5cb58afbd25c4b0ed835c0`. `f994457`, `7bea8e6` and `b779c21` are ancestry parents via merge commits `a654f66`, `be7b394` and `0697d88`; those ancestry commits preserve the develop tree, while the task adds only ledger/memory documentation and a ledger test. Historical PR #46 remains isolated to `history/by-phase`; its `f5f1086` tree is not the current main tree. | Task branch `task/P28-E-R3-record-selected-ancestry`; task -> Phase 28 -> `develop` PRs. | Old: the three selected commits were represented only on the archive branch, and the archive was described as matching the current main tree. New: record their ancestry through `ours` merges while keeping the develop source tree; clarify that the archived tree is a historical snapshot, not current main. Reason: use the requested develop target and correct the stale tree comparison without changing application source or main. Updated ledger guard: old assertion required P28-E to be revised only by R1; new assertion requires R1/R2/R3 and exactly one dashboard/log row for R3. Reason: track this revision without weakening progress/branch-index count checks. | current request |
 
 ## 7. Change-request register
 
@@ -3518,7 +3630,8 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
    P19-B investment/income reconciliation and Budget actions (CR-9, CR-16), and
    P19-C header icons, user-owned inputs and balance card (CR-17–CR-19).
 2. **Phase 20 — Pending items, Home, navigation and Budget management**
-   (P20-A through P20-V Done): P20-A pending
+   (P20-A through P20-V Done; P20-A-R1/R2 and P20-S-R1-R1 revisions Done):
+   P20-A pending
    Transactions with Pay/Clear due (CR-6), P20-B Home due actions and collapsed
    spending plan (CR-7, CR-10), P20-C main-screen-only tabs (CR-11), P20-E
    balance normalization/Home confirmations/demo-load popup (CR-27, CR-28,
@@ -3558,10 +3671,11 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
     GitHub release-body edit is pending. See
     [`docs/releases/build-config.md`](releases/build-config.md), the
     release-build record and the device checklist.
-11. **Phase 29 — Product delivery** (Done through P29-AB-R2): P29-O1-R1 and
-    P29-W-R1 add schedule counts, collapsed paid entries and maturity/final-EMI
-    caps; P29-AB-R2 removes non-due recurring income from planned/due rows and
-    totals while preserving editability.
+11. **Phase 29 — Product delivery** (41/41 closed): P29-O-R1 closes the
+    cancelled ledger-migration scope; P29-O1-R1 and P29-W-R1 add schedule
+    counts, collapsed paid entries and maturity/final-EMI caps; P29-AB-R2
+    removes non-due recurring income from planned/due rows and totals while
+    preserving editability.
 12. **Phase 30 — Release 2 stabilization** (Done; physical-device re-test
     pending):
     - P30-A — Failing persistence/restart tests and mounted-screen refresh
@@ -3570,6 +3684,75 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
       the newest persisted value win and expose failed writes.
     - P30-C — Memo-input/cache source guard and development-only hydration/write
       verification diagnostic.
+13. **Phase 31 — Project health and community** (Planned):
+    - P31-A — Add `CODE_OF_CONDUCT.md`. Dependencies: none. This root document
+      requires explicit owner authorization when executed. Demo data and tests
+      are required per DEC-DEMO.
+    - P31-B — Upgrade bug, feature and question issue templates to YAML issue
+      forms and add `config.yml`; warn users not to include financial data.
+      Dependencies: none. Demo data and tests are required per DEC-DEMO.
+    - P31-C — Write an accessibility statement and accessibility-audit
+      checklist. Dependencies: none. Any root-level document requires explicit
+      owner authorization when executed. Demo data and tests are required per
+      DEC-DEMO.
+14. **Phase 32 — Screenshots** (Planned):
+    - P32-A — Decide feasibility and workflow: emulator, Maestro, adb
+      screencap, demo data, image location and who frames screenshots.
+      Dependencies: none. Demo data and tests are required per DEC-DEMO.
+    - P32-B — Script core-screen captures at font scales 1.0 and 2.0 in light
+      and dark themes. Dependencies: P32-A. Demo data and tests are required
+      per DEC-DEMO.
+    - P32-C — Add a README Screenshots section after scope and image location
+      are approved; this root-document change requires explicit owner
+      authorization when executed. Dependencies: P32-B. Demo data and tests
+      are required per DEC-DEMO.
+15. **Phase 33 — Widgets** (Planned):
+    - P33-A — Research SDK 57 options, config plugin, dev-build need, privacy
+      and hide-previews behavior. Dependencies: none. Demo data and tests are
+      required per DEC-DEMO.
+    - P33-B — Implement the Android widget. Dependencies: P33-A. Demo data and
+      tests are required per DEC-DEMO.
+    - P33-C — Implement the iOS widget only if iOS distribution exists.
+      Dependencies: P33-A and iOS distribution. Demo data and tests are
+      required per DEC-DEMO.
+16. **Phase 34 — Quick capture** (Planned):
+    - P34-A — Research and decide quick-capture scope and native/platform
+      constraints. Dependencies: none. Demo data and tests are required per
+      DEC-DEMO.
+    - P34-B — Add app shortcuts, a Quick Settings tile and a notification
+      action that opens a prefilled quick-add form. Dependencies: P34-A. Demo
+      data and tests are required per DEC-DEMO.
+    - P34-C — Add an opt-in foreground shake gesture. Background gestures are
+      out of scope unless research proves a policy-safe route. Dependencies:
+      P34-A. Demo data and tests are required per DEC-DEMO.
+17. **Phase 35 — Transaction auto-detect** (Planned; gated):
+    - P35-A — Report Android notification-listener vs SMS-permission options,
+      iOS impossibility, Play policy, prominent disclosure, local-only parsing
+      and no raw-message storage. Dependencies: none. Demo data and tests are
+      required per DEC-DEMO.
+    - P35-B — Obtain the owner's explicit go/no-go decision. Dependencies:
+      P35-A. Demo data and tests are required per DEC-DEMO.
+    - P35-C — Continue only after approval; no implementation here or in later
+      parts before the owner go/no-go. Dependencies: P35-B
+      approval. Demo data and tests are required per DEC-DEMO.
+18. **Phase 36 — Notes** (Planned):
+    - P36-A — Design scope, links to transactions/holdings/goals, schema-v23
+      plan and backup/migration impact. Dependencies: none. Demo data and tests
+      are required per DEC-DEMO.
+    - P36-B — Implement schema and pure domain behavior. Dependencies: P36-A.
+      Demo data and tests are required per DEC-DEMO.
+    - P36-C — Implement the Notes UI. Dependencies: P36-B. Demo data and tests
+      are required per DEC-DEMO.
+    - P36-D — Add deterministic Notes demo data. Dependencies: P36-C. Demo
+      data and tests are required per DEC-DEMO.
+19. **Phase 37 — First-run tutorials** (Planned):
+    - P37-A — Design per-feature skippable coach marks, replay from the menu,
+      flags in the meta store rather than AppData, and accessibility.
+      Dependencies: none. Demo data and tests are required per DEC-DEMO.
+    - P37-B — Implement the tutorial framework. Dependencies: P37-A. Demo
+      data and tests are required per DEC-DEMO.
+    - P37-C — Implement per-feature tours. Dependencies: P37-B. Demo data and
+      tests are required per DEC-DEMO.
 
 **Superseded (2026-11-08):** the earlier roadmap ended at Phase 28 and marked
 Phases 24, 26, 27 and 28 as in progress or planned. Those entries have been
@@ -3582,6 +3765,67 @@ work remain in their original phase and use `<ID>-R<n>` (for example,
 An item is `Done` only when its named source and test evidence are available.
 Paths below are repository-relative. Baseline results are not completion
 evidence for the fixes.
+
+### P28-E-R3 — selected history ancestry on develop
+
+| Area | Status | Evidence |
+|---|---|---|
+| Ancestry and tree preservation | Verified on task branch | `f994457`, `7bea8e6` and `b779c21` are ancestors via `a654f66`, `be7b394` and `0697d88`. These ancestry commits preserve the captured `origin/develop` tree `dba012ebe61de2796960711ed9948b2fad1352f1`; subsequent changes are limited to ledger/memory documentation and a ledger test. No application source paths changed. `main` remains at baseline `7bea8e62c10f641f1fe9aeb9e3ef605b3620250a`. |
+| Archive clarification | Recorded | PR #46 changed only `history/by-phase`; its tree `f5f10867771cf74d03071f4c8d8a5cbfd7941156` is an older snapshot, not the current main tree. |
+| Progress-ledger assertions | Updated | Old: the dashboard assertion required only `Revised by P28-E-R1`, and the ID lists omitted P28-E-R2/R3. New: the assertion requires `Revised by P28-E-R1, P28-E-R2 and P28-E-R3`, and both ID lists include R2/R3. Reason: ensure the new revision is tracked exactly once while retaining count and branch-index guards. |
+
+Final-tree gates, run in order: `npm test -- --coverage` 0 (98 suites,
+1,267 passed, 1 skipped; 95.96% statements, 92.04% branches, 98.02% functions,
+97.63% lines overall); `npx tsc --noEmit` 0; `npx expo lint` 0;
+`npx expo-doctor` 0 (21/21); `npx expo export --platform android` 0; and
+`npx expo export --platform ios` 0. Gate 1 coverage by `src/` directory
+(statements/branches/functions/lines): `data` 91.03/87.41/94.46/94.17%,
+`domain` 96.94/92.87/98.80/98.33%, and `lib` 100% in all four measures.
+The merge PRs follow task -> Phase 28 -> `develop`; no release, tag, or `main`
+change is included.
+
+### P20-S-R1 — form Dropdowns and visible titles
+
+| Area | Status | Evidence |
+|---|---|---|
+| ChoiceField conversion | Done (owner-approved) | All non-filter `ChoiceField` uses in app forms/settings are replaced with `Dropdown`; `ChoiceField` remains implemented, and filter chips are unchanged. |
+| Visible titles | Done (owner-approved) | Added persistent single-line titles to editable text, money, number and percent controls without an existing title, plus context-specific labels on date controls that lacked them. SegmentedControl title props are intentionally absent per the owner's follow-up. Existing Dropdown, SwitchRow and ReadOnlyRow labels remain; filters are unchanged. No editable input was replaced with ReadOnlyRow. |
+| Assertions | Updated | The old `expect(amount.props.label).toBe('Amount')` checked a placeholder prop; the replacement asserts visible `Amount` title text. The former Transaction type title and Investment type title assertions are removed per the owner's request to keep SegmentedControl titles absent; the Transaction test still asserts all three type options, and the manual Investment type test asserts that `Fixed deposit` remains selectable. |
+| Owner review | Approved | Owner approved commit/merge and explicitly directed that removed SegmentedControl labels stay removed. |
+
+Final-tree gates, run in order: `npm test -- --coverage` 0 (98 suites, 1,267
+passed, 1 skipped; 95.96% statements, 92.04% branches, 98.02% functions,
+97.63% lines overall); `npx tsc --noEmit` 0; `npx expo lint` 0;
+`npx expo-doctor` 0 (21/21); `npx expo export --platform android` 0; and
+`npx expo export --platform ios` 0. Coverage by instrumented `src/` directory
+(statements/branches/functions/lines): `data` 91.03/87.41/94.46/94.17%,
+`domain` 96.94/92.87/98.80/98.33%, and `lib` 100% in all measures. PR
+integration evidence is recorded below. Physical-device rendering remains
+unverified.
+
+### P20-A-R2 — linked one-time manual savings
+
+| Area | Status | Evidence |
+|---|---|---|
+| Before-fix screen reproduction | Reproduced | `PendingItemActions.test.tsx` failed before production edits when a Budget link existed only in the viewed-month snapshot: expected `clearDue`, observed no call. Red reproduction commit: `4cfa20c`. |
+| Before-fix real-store output | Reproduced | For Savings account, Cash and Other manual holdings: one generic invest transaction, zero holding entries, one persisted write. With $10,000 starting Invested/value and a $5,000 planned item, Budget actual became $5,000, remaining became zero and the pending row disappeared; holding values stayed $10,000 and Budget enum status was `near`. Recorded in `4107494`. |
+| After-fix atomic action and Undo | Done (focused tests) | `dues.test.ts` and `createAppStore.test.ts`: one Deposit plus one linked invest transaction; one persisted write on clear and one on exact Undo; original data is restored. Exact/lower/higher amounts ($5,000/$3,500/$6,500) run for Savings account, Cash and Other. Missing targets, invalid amounts and omitted note handling are also covered. |
+| Budget source and duplicate suppression | Done (focused tests) | `pending.test.ts` verifies explicit manual links survive category suppression and carry month/holding ID for frozen and virtual future months. `budget.test.ts` now expects the `month` field in Budget source metadata. |
+| Holding invariants | Done (focused tests) | P29-T historical valuation-snapshot adjustment is retained; Fixed Deposit is rejected; Cash/Savings return-display code is unchanged. |
+| Entry-point boundaries | Automated scope recorded | Transactions and Budget share `PendingItemActions`; `/payment-confirm` mounts the same component. Home exposes only due-kind rows, so a Budget-kind row is not available there; `app/(tabs)/index.tsx` remains untouched. Asset Entries are covered through the real store, not a physical-device run. Reminder delivery was not separately exercised with this Budget scenario. |
+| Physical-device check | Not run | N44 is added to the release device checklist and owner re-test list. |
+
+Final ordered gates (real exit codes): `npm test -- --coverage` 0 (98 suites,
+1,255 passed, 1 skipped; 95.96% statements, 92.04% branches, 98.02% functions,
+97.63% lines); `npx tsc --noEmit` 0; `npx expo lint` 0; `npx expo-doctor` 0
+(21/21); `npx expo export --platform android` 0; and
+`npx expo export --platform ios` 0. Gate 1 coverage by `src/` directory:
+`data` 91.03/87.41/94.46/94.17%, `domain` 96.94/92.88/98.80/98.33%, and
+`lib` 100% in all four measures (statements/branches/functions/lines). Earlier
+Gate 1 attempts exited 1: the initial run found `dues.ts` branch coverage at
+89.89%, then two parallel retries hit Jest's 5-second timeout under load. Guard
+tests were added without lowering thresholds; the serial diagnostic and final
+required Gate 1 command both passed. The focused 6-suite run passed 267 tests.
 
 ### Current P20-L / P21-D work
 
@@ -9074,6 +9318,79 @@ Gradle build, version bump, or release preparation was performed.
 
 ## 11. Session and release log
 
+### P28-E-R3 selected ancestry (2026-11-09)
+
+- Added three `ours` merge commits on
+  `task/P28-E-R3-record-selected-ancestry` for `f994457`, `7bea8e6` and
+  `b779c21`. The ancestry merges preserve the captured `origin/develop` tree;
+  subsequent changes are limited to ledger/memory documentation and a ledger
+  test. Application source, `main`, and release tags are unchanged. PR #46
+  remains isolated to `history/by-phase`.
+- Gate 1: 98 suites, 1,267 passed, 1 skipped; coverage 95.96/92.04/98.02/97.63%
+  overall, `src/data` 91.03/87.41/94.46/94.17%, `src/domain`
+  96.94/92.87/98.80/98.33%, and `src/lib` 100% in all measures. Gates 2-6 exit
+  0; Expo Doctor is 21/21. Full gate commands and results are in Section 10.
+- Replaced the progress-ledger test's `Revised by P28-E-R1` check with the
+  exact R1/R2/R3 revision chain and added exact-once tracking for R2/R3.
+  Reason: protect the newly recorded revision without weakening status,
+  percentage, or phase-index assertions.
+
+### Owner-edit preservation instruction (2026-11-09)
+
+- P20-S-R1-R1 adds R5 to root `AGENTS.md` at the owner's explicit request:
+  when owner edits follow agent changes, ask before changing the affected
+  file, and revert or overwrite those edits only on explicit request.
+- Documentation-only change; no code behavior changed. The focused permanent
+  progress-ledger test passes; full six-gate validation is not applicable.
+- Updated the Phase 20 dashboard and branch-index counts from 27 to 28 and
+  added the revision ID guard. Old assertion: Phase 20 had 27 subtasks. New:
+  Phase 20 has 28, including P20-S-R1-R1. Reason: ledger now tracks this
+  completed revision in its existing phase; no new phase or branch row was
+  added.
+- Commit `e955021`; task-to-phase PR #44 merged as
+  `93dfb6acacca296ff7ef5c4629721efd5e0d3995`; phase-to-develop PR #45.
+
+### P20-S-R1 form controls (2026-11-09)
+
+- Replaced app-form/settings ChoiceField controls with Dropdown, excluding
+  filters; the ChoiceField component and frozen form components remain.
+- Added persistent, single-line titles to editable text, money, number and
+  percent fields that previously relied on placeholders, and contextual
+  titles to date controls that lacked them. SegmentedControl labels are
+  intentionally omitted, as directed by the owner after review. Existing
+  Dropdown, SwitchRow and ReadOnlyRow titles remain; filters are unchanged.
+  No ReadOnlyRow was added to editable inputs.
+- After the title changes, `npx tsc --noEmit` and `npx expo lint` pass.
+  `npm test -- --runInBand --silent src/components/__tests__/RouteRenderSmoke.test.tsx src/components/__tests__/TransactionForm.test.tsx src/components/__tests__/formComponentsFrozen.test.ts src/lib/__tests__/progressLedger.test.ts`
+  passes: 4 suites, 204 tests. An initial run exposed that the existing
+  transaction assertion checked a `MoneyField` placeholder prop instead of
+  the new visible title; the assertion was updated to check rendered title
+  text as documented below.
+- Superseded test assertion: `expect(amount.props.label).toBe('Amount')` only
+  checked the input placeholder prop. It is now replaced by an assertion that
+  the rendered form contains the visible `Amount` title. Reason: the request
+  is for a persistent title, not a component label/placeholder; the visible
+  title assertion checks that exact behavior without weakening coverage.
+- Final-tree six-gate run, in order, all exit 0: `npm test -- --coverage`
+  (98 suites, 1,267 passed, 1 skipped; 95.96/92.04/98.02/97.63% overall);
+  `npx tsc --noEmit`; `npx expo lint`; `npx expo-doctor` (21/21);
+  `npx expo export --platform android`; `npx expo export --platform ios`.
+  Coverage per instrumented `src/` directory (statements/branches/functions/
+  lines): `data` 91.03/87.41/94.46/94.17%, `domain`
+  96.94/92.87/98.80/98.33%, and `lib` 100% in all measures.
+- Replaced assertions: the old `expect(amount.props.label).toBe('Amount')`
+  checked the placeholder prop; the new assertion checks rendered `Amount`
+  title text. Owner-removed SegmentedControl title expectations were removed;
+  transaction type options are still checked against `expense`, `income` and
+  `invest`, and the manual Investment type still verifies `Fixed deposit` is
+  selectable. Reason: the approved UI intentionally has no SegmentedControl
+  titles, while choice behavior remains covered.
+- Owner approved commit/merge and explicitly requested not to restore removed
+  SegmentedControl labels. No version change, release preparation, or
+  EAS/Gradle build.
+- Integration: commit `d36103e`; task-to-phase PR #42 merged as
+  `bb755347a809a46df9fd81d83859dd8c3c98027e`; phase-to-develop PR #43.
+
 ### v1.1.0 versioned APK filename integration (2026-11-08)
 
 - The filename and release-documentation changes reached GitHub `main` through
@@ -9732,7 +10049,7 @@ branches. Subtask counts are derived from the dashboard and are guarded by
 | 17 | `phase/17-cash-flow-budgets-sorting` | `phase-17-complete` | `1e206ad754e95cd53f7cc06e9cba4d2d9b151a68` | 3 |
 | 18 | `phase/18-ui-fix-rounds` | `phase-18-complete` | `3e28f763502fa09b32c00fce1bae95c71285f556` | 9 |
 | 19 | `phase/19-budget-model-and-sync` | `phase-19-complete` | `d3477f2e1266e686b611aa819be90dba113a7a5f` | 3 |
-| 20 | `phase/20-budget` | `phase-20-complete` | `eed40750f68bebc9168907f79f74a67c1f301b83` | 25 |
+| 20 | `phase/20-budget` | `phase-20-complete` | `eed40750f68bebc9168907f79f74a67c1f301b83` | 28 |
 | 21 | `phase/21-emergency-fund` | `phase-21-complete` | `96b85d72e401215a0f17864b9f8099e5452e3a66` | 6 |
 | 22 | `phase/22-demo-data` | `phase-22-complete` | `6cb4fa0a42be2c60ee3d4bf162bb41d6a2f0ea58` | 1 |
 | 23 | `phase/23-insurance` | `phase-23-complete` | `04988e8366949c0cde04912ca1f472c4b31c227f` | 4 |
@@ -9740,8 +10057,8 @@ branches. Subtask counts are derived from the dashboard and are guarded by
 | 25 | `phase/25-release-and-backups` | `phase-25-complete` | `f99445790f44a20e022201452ddd4755ecc9d243` | 6 |
 | 26 | `phase/26-accessibility-and-performance` | `phase-26-complete` | `643ef5bbb5b8481332d1416754d71b0647431f2f` | 1 |
 | 27 | `phase/27-cleanup` | `phase-27-complete` | `a2fa24f930da15c49f779577eb749b33f11a7059` | 1 |
-| 28 | `phase/28-qa-and-release` | `phase-28-complete` | `421e53f974b72f6869a725d39fd1a8dfd95baa99` | 21 |
-| 29 | `phase/29-income-recurrence` | `phase-29-complete` | `9637d222c4feb4a001384a4d9094e472eff23728` | 40 |
+| 28 | `phase/28-qa-and-release` | `phase-28-complete` | `421e53f974b72f6869a725d39fd1a8dfd95baa99` | 22 |
+| 29 | `phase/29-income-recurrence` | `phase-29-complete` | `9637d222c4feb4a001384a4d9094e472eff23728` | 41 |
 | 30 | `phase/30-release-2-stabilization` | `phase-30-complete` | `a258579c4b580d6f3a157b8d13de53334aa8d34d` | 3 |
 
 ### P29-O1-R2 / P29-W-R2 month-count layout (2026-11-08)
@@ -9771,6 +10088,20 @@ branches. Subtask counts are derived from the dashboard and are guarded by
   from dated entries / new / paired summary cells and descending date order
   across pending and dated rows / reason: make month status scannable like
   other paired financial metrics and present a single date-ordered timeline.
-- Local no-fast-forward integration: task commit `601a731` was merged into
-  Phase 29 by `22a0ec4`, then the phase was merged into local `develop`.
-  This continuation was not pushed.
+### P29-O-R1 scope close-out (2026-11-08)
+
+- The P29-O inventory and P29-O1 implementation are retained. The P29-S owner
+  decision explicitly cancels the separate ledger-only schema-v19 redesign
+  and says no schema change, runtime behavior change or data migration is
+  authorized or needed.
+- Closed P29-O as superseded by P29-O1 and P29-S; no application, schema,
+  migration or physical-device work was inferred or added. The pre-existing
+  P29-O1 physical-device checks remain listed separately in
+  [open-items.md](memory/open-items.md).
+- The focused progress-ledger test passes: 10 tests. Phase 29 now derives to
+  41/41; the dashboard, branch index, task register and regression assertions
+  agree. The phase branch is synced to the current `develop` baseline for PR
+  integration; no direct push to `develop` was made.
+- The separately requested local `codex-changes` branch (`d033d6a`) was
+  deleted at the owner's direction; its stale schema-v2 changes were not
+  ported and no remote branch was touched.

@@ -21,7 +21,7 @@ export type PendingSource =
   | { kind: 'plan'; parentId: string; slotId: string }
   | { kind: 'liability'; parentId: string; slotId: string; paymentKind: 'EMI' | 'Payment' }
   | { kind: 'policy'; parentId: string; slotId: string }
-  | { kind: 'budget'; category: string; type: 'expense' | 'invest' }
+  | { kind: 'budget'; category: string; type: 'expense' | 'invest'; month: string; holdingId?: string }
   | { kind: 'income'; incomeId: string };
 
 export type PendingItem = {
@@ -221,7 +221,10 @@ function pendingItemsWithCache(
       if (section?.system && !manualInsurance) continue;
       const type = section?.type === 'invest' ? 'invest' : 'expense';
       const category = item.name;
-      if (instrumentCategories.has(category) || representedCategories.has(category)) continue;
+      const linkedManualHolding = item.holdingId !== undefined
+        && data.holdings.some((holding) => holding.id === item.holdingId && holding.kind === 'manual');
+      if (!linkedManualHolding
+        && (instrumentCategories.has(category) || representedCategories.has(category))) continue;
       const plannedValue = plannedForMonth(
         virtual ? item : { ...item, frequency: 'monthly' },
         month,
@@ -243,7 +246,13 @@ function pendingItemsWithCache(
         amount: remaining,
         ...(dueDate === undefined ? {} : { dueDate }),
         status: dueDate === undefined ? 'planned' : dueStatus(dueDate, month, today),
-        source: { kind: 'budget', category, type },
+        source: {
+          kind: 'budget',
+          category,
+          type,
+          month,
+          ...(item.holdingId === undefined ? {} : { holdingId: item.holdingId }),
+        },
         actionable: true,
       });
     }

@@ -1,9 +1,14 @@
-<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-08 | Updates: owner and AI agents -->
+<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-09 | Updates: owner and AI agents -->
 
 # Open items
 
 ## Recently resolved
 
+- **Owner-edit handling:** P20-S-R1-R1 records R5 in root
+  [AGENTS.md](../../AGENTS.md): ask before changing a file with owner edits
+  made after agent changes, and revert or overwrite those edits only when
+  explicitly requested. Task PR #44 is merged; phase PR #45 promotes the
+  revision to `develop`. See [PROGRESS.md](../PROGRESS.md).
 - **Release 2 device checks N39-N43:** the owner reported all five checks Pass
   on 2026-11-08. The device checklist records Pass for income recurrence and
   backup restore, immediate edit refresh, aggregate Pace, linked paid sync and
@@ -39,6 +44,14 @@
   merged Phase 28 into develop; PR #6 carries the release branch to main and
   PR #7 is the main-to-develop back-merge. The full sequence preserves
   task -> phase -> develop -> release -> main -> develop.
+- **P29-O-R1 scope close-out:** P29-O is superseded by the accepted P29-O1
+  holding workflow and the explicit P29-S cancellation of the separate
+  ledger-only migration. No app implementation remains in scope; Phase 29 is
+  41/41. The P29-O1 physical-device checks below remain open.
+- **Local `codex-changes` branch:** deleted on 2026-11-08 at the owner's
+  direction. Its sole commit (`d033d6a`) was an October schema-v2 alternative
+  with checked-in coverage output and an unsafe migration; current schema-v22
+  loan/liability behavior supersedes its source changes. Nothing was ported.
 - **P29-O1-R2 / P29-W-R2 Entries layout:** completed/pending month counts now
   use paired summary cells on Assets and Liabilities; pending schedule rows
   are sorted together with dated entries. Focused route tests pass at font
@@ -56,6 +69,12 @@
   annotated phase completion tags were pushed and verified. `main`, `develop`,
   and the v1.0.0 tag were also verified; v1.0.0 was not changed. No force push
   was used.
+- **P28-E-R3 ancestry reconciliation:** owner-authorized `ours` merges record
+  `f994457`, `7bea8e6` and `b779c21` as ancestry on the task branch without
+  changing the captured `develop` tree. The accompanying changes are limited
+  to ledger/memory documentation and a ledger test. The historical archive
+  remains separate; `main` and its v1.1.0 tag are untouched. The task -> Phase
+  28 -> `develop` route is recorded in [PROGRESS.md](../PROGRESS.md).
 - **P28-F-R3 GitHub integration:** PR #11 merged the publication task into
   Phase 28 (`a2f9db2`), #12 promoted Phase 28 to develop (`3e2a5a8`), #13
   merged develop to `release/v1.1.0` (`d4d69fa`), #14 merged that release to
@@ -65,6 +84,23 @@
 
 ## Unresolved
 
+- **P20-S-R1 device check:** physical-device rendering remains unverified.
+  Owner approved commit/merge; SegmentedControl labels removed by the owner
+  remain absent. Final gate results and PR integration are in
+  [`PROGRESS.md`](../PROGRESS.md). Implementation commit `d36103e` is in
+  task-to-phase PR #42; phase-to-develop PR #43.
+- **Owner decisions for planned Phases 31-37:** clarify what the accessibility
+  statement/audit should mean; decide whether screenshots should be committed
+  to Git; decide whether notification/SMS transaction detection is worth its
+  permission and policy cost; decide whether widgets and foreground shake
+  justify native-build overhead; and decide whether this P20-A-R2 fix ships as
+  v1.1.1. These phases remain planning-only; no new feature implementation or
+  release work has started.
+- **P20-A-R2 device re-test:** run N44 in
+  [`device-test-checklist.md`](../releases/device-test-checklist.md): mark a
+  linked one-time savings item Paid from Transactions, confirm a holding entry
+  is created, then confirm one-step Undo removes it. No physical-device
+  validation has been performed.
 - **Branching baseline exception:** the initial `develop` baseline
   `a258579c4b580d6f3a157b8d13de53334aa8d34d` was created from current main,
   which contains legacy unreleased Release 2 work. Branch protection and
@@ -166,7 +202,7 @@
   ledger-only schema-v19 storage redesign. Its converter, alternate v19
   schemas/types and prototype tests had no production callers and have been
   removed. The cancelled storage design does not affect the current schema
-  v20; P29-O1's unified holding actions remain supported. Historical
+  v22; P29-O1's unified holding actions remain supported. Historical
   preparation commits are retained; see
   DEC-P29S-CANCEL-LEDGER-ONLY-STORAGE in [PROGRESS.md](../PROGRESS.md).
 - **P29-O1 physical-device checks:** verify manual and recurring holding

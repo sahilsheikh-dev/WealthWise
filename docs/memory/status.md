@@ -1,6 +1,18 @@
-<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-08 | Updates: owner and AI agents -->
+<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-09 | Updates: owner and AI agents -->
 
 # Status
+- Current instruction update: P20-S-R1-R1 adds R5 to
+  [AGENTS.md](../../AGENTS.md) at the owner's request. When owner edits follow
+  agent changes, ask before changing the affected file; revert or overwrite
+  those edits only on explicit request. Commit `e955021` is merged by task PR
+  #44 into Phase 20; phase PR #45 is the promotion to `develop`. Details are
+  recorded in [PROGRESS.md](../PROGRESS.md).
+- P28-E-R3 records the selected P25-F, v1.1.0 merge and Phase 1 commits as
+  ancestry through `task/P28-E-R3-record-selected-ancestry` and
+  `phase/28-qa-and-release`. The ancestry merges preserve the captured
+  `develop` tree; the task adds only ledger/memory documentation and a ledger
+  test. No application source or `main` changes are included. The intended
+  integration route remains task -> Phase 28 -> `develop`.
 - Current integration: P28-D, P28-C-R4, P28-E, P20-A-R1, P20-N-R2,
   P29-AB-R2, P29-O1-R1, P29-W-R1, P28-F-R1/R2 and the Phase 30 work are
   integrated into GitHub `main` and `develop`. `develop` began at main baseline
@@ -30,6 +42,43 @@
   TypeScript, lint and Expo Doctor (21/21) pass; Android and iOS exports
   succeed. The owner-provided EAS build is verified; no local EAS or Gradle
   build was run.
+- Current task: P20-S-R1 applies the owner-requested form-control conversion
+  and visible-title pass. App-form ChoiceField usages are Dropdowns;
+  ChoiceField remains and filters are unchanged. Editable text, money, number
+  and percent controls without a visible title now have persistent
+  single-line titles; existing Dropdown, SwitchRow, ReadOnlyRow and already
+  titled date controls are preserved. SegmentedControl title props remain
+  absent at the owner's direction; no editable input was replaced with
+  ReadOnlyRow. Owner approved commit/merge. Working branch:
+  `task/P20-S-R1-form-choicefields-labels`. Final gates, test totals and
+  integration PRs are recorded in `docs/PROGRESS.md`. Implementation commit
+  `d36103e` is in PR #42 (task to phase); PR #43 promotes the phase to develop.
+  Physical-device rendering remains unverified.
+- P20-S-R1 final-tree validation: all six ordered gates exit 0. Coverage:
+  98 suites, 1,267 passed, 1 skipped; 95.96/92.04/98.02/97.63% overall
+  (statements/branches/functions/lines), `src/data`
+  91.03/87.41/94.46/94.17%, `src/domain` 96.94/92.87/98.80/98.33%,
+  and `src/lib` 100% in all measures. Expo Doctor is 21/21.
+- Previous task: P20-A-R2 repairs Paid on a linked one-time manual savings
+  Budget row. The pre-fix component reproduction confirmed that a link present
+  only in a viewed-month snapshot fell through to a generic transaction;
+  category-matched actuals hid the missing holding entry. The shared
+  clearDue/undoClearDue path now creates one Deposit and one linked invest
+  transaction in one persisted write, and exact Undo removes both in one
+  write. Store tests cover Savings account, Cash and Other manual holdings at
+  exact, lower and higher amounts. No schema/version/release change was made.
+  Final ordered gates on the develop-synced phase tree all exit 0: 98 suites,
+  1,267 passed and 1 skipped; overall coverage 95.96/92.04/98.02/97.63%
+  (statements/branches/functions/lines). `src/data`:
+  91.03/87.41/94.46/94.17%; `src/domain`: 96.94/92.87/98.80/98.33%;
+  `src/lib`: 100% in all four measures.
+  TypeScript, lint, Expo Doctor 21/21, Android export and iOS export pass.
+  N44 remains unverified on a physical device; no feature from planned
+  Phases 31-37 has been started. Owner decisions are listed in
+  [open-items.md](./open-items.md), with full evidence in
+  [PROGRESS.md](../PROGRESS.md). Integration route: task PR #40 merged into
+  Phase 20; phase PR #41 carries the synchronized branch to develop after
+  sync merge `6982ff2`.
 - Ordered release-branch gates on `release/v1.1.0`: all six exit 0. Gate 1
   has 98 suites, 1,242 passed, 1 skipped; coverage is 95.96/92.01/98.01/97.62%
   overall, `src/data` 91.03/87.39/94.46/94.17%, `src/domain`
@@ -48,9 +97,11 @@
   parity, release notes and build-history record. The owner-approved
   `preview` profile and reused versionCode 1 exceptions are documented.
 - P28-E archive evidence: 337 direct plus 175 date-fallback mappings; zero
-  unmapped hashes, 512 unique original commits, 131 synthetic archive commits,
-  and a final tree equal to main. The later route-diagnostic and ledger
-  revisions are outside the read-only snapshot. Full details are in
+  unmapped hashes, 512 unique original commits, and 131 synthetic archive
+  commits. Its tree matched `main` at the original verification point; the
+  current archive tree is an older snapshot, not the current `main` tree. The
+  later route-diagnostic and ledger revisions are outside the read-only
+  snapshot. Full details are in
   [PROGRESS.md](../PROGRESS.md).
 - P28-F-R3-R2 corrected historical downloads: the v1.0.0 asset is now
   `WealthWise-android-v1.0.0.apk` at its version-specific URL, and the GitHub
@@ -66,6 +117,14 @@
   `release/v1.1.0`, release to main, then main back to develop. Remote trees
   for main, develop, release and Phase 28 are identical; the tag was not
   changed.
+- P29-O-R1 closes the only uncompleted Phase 29 implementation row. The
+  proposed ledger-only migration was explicitly cancelled as unnecessary;
+  P29-O1's accepted unified holding workflow remains. Phase 29 is 41/41 after
+  the close-out. P29-O1's physical-device checks remain unverified.
+- The owner directed deletion of local `codex-changes` (`d033d6a`). Its
+  October schema-v2 loan/liability alternative was stale against schema v22,
+  included generated coverage, and contained a migration defect. Nothing was
+  ported or pushed.
 - Protected hashes reverified with `git hash-object`: Budget
   `b60f77af4f76d47f2cee07393fe9d8f3fa6bd04c` and Home
   `d3d1e465fe9f5d238d338afeb033e2a54889ddc6`. Current values and
@@ -227,9 +286,10 @@
   legacy schedule outputs. P29-M2 supersedes the blocked P29-M.
   Findings and evidence are recorded in [PROGRESS.md](../PROGRESS.md).
 - P29-O Step 1 report-only inventory is committed. P29-O1 supersedes its
-  schema-v19 model for this step and changes only the presentation/derived
-  invested display on the existing schema-v18 ledger. The original inventory
-  remains historical; see [PROGRESS.md](../PROGRESS.md).
+  proposed schema-v19 model and delivers the accepted presentation/derived
+  invested display on the existing holding model. P29-O-R1 closes the proposed
+  migration under the P29-S owner decision; the original inventory remains
+  historical. See [PROGRESS.md](../PROGRESS.md).
 - P29-N remains complete. Transactions no longer shows the Review-month link;
   Budget's independent month routing and Home remain unchanged. The one-time
   reminders prompt is mounted inside `LockGate` and stores its handled flag in
@@ -241,8 +301,8 @@
   `app/(tabs)/index.tsx` remains user-owned and was not edited.
 - Phase 29 status: P29-O2 is Cancelled by the owner; P29-S, P29-T, P29-U,
   P29-V and P29-W are Done. P29-M is
-  Superseded by P29-M2; P29-O inventory is committed and P29-O1 remains Done
-  on schema v18. P29-S makes no behavior or schema change.
+  Superseded by P29-M2; P29-O is superseded by P29-O1/P29-S and closed by
+  P29-O-R1. P29-O1 remains Done. P29-S makes no behavior or schema change.
   Includes P29-F2, P29-F3 and
   P29-F4. DEC-P29E-HOLDING-DELETE withdraws Undo after holding deletion; the
   retained same-write Budget unlink requirement is proven.

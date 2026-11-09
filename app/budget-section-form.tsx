@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { useState } from 'react';
 
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
+import { FieldTitle } from '../src/components/form/FieldTitle';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { SegmentedControl } from '../src/components/form/SegmentedControl';
 import { TextField } from '../src/components/form/TextField';
@@ -153,15 +154,17 @@ export default function BudgetSectionFormScreen() {
         control={control}
         name="name"
         render={({ field }) => (
-          <TextField
-            label="Name"
-            accessibilityLabel="Budget category name"
-            value={field.value}
-            onChangeText={field.onChange}
-            onBlur={field.onBlur}
-            maxLength={30}
-            error={errors.name?.message}
-          />
+          <FieldTitle title="Name">
+            <TextField
+              label="Name"
+              accessibilityLabel="Budget category name"
+              value={field.value}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              maxLength={30}
+              error={errors.name?.message}
+            />
+          </FieldTitle>
         )}
       />
       {!section ? (

@@ -2177,7 +2177,7 @@ describe('budget plans and monthly views', () => {
       expect(insuranceDues).toEqual([expect.objectContaining({
         title: 'Insurance',
         amount: 365,
-        source: { kind: 'budget', category: 'Insurance', type: 'expense' },
+        source: { kind: 'budget', category: 'Insurance', type: 'expense', month: '2026-03' },
       })]);
     });
 
