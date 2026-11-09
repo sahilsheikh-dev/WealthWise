@@ -7,6 +7,11 @@
   those edits only on explicit request. Commit `e955021` is merged by task PR
   #44 into Phase 20; phase PR #45 is the promotion to `develop`. Details are
   recorded in [PROGRESS.md](../PROGRESS.md).
+- P28-E-R3 records the selected P25-F, v1.1.0 merge and Phase 1 commits as
+  ancestry through `task/P28-E-R3-record-selected-ancestry` and
+  `phase/28-qa-and-release`. The task tree matches the captured `develop`
+  baseline; no application source or `main` changes are included. The intended
+  integration route remains task -> Phase 28 -> `develop`.
 - Current integration: P28-D, P28-C-R4, P28-E, P20-A-R1, P20-N-R2,
   P29-AB-R2, P29-O1-R1, P29-W-R1, P28-F-R1/R2 and the Phase 30 work are
   integrated into GitHub `main` and `develop`. `develop` began at main baseline
@@ -91,9 +96,11 @@
   parity, release notes and build-history record. The owner-approved
   `preview` profile and reused versionCode 1 exceptions are documented.
 - P28-E archive evidence: 337 direct plus 175 date-fallback mappings; zero
-  unmapped hashes, 512 unique original commits, 131 synthetic archive commits,
-  and a final tree equal to main. The later route-diagnostic and ledger
-  revisions are outside the read-only snapshot. Full details are in
+  unmapped hashes, 512 unique original commits, and 131 synthetic archive
+  commits. Its tree matched `main` at the original verification point; the
+  current archive tree is an older snapshot, not the current `main` tree. The
+  later route-diagnostic and ledger revisions are outside the read-only
+  snapshot. Full details are in
   [PROGRESS.md](../PROGRESS.md).
 - P28-F-R3-R2 corrected historical downloads: the v1.0.0 asset is now
   `WealthWise-android-v1.0.0.apk` at its version-specific URL, and the GitHub
