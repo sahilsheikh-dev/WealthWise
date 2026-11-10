@@ -52,7 +52,7 @@ parts count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress ████████░░ 81% (161/199)
+Overall progress ████████░░ 81% (164/202)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -74,17 +74,17 @@ Phase 18         ██████████ 100% (9/9)
 Phase 19         ██████████ 100% (3/3)
 Phase 20         ██████████ 100% (29/29)
 Phase 21         ██████████ 100% (6/6)
-Phase 22         ██████████ 100% (1/1)
+Phase 22         █████░░░░░ 50% (1/2)
 Phase 23         ██████████ 100% (4/4)
 Phase 24         ██████████ 100% (1/1)
 Phase 25         ██████████ 100% (6/6)
 Phase 26         ██████████ 100% (1/1)
 Phase 27         ██████████ 100% (1/1)
-Phase 28         ██████████ 97% (32/33)
+Phase 28         █████████░ 91% (32/35)
 Phase 29         ██████████ 100% (41/41)
 Phase 30         ██████████ 100% (3/3)
 Phase 31         ░░░░░░░░░░ 0% (0/5)
-Phase 32         ░░░░░░░░░░ 0% (0/3)
+Phase 32         ██████████ 100% (3/3)
 Phase 33         ░░░░░░░░░░ 0% (0/3)
 Phase 34         ░░░░░░░░░░ 0% (0/3)
 Phase 35         ░░░░░░░░░░ 0% (0/3)
@@ -168,7 +168,8 @@ Phase 40         ░░░░░░░░░░ 0% (0/2)
 | P21-C1 | `3405101c1d65b6dfdbc7d84176d17b3208f389ca` | Done | CR-39: resolve malformed stored emergency-fund allocations, repair/archive on hydration and block invalid form saves; schema remains v8. | 2026-10-17 |
 | P21-D | — | Done | CR-51; null/default/repair targets are Cash 10, Bank account 40, FD / RD 50. Full tests/coverage and all required gates pass; schema v8 unchanged. | 2026-10-18 |
 | P21-E | `c199c8e` | Done | CR-90: replace the predefined allocation-item picker and custom-option modal with a shared-shell add/edit item route form. Schema v13 remains unchanged; full gates pass. | 2026-10-21 |
-| P22-A | — | Done | `1f2d9c8`; deterministic four-month linked demo and undoable dev loader; final acceptance tests and all required gates pass. | 2026-10-16 |
+| P22-A | — | Done; Revised by P22-A-R1 | `1f2d9c8`; deterministic four-month linked demo and undoable dev loader; final acceptance tests and all required gates pass. | 2026-10-16 |
+| P22-A-R1 | — | In progress | Expand deterministic demo data to six months, Rs 1,00,000 earned income/month, Rs 1 crore assets, Rs 10 lakh liabilities, and goals capped at 87%; preserve fixture coverage and document directly seeded holding openings. | 2026-11-10 |
 | P23-A | P15-F | Done | Schema v11 policy model, migration/archive, pure actions/summary, active-only schedule and budget dues, Undo and demo coverage; no screens. Six final gates pass. | 2026-10-21 |
 | P23-B | — | Done | CR-80/CR-81: schema v12 cover goals, typed insurance categories, domain summary/target/suggestion actions, and Budget reconciliation. 78 suites/914 tests and all six gates pass; native device checks remain. | 2026-10-21 |
 | P23-C | — | Done | CR-82–CR-85: Insurance cover and policy screens, cover targets, premium linking, and Goals/Budget/Home entry points; screen, form, transaction and store tests. Schema v12 preserved. Goals link and compact Home gap/missing row superseded by P23-D. | 2026-10-21 |
@@ -212,7 +213,9 @@ Phase 40         ░░░░░░░░░░ 0% (0/2)
 | P28-E-R4 | — | Done | Connected the complete `history/by-phase` archive ancestry to `develop` through task PR #49 and phase PR #50. Every remote branch tip is reachable from `develop`; `main` and `release/v1.1.0` remain unchanged. The ancestry-only merge preserved application code. | 2026-11-09 |
 | P28-E-R5 | — | Done; Revised by P28-E-R5-R1 | Audited the 403 non-merge first-parent commits after the initial commit. They are already present in `main` and `develop`; all 30 phase branches exist, and none of these commits can be newly introduced by PR without rewriting history. Created `release/v1.0.0` at the existing v1.0.0 tag target. Task PR #52 merged into Phase 28 as `f9bb715`; phase PR #53 later merged into `develop`. | 2026-11-09 |
 | P28-E-R5-R1 | — | Done | Finalized P28-E-R5 integration evidence: Phase 28 PR #53 merged into `develop` as `0402592`; no historical commit subjects or hashes were changed, and `main` and release branch trees remain unchanged. | 2026-11-09 |
-| P28-F | — | Done; Revised by P28-F-R1, P28-F-R2, P28-F-R2-R1, P28-F-R3, P28-F-R3-R1, P28-F-R3-R2, P28-F-R3-R3, P28-F-R3-R3-R1, P28-F-R4, P28-F-R4-R1-R1, P28-F-R4-R1-R1-R1-R1-R1, P28-F-R4-R1-R1-R1-R1-R1-R1 and P28-F-R4-R1-R1-R1-R1-R1-R1-R1 | Prepared v1.1.0 on `release/v1.1.0`; all six gates passed. PR #2 merged the release into main and PR #3 back-merged main into develop. Revised by P28-F-R3 for verified EAS build, tag and publication evidence, P28-F-R3-R1 for the completed publication PR chain, P28-F-R3-R2 for historical asset rollover and checksum removal, P28-F-R3-R3 for versioned latest-asset naming, P28-F-R3-R3-R1 for the merged filename-policy PR chain, Revised by P28-F-R4 for a review-only v1.1.1 candidate, P28-F-R4-R1 for supplied screenshot integration and owner-led release workflow, P28-F-R4-R1-R1 for the approved v1.1.1 release integration, P28-F-R4-R1-R1-R1-R1-R1 for screenshot-asset naming, latest-version rules and APK handoff corrections, P28-F-R4-R1-R1-R1-R1-R1-R1 for template-aligned historical metadata and release preparation, and P28-F-R4-R1-R1-R1-R1-R1-R1-R1 for v1.1.1 publication and post-publication asset/doc rollover. | 2026-11-08 |
+| P28-F | — | Done; Revised by P28-F-R1, P28-F-R2, P28-F-R2-R1, P28-F-R3, P28-F-R3-R1, P28-F-R3-R2, P28-F-R3-R3, P28-F-R3-R3-R1, P28-F-R4, P28-F-R4-R1-R1, P28-F-R4-R1-R1-R1-R1-R1, P28-F-R4-R1-R1-R1-R1-R1-R1, P28-F-R4-R1-R1-R1-R1-R1-R1-R1 and P28-F-R5 | Prepared v1.1.0 on `release/v1.1.0`; all six gates passed. PR #2 merged the release into main and PR #3 back-merged main into develop. Revised by P28-F-R3 for verified EAS build, tag and publication evidence, P28-F-R3-R1 for the completed publication PR chain, P28-F-R3-R2 for historical asset rollover and checksum removal, P28-F-R3-R3 for versioned latest-asset naming, P28-F-R3-R3-R1 for the merged filename-policy PR chain, Revised by P28-F-R4 for a review-only v1.1.1 candidate, P28-F-R4-R1 for supplied screenshot integration and owner-led release workflow, P28-F-R4-R1-R1 for the approved v1.1.1 release integration, P28-F-R4-R1-R1-R1-R1-R1 for screenshot-asset naming, latest-version rules and APK handoff corrections, P28-F-R4-R1-R1-R1-R1-R1-R1 for template-aligned historical metadata and release preparation, P28-F-R4-R1-R1-R1-R1-R1-R1-R1 for v1.1.1 publication and post-publication asset/doc rollover, and P28-F-R5 for repository-backed, browser-viewable screenshots and roadmap cancellation. | 2026-11-08 |
+| P28-F-R5 | — | In progress | Cancel screenshot-capture work because the owner already supplied the images; commit the 23 versioned screenshots in-repository with browser-viewable links, update release guides, and resolve the repository screenshot open decision. | 2026-11-10 |
+| P28-G | — | In progress | Replace ledger phase labels with PN notation in `docs/PROGRESS.md` and `docs/memory/*`; add a ledger-derived glossary and regression guards while preserving documented exclusions. | 2026-11-10 |
 | P28-F-R1 | — | Done | Recorded owner-reported Pass results for device checklist N39-N43; device identification fields remain blank. | 2026-11-08 |
 | P28-F-R2 | — | Done; Revised by P28-F-R2-R1 | Corrected the v1.1.0 draft contributor credits using the published v1.0.0 format, added contributor guidance, and verified the PR integration path. | 2026-11-08 |
 | P28-F-R2-R1 | — | Done; Revised by P28-F-R3 | Corrected stale branch/GitHub audit records; task and Phase 28 PRs are integrated into develop, with release and back-merge PRs carrying the correction through main. Latest six ordered gates pass: 98 suites, 1,243 passed, 1 skipped; coverage 95.96/92.01/98.01/97.62% overall, `src/data` 91.03/87.39/94.46/94.17%, `src/domain` 96.95/92.85/98.80/98.32%, `src/lib` 100%; TypeScript, lint, Doctor 21/21, Android export and iOS export all pass. At that revision v1.1.0 was untagged; publication is recorded by P28-F-R3. | 2026-11-08 |
@@ -278,18 +281,18 @@ Phase 40         ░░░░░░░░░░ 0% (0/2)
 | P31-C | — | Planned | Write an accessibility statement and audit checklist; owner confirmed documentation plus audit, not new app features. Dependencies: none. | 2026-11-09 |
 | P31-D | — | Planned | Privacy statement derived only from verified source facts: local-only storage, no network calls or analytics, local notifications, permissions, encrypted-backup scope, and the unencrypted-at-rest limit. Root document; explicit owner authorization required when executed. Dependencies: P39-C. | 2026-11-10 |
 | P31-E | — | Planned | GitHub Actions workflow for pull requests to develop and main; run gates 1-4 on the Node version in .nvmrc, pin action versions, use no secrets and minimal permissions, and verify with a real PR run. Owner then sets branch protection to require it. Dependencies: none. | 2026-11-10 |
-| P32-A | — | Planned | Use Device Hub.app (not Android tooling); capture only synthetic demo data; keep the capture script outside the repository and delete it after use; select versioned screenshot paths. Dependencies: none. | 2026-11-09 |
-| P32-B | — | Planned | Capture feature screenshots from the matching release build with synthetic data, except where the owner explicitly approves reuse of the same image across versions; do not capture personal phone data or retain/package the temporary script. Dependencies: P32-A. | 2026-11-09 |
-| P32-C | — | Planned | Capture and add reviewed version-specific screenshots to the README, release Markdown and GitHub Release bodies, then attach images to matching releases, including v1.0.0 and v1.1.0. The sections are present; image assets remain pending. Owner explicitly authorizes screenshot-only additions to published records. Dependencies: P32-B. | 2026-11-09 |
-| P33-A | — | Held by owner | Widgets are deferred; retain SDK 57/platform/privacy research for future reactivation. Dependencies: none. | 2026-11-09 |
-| P33-B | — | Held by owner | Android widget implementation is deferred until the owner reactivates the feature and approves research. Dependencies: P33-A. | 2026-11-09 |
-| P33-C | — | Held by owner | iOS widget implementation is deferred; retain the iOS-distribution condition for future reactivation. Dependencies: P33-A and iOS distribution. | 2026-11-09 |
-| P34-A | — | Held by owner | Quick capture (shake, double-tap back or key combination) is deferred; retain scope/platform research for future reactivation. Dependencies: none. | 2026-11-09 |
-| P34-B | — | Held by owner | App shortcuts, Quick Settings and notification-action quick capture are deferred. Dependencies: P34-A. | 2026-11-09 |
-| P34-C | — | Held by owner | Foreground shake capture is deferred; background gestures remain out of scope unless research proves a policy-safe route. Dependencies: P34-A. | 2026-11-09 |
-| P35-A | — | Held by owner | SMS/notification transaction auto-detection is deferred; retain permission, platform and policy research for future reactivation. Dependencies: none. | 2026-11-09 |
-| P35-B | — | Held by owner | The owner go/no-go gate for transaction auto-detection is deferred until reactivation. Dependencies: P35-A. | 2026-11-09 |
-| P35-C | — | Held by owner | Do not implement transaction auto-detection or later parts until the owner explicitly reactivates and approves it. Dependencies: P35-B approval. | 2026-11-09 |
+| P32-A | — | Cancelled by owner | Screenshot capture was cancelled because the owner already supplied the screenshots. Dependencies: none. | 2026-11-10 |
+| P32-B | — | Cancelled by owner | Screenshot capture was cancelled because the owner already supplied the screenshots. Dependencies: P32-A. | 2026-11-10 |
+| P32-C | — | Cancelled by owner | Screenshot capture was cancelled because the owner already supplied the screenshots; repository-backed image organization is handled by P28-F-R5. Dependencies: P32-B. | 2026-11-10 |
+| P33-A | — | Planned | Widgets are deferred; retain SDK 57/platform/privacy research for future reactivation. Dependencies: none. | 2026-11-10 |
+| P33-B | — | Planned | Android widget implementation requires owner reactivation and research approval. Dependencies: P33-A. | 2026-11-10 |
+| P33-C | — | Planned | iOS widget implementation requires owner reactivation and iOS distribution. Dependencies: P33-A and iOS distribution. | 2026-11-10 |
+| P34-A | — | Planned | Quick capture (shake, double-tap back or key combination) requires renewed scope/platform research. Dependencies: none. | 2026-11-10 |
+| P34-B | — | Planned | App shortcuts, Quick Settings and notification-action quick capture require P34-A research. Dependencies: P34-A. | 2026-11-10 |
+| P34-C | — | Planned | Foreground shake capture requires P34-A research; background gestures remain out of scope unless research proves a policy-safe route. Dependencies: P34-A. | 2026-11-10 |
+| P35-A | — | Planned | SMS/notification transaction auto-detection requires permission, platform and policy research. Dependencies: none. | 2026-11-10 |
+| P35-B | — | Planned | Obtain the owner's explicit go/no-go decision before transaction auto-detection implementation. Dependencies: P35-A. | 2026-11-10 |
+| P35-C | — | Planned | No transaction auto-detection implementation may begin until the owner explicitly gives a go decision in P35-B. Dependencies: P35-B owner go/no-go approval. | 2026-11-10 |
 | P36-A | — | Planned | Design Notes for text, voice/audio recordings, photos and videos; define optional financial-record links, local storage, limits, backup/migration and schema-v23 impact. Dependencies: none. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
 | P36-B | — | Planned | Implement Notes schema, attachment metadata and pure domain behavior with offline-safe storage and backup compatibility. Dependencies: P36-A. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
 | P36-C | — | Planned | Implement Notes UI for writing, recording and attaching/viewing photos and videos. Dependencies: P36-B. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
@@ -697,7 +700,7 @@ changes.
   `midnight`. Tabs are Home, Transactions, Goals, Budget.
 - DEC-DEMO: every part that adds or changes a feature also extends demo data
   and adds tests. P22-A adds `buildDemoData(today)` in `src/mock/demoData.ts`:
-  deterministic IDs and amounts, explicit injected date, and four complete
+  deterministic IDs and amounts, explicit injected date, and six complete
   months ending with the current month. Keep `src/mock/data.ts` and its
   established fixtures stable. The data covers all current budget/investment
   categories, linked instrument/payment transactions, an overdue SIP, upcoming
@@ -713,6 +716,22 @@ changes.
   P20-H current-month snapshot deliberately has a fully paid Festival row, an
   overdue Bills row, a partially paid Food row and a linked SIP row so the
   grouped Budget screen demonstrates Paid, Overdue, partial and Auto states.
+  P22-A-R1 directly seeds holding opening values rather than deriving the
+  crore-scale portfolio from six months of flows. The demo monthly earned
+  income is exactly Rs 1,00,000, total assets are Rs 1 crore including linked
+  Emergency Fund holdings, liabilities total Rs 10 lakh, and every goal is
+  capped at 87% saved. These are deterministic sample values, not personal
+  financial data.
+- DEC-CR107-SCREENSHOTS: the owner supplied all 23 screenshots, so capture
+  work P32-A/B/C is cancelled. The screenshots are committed under
+  `docs/releases/screenshots/vX.Y.Z/` and release-note thumbnails link to
+  browser-viewable repository blobs with raw repository images. This
+  supersedes the earlier "no screenshots in the repository" decision and
+  resolves the open decision to commit screenshots to Git as YES. Screenshots
+  are not GitHub Release assets; only APKs are attached.
+- DEC-CR107-MAIN-MERGE: for CR-107 only, the owner authorizes merging
+  `develop` to `main` and back-merging `main` to `develop` without a release,
+  version bump or tag. No other release or main-branch rule changes.
   The strict backup/import entry
   schema accepts `snapshotAdjustment`, matching the app schema so valid
   manual-holding entries can be replaced and restored without losing metadata.
@@ -3712,8 +3731,9 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
    allocation table (CR-14, CR-15); P21-C normal-mode presentation and
    allocation item editing (CR-37, CR-38); P21-C1 invalid-allocation crash
    repair (CR-39), with schema v8 unchanged.
-4. **Phase 22 — Demo data** (Done): P22-A four months of linked demo data
-   (CR-12).
+4. **Phase 22 — Demo data**: P22-A's four-month demo data (CR-12) is Done;
+   P22-A-R1 is revising it to six complete months and crore-scale assets and
+   liabilities while keeping the existing demo fixtures stable.
 5. **Phase 23 — Insurance** (Done) [P15-F].
 6. **Phase 24 — Reminders and notifications** (Done), including CR-1
    [P15-K]. P24-A implemented local reminders and confirmation; CR-1's former
@@ -3768,27 +3788,21 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
       versions, no secrets and minimal permissions. Verify with a real PR run;
       the owner then configures branch protection to require it. Dependencies:
       none.
-14. **Phase 32 — Screenshots** (Planned):
-    - P32-A — Use Device Hub.app, not Android tooling. Capture only
-      deterministic synthetic demo data. Keep the one-off capture script
-      outside the repository and delete it after use; do not retain or package
-      it with the app. Choose versioned screenshot paths. Dependencies: none.
-    - P32-B — Capture screenshots of each release's new features from that
-      exact release build, at the agreed screens/settings, with synthetic data.
-      Never capture personal phone data. Dependencies: P32-A.
-    - P32-C — Add version-specific images to README, the release template,
-      each published release Markdown file and GitHub Release body; attach the
-      image assets to the matching GitHub Releases, including v1.0.0 and
-      v1.1.0. The owner explicitly authorizes screenshot-only additions to
-      those historical records, without unrelated edits. Dependencies: P32-B.
-15. **Phase 33 — Widgets** (Held by owner; retained for future):
+14. **Phase 32 — Screenshots** (Cancelled by owner):
+    - P32-A — Cancelled because the owner already supplied the screenshots.
+      Dependencies: none.
+    - P32-B — Cancelled because the owner already supplied the screenshots.
+      Dependencies: P32-A.
+    - P32-C — Cancelled because the owner already supplied the screenshots;
+      the supplied images are organized by P28-F-R5. Dependencies: P32-B.
+15. **Phase 33 — Widgets** (Planned):
     - P33-A — Research SDK 57 options, config plugin, dev-build need, privacy
       and hide-previews behavior after reactivation. Dependencies: none.
     - P33-B — Implement the Android widget only after owner reactivation and
       research approval. Dependencies: P33-A.
     - P33-C — Implement the iOS widget only if reactivated and iOS
       distribution exists. Dependencies: P33-A and iOS distribution.
-16. **Phase 34 — Quick capture** (Held by owner; retained for future):
+16. **Phase 34 — Quick capture** (Planned):
     - P34-A — Research quick-capture scope and platform constraints after
       reactivation; candidates include shake, double-tap back and a key
       combination. Dependencies: none.
@@ -3798,15 +3812,16 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
     - P34-C — Consider an opt-in foreground shake gesture after reactivation.
       Background gestures remain out of scope unless research proves a
       policy-safe route. Dependencies: P34-A.
-17. **Phase 35 — Transaction auto-detect** (Held by owner; retained for future):
+17. **Phase 35 — Transaction auto-detect** (Planned):
     - P35-A — Research Android notification-listener vs SMS-permission
       options, iOS limitations, Play policy, prominent disclosure, local-only
       parsing and no raw-message storage after reactivation. Dependencies:
       none.
     - P35-B — Obtain the owner's explicit go/no-go decision after reactivation.
       Dependencies: P35-A.
-    - P35-C — Do not implement transaction auto-detection or later parts
-      without explicit owner reactivation and approval. Dependencies: P35-B.
+    - P35-C — No transaction auto-detection implementation may begin until
+      the owner explicitly gives a go decision in P35-B. Dependencies: P35-B
+      owner go/no-go approval.
 18. **Phase 36 — Notes** (Planned):
     - P36-A — Design text notes, voice/audio recordings, photos and videos;
       optional links to financial records; offline storage, media limits,
@@ -10579,13 +10594,13 @@ are guarded by `progressLedger.test.ts`.
 | 19 | `phase/19-budget-model-and-sync` | `phase-19-complete` | `d3477f2e1266e686b611aa819be90dba113a7a5f` | 3 |
 | 20 | `phase/20-budget` | `phase-20-complete` | `eed40750f68bebc9168907f79f74a67c1f301b83` | 29 |
 | 21 | `phase/21-emergency-fund` | `phase-21-complete` | `96b85d72e401215a0f17864b9f8099e5452e3a66` | 6 |
-| 22 | `phase/22-demo-data` | `phase-22-complete` | `6cb4fa0a42be2c60ee3d4bf162bb41d6a2f0ea58` | 1 |
+| 22 | `phase/22-demo-data` | `phase-22-complete` | `6cb4fa0a42be2c60ee3d4bf162bb41d6a2f0ea58` | 2 |
 | 23 | `phase/23-insurance` | `phase-23-complete` | `04988e8366949c0cde04912ca1f472c4b31c227f` | 4 |
 | 24 | `phase/24-reminders` | `phase-24-complete` | `afe54225c10d2a402d79fdc751c7c75225000e43` | 1 |
 | 25 | `phase/25-release-and-backups` | `phase-25-complete` | `f99445790f44a20e022201452ddd4755ecc9d243` | 6 |
 | 26 | `phase/26-accessibility-and-performance` | `phase-26-complete` | `643ef5bbb5b8481332d1416754d71b0647431f2f` | 1 |
 | 27 | `phase/27-cleanup` | `phase-27-complete` | `a2fa24f930da15c49f779577eb749b33f11a7059` | 1 |
-| 28 | `phase/28-qa-and-release` | `phase-28-complete` | `421e53f974b72f6869a725d39fd1a8dfd95baa99` | 33 |
+| 28 | `phase/28-qa-and-release` | `phase-28-complete` | `421e53f974b72f6869a725d39fd1a8dfd95baa99` | 35 |
 | 29 | `phase/29-income-recurrence` | `phase-29-complete` | `9637d222c4feb4a001384a4d9094e472eff23728` | 41 |
 | 30 | `phase/30-release-2-stabilization` | `phase-30-complete` | `a258579c4b580d6f3a157b8d13de53334aa8d34d` | 3 |
 

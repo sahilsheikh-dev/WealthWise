@@ -110,7 +110,7 @@ describe('permanent progress ledger', () => {
     }
   });
 
-  it('keeps roadmap phases planned or held and out of the prompt log', () => {
+  it('keeps roadmap statuses, owner gates, and prompt-log scope aligned', () => {
     const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
     const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
     const roadmap = ledger.split('## 9. Upcoming roadmap')[1]?.split('## 10. Verification matrix')[0] ?? '';
@@ -126,23 +126,22 @@ describe('permanent progress ledger', () => {
       'P39-A', 'P39-B', 'P39-C', 'P39-D', 'P39-E', 'P39-F', 'P39-G', 'P39-H',
       'P40-A', 'P40-B',
     ];
-    const heldPartIds = new Set([
-      'P33-A', 'P33-B', 'P33-C',
-      'P34-A', 'P34-B', 'P34-C',
-      'P35-A', 'P35-B', 'P35-C',
-      'P40-B',
-    ]);
+    const cancelledPartIds = new Set(['P32-A', 'P32-B', 'P32-C']);
 
     for (const id of plannedPartIds) {
       const dashboardRows = dashboard.split('\n').filter((line) => line.startsWith(`| ${id} |`));
       expect(dashboardRows).toHaveLength(1);
       const expectedStatus = id === 'P40-B'
         ? '| Held pending owner approval |'
-        : heldPartIds.has(id) ? '| Held by owner |' : '| Planned |';
+        : cancelledPartIds.has(id) ? '| Cancelled by owner |' : '| Planned |';
       expect(dashboardRows[0]).toContain(expectedStatus);
       expect(roadmap.split('\n').filter((line) => line.includes(`${id} —`))).toHaveLength(1);
       expect(promptLog.split('\n').find((line) => line.startsWith(`| ${id} |`))).toBeUndefined();
     }
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P33-C |')))
+      .toContain('iOS distribution');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P35-C |')))
+      .toContain('P35-B owner go/no-go approval');
     for (const phase of [31, 32, 33, 34, 35, 36, 37, 38, 39, 40]) {
       expect(roadmap).toContain(`**Phase ${phase} —`);
     }
@@ -230,9 +229,12 @@ describe('permanent progress ledger', () => {
           .toContain('Done; Revised by P20-S-R1-R1');
         expect(dashboard.split('\n').find((line) => line.startsWith('| P20-S-R1-R1 |')))
           .toContain('| Done |');
+      } else if (phase === 22) {
+        expect(count?.done).toBe(1);
+        expect(count?.total).toBe(2);
       } else if (phase === 28) {
         expect(count?.done).toBe(32);
-        expect(count?.total).toBe(33);
+        expect(count?.total).toBe(35);
         expect(dashboard.split('\n').find((line) => line.startsWith('| P28-E-R4 |')))
           .toContain('| Done |');
         expect(dashboard.split('\n').find((line) => line.startsWith('| P28-E-R5 |')))

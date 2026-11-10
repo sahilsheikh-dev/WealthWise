@@ -61,10 +61,10 @@ WealthWise follows Semantic Versioning:
   When a newer version is published, remove `latest` from the previous APK
   asset name, rename it to `WealthWise-android-vX.Y.Z.apk`, and update that
   release's Download block and table link.
-- Name screenshots `WealthWise-vX.Y.Z-screenshot-<screen>.png`, attach them
-  to the corresponding GitHub Release, and reference the assets directly in
-  Markdown. Do not retain screenshots in `docs/releases/screenshots/`;
-  verify screenshot asset links before removing a local screenshot folder.
+- Keep screenshots named `WealthWise-vX.Y.Z-screenshot-<screen>.png` under
+  `docs/releases/screenshots/vX.Y.Z/` alongside the published note, and
+  reference those repository files in Markdown. Do not attach screenshots as
+  GitHub Release assets; verify screenshot links after merge to `main`.
 - Never fabricate release or build data or overwrite a published record.
 - Keep unapproved notes in `drafts/`. After owner approval, finalize the note
   and move it to `published/` before GitHub Release draft creation. Add a
