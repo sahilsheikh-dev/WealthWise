@@ -5432,7 +5432,7 @@ describe('route render smoke audit', () => {
       )).toHaveLength(4);
       expect(renderer.root.findByProps({ testID: 'budget-overview-metric-left' })
         .findAllByType('text').some((node) => node.children.includes('Left'))).toBe(true);
-      expect(overviewCard.findAll((node) =>
+      expect(pace.findAll((node) =>
         String(JSON.stringify(node.props.style)).includes('"position":"absolute"'),
       )).toHaveLength(0);
       const rowContainer = renderer.root.findAll((node) =>

@@ -83,7 +83,6 @@ describe('Budget pace chart', () => {
           pace={pace}
           spendingSectionIds={['food', 'transport']}
           summary={summary}
-          shortSummary="Left ₹250"
         />,
       );
     });

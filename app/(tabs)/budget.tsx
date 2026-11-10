@@ -369,14 +369,10 @@ export default function BudgetScreen() {
                   <AppText weight="bold" style={[typography.name, styles.overviewTitle]}>Overview</AppText>
                   {overview.pace ? (
                     <View testID="budget-pace">
-                      <AppText weight="semibold" style={[typography.meta, styles.paceTitle]}>Pace</AppText>
                       <PaceLine
                         pace={overview.pace}
                         spendingSectionIds={spendingSectionIds}
                         summary={paceSummary}
-                        shortSummary={overview.stacked.left.actual < 0
-                          ? `Over by ${formatAmount(Math.abs(overview.stacked.left.actual), 'exact', 1)}`
-                          : `Left ${formatAmount(overview.stacked.left.actual, 'exact', 1)}`}
                       />
                     </View>
                   ) : null}
@@ -393,13 +389,11 @@ export default function BudgetScreen() {
                   </View>
                   <AppText
                     testID="budget-overview-summary"
-                    numberOfLines={1}
+                    accessible
+                    accessibilityRole="text"
                     accessibilityLabel={overviewAccessibility}
-                    style={[typography.meta, { color: colors.text2 }]}>
-                    {overview.stacked.left.actual < 0
-                      ? `Over by ${formatAmount(Math.abs(overview.stacked.left.actual), 'exact', 1)}`
-                      : `Left ${formatAmount(overview.stacked.left.actual, 'exact', 1)}`}
-                  </AppText>
+                    style={[typography.meta, { position: 'absolute', width: 1, height: 1, margin: -1, overflow: 'hidden' }]}
+                  />
                 </Card>
               </View>
 
