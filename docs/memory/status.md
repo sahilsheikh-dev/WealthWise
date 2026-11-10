@@ -19,10 +19,16 @@
   route/menu; its About screen, browser-confirmed update action and offline API
   regression pass focused verification (8 suites / 47 tests) and
   RouteRenderSmoke (1 suite / 174 tests), TypeScript and Expo lint. Task PR
-  #106 merged into the phase as `7ddfef5`; phase-to-`develop` integration and
-  the six final ordered gates remain pending. The authorized Budget blob is
-  recorded in [rules.md](rules.md). No CR-108 work ships in v1.1.1;
-  physical-device checks remain unverified.
+  #106 merged into the phase as `7ddfef5`, and phase PR #107 merged to
+  `develop` as `8e4a2d1`. Initial Gate 1 failed in 100 suites / 1,314 passed /
+  1 failed / 1 skipped: the demo reminder expectation was 909 while the
+  once-only schedule correctly yields 893; domain branch-coverage thresholds
+  also need verification after correction. P41-B-R1 test-first commit
+  `bd8f1c9` updates the assertion and adds focused schedule/schema coverage;
+  its targeted checks pass (4 suites / 86 tests), TypeScript and Expo lint
+  pass. Integrate the correction via task and phase PRs, then restart all six
+  gates from Gate 1. The authorized Budget blob is recorded in [rules.md](rules.md).
+  No CR-108 work ships in v1.1.1; physical-device checks remain unverified.
 - CR-106 adds planning rows only: P31-D privacy and P31-E CI, report-first
   P39 release audit/hardening, and P40 agent-context hygiene.
   No audit part, app-source change, phase implementation, or release work has
