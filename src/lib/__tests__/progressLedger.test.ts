@@ -80,6 +80,7 @@ describe('permanent progress ledger', () => {
   it('logs every prompt ID exactly once', () => {
     const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
     const promptIds = [
+      'P41-B-R1',
       'P01', 'P02', 'P03', 'P04', 'P05', 'P06', 'P06-FIX-R1',
       'P07', 'P08', 'P09', 'P10', 'P11', 'P12', 'P13', 'P14',
       'P15-A', 'P15-A2', 'P15-B', 'P15-C',
@@ -110,6 +111,7 @@ describe('permanent progress ledger', () => {
     const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
     const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
     const newPartIds = [
+      'P41-B-R1',
       'P16-A', 'P16-B', 'P16-C', 'P17-A', 'P17-B', 'P17-C',
       'P18-R0', 'P18-R1', 'P18-R2', 'P18-R3', 'P18-R4', 'P18-R5',
       'P18-R6', 'P18-LEDGER', 'P18-R7',
@@ -125,6 +127,8 @@ describe('permanent progress ledger', () => {
       expect(dashboard.split('\n').filter((line) => line.startsWith(`| ${id} |`))).toHaveLength(1);
       expect(promptLog.split('\n').filter((line) => line.startsWith(`| ${id} |`))).toHaveLength(1);
     }
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P41-B |')))
+      .toContain('Revised by P41-B-R1');
   });
 
   it('keeps roadmap statuses, owner gates, and prompt-log scope aligned', () => {
@@ -376,7 +380,7 @@ describe('permanent progress ledger', () => {
         expect(branch).toBe('phase/41-types-frequency-completion');
         expect(tag).toBe('—');
         expect(commit).toBe('—');
-        expect(Number(count)).toBe(4);
+        expect(Number(count)).toBe(5);
         continue;
       }
       const paddedPhase = String(number).padStart(2, '0');
