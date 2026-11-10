@@ -212,10 +212,23 @@ describe('published release download documentation', () => {
     const readmeVersion = readLatestVersion(readDownloadBlock(readme, readmePath));
     const readmeScreenshotTables = [...readme.matchAll(/<table>([\s\S]*?)<\/table>/g)];
     const screenshotSets = {
-      'v1.0.0': ['home', 'assets', 'liabilities', 'emergency-fund', 'goals', 'insurance', 'transactions'],
-      'v1.1.0': ['home', 'assets', 'liabilities', 'emergency-fund', 'goals', 'insurance', 'budget', 'transactions'],
-      'v1.1.1': ['home', 'assets', 'liabilities', 'emergency-fund', 'goals', 'insurance', 'budget', 'transactions'],
-      'v1.2.0': ['home', 'assets', 'liabilities', 'emergency-fund', 'goals', 'insurance', 'budget', 'transactions'],
+      'v1.0.0': [
+        'home', 'assets', 'liabilities', 'emergency-fund', 'goals', 'insurance', 'transactions',
+        'backup-and-restore', 'reminders', 'security', 'profile', 'theme',
+      ],
+      'v1.1.0': [
+        'home', 'assets', 'liabilities', 'emergency-fund', 'goals', 'insurance', 'budget',
+        'transactions', 'backup-and-restore', 'reminders', 'security', 'profile', 'theme',
+      ],
+      'v1.1.1': [
+        'home', 'assets', 'liabilities', 'emergency-fund', 'goals', 'insurance', 'budget',
+        'transactions', 'backup-and-restore', 'reminders', 'security', 'profile', 'theme',
+      ],
+      'v1.2.0': [
+        'home', 'assets', 'liabilities', 'emergency-fund', 'goals', 'insurance', 'budget',
+        'transactions', 'backup-and-restore', 'reminders', 'security', 'profile', 'theme',
+        'about',
+      ],
     } as const;
     const markdownByVersion = {
       'v1.0.0': 'docs/releases/published/v1.0.0.md',
@@ -266,16 +279,20 @@ describe('published release download documentation', () => {
     expect(readme).toContain('### Screenshots');
     expect(readme).not.toMatch(/^#### v\d+\.\d+\.\d+/m);
     expect(readmeScreenshotTables).toHaveLength(1);
+    const readmeCategories = screenshotSets[readmeVersion as keyof typeof screenshotSets];
     for (const [, table = ''] of readmeScreenshotTables) {
-      expect(readScreenshotRowCounts(table)).toEqual([4, 4]);
-      expect(readScreenshotCategories(table)).toEqual(
-        screenshotSets[readmeVersion as keyof typeof screenshotSets],
+      expect(readScreenshotRowCounts(table)).toEqual(
+        Array.from(
+          { length: Math.ceil(readmeCategories.length / 4) },
+          (_, row) => Math.min(4, readmeCategories.length - row * 4),
+        ),
       );
+      expect(readScreenshotCategories(table)).toEqual(readmeCategories);
       expect([...table.matchAll(/<img\b[^>]*>/g)].every((match) =>
         (match[0] ?? '').includes('width="150"'),
       )).toBe(true);
       expect([...table.matchAll(/<td><a href="([^"]+)"><img src="([^"]+)"[^>]*><\/a><\/td>/g)])
-        .toHaveLength(8);
+        .toHaveLength(readmeCategories.length);
       for (const [, href = '', src = ''] of table.matchAll(/<td><a href="([^"]+)"><img src="([^"]+)"[^>]*><\/a><\/td>/g)) {
         expect(href).toContain('docs/releases/screenshots/v1.1.1/');
         expect(src).toContain('docs/releases/screenshots/v1.1.1/');
@@ -289,7 +306,10 @@ describe('published release download documentation', () => {
       const releaseScreenshotTable = releaseContents.match(/<table>([\s\S]*?)<\/table>/)?.[1] ?? '';
       expect(readScreenshotCategories(releaseScreenshotTable)).toEqual(categories);
       expect(readScreenshotRowCounts(releaseScreenshotTable)).toEqual(
-        categories.length === 7 ? [4, 3] : [4, 4],
+        Array.from(
+          { length: Math.ceil(categories.length / 4) },
+          (_, row) => Math.min(4, categories.length - row * 4),
+        ),
       );
       expect([...releaseScreenshotTable.matchAll(/<img\b[^>]*>/g)].every((match) =>
         (match[0] ?? '').includes('width="150"'),
