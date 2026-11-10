@@ -176,6 +176,9 @@ Not adopted in CR-106:
   After the authorized merge to `main`, verify all 46 blob/raw URLs, update
   only the three release-body screenshot sections, then remove only those
   23 screenshot assets. No screenshot capture or capture script is planned.
+- **CR-107 demo display:** route tests verify the Rs 1 crore Assets total at
+  simulated font scales 1.3 and 2.0. Physical-device rendering at both scales
+  remains unverified.
 - **v1.1.1 release:** the owner-approved patch release was published on
   2026-11-09 after PR #69 merged it to `main` and PR #70 back-merged it to
   `develop`. Tag `v1.1.1` points to the main merge commit. The owner-run EAS
