@@ -6,16 +6,24 @@
   screenshots, with five new settings/backup screens added to every release
   and About only to v1.2.0. The README gallery remains for latest-published
   v1.1.1. Task PR #112, phase PR #113 and evidence PRs #114/#115 merged into
-  `develop` at `d347526`, `5ae1b72` and `936ee25`. A v1.2.0 draft exists at
-  the earlier candidate; its replacement is authorized now that screenshot
-  integration is complete. No v1.2.0 tag or APK exists. Screenshot task PR
-  #116 merged into the phase as `f08f963`; phase PR #117 merged into
-  `develop` at `25258ac`. All six gates pass on that commit: 101 suites,
+  `develop` at `d347526`, `5ae1b72` and `936ee25`. The prior untagged draft
+  was replaced after screenshot integration; the current draft targets
+  `199ebed307ce7755bc92c1f15544999d852db54f`. No v1.2.0 tag or published
+  release exists.
+  Screenshot task PR #116 merged into the phase as `f08f963`; phase PR #117
+  merged into `develop` at `25258ac`. All six gates were rerun on `develop`
+  at `3bd5be6`: 101 suites,
   1,316 passed, 1 skipped; coverage is 95.96/92.15/98.02/97.62% overall,
-  `src/data`
-  91.06/87.47/94.48/94.19%, `src/domain` 96.94/93.00/98.80/98.31%, and
-  `src/lib` 100% in all measures. The draft replacement, EAS APK build,
-  artifact/link verification and publication remain pending. The owner
+  `src/data` 91.06/87.47/94.48/94.19%, `src/domain` 96.94/93.00/98.80/98.31%, and
+  `src/lib` 100% in all measures. Replacement draft target:
+  `199ebed307ce7755bc92c1f15544999d852db54f`. EAS build
+  `6fccf7d1-0580-46a6-9e09-ff7467fb0a30` succeeded with profile `android-apk`
+  and `versionCode` 3; its 112,163,081-byte APK is uploaded and byte-verified.
+  Build-record task PR #121 merged into the phase as
+  `e74c39a610f9ac0bbb8b5edebe3160ea5fa0f2b8`; its phase-to-develop PR is
+  pending.
+  Public-link verification, main integration, historical release-body updates,
+  previous APK asset rollover and publication remain pending. The owner
   reports O45-O53 passed on 2026-11-11; device/tester fields were not supplied.
 - CR-108 is complete on `develop`. P29-Q-R1 and P20-N-R3 merged at
   `80eb0e4` and `f5f6e16`. P41-A and its category correction merged through
