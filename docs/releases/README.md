@@ -129,17 +129,16 @@ The shared project rules are in [AGENTS.md](../../AGENTS.md),
 
 ## Current release
 
-- Latest published version: v1.1.0
-- Release date: 2026-11-08
+- Latest published version: v1.1.1
+- Release date: 2026-11-09
 - GitHub release:
-  [WealthWise v1.1.0](https://github.com/sahilsheikh-dev/WealthWise/releases/tag/v1.1.0)
-- APK artifact verification: both URLs returned HTTP 200 with a content
-  length of 112,147,677 bytes. The digest was verified privately and is not
-  published.
-- v1.1.1 is the approved release candidate and remains a GitHub draft. Its
-  owner-supplied APK was verified against its finished EAS build and uploaded
-  to the draft; publication and public latest-route rollover are still
-  pending separate approval.
+  [WealthWise v1.1.1](https://github.com/sahilsheikh-dev/WealthWise/releases/tag/v1.1.1)
+- APK artifact verification: the latest and versioned URLs returned HTTP 200
+  with a content length of 112,150,605 bytes. The digest was verified
+  privately and is not published.
+- v1.2.0 is the owner-approved release candidate. Its note and screenshots
+  are prepared for integration; no v1.2.0 release draft, build, tag or
+  artifact has been created.
 - Production AAB: not verified.
 
 See [release-history.md](release-history.md) for the published release and

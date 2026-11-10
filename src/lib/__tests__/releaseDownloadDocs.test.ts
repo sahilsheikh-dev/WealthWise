@@ -125,6 +125,11 @@ describe('published release download documentation', () => {
         date: '2026-11-09',
         previous: 'v1.1.0',
       },
+      'v1.2.0': {
+        type: 'Minor',
+        date: '2026-11-11',
+        previous: 'v1.1.1',
+      },
     } as const;
 
     for (const [version, metadata] of Object.entries(releases)) {
@@ -181,6 +186,7 @@ describe('published release download documentation', () => {
       join(publishedDirectory, 'v1.0.0.md'),
       join(publishedDirectory, 'v1.1.0.md'),
       join(publishedDirectory, 'v1.1.1.md'),
+      join(publishedDirectory, 'v1.2.0.md'),
       join(root, 'docs', 'releases', 'TEMPLATE.md'),
     ];
 
@@ -209,11 +215,13 @@ describe('published release download documentation', () => {
       'v1.0.0': ['home', 'assets', 'liabilities', 'emergency-fund', 'goals', 'insurance', 'transactions'],
       'v1.1.0': ['home', 'assets', 'liabilities', 'emergency-fund', 'goals', 'insurance', 'budget', 'transactions'],
       'v1.1.1': ['home', 'assets', 'liabilities', 'emergency-fund', 'goals', 'insurance', 'budget', 'transactions'],
+      'v1.2.0': ['home', 'assets', 'liabilities', 'emergency-fund', 'goals', 'insurance', 'budget', 'transactions'],
     } as const;
     const markdownByVersion = {
       'v1.0.0': 'docs/releases/published/v1.0.0.md',
       'v1.1.0': 'docs/releases/published/v1.1.0.md',
       'v1.1.1': 'docs/releases/published/v1.1.1.md',
+      'v1.2.0': 'docs/releases/published/v1.2.0.md',
     } as const;
 
     expect(template).toContain('## Screenshots');
@@ -344,12 +352,12 @@ describe('published release download documentation', () => {
       readFileSync(join(root, 'package-lock.json'), 'utf8'),
     );
     const releaseNote = readFileSync(
-      join(root, 'docs', 'releases', 'published', 'v1.1.1.md'),
+      join(root, 'docs', 'releases', 'published', 'v1.2.0.md'),
       'utf8',
     );
     const releaseVersion = releaseNote.match(/^# WealthWise v(\d+\.\d+\.\d+)$/m)?.[1];
 
-    expect(releaseVersion).toBeDefined();
+    expect(releaseVersion).toBe('1.2.0');
     expect(appConfig.expo.version).toBe(releaseVersion);
     expect(packageManifest.version).toBe(releaseVersion);
     expect(lockfile.version).toBe(releaseVersion);

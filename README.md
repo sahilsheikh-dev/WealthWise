@@ -9,7 +9,7 @@ requests at runtime.
 - [For users](#for-users)
 - [Features](#features)
 - [Download](#download)
-- [What's new in v1.1.1](#whats-new-in-v111)
+- [What's new in v1.2.0](#whats-new-in-v120)
 - [Screenshots](#screenshots)
 - [Data and privacy](#data-and-privacy)
 - [Limitations and disclaimer](#limitations-and-disclaimer)
@@ -45,7 +45,11 @@ requests at runtime.
   Foreclosure.
 - Monthly budgets with spend/invest sections, income schedules, due tracking,
   and cash-flow views. Income can recur monthly, quarterly, half-yearly or
-  yearly.
+  yearly, or be scheduled once.
+- Real estate and named Custom financial types are available for holdings;
+  liabilities also support named Custom types.
+- Completed loans and achieved goals appear in separate, initially collapsed
+  sections.
 - Savings goals, goal-linked assets and an Emergency Fund with editable
   allocation items.
 - Editable Insurance policies and scheduled premium dues.
@@ -62,12 +66,14 @@ Release date: 2026-11-09
 - [Click here to check older versions](https://github.com/sahilsheikh-dev/WealthWise/releases)
 To install the APK, allow installs from this source in Android settings when prompted. This is a direct APK, not a Google Play Store-signed app.
 
-### What's new in v1.1.1
+### What's new in v1.2.0
 
-Linked one-time savings marked Paid from Transactions now create the associated
-holding entry, and Undo removes it. Shared form controls also display
-consistent titles for dropdowns and inputs. See the
-[v1.1.1 release notes](docs/releases/published/v1.1.1.md).
+The stress-tier picker supports four choices; Budget Overview removes
+redundant summaries while retaining accessible descriptions. WealthWise adds
+Real estate and named Custom financial types, once-only Budget and insurance
+dues, completed-loan and achieved-goal sections, and an About page with a
+confirmed browser link to the latest release. See the
+[v1.2.0 release notes](docs/releases/published/v1.2.0.md).
 
 ### Screenshots
 
