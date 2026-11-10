@@ -4,23 +4,17 @@
 
 ## Proposed v1.2.0 release
 
-- The owner approved the v1.2.0 release-note content, confirmed the version,
-  and supplied the screenshots. The app/package version metadata is now
-  1.2.0; v1.1.1 remains the latest published release. No v1.2.0 tag, GitHub
-  release draft, APK or release artifact exists.
-- The owner supplied and approved use of eight v1.2.0 screenshots; they are
-  copied into the versioned screenshot directory. The approved note is
-  finalized in `docs/releases/published/v1.2.0.md`.
-- Task PR #112 merged into `phase/28-qa-and-release` as `fa153da`; phase PR
-  #113 merged into `develop` as `d347526`, and evidence PR #114 merged as
-  `5ae1b72`. All six ordered gates pass. Physical-device checks O45-O53
-  remain unverified. The README Download block and screenshot gallery
-  continue to match the latest published v1.1.1 release until v1.2.0 is
-  published.
-- Physical-device font-scale and screen-reader checks for CR-108 remain
-  unverified. Complete the required device checklist before any release
-  build. APK build, verification and draft upload follow the release process;
-  publication requires separate explicit approval.
+- The owner approved the v1.2.0 note and supplied six additional screenshots.
+  Five screens are being added to each release; About is exclusive to v1.2.0.
+  The existing untagged draft at `936ee25` is authorized for replacement after
+  the screenshot revision merges. Task PR #116 merged into the phase as
+  `f08f963`; its phase PR remains pending. v1.1.1 remains latest published;
+  no v1.2.0 tag or APK exists.
+- O45-O53 are marked owner-reported Pass (2026-11-11); device model, Android
+  version and tester were not supplied. The README Download block remains
+  v1.1.1 until v1.2.0 publication. Final ordered gates must be rerun after
+  screenshot integration; EAS build, artifact verification, final release
+  links and publication remain pending.
 
 ## CR-108 owner decisions and remaining scope
 
@@ -32,8 +26,8 @@
 - CR-108 is complete: P41-B-R1 task PR #108 merged into the retained phase as
   `e1db78e`, and phase PR #109 merged to `develop` as `5cb4957`. All six
   ordered gates pass; detailed commands, coverage and PR evidence are in
-  [PROGRESS.md](../PROGRESS.md). Physical-device font-scale and screen-reader
-  checks remain unverified.
+  [PROGRESS.md](../PROGRESS.md). The owner reports O45-O53 physical-device
+  checks passed on 2026-11-11; device/tester details were not supplied.
 
 ## CR-106 owner decisions and scope
 

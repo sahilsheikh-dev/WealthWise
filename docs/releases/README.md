@@ -137,10 +137,15 @@ The shared project rules are in [AGENTS.md](../../AGENTS.md),
   with a content length of 112,150,605 bytes. The digest was verified
   privately and is not published.
 - v1.2.0 is the owner-approved release candidate. Task PR #112 merged its
-  note, screenshots and version metadata into `phase/28-qa-and-release` as
-  `fa153da`; phase PR #113 merged it into `develop` as `d347526`. All six
-  ordered gates pass; physical-device checks O45-O53 remain unverified. No
-  v1.2.0 release draft, build, tag or artifact has been created.
+  initial note/screenshots and metadata into `phase/28-qa-and-release` as
+  `fa153da`; phase PR #113 merged to `develop` as `d347526`, with evidence
+  PRs #114/#115 at `5ae1b72` and `936ee25`. Six more screenshots expand the
+  release history; About is exclusive to v1.2.0. The owner reports O45-O53
+  passed; device/tester details were not supplied. The current untagged draft
+  targets the earlier candidate and is authorized for replacement after the
+  screenshot revision reaches `develop`; task PR #116 merged into the phase
+  as `f08f963`, with its phase PR pending. No v1.2.0 tag or APK exists; final
+  gates must be rerun, then EAS build and artifact verification completed.
 - Production AAB: not verified.
 
 See [release-history.md](release-history.md) for the published release and
