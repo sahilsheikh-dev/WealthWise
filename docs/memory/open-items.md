@@ -1,4 +1,4 @@
-<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-10 | Updates: owner and AI agents -->
+<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-11 | Updates: owner and AI agents -->
 
 # Open items
 
@@ -12,10 +12,10 @@
 - P41-C is integrated through PR #105 (`37a3429`); P41-D is integrated through
   phase PR #107 (`8e4a2d1`). The initial Gate 1 run failed on the stale demo
   reminder expectation (909 expected; 893 actual) and branch-coverage
-  thresholds. P41-B-R1 test-first commit `bd8f1c9` corrects the expected value
-  and adds focused coverage; task and phase PR integration and a full restart
-  of the six ordered gates remain open. Physical-device checks remain
-  unverified.
+  thresholds. P41-B-R1's task PR #108 merged into the phase as `e1db78e`; the
+  phase PR to `develop` and full restart of the six ordered gates remain open.
+  Its focused domain and ledger run passes (4 suites / 86 tests), as do
+  TypeScript and Expo lint. Physical-device checks remain unverified.
 
 ## CR-106 owner decisions and scope
 
