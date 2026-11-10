@@ -2485,6 +2485,69 @@ describe('route render smoke audit', () => {
     }
   });
 
+  it('shows a custom holding type in goal links and investment entries', () => {
+    const storeState = useAppStore((state) => state) as { data: AppData };
+    const previousData = storeState.data;
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const previousRouteData = { ...routeData };
+    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+    const previousParams = routeParams();
+    const today = todayISO();
+    const goal: Goal = {
+      id: 'custom-type-goal',
+      name: 'Custom type goal',
+      target: 10_000,
+      saved: 0,
+      year: 2030,
+      links: [],
+    };
+    const holding: ManualHolding = {
+      id: 'custom-type-goal-holding',
+      kind: 'manual',
+      name: 'Artwork collection',
+      type: 'Custom',
+      customTypeName: 'Fine art',
+      invested: 1_000,
+      value: 1_200,
+      valueAsOf: today,
+      logs: [],
+    };
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+
+    try {
+      const data = { ...emptyAppData(today), goals: [goal], holdings: [holding] };
+      Object.assign(routeData, data);
+      storeState.data = data;
+      routeParams.mockReturnValue({ id: goal.id });
+      const goalRenderer = renderScreen(React.createElement(GoalFormScreen));
+      renderer = goalRenderer;
+      act(() => goalRenderer.root.findByProps({ accessibilityLabel: 'Link an asset' }).props.onPress());
+      const option = goalRenderer.root.findAll((node) =>
+        String(node.type) === 'pressable'
+        && typeof node.props.accessibilityLabel === 'string'
+        && node.props.accessibilityLabel.startsWith('Link Artwork collection, Fine art, current value '),
+      )[0];
+      if (!option) throw new Error('Goal link picker did not expose the custom holding type.');
+      act(() => option.props.onPress());
+      expect(goalRenderer.root.findAllByType('text').map((node) => node.children.join('')).join(' '))
+        .toContain('Fine art');
+      act(() => goalRenderer.unmount());
+      renderer = undefined;
+
+      routeParams.mockReturnValue({ id: holding.id });
+      const entriesRenderer = renderScreen(React.createElement(InvestmentEntriesScreen));
+      renderer = entriesRenderer;
+      expect(entriesRenderer.root.findByProps({ testID: 'investment-type-label' })
+        .findAllByType('text').map((node) => node.children.join('')).join(' '))
+        .toContain('Fine art');
+    } finally {
+      act(() => renderer?.unmount());
+      storeState.data = previousData;
+      Object.assign(routeData, previousRouteData);
+      routeParams.mockReturnValue(previousParams);
+    }
+  });
+
   it('keeps Home spending collapsed and asks before changing a due', async () => {
     const routeModule = jest.requireMock('../../data/useAppData') as { useAppData: () => AppData };
     const routeData = routeModule.useAppData();
@@ -4230,6 +4293,16 @@ describe('route render smoke audit', () => {
       { id: 'gold-antique', kind: 'manual', name: 'Antique collection', type: 'Gold', invested: 1_000, value: 1_500, logs: [] },
       { id: 'gold-retirement', kind: 'manual', name: 'Retirement reserve', type: 'Gold', invested: 1_000, value: 1_100, logs: [] },
       { id: 'cash-type', kind: 'manual', name: 'Emergency cash', type: 'Cash', invested: 500, value: 500, logs: [] },
+      {
+        id: 'custom-type',
+        kind: 'manual',
+        name: 'Artwork collection',
+        type: 'Custom',
+        customTypeName: 'Fine art',
+        invested: 5_000,
+        value: 5_500,
+        logs: [],
+      },
     ];
     const data: AppData = { ...emptyAppData(todayISO()), holdings: assets };
     Object.assign(routeData, data);
@@ -4271,6 +4344,20 @@ describe('route render smoke audit', () => {
 
       act(() => screen.root.findByProps({ accessibilityLabel: 'Search assets' }).props.onChangeText(' CASH '));
       expect(assetCards()).toEqual(['asset-card-manual-Emergency cash']);
+      const allChip = screen.root.findAll((node) => String(node.type) === 'chip')
+        .find((node) => node.props.accessibilityLabel === 'All');
+      if (!allChip) throw new Error('All asset filter did not render.');
+      act(() => allChip.props.onPress());
+      act(() => screen.root.findByProps({ accessibilityLabel: 'Search assets' }).props.onChangeText(' FINE ART '));
+      expect(assetCards()).toEqual(['asset-card-manual-Artwork collection']);
+      const customTypeChip = screen.root.findAll((node) => String(node.type) === 'chip')
+        .find((node) => node.props.accessibilityLabel === 'Fine art');
+      if (!customTypeChip) throw new Error('Custom holding name filter did not render.');
+      act(() => customTypeChip.props.onPress());
+      expect(assetCards()).toEqual(['asset-card-manual-Artwork collection']);
+      expect(screen.root.findByProps({ testID: 'asset-card-manual-Artwork collection' })
+        .findAllByType('text').map((node) => node.children.join('')).join(' '))
+        .toContain('Fine art');
       act(() => screen.unmount());
       renderer = renderScreen(React.createElement(AssetsScreen));
       expect(renderer.root.findByProps({ accessibilityLabel: 'Search assets' }).props.value).toBe('');
@@ -4645,7 +4732,14 @@ describe('route render smoke audit', () => {
       payments: [],
     };
     const other: OneTimeLiability = { ...oneTime, id: 'search-bank', name: 'Bank', type: 'Personal loan' };
-    const data: AppData = { ...emptyAppData(todayISO()), liabilities: [other, oneTime] };
+    const custom: OneTimeLiability = {
+      ...oneTime,
+      id: 'search-custom',
+      name: 'Artwork debt',
+      type: 'Custom',
+      customTypeName: 'Fine art debt',
+    };
+    const data: AppData = { ...emptyAppData(todayISO()), liabilities: [other, custom, oneTime] };
     Object.assign(routeData, data);
     store.data = data;
 
@@ -4683,6 +4777,11 @@ describe('route render smoke audit', () => {
       expect(liabilityCards()).toEqual(['liability-card-search-friend']);
       act(() => screen.root.findByProps({ accessibilityLabel: 'Search liabilities' }).props.onChangeText('  personal loan '));
       expect(liabilityCards()).toEqual(['liability-card-search-bank']);
+      act(() => screen.root.findByProps({ accessibilityLabel: 'Search liabilities' }).props.onChangeText('  FINE ART DEBT '));
+      expect(liabilityCards()).toEqual(['liability-card-search-custom']);
+      expect(screen.root.findByProps({ testID: 'liability-card-search-custom' })
+        .findAllByType('text').map((node) => node.children.join('')).join(' '))
+        .toContain('Fine art debt');
       act(() => screen.root.findByProps({ accessibilityLabel: 'Search liabilities' }).props.onChangeText('nothing'));
       expect(screen.root.findAllByProps({ testID: 'liability-no-matches' })).not.toHaveLength(0);
       act(() => screen.unmount());
@@ -4692,6 +4791,50 @@ describe('route render smoke audit', () => {
       act(() => renderer?.unmount());
       Object.assign(routeData, previousRouteData);
       store.data = previousStoreData;
+    }
+  });
+
+  it('uses the same liability type field for recurring and one-time forms', () => {
+    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+    const previousParams = routeParams();
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+
+    try {
+      routeParams.mockReturnValue({});
+      renderer = renderScreen(React.createElement(LiabilityFormScreen));
+      const options = [
+        'Home loan',
+        'Car loan',
+        'Personal loan',
+        'Education loan',
+        'Credit card',
+        'Borrowed money',
+        'Other',
+        'Custom',
+      ];
+      const typeField = () => renderer?.root.findAllByType(Dropdown)
+        .find((field) => field.props.label === 'Liability type');
+      expect(typeField()?.props.options.map((option: { value: string }) => option.value)).toEqual(options);
+      const typeControl = renderer.root.findAllByProps({ accessibilityLabel: 'Liability type' })
+        .find((node) => typeof node.props.onPress === 'function');
+      if (!typeControl) throw new Error('Liability type control did not render.');
+      act(() => typeControl.props.onPress());
+      const customOption = renderer.root.findByProps({ accessibilityRole: 'radio', accessibilityLabel: 'Custom' });
+      act(() => customOption.props.onPress());
+      expect(typeField()?.props.value).toBe('Custom');
+      expect(renderer.root.findAll((node) =>
+        String(node.type) === 'textfield' && node.props.label === 'Custom type name',
+      )).not.toHaveLength(0);
+      const kindControl = renderer.root.findAll((node) => String(node.type) === 'segmentedcontrol')[0];
+      if (!kindControl) throw new Error('Liability form kind control did not render.');
+      act(() => kindControl.props.onChange('one-time'));
+      expect(typeField()?.props.options.map((option: { value: string }) => option.value)).toEqual(options);
+      expect(renderer.root.findAll((node) =>
+        String(node.type) === 'textfield' && node.props.label === 'Custom type name',
+      )).not.toHaveLength(0);
+    } finally {
+      act(() => renderer?.unmount());
+      routeParams.mockReturnValue(previousParams);
     }
   });
 
@@ -4946,7 +5089,7 @@ describe('route render smoke audit', () => {
         if (holding.kind === 'plan') {
           expect(renderer.root.findAllByType(Dropdown).some((field) => field.props.label === 'Holding type')).toBe(true);
         } else {
-          const manualType = renderer.root.findAllByType(Dropdown).find((field) => field.props.label === 'Type');
+          const manualType = renderer.root.findAllByType(Dropdown).find((field) => field.props.label === 'Holding type');
           expect(manualType?.props.options.map((option: { value: string }) => option.value)).toContain('Fixed deposit');
         }
         act(() => renderer?.unmount());
@@ -5068,7 +5211,33 @@ describe('route render smoke audit', () => {
       const planType = planRenderer.root.findAllByType(Dropdown)
         .find((node) => node.props.label === 'Holding type');
       if (!planType) throw new Error('Recurring holding type field did not render.');
-      expect(planType.props.options.some((option: { value: string }) => option.value === 'Fixed deposit')).toBe(false);
+      const planOptions = planType.props.options;
+      expect(planOptions.map((option: { value: string }) => option.value)).toEqual([
+        'Mutual fund / SIP',
+        'Stocks / ETF',
+        'Real estate',
+        'Fixed deposit',
+        'Recurring deposit',
+        'EPFO / PF',
+        'Savings account',
+        'Cash',
+        'Gold',
+        'Silver',
+        'Other',
+        'Custom',
+      ]);
+      const chooseCustomType = (screen: TestRenderer.ReactTestRenderer, label: string) => {
+        const control = screen.root.findAllByProps({ accessibilityLabel: label })
+          .find((node) => typeof node.props.onPress === 'function');
+        if (!control) throw new Error(`${label} control did not render.`);
+        act(() => control.props.onPress());
+        const option = screen.root.findByProps({ accessibilityRole: 'radio', accessibilityLabel: 'Custom' });
+        act(() => option.props.onPress());
+      };
+      chooseCustomType(planRenderer, 'Holding type');
+      expect(planRenderer.root.findAll((node) =>
+        String(node.type) === 'textfield' && node.props.label === 'Custom type name',
+      )).not.toHaveLength(0);
 
       act(() => planRenderer.unmount());
       renderer = undefined;
@@ -5076,11 +5245,15 @@ describe('route render smoke audit', () => {
       const manualRenderer = renderScreen(React.createElement(InvestmentFormScreen));
       renderer = manualRenderer;
       const manualType = manualRenderer.root.findAllByType(Dropdown)
-        .find((field) => field.props.label === 'Type');
+        .find((field) => field.props.label === 'Holding type');
       if (!manualType) throw new Error('Manual holding type field did not render.');
-      expect(manualType.props.options.map((option: { value: string }) => option.value)).toContain('Fixed deposit');
+      expect(manualType.props.options).toEqual(planOptions);
       expect(manualRenderer.root.findAllByType('text')
         .some((node) => node.children.join('').includes('Entries from earlier are kept.'))).toBe(true);
+      chooseCustomType(manualRenderer, 'Holding type');
+      expect(manualRenderer.root.findAll((node) =>
+        String(node.type) === 'textfield' && node.props.label === 'Custom type name',
+      )).not.toHaveLength(0);
 
       act(() => manualRenderer.unmount());
       renderer = undefined;

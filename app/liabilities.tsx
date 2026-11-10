@@ -26,6 +26,7 @@ import { useSort } from '../src/data/useSort';
 import { isLiabilityClosed, liabilitySummary, payoffDate } from '../src/domain/liability';
 import { liabilitySchedule } from '../src/domain/schedule';
 import { liabilitiesOverview } from '../src/domain/summary';
+import { financialTypeLabel } from '../src/domain/typeLabels';
 import type { OneTimeLiability, RecurringLiability } from '../src/domain/types';
 import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
@@ -84,7 +85,7 @@ export default function LiabilitiesScreen() {
       : kindFilter === 'All'
         || (!isLiabilityClosed(liability)
           && (kindFilter === 'Recurring' ? liability.kind === 'recurring' : liability.kind === 'one-time')))
-    && (!normalizedQuery || `${liability.name} ${liability.type}`.toLowerCase().includes(normalizedQuery)),
+    && (!normalizedQuery || `${liability.name} ${financialTypeLabel(liability.type, liability.customTypeName)}`.toLowerCase().includes(normalizedQuery)),
   );
 
   return (
@@ -330,7 +331,7 @@ function OneTimeCard({ liability, asOf }: { liability: OneTimeLiability; asOf: s
       <CardHeaderRow
         title={<AppText weight="semibold" style={typography.name}>{liability.name}</AppText>}
         subtitle={<AppText style={[typography.meta, { color: colors.text3 }]}>
-            {liability.type} · {liability.ratePct}% p.a. · Since {formatDate(liability.startDate)}
+            {financialTypeLabel(liability.type, liability.customTypeName)} · {liability.ratePct}% p.a. · Since {formatDate(liability.startDate)}
         </AppText>}
         value={<AmountText value={summary.balance} tier="tile" weight="bold" style={typography.amount} />}
       />

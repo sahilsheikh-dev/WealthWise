@@ -8,9 +8,10 @@
   keeps the app offline and uses an explicit browser link only.
 - Confirm whether "Once only" is desired for investment plans or liabilities
   in a future request; CR-108 deliberately excludes both.
-- Complete Part 2's phase-to-`develop` PR; implement Parts 3–6; then run the six
-  ordered gates after all parts reach `develop`. Physical-device checks remain
-  unverified and must be recorded before closing CR-108.
+- Complete P41-A's task-to-phase and phase-to-`develop` PRs; implement Parts
+  4–6; then run the six ordered gates after all parts reach `develop`.
+  Physical-device checks remain unverified and must be recorded before closing
+  CR-108.
 
 ## CR-106 owner decisions and scope
 

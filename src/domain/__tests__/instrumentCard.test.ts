@@ -1,7 +1,7 @@
 import { buildInstrumentCardModel } from '../instrumentCard';
 import { listInstruments } from '../instruments';
 import { buildPortfolioRows } from '../portfolio';
-import type { AppData } from '../types';
+import type { AppData, ManualHolding } from '../types';
 import { mockAppData } from '../../mock/data';
 
 const context = {
@@ -22,6 +22,27 @@ function textContent(segments: ({ text: string } | { amount: number })[]) {
 }
 
 describe('buildInstrumentCardModel', () => {
+  it('displays the custom holding name instead of the generic Custom type', () => {
+    const customHolding: ManualHolding = {
+      id: 'custom-holding',
+      kind: 'manual',
+      name: 'Collection',
+      type: 'Custom',
+      customTypeName: 'Collectibles',
+      invested: 1_000,
+      value: 1_200,
+      valueAsOf: context.asOf,
+      logs: [],
+    };
+    const data: AppData = {
+      ...mockAppData,
+      holdings: [...mockAppData.holdings, customHolding],
+    };
+    const model = buildInstrumentCardModel(rowFor(data, customHolding.id), context);
+    expect(textContent(model.subtitle)).toContain('Collectibles');
+    expect(textContent(model.subtitle)).not.toContain('Custom');
+  });
+
   it('uses only real holdings as investment instruments', () => {
     expect(listInstruments(mockAppData, context.asOf).map(({ id }) => id))
       .toEqual(mockAppData.holdings.map(({ id }) => id));
