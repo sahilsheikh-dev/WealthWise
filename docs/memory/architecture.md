@@ -129,3 +129,11 @@ area and keyboard handling in the screen wrapper.
 options in a top-anchored sheet, supports grouped options, selected radio
 state, font-scaled row height and error/accessibility text. Frozen form input
 components are protected by the manifest and freeze test.
+
+The About route is a registered root-stack screen reachable from the Home
+app-menu builder and `useAppMenu`. It reads the app version from
+`Constants.expoConfig` and the persisted schema from `SCHEMA_VERSION`.
+Repository links and the optional update action use React Native `Linking` to
+open the user's browser; update discovery requires confirmation and performs
+no app-side request. A source scan regression guards `app/` and `src/` against
+`fetch`, `XMLHttpRequest` and `WebSocket`.

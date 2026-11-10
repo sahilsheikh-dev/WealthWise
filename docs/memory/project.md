@@ -23,6 +23,10 @@ runtime synchronization.
 - Backup encryption protects exported files only; app data on device remains
   unencrypted and a lost backup passphrase cannot be recovered.
 - Tabs: Home, Transactions, Goals and Budget.
+- The About route is available from the Home app menu and displays Expo-config
+  app metadata, schema version, MIT license and verified repository links.
+  Update discovery asks first, then opens the GitHub latest-release page in
+  the browser; it does not make an app-side network request.
 - Budget scope choices apply on selection; Close, backdrop and Android back
   dismiss the popup without applying a change.
 - Manual and recurring holdings share Deposit, Withdraw and Entries actions

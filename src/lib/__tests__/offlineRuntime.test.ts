@@ -22,6 +22,14 @@ describe('offline runtime boundary', () => {
         if (ts.isIdentifier(node) && forbiddenApis.has(node.text)) {
           usages.push(`${path}:${node.getStart(source)}:${node.text}`);
         }
+        if (
+          ts.isElementAccessExpression(node)
+          && node.argumentExpression
+          && ts.isStringLiteralLike(node.argumentExpression)
+          && forbiddenApis.has(node.argumentExpression.text)
+        ) {
+          usages.push(`${path}:${node.getStart(source)}:${node.argumentExpression.text}`);
+        }
         ts.forEachChild(node, inspect);
       };
       inspect(source);
