@@ -14,6 +14,10 @@ runtime synchronization.
 - Schema version: v23 (`SCHEMA_VERSION` in `src/domain/schemas.ts`). Once-only
   recurrence applies to Budget items, Budget income and insurance premiums;
   investment plans and liabilities remain excluded.
+- Liability and goal lists show in-progress entries before collapsed
+  Completed/Achieved groups. A liability is completed below Rs 1 outstanding
+  or when closed; goals at or above target are achieved. The pinned Emergency
+  fund goal remains in its first position and is not moved into Achieved.
 - Insurance is a simple editable policy tracker with scheduled premiums;
   cover-goal management and policy lifecycle controls were removed in P29-L.
 - Backup encryption protects exported files only; app data on device remains

@@ -1,4 +1,4 @@
-<!-- Purpose: Durable architecture facts and data boundaries. | Last updated: 2026-11-05 | Updates: owner and AI agents -->
+<!-- Purpose: Durable architecture facts and data boundaries. | Last updated: 2026-11-10 | Updates: owner and AI agents -->
 
 # Architecture
 
@@ -25,6 +25,17 @@ device-capacity result.
 An action that changes linked entities is one domain operation, one Zustand
 `set()`, and one persisted write. Tests count writes where the behavior
 requires atomicity.
+
+## Completed list presentation
+
+The liabilities route applies existing sorting, kind/Closed filters and
+search before separating in-progress liabilities from the collapsed
+Completed section. A balance below 1 or a recorded recurring-liability
+closure marks an item completed. The Goals route similarly separates
+non-pinned goals whose saved amount is at least their displayed target into
+the collapsed Achieved section. Sorting and search remain upstream of the
+grouping; the Emergency fund goal remains pinned first and outside Achieved.
+Both sections expand the same cards used by the active lists.
 
 ## Asset values and returns
 
