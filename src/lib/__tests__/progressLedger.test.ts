@@ -321,7 +321,7 @@ describe('permanent progress ledger', () => {
         expect(count?.done).toBe(2);
         expect(count?.total).toBe(2);
       } else if (phase === 28) {
-        expect(count?.done).toBe(36);
+        expect(count?.done).toBe(37);
         expect(count?.total).toBe(37);
         expect(dashboard.split('\n').find((line) => line.startsWith('| P28-E-R4 |')))
           .toContain('| Done |');
@@ -346,7 +346,7 @@ describe('permanent progress ledger', () => {
         expect(dashboard.split('\n').find((line) => line.startsWith('| P28-F-R4-R1-R1-R1-R1-R1-R1-R1 |')))
           .toContain('| Done |');
         expect(dashboard.split('\n').find((line) => line.startsWith('| P28-F-R6 |')))
-          .toContain('| In progress |');
+          .toContain('| Done |');
       } else {
         expect(count?.done).toBe(count?.total);
       }
