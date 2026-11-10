@@ -53,6 +53,7 @@ function AppContent() {
                 }}>
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="assets" />
+                <Stack.Screen name="about" />
                 <Stack.Screen name="liabilities" />
                 <Stack.Screen name="insurance" />
                 <Stack.Screen name="emergency-fund" />

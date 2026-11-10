@@ -74,6 +74,7 @@ describe('useAppMenu', () => {
       ['Security', '/security'],
       ['Profile', '/profile-form'],
       ['Theme', '/theme'],
+      ['About', '/about'],
       ['Erase all data', '/erase-data'],
     ] as const;
     const menuRef: { current: ReturnType<typeof useAppMenu> } = { current: [] };

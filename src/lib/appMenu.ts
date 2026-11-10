@@ -1,7 +1,7 @@
 export type AppMenuItem = {
   label: string;
   description?: string;
-  icon: 'download' | 'lock' | 'user' | 'sliders' | 'link' | 'trash-2' | 'database' | 'alert-triangle' | 'edit-2' | 'calendar' | 'check-circle';
+  icon: 'download' | 'lock' | 'user' | 'sliders' | 'link' | 'trash-2' | 'database' | 'alert-triangle' | 'edit-2' | 'calendar' | 'check-circle' | 'info';
   destructive?: boolean;
   disabled?: boolean;
 };
@@ -19,6 +19,7 @@ export function buildAppMenu({
     { label: 'Security', icon: 'lock' },
     { label: 'Profile', icon: 'user' },
     { label: 'Theme', description: `Current theme: ${themeLabel}`, icon: 'sliders' },
+    { label: 'About', icon: 'info' },
   ];
   if (isDev) {
     items.push(
