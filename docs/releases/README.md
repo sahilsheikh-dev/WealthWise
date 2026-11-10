@@ -142,10 +142,11 @@ The shared project rules are in [AGENTS.md](../../AGENTS.md),
   PRs #114/#115 at `5ae1b72` and `936ee25`. Six more screenshots expand the
   release history; About is exclusive to v1.2.0. The owner reports O45-O53
   passed; device/tester details were not supplied. The current untagged draft
-  targets the earlier candidate and is authorized for replacement after the
-  screenshot revision reaches `develop`; task PR #116 merged into the phase
-  as `f08f963`, with its phase PR pending. No v1.2.0 tag or APK exists; final
-  gates must be rerun, then EAS build and artifact verification completed.
+  targets the earlier candidate and is authorized for replacement now that
+  the screenshot revision reached `develop`; task PR #116 merged into the
+  phase as `f08f963`, and phase PR #117 merged into `develop` at `25258ac`.
+  All six ordered gates pass on `25258ac`. No v1.2.0 tag or APK exists; EAS
+  build and artifact verification remain pending.
 - Production AAB: not verified.
 
 See [release-history.md](release-history.md) for the published release and

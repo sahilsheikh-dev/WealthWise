@@ -7,10 +7,15 @@
   and About only to v1.2.0. The README gallery remains for latest-published
   v1.1.1. Task PR #112, phase PR #113 and evidence PRs #114/#115 merged into
   `develop` at `d347526`, `5ae1b72` and `936ee25`. A v1.2.0 draft exists at
-  the earlier candidate and is authorized for replacement after screenshot
-  integration; no v1.2.0 tag or APK exists. Screenshot task PR #116 merged
-  into the phase as `f08f963`; the phase PR is pending. All six gates passed
-  at `936ee25`; they must be rerun after the screenshot update. The owner
+  the earlier candidate; its replacement is authorized now that screenshot
+  integration is complete. No v1.2.0 tag or APK exists. Screenshot task PR
+  #116 merged into the phase as `f08f963`; phase PR #117 merged into
+  `develop` at `25258ac`. All six gates pass on that commit: 101 suites,
+  1,316 passed, 1 skipped; coverage is 95.96/92.15/98.02/97.62% overall,
+  `src/data`
+  91.06/87.47/94.48/94.19%, `src/domain` 96.94/93.00/98.80/98.31%, and
+  `src/lib` 100% in all measures. The draft replacement, EAS APK build,
+  artifact/link verification and publication remain pending. The owner
   reports O45-O53 passed on 2026-11-11; device/tester fields were not supplied.
 - CR-108 is complete on `develop`. P29-Q-R1 and P20-N-R3 merged at
   `80eb0e4` and `f5f6e16`. P41-A and its category correction merged through
