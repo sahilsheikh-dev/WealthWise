@@ -1,6 +1,31 @@
-<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-09 | Updates: owner and AI agents -->
+<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-10 | Updates: owner and AI agents -->
 
 # Open items
+
+## CR-106 owner decisions and scope
+
+- Decide whether public adoption is a goal. If it is not, drop public-launch
+  checklist items that depend on adoption as a goal.
+- Approve or decline P31-D's privacy statement as a root document before that
+  part is executed; its content must use verified source facts only.
+- After P40-A, choose whether Phase 40 remains report-only or proceeds with
+  the P40-B narrative/archive split.
+- Confirm the holder of the MIT license.
+- After P31-E has a successful real PR run, set branch protection to require
+  the workflow.
+
+Not adopted in CR-106:
+
+- ClaudEx Loop and the agent-swarm kit: no demonstrated repository need for
+  additional external agent orchestration or its maintenance surface.
+- Shunt: it is not Claude Code and relies on a third-party 0.1.0 hook; the
+  identified root cause is progress-ledger size, not a missing tool hook.
+- GDPR consent/processor items: no server or analytics is described in the
+  verified app architecture; do not add server-processing controls without a
+  verified processing surface.
+- Show HN, GitHub Discussions and issue-response items: not adopted while the
+  public-adoption goal and ongoing community-response capacity remain
+  undecided.
 
 ## Recently resolved
 

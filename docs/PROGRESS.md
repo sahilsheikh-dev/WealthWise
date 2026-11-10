@@ -52,7 +52,7 @@ parts count in the numerator and denominator. Phases 1–14 count as one part
 each.
 
 ```text
-Overall progress █████████░ 86% (161/187)
+Overall progress ████████░░ 81% (161/199)
 Phase 1          ██████████ 100% (1/1)
 Phase 2          ██████████ 100% (1/1)
 Phase 3          ██████████ 100% (1/1)
@@ -83,7 +83,7 @@ Phase 27         ██████████ 100% (1/1)
 Phase 28         ██████████ 97% (32/33)
 Phase 29         ██████████ 100% (41/41)
 Phase 30         ██████████ 100% (3/3)
-Phase 31         ░░░░░░░░░░ 0% (0/3)
+Phase 31         ░░░░░░░░░░ 0% (0/5)
 Phase 32         ░░░░░░░░░░ 0% (0/3)
 Phase 33         ░░░░░░░░░░ 0% (0/3)
 Phase 34         ░░░░░░░░░░ 0% (0/3)
@@ -91,6 +91,8 @@ Phase 35         ░░░░░░░░░░ 0% (0/3)
 Phase 36         ░░░░░░░░░░ 0% (0/4)
 Phase 37         ░░░░░░░░░░ 0% (0/3)
 Phase 38         ░░░░░░░░░░ 0% (0/3)
+Phase 39         ░░░░░░░░░░ 0% (0/8)
+Phase 40         ░░░░░░░░░░ 0% (0/2)
 ```
 
 | ID | Legacy ID | Status | Evidence | Last updated |
@@ -191,6 +193,7 @@ Phase 38         ░░░░░░░░░░ 0% (0/3)
 | CR-103 | — | Done | Aligned v1.0.0 metadata, published v1.1.1, promoted it to latest in README/history, renamed the v1.1.0 APK asset, and verified the download and screenshot URLs. | 2026-11-09 |
 | CR-104 | — | Done | Fetched and audited all 36 remote branches; all tips are integrated into `develop`, the v1.1.1 release branch is integrated into `main`, the three release-line trees match, and no open PRs or pending merges remain. Fast-forwarded the stale local `main` branch. | 2026-11-09 |
 | CR-105 | — | Done | Confirmed the release workflow already mandates the agent's EAS `android-apk` build and draft upload; explicitly prohibit waiting for or asking the owner/developer for an APK or local APK path in shared rules and release guides, with regression coverage. | 2026-11-09 |
+| CR-106 | — | Done | Plan report-first external-guidance work for Phase 31 privacy/CI rows, new Phase 39 release audit and hardening, and Phase 40 agent-context hygiene; record owner decisions and keep reports out of Git except for the findings summary table. | 2026-11-10 |
 | P26-A | P15-M | Done (device checks outstanding) | Accessibility/performance fixes, 91-suite verification and all six ordered gates passed; native font-scale, touch and accessibility checks remain open. | 2026-11-06 |
 | P27-A | — | Done | Dead-code/dependency cleanup, bundle audit and bounded schedule benchmark; 91 suites and all six ordered gates passed. | 2026-11-07 |
 | P28-A | `fbdcbac`, `41c4617`, `d0ddff8` | Done | Report-first release readiness, initial `0.2.0` metadata alignment, audit/data-safety/migration inventory, README and changelog corrections. Revised by P28-B for stable-version metadata; Revised by P28-A-R1 for the v13 backup equality regression. Protected routes remain unchanged. | 2026-11-07 |
@@ -270,9 +273,11 @@ Phase 38         ░░░░░░░░░░ 0% (0/3)
 | P30-A | — | Done | Real-store action persistence/hydration and eight screen refresh checks pass; three SQLite fallback/restart tests reproduce stale-value restoration. Source scan finds no module-level Map caches; the prior-state mutation harness passes. | 2026-11-08 |
 | P30-B | — | Done | Durable legacy authority markers win over stale SQLite after failed writes, read-back mismatch and fallback; deletion tombstones prevent removed values returning. Restart regressions now pass, and a mounted banner test verifies persistence failures are visible. | 2026-11-08 |
 | P30-C | — | Done | TypeScript source scan guards hook closure inputs, explicit memo dependencies and module-level Map caches; a dev-only diagnostic reports hydration source and last-write verification. | 2026-11-08 |
-| P31-A | — | Planned | CODE_OF_CONDUCT.md; root-document changes require explicit owner authorization when executed. Dependencies: none. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
-| P31-B | — | Planned | YAML bug, feature and question issue forms plus config.yml; warn contributors not to include financial data. Dependencies: none. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
-| P31-C | — | Planned | Write an accessibility statement and audit checklist; owner confirmed documentation plus audit, not new app features. Dependencies: none. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P31-A | — | Planned | CODE_OF_CONDUCT.md; root-document changes require explicit owner authorization when executed. Dependencies: none. | 2026-11-09 |
+| P31-B | — | Planned | YAML bug, feature and question issue forms plus config.yml; warn contributors not to include financial data. Dependencies: none. | 2026-11-09 |
+| P31-C | — | Planned | Write an accessibility statement and audit checklist; owner confirmed documentation plus audit, not new app features. Dependencies: none. | 2026-11-09 |
+| P31-D | — | Planned | Privacy statement derived only from verified source facts: local-only storage, no network calls or analytics, local notifications, permissions, encrypted-backup scope, and the unencrypted-at-rest limit. Root document; explicit owner authorization required when executed. Dependencies: P39-C. | 2026-11-10 |
+| P31-E | — | Planned | GitHub Actions workflow for pull requests to develop and main; run gates 1-4 on the Node version in .nvmrc, pin action versions, use no secrets and minimal permissions, and verify with a real PR run. Owner then sets branch protection to require it. Dependencies: none. | 2026-11-10 |
 | P32-A | — | Planned | Use Device Hub.app (not Android tooling); capture only synthetic demo data; keep the capture script outside the repository and delete it after use; select versioned screenshot paths. Dependencies: none. | 2026-11-09 |
 | P32-B | — | Planned | Capture feature screenshots from the matching release build with synthetic data, except where the owner explicitly approves reuse of the same image across versions; do not capture personal phone data or retain/package the temporary script. Dependencies: P32-A. | 2026-11-09 |
 | P32-C | — | Planned | Capture and add reviewed version-specific screenshots to the README, release Markdown and GitHub Release bodies, then attach images to matching releases, including v1.0.0 and v1.1.0. The sections are present; image assets remain pending. Owner explicitly authorizes screenshot-only additions to published records. Dependencies: P32-B. | 2026-11-09 |
@@ -295,6 +300,16 @@ Phase 38         ░░░░░░░░░░ 0% (0/3)
 | P38-A | — | Planned | Inventory operations with genuine asynchronous loading and define when skeleton placeholders should appear, including theme, accessibility and reduced-motion behavior. Dependencies: none. | 2026-11-09 |
 | P38-B | — | Planned | Implement reusable skeleton loaders and connect them only to the identified loading states; keep errors and empty states explicit. Dependencies: P38-A. | 2026-11-09 |
 | P38-C | — | Planned | Test loading, success, empty and failure transitions and confirm skeletons never mask errors or flash during synchronous operations. Dependencies: P38-B. | 2026-11-09 |
+| P39-A | — | Planned | Report-first master read-only audit of dead code, secrets/config, app lock, notification-response route, wealthwise:// deep links, silent failures, performance, dependencies, debug residue, TODO debt, permissions, and first launch. Every finding needs file/line evidence and severity P0-P3. Dependencies: none. | 2026-11-10 |
+| P39-B | — | Planned | Report-first secrets/network/debug-residue verification across tracked files, Git history patterns and EAS config; inspect the exported bundle to prove dev-menu demo/stress loaders and the dev storage diagnostic are absent or unreachable; check console/debugger statements and source maps; turn the no-fetch/XHR/WebSocket-in-app-or-src finding into a regression test. Dependencies: P39-A. | 2026-11-10 |
+| P39-C | — | Planned | Report-first permissions/privacy trace from declaration to request to use for notifications, biometrics, file/share/document picker and SQLite; verify denial/revocation behavior and Android allowBackup from resolved config, marking unverifiable items unverified. Dependencies: P39-A. | 2026-11-10 |
+| P39-D | — | Planned | Report-first silent-failure and recovery-state audit extending P30 across storage, backup import/export, notification scheduling and SQLite fallback visibility. Dependencies: P39-A. | 2026-11-10 |
+| P39-E | — | Planned | Report-first dependency risk triage using current npm audit; separate production-reachable dependencies from tooling, record accepted risks and owner decisions; no force fix or install-script approval. Dependencies: P39-A. | 2026-11-10 |
+| P39-F | — | Planned | Report-first debt/skipped-test audit of TODO/FIXME markers, the one skipped test and opt-in stress benchmark, with a disposition per item. Dependencies: P39-A. | 2026-11-10 |
+| P39-G | — | Planned | Report-first clean-install walkthrough of onboarding, lock, reminders prompt, first transaction, and interrupted/denied paths; findings feed P37-A. Dependencies: P39-A. | 2026-11-10 |
+| P39-H | — | Planned | Remediation plan grouping findings into the smallest independent batches, with containment before cleanup, required owner approvals and rollback. Detailed reports stay in chat or /tmp; only the findings summary table enters the ledger. Dependencies: P39-B, P39-C, P39-D, P39-E, P39-F and P39-G. | 2026-11-10 |
+| P40-A | — | Planned | Report-only measurement of docs/PROGRESS.md, docs/memory/* and AGENTS.md sizes, parsing tests and per-prompt read cost. Dependencies: none. | 2026-11-10 |
+| P40-B | — | Held pending owner approval | After P40-A, move completed-phase narrative out of PROGRESS.md into archive files, keep the dashboard, standing rules and open items in the main file, and update ledger tests to read the archives without weakening assertions. Dependencies: P40-A and owner approval. | 2026-11-10 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
 DEC-P29AA-EF-LINK-INTEGRITY: Assumed valid Emergency Fund links are holding IDs
@@ -3381,6 +3396,7 @@ completion checks without hardcoding totals.
 | P28-E-R4 | Phase 28 | P28-E | current | 2026-11-09 | Connect the complete `history/by-phase` ancestry to `develop` while preserving `develop`, `release/v1.1.0`, and `main` tracked content. | Done; archive tip `e4a95d57d7bfa3d062d233c3ca315a1a520ef654` is reachable through tree-preserving merge `c4f9aba`. Task PR #49 merged into Phase 28 as `7f9221a`; Phase 28 PR #50 merged into `develop` as `b5dbe5f`. Every remote branch tip is reachable from `develop`. `main` and `release/v1.1.0` remain at `7bea8e62c10f641f1fe9aeb9e3ef605b3620250a`, tree `207ed97e541e55919d5cb58afbd25c4b0ed835c0`. | Task branch `task/P28-E-R4-connect-history-archive`; phase branch `phase/28-qa-and-release`; PRs #49 and #50 merged task -> phase -> `develop`. | Old assertions expected P28-E-R4 `In progress` and Phase 28 22/23 done. New assertions expect `Done` and 23/23 after PR #50 integration and remote-branch reachability verification. Reason: the work is fully integrated; no guard or threshold was removed. | current request |
 | P28-E-R5 | Phase 28 | P28-E | current | 2026-11-09 | Audit requested first-parent commit subjects and create `release/v1.0.0` at the existing `v1.0.0` tag target without rewriting history or changing protected branch trees. | Done; Revised by P28-E-R5-R1. 403 non-merge commits after the initial commit are already ancestors of `main` and `develop`. All 30 phase branches exist and every requested commit is reachable from at least one. Eighty-four old subjects do not pass the current Conventional Commit hook; rewording would rewrite history, so no commit IDs or messages were changed. New historical branch `release/v1.0.0` points to tagged commit `cac6fedc6242b495558f11cc6d7fe8551fd354ea`, already an ancestor of `main` and `develop`. Task PR #52 merged into Phase 28 as `f9bb715`; phase PR #53 merged into `develop` as `0402592`. | Task branch `task/P28-E-R5-record-v1.0-release-branch`; Phase 28 branch `phase/28-qa-and-release`; PRs #52 and #53 merged task -> phase -> `develop`. | Old: the v1.0.0 tag existed but no matching release branch was present, and 403 historical commits appeared on the first-parent main line. New: a branch points at the published tag; commits remain unchanged because ordinary PRs cannot re-introduce existing ancestors and rewriting is prohibited. Reason: preserve existing code/history while making the historical release branch explicit. |
 | P28-E-R5-R1 | Phase 28 | P28-E-R5 | current | 2026-11-09 | Record final integration of P28-E-R5 to `develop` and reconcile status/memory evidence without changing application code or protected release branches. | Done; Phase 28 PR #53 merged into `develop` as `04025926a95b8dda22f15e67b4ea3c3c8769a994`. `main` remains `7bea8e62c10f641f1fe9aeb9e3ef605b3620250a`; `release/v1.0.0` remains at the existing v1.0.0 tag target and `release/v1.1.0` remains unchanged. | Task branch `task/P28-E-R5-R1-record-develop-merge`; phase branch `phase/28-qa-and-release`. | Old: the P28-E-R5 record said Phase 28 -> `develop` was pending after PR #53 had merged. New: this revision records PR #53's merge SHA and verifies the protected refs. Reason: synchronize the permanent ledger with completed PR integration. |
+| CR-106 | Phase 28 | — | current | 2026-11-10 | Plan report-first external-guidance work for Phases 31, 39 and 40, with roadmap, owner decisions and test expectations. | Done; planning rows only, with no audit, implementation or app-source change. All six ordered gates passed; Gate 1: 98 suites, 1,271 passed, 1 skipped; 95.96/92.04/98.02/97.63% overall coverage. | This task commit; task/phase PR references are reported in chat. | Old: roadmap checks enumerated P31-A-C/P32-P38 and CR/prompt coverage stopped at CR-103/CR-96. New: exact-once checks include P31-D/E, P39-A-H, P40-A/B and CR-106, with P40-B's owner-approval hold checked explicitly. Reason: assert the added planning inventory without weakening prior checks. `memoryDocs.test.ts` remains unchanged because its count expectations are derived from the documented values; the verified counts changed from 98 suites/1,270 tests (1,269 passed, 1 skipped) to 98 suites/1,272 tests (1,271 passed, 1 skipped). | current request |
 
 ## 7. Change-request register
 
@@ -3735,14 +3751,23 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
       verification diagnostic.
 13. **Phase 31 — Project health and community** (Planned):
     - P31-A — Add `CODE_OF_CONDUCT.md`. Dependencies: none. This root document
-      requires explicit owner authorization when executed. Demo data and tests
-      are required per DEC-DEMO.
+      requires explicit owner authorization when executed.
     - P31-B — Upgrade bug, feature and question issue templates to YAML issue
       forms and add `config.yml`; warn users not to include financial data.
-      Dependencies: none. Demo data and tests are required per DEC-DEMO.
+      Dependencies: none.
     - P31-C — Write an accessibility statement and audit checklist. The owner
       confirmed documentation plus an audit, not new app features.
-      Dependencies: none. Demo data and tests are required per DEC-DEMO.
+      Dependencies: none.
+    - P31-D — Draft a privacy statement from verified source facts only:
+      local-only storage, no network calls or analytics, local notifications,
+      permissions, encrypted-backup scope, and the unencrypted-at-rest limit.
+      This is a root document and requires explicit owner authorization when
+      executed. Dependencies: P39-C.
+    - P31-E — Add a GitHub Actions workflow for pull requests to `develop` and
+      `main`, running gates 1–4 with the Node version in `.nvmrc`, pinned action
+      versions, no secrets and minimal permissions. Verify with a real PR run;
+      the owner then configures branch protection to require it. Dependencies:
+      none.
 14. **Phase 32 — Screenshots** (Planned):
     - P32-A — Use Device Hub.app, not Android tooling. Capture only
       deterministic synthetic demo data. Keep the one-off capture script
@@ -3813,6 +3838,47 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
     - P38-C — Test loading, success, empty and failure transitions; ensure
       skeletons do not mask errors or flash during synchronous operations.
       Dependencies: P38-B.
+21. **Phase 39 — Release audit and hardening** (Planned; report-first):
+    - P39-A — Read-only audit of dead code, secrets/configuration, app lock,
+      notification-response routing, `wealthwise://` deep links, silent
+      failures, performance, dependencies, debug residue, TODO debt,
+      permissions and first launch. Every finding needs file/line evidence
+      and severity P0-P3. Dependencies: none.
+    - P39-B — Verify secrets, network behavior and debug residue across
+      tracked files, Git history patterns and EAS config; inspect the exported
+      bundle to prove demo/stress loaders and the dev storage diagnostic are
+      absent or unreachable; inspect console/debugger statements and source
+      maps; add a regression test for no fetch/XHR/WebSocket in `app/` or
+      `src/`. Dependencies: P39-A.
+    - P39-C — Trace privacy-sensitive permissions from declaration through
+      request to use for notifications, biometrics, file/share/document
+      picker and SQLite; check denial/revocation behavior and Android
+      `allowBackup` in resolved config, marking unverifiable items unverified.
+      Dependencies: P39-A.
+    - P39-D — Extend P30's silent-failure/recovery audit across storage,
+      backup import/export, notification scheduling and SQLite fallback
+      visibility. Dependencies: P39-A.
+    - P39-E — Triage current `npm audit` findings by production reachability
+      versus tooling, record accepted risks and owner decisions; no force fix
+      or install-script approval. Dependencies: P39-A.
+    - P39-F — Inventory TODO/FIXME markers, the skipped test and opt-in stress
+      benchmark; assign a disposition to each. Dependencies: P39-A.
+    - P39-G — Walk through onboarding, lock, reminders prompt, first
+      transaction and interrupted/denied paths from a clean install; findings
+      feed P37-A. Dependencies: P39-A.
+    - P39-H — Group findings into the smallest independent remediation
+      batches, containment before cleanup, owner approvals and rollback.
+      Detailed reports stay in chat or `/tmp`; only the findings summary table
+      enters this ledger. Dependencies: P39-B through P39-G.
+22. **Phase 40 — Agent-context hygiene** (Planned):
+    - P40-A — Report-only measurement of `docs/PROGRESS.md`,
+      `docs/memory/*` and `AGENTS.md` sizes, their parsing tests and
+      per-prompt read cost. Dependencies: none.
+    - P40-B — After P40-A and owner approval, move completed-phase narrative
+      from `PROGRESS.md` into archive files, keep the dashboard,
+      standing rules and open items in the main file, and update ledger tests
+      to read archives without weakening assertions. Dependencies: P40-A and
+      owner approval.
 
 **Superseded (2026-11-08):** the earlier roadmap ended at Phase 28 and marked
 Phases 24, 26, 27 and 28 as in progress or planned. Those entries have been
@@ -3825,6 +3891,31 @@ work remain in their original phase and use `<ID>-R<n>` (for example,
 An item is `Done` only when its named source and test evidence are available.
 Paths below are repository-relative. Baseline results are not completion
 evidence for the fixes.
+
+### 2026-11-10 — CR-106 roadmap planning
+
+- Updated only the progress ledger, shared status/open-items memory and the
+  progress-ledger regression. No app source or release files changed. The six
+  protected Git blob IDs in `docs/memory/rules.md` were all verified unchanged.
+- The six ordered gates all exited 0:
+
+  | Gate | Command | Exit / result |
+  |---:|---|---|
+  | 1 | `npm test -- --coverage` | 0; 98 suites, 1,271 passed, 1 skipped (1,272 total); coverage 95.96/92.04/98.02/97.63% statements/branches/functions/lines |
+  | 2 | `npx tsc --noEmit` | 0 |
+  | 3 | `npx expo lint` | 0 |
+  | 4 | `npx expo-doctor` | 0; 21/21 checks |
+  | 5 | `npx expo export --platform android` | 0 |
+  | 6 | `npx expo export --platform ios` | 0 |
+
+- Gate 1 per-source coverage: `src/data` lines 760/807 (94.18%), branches
+  799/914 (87.42%); `src/domain` lines 3,598/3,659 (98.33%), branches
+  3,573/3,847 (92.88%); `src/lib` lines 107/107 (100%), branches 126/126
+  (100%). The focused ledger/memory test run passed 2 suites/12 tests.
+- All progress bars and percentages are recomputed by the ledger regression.
+  Final `git diff --check` exited 0. No
+  physical-device behavior was claimed or tested; no EAS or Gradle build was
+  run.
 
 ### 2026-11-09 — current develop verification and roadmap decisions
 
@@ -3911,10 +4002,11 @@ evidence for the fixes.
 
 - Focused release/memory/ledger verification passed 3 suites / 19 tests;
   `git diff --check` passed. No EAS or Gradle build was run.
-- N44 remains owner-reported Pass; the new APK/device verification cannot
-  occur until the owner builds from merged source and uploads the APK.
-  GitHub Release draft creation follows task -> phase -> `develop` PR
-  integration; publication requires separate approval after artifact checks.
+- Task PR #56 and Phase 28 PR #57 merged; the pushed `release/v1.1.1` branch
+  is at `cbb8454`, based on merged candidate `d16886d`. The GitHub draft
+  targets `cbb8454` and includes the screenshot asset. N44 remains
+  owner-reported Pass; APK/device verification awaits owner build and upload.
+  Publication requires separate approval after artifact checks.
 
 ### P28-F-R4-R1-R1-R1 — expanded screenshots and clarified release handoff (2026-11-09)
 
@@ -9636,6 +9728,19 @@ These are simulated/export checks, not physical-device verification. No EAS or
 Gradle build, version bump, or release preparation was performed.
 
 ## 11. Session and release log
+
+### CR-106 roadmap planning (2026-11-10)
+
+- Fetched `origin`; `develop` was already at `origin/develop`. Verified all six
+  protected Git blob IDs and fast-forwarded the existing Phase 28 branch to
+  `develop` before creating `task/CR-106-roadmap-external-guides`.
+- Added only planned Phase 31, 39 and 40 rows, owner decisions/non-adoptions,
+  and derived-ledger-test expectations. Reports and audit findings remain out
+  of Git until the report-first roadmap parts are executed.
+- All six ordered gates exited 0: Gate 1 had 98 suites, 1,271 passed and
+  1 skipped; coverage 95.96/92.04/98.02/97.63% overall. TypeScript, lint,
+  Expo Doctor 21/21, Android export and iOS export passed. No source behavior
+  or physical-device result is claimed.
 
 ### P28-E-R5 historical commit audit and v1.0.0 branch (2026-11-09)
 
