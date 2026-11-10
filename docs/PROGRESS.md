@@ -10027,7 +10027,9 @@ or a release artifact.
 Task branches were deleted after merge; `phase/41-types-frequency-completion`
 is retained. P41-B-R1 corrected the stale reminder assertion and added
 schedule/schema boundaries; the test-first and documentation commits are
-present in the PR chain above.
+present in the PR chain above. The final documentation/test-ledger close-out
+commit `14fb472` was merged by task PR #110 into the retained phase as
+`14c079a`.
 
 #### Final six ordered gates
 
