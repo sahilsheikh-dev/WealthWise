@@ -12,6 +12,9 @@
   replacement draft targets
   `199ebed307ce7755bc92c1f15544999d852db54f`; no v1.2.0 tag or published
   release exists.
+- Build-record task PR #121 merged into the retained phase as
+  `e74c39a610f9ac0bbb8b5edebe3160ea5fa0f2b8`; phase-to-develop integration
+  remains pending.
 - O45-O53 are marked owner-reported Pass (2026-11-11); device model, Android
   version and tester were not supplied. The README Download block remains
   v1.1.1 until v1.2.0 publication. All six ordered gates passed on `3bd5be6`.

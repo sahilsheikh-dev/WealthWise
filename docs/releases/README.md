@@ -145,7 +145,9 @@ The shared project rules are in [AGENTS.md](../../AGENTS.md),
   draft was replaced after the screenshot revision reached `develop`; task PR
   #116 merged into the phase as `f08f963`, and phase PR #117 merged into
   `develop` at `25258ac`.
-  The six ordered gates pass on `develop` at `3bd5be6`. EAS build
+  Build-record task PR #121 merged into the phase as `e74c39a`; its
+  phase-to-develop PR is pending. The six ordered gates pass on `develop` at
+  `3bd5be6`. EAS build
   `6fccf7d1-0580-46a6-9e09-ff7467fb0a30` completed with the `android-apk`
   profile and Android `versionCode` 3 on 2026-11-11. The 112,163,081-byte APK
   is uploaded to the replacement draft and byte-identical to the EAS

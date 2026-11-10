@@ -19,6 +19,9 @@
   `199ebed307ce7755bc92c1f15544999d852db54f`. EAS build
   `6fccf7d1-0580-46a6-9e09-ff7467fb0a30` succeeded with profile `android-apk`
   and `versionCode` 3; its 112,163,081-byte APK is uploaded and byte-verified.
+  Build-record task PR #121 merged into the phase as
+  `e74c39a610f9ac0bbb8b5edebe3160ea5fa0f2b8`; its phase-to-develop PR is
+  pending.
   Public-link verification, main integration, historical release-body updates,
   previous APK asset rollover and publication remain pending. The owner
   reports O45-O53 passed on 2026-11-11; device/tester fields were not supplied.
