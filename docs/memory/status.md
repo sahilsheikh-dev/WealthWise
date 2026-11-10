@@ -1,6 +1,13 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-10 | Updates: owner and AI agents -->
 
 # Status
+- CR-108 is in progress. P29-Q-R1 reproduces the four-choice `choiceAsync`
+  RangeError before production changes, replaces the stress picker with a
+  centered scalable selection dialog, and keeps the helper's two-choice limit.
+  Five focused suites / 30 tests and TypeScript pass; the task-to-phase and
+  phase-to-develop PRs are not yet integrated. Parts 2–6, schema v23, demo
+  updates and the six final ordered gates remain pending. The initial failing
+  test commit is `89b2654`; physical-device checks remain unverified.
 - CR-106 adds planning rows only: P31-D privacy and P31-E CI, report-first
   P39 release audit/hardening, and P40 agent-context hygiene.
   No audit part, app-source change, phase implementation, or release work has

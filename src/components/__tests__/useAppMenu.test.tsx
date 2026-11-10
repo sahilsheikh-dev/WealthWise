@@ -10,7 +10,7 @@ const mockAlert = jest.fn();
 const mockConfirmAsync = jest.fn(async (_options: object) => true);
 const mockPathname: { current: string } = { current: '/' };
 const mockState: {
-  devActions?: { loadDemoData: jest.Mock; loadStressData: jest.Mock };
+  devActions?: { loadDemoData: jest.Mock; loadStressData: jest.Mock; simulateCorruption?: jest.Mock };
   actions: { undoImport: jest.Mock };
 } = {
   devActions: undefined,
@@ -67,6 +67,69 @@ describe('useAppMenu', () => {
     expect(mockRouterPush).toHaveBeenCalledTimes(1);
   });
 
+  it('routes each non-loader app-menu action through its handler', () => {
+    const destinations = [
+      ['Backup and restore', '/backup'],
+      ['Reminders', '/reminders'],
+      ['Security', '/security'],
+      ['Profile', '/profile-form'],
+      ['Theme', '/theme'],
+      ['Erase all data', '/erase-data'],
+    ] as const;
+    const menuRef: { current: ReturnType<typeof useAppMenu> } = { current: [] };
+    function CaptureMenu() {
+      menuRef.current = useAppMenu();
+      return null;
+    }
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    act(() => { renderer = TestRenderer.create(<CaptureMenu />); });
+    if (!renderer) throw new Error('Menu hook did not render.');
+    try {
+      for (const [label, destination] of destinations) {
+        const item = menuRef.current.find(({ label: itemLabel }) => itemLabel === label);
+        if (!item) throw new Error(`${label} menu action did not render.`);
+        act(() => item.onPress());
+        expect(mockRouterPush).toHaveBeenLastCalledWith(destination);
+      }
+      expect(mockRouterPush).toHaveBeenCalledTimes(destinations.length);
+    } finally {
+      act(() => renderer?.unmount());
+    }
+  });
+
+  it('confirms the corrupt-storage action using its single supported choice', async () => {
+    const simulateCorruption = jest.fn();
+    mockState.devActions = {
+      loadDemoData: jest.fn(),
+      loadStressData: jest.fn(),
+      simulateCorruption,
+    };
+    jest.mocked(choiceAsync).mockResolvedValue('continue');
+    const menuRef: { current: ReturnType<typeof useAppMenu> } = { current: [] };
+    function CaptureMenu() {
+      menuRef.current = useAppMenu();
+      return null;
+    }
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    act(() => { renderer = TestRenderer.create(<CaptureMenu />); });
+    if (!renderer) throw new Error('Menu hook did not render.');
+    try {
+      const item = menuRef.current.find(({ label }) => label === 'Simulate corrupt storage');
+      if (!item) throw new Error('Corrupt-storage menu action did not render.');
+      await act(async () => {
+        item.onPress();
+        await Promise.resolve();
+      });
+      expect(choiceAsync).toHaveBeenCalledWith(expect.objectContaining({
+        title: 'Simulate Corrupt Storage?',
+        choices: [{ id: 'continue', label: 'Continue', destructive: true }],
+      }));
+      expect(simulateCorruption).toHaveBeenCalledTimes(1);
+    } finally {
+      act(() => renderer?.unmount());
+    }
+  });
+
   it('shows the demo-loaded Undo / OK popup without navigating, then restores data and shows a toast', async () => {
     const loadDemoData = jest.fn(async () => ({ ok: true as const }));
     const undoImport = jest.fn(async () => ({ ok: true as const }));
@@ -118,7 +181,7 @@ describe('useAppMenu', () => {
     }
   });
 
-  it('keeps stress tiers within the confirmation helper choice limit', () => {
+  it('offers stress tiers in a selection dialog instead of passing four choices to the adapter', () => {
     mockState.devActions = { loadDemoData: jest.fn(), loadStressData: jest.fn() };
     jest.mocked(choiceAsync).mockImplementation((options) => {
       if (options.choices.length > 2) throw new RangeError('At most two choices are supported.');
@@ -135,17 +198,23 @@ describe('useAppMenu', () => {
     try {
       const loadItem = menuRef.current.find(({ label }) => label === 'Load stress data (50y/100y/126y/dense)');
       if (!loadItem) throw new Error('Stress-data menu action did not render.');
-      expect(() => loadItem.onPress()).not.toThrow();
+      expect(loadItem.selection?.choices.map(({ id }) => id)).toEqual(['50', '100', '126', 'dense']);
+      expect(choiceAsync).not.toHaveBeenCalled();
     } finally {
       act(() => renderer?.unmount());
     }
   });
 
-  it('loads a selected stress tier, reports hydration/render timing, and offers Undo', async () => {
+  it.each([
+    ['50', 50, false],
+    ['100', 100, false],
+    ['126', 126, false],
+    ['dense', 126, true],
+  ] as const)('loads selected stress tier %s, reports timing, and offers Undo', async (choice, years, dense) => {
     const loadStressData = jest.fn(async () => ({ ok: true as const, loadMs: 125 }));
     mockState.devActions = { loadDemoData: jest.fn(), loadStressData };
-    mockState.actions.undoImport = jest.fn(async () => ({ ok: true as const }));
-    jest.mocked(choiceAsync).mockResolvedValue('dense');
+    const undoImport = jest.fn(async () => ({ ok: true as const }));
+    mockState.actions.undoImport = undoImport;
     const originalRequestAnimationFrame = globalThis.requestAnimationFrame;
     globalThis.requestAnimationFrame = (callback) => {
       callback(0);
@@ -161,32 +230,34 @@ describe('useAppMenu', () => {
     if (!renderer) throw new Error('Menu hook did not render.');
     try {
       const loadItem = menuRef.current.find(({ label }) => label === 'Load stress data (50y/100y/126y/dense)');
-      if (!loadItem) throw new Error('Stress-data menu action did not render.');
+      if (!loadItem?.selection) throw new Error('Stress-data selection dialog did not render.');
       await act(async () => {
-        loadItem.onPress();
+        loadItem.selection?.onSelect(choice);
         await Promise.resolve();
         await Promise.resolve();
         await Promise.resolve();
       });
 
-      expect(choiceAsync).toHaveBeenCalledWith(expect.objectContaining({
-        title: 'Load stress data?',
-        choices: expect.arrayContaining([
-          expect.objectContaining({ id: '50' }),
-          expect.objectContaining({ id: '100' }),
-          expect.objectContaining({ id: '126' }),
-          expect.objectContaining({ id: 'dense' }),
-        ]),
-      }));
-      expect(loadStressData).toHaveBeenCalledWith(126, true);
+      expect(choiceAsync).not.toHaveBeenCalled();
+      expect(loadStressData).toHaveBeenCalledWith(years, dense);
       expect(mockAlert).toHaveBeenCalledWith(
         'Stress data loaded',
-        expect.stringMatching(/Build, validate, save and replace: 125 ms\. First render after replace: \d+ ms\./),
+        expect.stringMatching(new RegExp(`${dense ? 'Dense 200-year record count within 126 years, including daily SIP' : `${years} years`}\\. Build, validate, save and replace: 125 ms\\. First render after replace: \\d+ ms\\.`)),
         expect.arrayContaining([expect.objectContaining({ text: 'Undo' }), { text: 'OK' }]),
       );
+      const buttons = mockAlert.mock.calls[0]?.[2] as { text: string; onPress?: () => void }[] | undefined;
+      const undoButton = buttons?.find(({ text }) => text === 'Undo');
+      if (!undoButton?.onPress) throw new Error('Stress-data Undo action did not render.');
+      await act(async () => {
+        undoButton.onPress?.();
+        await Promise.resolve();
+      });
+      expect(undoImport).toHaveBeenCalledTimes(1);
+      expect(useUIStore.getState().actionToast).toEqual({ message: 'Stress data removed' });
     } finally {
       globalThis.requestAnimationFrame = originalRequestAnimationFrame;
       act(() => renderer?.unmount());
+      useUIStore.getState().setActionToast(null);
     }
   });
 });
