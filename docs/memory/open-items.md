@@ -1,4 +1,4 @@
-<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-11 | Updates: owner and AI agents -->
+<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-10 | Updates: owner and AI agents -->
 
 # Open items
 
@@ -8,10 +8,10 @@
   keeps the app offline and uses an explicit browser link only.
 - Confirm whether "Once only" is desired for investment plans or liabilities
   in a future request; CR-108 deliberately excludes both.
-- Complete P41-A-R1's test correction and PR integration, finish P41-B's
-  implementation/PR integration, implement P41-C and P41-D, then run the six
-  ordered gates after all parts reach `develop`. Physical-device checks remain
-  unverified and must be recorded before closing CR-108.
+- Complete P41-B task/phase PR integration, implement and integrate P41-C and
+  P41-D, then run the six ordered gates after all parts reach `develop`.
+  Physical-device checks remain unverified and must be recorded before
+  closing CR-108.
 
 ## CR-106 owner decisions and scope
 
@@ -48,8 +48,9 @@ Not adopted in CR-106:
   Planned, with research/reactivation requirements retained. P33-C still
   requires iOS distribution; P35-C requires the P35-B owner go/no-go before
   implementation. Notes includes text, voice/audio recordings, photos and
-  videos. Skeleton loading is planned as P38. See [PROGRESS.md](../PROGRESS.md)
-  for the recorded acceptance scope.
+  videos; its planned migration impact is now schema v24 after CR-108's v23
+  release. Skeleton loading is planned as P38. See
+  [PROGRESS.md](../PROGRESS.md) for the recorded acceptance scope.
 - **Release screenshots and APK handoff:** all 23 owner-supplied screenshots
   (7 for v1.0.0, 8 for v1.1.0 and 8 for v1.1.1) have been copied to
   `docs/releases/screenshots/vX.Y.Z/` as

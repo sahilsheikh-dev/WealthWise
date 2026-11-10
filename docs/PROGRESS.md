@@ -73,7 +73,7 @@ parts count in the numerator and denominator. P1–P14 count as one part
 each.
 
 ```text
-Overall progress ████████░░ 81% (169/208)
+Overall progress ████████░░ 82% (170/208)
 P1          ██████████ 100% (1/1)
 P2          ██████████ 100% (1/1)
 P3          ██████████ 100% (1/1)
@@ -114,7 +114,7 @@ P37         ░░░░░░░░░░ 0% (0/3)
 P38         ░░░░░░░░░░ 0% (0/3)
 P39         ░░░░░░░░░░ 0% (0/8)
 P40         ░░░░░░░░░░ 0% (0/2)
-P41         ██░░░░░░░░ 25% (1/4)
+P41         ███░░░░░░░ 25% (1/4)
 ```
 
 | ID | Legacy ID | Status | Evidence | Last updated |
@@ -338,8 +338,8 @@ P41         ██░░░░░░░░ 25% (1/4)
 | P39-H | — | Planned | Remediation plan grouping findings into the smallest independent batches, with containment before cleanup, required owner approvals and rollback. Detailed reports stay in chat or /tmp; only the findings summary table enters the ledger. Dependencies: P39-B, P39-C, P39-D, P39-E, P39-F and P39-G. | 2026-11-10 |
 | P40-A | — | Planned | Report-only measurement of docs/PROGRESS.md, docs/memory/* and AGENTS.md sizes, parsing tests and per-prompt read cost. Dependencies: none. | 2026-11-10 |
 | P40-B | — | Held pending owner approval | After P40-A, move completed-phase narrative out of PROGRESS.md into archive files, keep the dashboard, standing rules and open items in the main file, and update ledger tests to read the archives without weakening assertions. Dependencies: P40-A and owner approval. | 2026-11-10 |
-| P41-A | — | Done | Add finite Real estate and Custom financial types, validated optional custom names, consistent forms, display/search/backup behavior, and balanced demo data. Real estate maps to the Real estate invest category; Custom maps to Other investments; both use Savings and Investments. Task PR #97 and phase PR #98 merged to `develop` as `9aa6540`. | 2026-11-11 |
-| P41-B | — | In progress | Add Once only recurrence to Budget items, income and insurance premiums with exact-once due, reminder, cash-flow, snapshot and schema-v23 migration behavior. Do not add it to investment plans or liabilities. TypeScript passes; focused run has 11 suites/555 passing tests and one stale P41-A category assertion, isolated for P41-A-R1. Test-first commit: `f98d7dd`; task/phase PR integration pending. Dependencies: P41-A. | 2026-11-11 |
+| P41-A | — | Done; Revised by P41-A-R1 | Add finite Real estate and Custom financial types, validated optional custom names, consistent forms, display/search/backup behavior, and balanced demo data. Real estate maps to the Real estate invest category; Custom maps to Other investments; both use Savings and Investments. Task PR #97 and phase PR #98 merged to `develop` as `9aa6540`; P41-A-R1 task PR #99 and phase PR #100 merged to `develop` as `a67f54f`. | 2026-11-10 |
+| P41-B | — | In progress | Add Once only recurrence to Budget items, income and insurance premiums with exact-once due, reminder, cash-flow, snapshot and schema-v23 migration behavior. Do not add it to investment plans or liabilities. TypeScript passes; focused P41-B/migration/demo suite passes (7 suites, 216 tests). Test-first commit `f98d7dd`; implementation `873eed7`; task/phase PR integration pending. Dependencies: P41-A. | 2026-11-10 |
 | P41-C | — | Planned | Separate completed liabilities and achieved goals into labelled collapsed sections while retaining filters, sorting, search and the pinned Emergency fund goal. Dependencies: P41-A. | 2026-11-10 |
 | P41-D | — | Planned | Add the offline About route, app-menu access, confirmed browser update link, route tests and offline regression evidence. Dependencies: none. | 2026-11-10 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
@@ -668,12 +668,13 @@ Premigration bytes are copied once and removed by erase-all.
 | v20 | Adds optional recurring-liability closure metadata. | P29-W; identity-preserving v19-to-v20 migration |
 | v21 | Adds optional recurring-investment stop date. | P29-X; identity-preserving v20-to-v21 migration |
 | v22 | Adds Budget income recurrence frequency and first-due month; existing income defaults to monthly. | P29-AB; additive v21-to-v22 migration |
+| v23 | Adds optional custom holding/liability names and Once-only recurrence for Budget items, Budget income and insurance premiums. Existing records remain unchanged; each Once-only schedule matches only its specified first due month/date. | P41-A/P41-B; identity-preserving v22-to-v23 migration |
 
-Current schema is `SCHEMA_VERSION = 22` (`src/domain/schemas.ts`); the
-persisted migration chain and backup importer cover v1 through v21.
+Current schema is `SCHEMA_VERSION = 23` (`src/domain/schemas.ts`); the
+persisted migration chain and backup importer cover v1 through v22.
 **Superseded (2026-11-08):** the prior v15 current-schema statement and
 v1-through-v14 migration boundary were accurate only at their earlier
-checkpoint; the table now records the subsequent source-backed v16–v22
+checkpoint; the table now records the subsequent source-backed v16–v23
 changes.
 
 ### Financial and UI rules
@@ -3342,7 +3343,8 @@ evidence present in exports/checkpoints.
 | P29-O2 | P29 | — | — | 2026-11-04 | Begin a schema-v19 ledger-only storage redesign with a converter, strict ledger validation and staged runtime adoption. | Cancelled by the owner in P29-S: the separate storage redesign is not wanted; P29-O1 remains the accepted v18 implementation. Prototype migration/schema/types and their tests were removed. | Historical preparation commits remain intact; removal and six-gate evidence recorded in P29-S. | Supersedes DEC-P29O2-UNIFIED-LEDGER. The cancellation is not a schema migration; schema remains v18. | current request |
 | P29-Q | P29 | — | — | 2026-11-04 | Measure persistence and performance for seeded 50-, 100- and 200-year app datasets; load them from the dev menu with Undo and report build/save/render timing. | Done after the owner approved Expo SQLite. Native AppData now uses Expo SQLite's key-value adapter with lazy legacy AsyncStorage migration; the stress loader uses replace/Undo. Normal 200-year hydration and single-write targets pass in Node; the measured 50-year size still exceeds 1.5 MB. No AppData schema change. Revised by P29-Q-R1. | Installed AsyncStorage and Expo SQLite package inspection; five-sample benchmark tables, focused behavior tests and six final gates recorded below. Native-device checks remain unverified. | DEC-P29Q-STORAGE-STOP (historical stop point), DEC-P29Q-SQLITE-APPROVAL. Assumed: each tier spans `years × 12` calendar months including injected today; 25 transactions and 12 monthly holding entries per month; five samples use the same seeded payload. Assumed: `SQLiteStorage` has no app-level per-value cap based on the installed source; actual native SQLite/device capacity needs device validation. | current request |
 | P29-Q-R1 | P29 | P29-Q | current | 2026-11-10 | Replace the stress-data menu's four-choice confirmation call with a proper centered selection dialog; keep the two-choice adapter limit and exercise every app-menu handler. | Done; the pre-edit menu-handler regression failed with `RangeError: At most two choices are supported.` after four choices reached `choiceAsync`. The replacement uses the centered shared-sheet pattern; all four tiers load the expected stress parameters, cancellation does not load, Undo restores the prior data, and 1.3x/2.0x simulated font-scale UI tests pass. Focused tests (5 suites / 30 tests), TypeScript and targeted lint pass. Task PR #93 and phase PR #94 merged to `develop` as `80eb0e4`; device checks remain unverified. | Failing reproduction committed before implementation; implementation and focused tests were merged from `task/P29-Q-R1-stress-menu-picker`. | Old: the menu-handler test expected `choiceAsync` to receive all four stress tiers, which reproduces the RangeError. New: the handler exposes four selection-dialog options and never calls `choiceAsync`; the independent helper test still rejects more than two choices. Reason: preserve the helper contract and offer a scalable native selection UI. Audit: all app/src choiceAsync calls pass one or two choices; confirmAsync uses its fixed Cancel/confirm pair. | current request |
-| P41-A | P41 | — | — | 2026-11-10 | Add finite Real estate and Custom financial types, validated optional display names, consistent holding/liability forms, display/search/backup behavior and balanced demo data. | Revised by P41-A-R1: the stale category assertion omitted the required `Real estate` Savings and Investments group entry. The regression now passes with the expected category list and TypeScript remains green. | Test-first commit `5b83d27`; implementation merged to `develop` in PR #97/#98. | Old: Real estate/Custom were unavailable; custom names could not be persisted or shown consistently; one-time/recurring holding forms had non-unified type options. New: finite enum values, optional validated `customTypeName`, one shared ordered holding-type list, consistent liability options, explicit categories/groups, and custom labels across display/search/backup paths. Reason: owner-directed custom financial types without open-ended enum values. | current request |
+| P41-A | P41 | — | — | 2026-11-10 | Add finite Real estate and Custom financial types, validated optional display names, consistent holding/liability forms, display/search/backup behavior and balanced demo data. | Test-first regression commit `5b83d27` preceded production edits. Task PR #97 and phase PR #98 merged to `develop` as `9aa6540`. Revised by P41-A-R1: the stale category assertion omitted the required `Real estate` Savings and Investments group entry; the corrected Budget suite and ledger checks pass. | Test-first commit `5b83d27`; implementation merged through `task/P41-A-custom-financial-types` and `phase/41-types-frequency-completion`; P41-A-R1 task PR #99 merged to phase as `0985ef3`, and phase PR #100 merged to `develop` as `a67f54f`. | Old: Real estate/Custom were unavailable; custom names could not be persisted or shown consistently; one-time/recurring holding forms had non-unified type options. New: finite enum values, optional validated `customTypeName`, one shared ordered holding-type list, consistent liability options, explicit categories/groups, and custom labels across display/search/backup paths. For P41-A-R1, old assertion omitted Real estate from this group; new assertion includes it. Reason: reflect the accepted category mapping; no production behavior changed. | current request |
+| P41-B | P41 | — | — | 2026-11-10 | Add Once-only frequency to Budget items, Budget income and insurance premiums, with exact-once schedules and an identity-preserving schema-v23 migration; exclude investment plans and liabilities. | Test-first commit `f98d7dd`; implementation `873eed7` is local. The focused Budget/pending/policy/backup/migration/archive/demo run passes (7 suites, 216 tests); `npx tsc --noEmit` exits 0. Task/phase PR integration remains pending. | Task branch `task/P41-B-once-only-frequency`; phase branch `phase/41-types-frequency-completion`. | Old: once-only due dates were unsupported for these three scheduled features; new: they match only their configured first month/date and flow through shared dues, reminders, Budget totals, projections and frozen snapshots. Reason: implement CR-108 Part 4 while retaining v22 import compatibility; no once-only option is added to investment plans or liabilities. | current request |
 
 | P29-R | P29 | — | — | 2026-11-05 | Dry-run every supported migration on the owner's local backup using the production import pipeline; compare all requested summaries without copying the backup into the repository or printing personal text. | Done; schema v13 migrated to v18 and the anonymized comparison found no differences in holding invested/current values, net worth/assets, Emergency fund, all goal saved amounts, liabilities, counts, pending dues or reminder preview. `scripts/dryRunMigration.ts` is committed; the backup was not copied or modified. | TypeScript, lint, Expo Doctor, Android export and iOS export exit 0. Full Jest tests pass, but coverage exits 1 because the unchanged `src/domain/schemas.ts` branch coverage is 89.41% against its 90% configured threshold. | DEC-P29R-BACKUP-DRY-RUN. Assumed: reminder preview uses enabled/day-before/same-day, 09:00, amounts hidden, because reminder preferences are not included in backups. Before-state comparison validates source AppData without migration; after-state uses `parseBackup` and its complete migration/validation pipeline. | current request |
 | P29-S | P29 | — | — | 2026-11-05 | Restore Gate 1's coverage threshold and remove uncalled P29-O2 schema-v19 ledger code; no behavior/schema change. | Done; production caller audit found no runtime consumers for the converter, v19 schema/type additions or prototype ledger. Removed the dead code and its tests; P29-O1 remains unchanged. All six ordered gates exit 0. | Final combined P29-S/P29-T closeout commit; hash verified with `git cat-file -t` in the task report. | DEC-P29S-CANCEL-LEDGER-ONLY-STORAGE supersedes DEC-P29O2-UNIFIED-LEDGER. Deleted test assertions covered canceled prototype behavior, not current app behavior; current holding, migration and progress-ledger tests remain. | current request |
@@ -3890,7 +3892,7 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
 18. **P36 — Notes** (Planned):
     - P36-A — Design text notes, voice/audio recordings, photos and videos;
       optional links to financial records; offline storage, media limits,
-      backup/migration compatibility and schema-v23 impact. Dependencies:
+      backup/migration compatibility and schema-v24 impact. Dependencies:
       none. Demo data and tests are required per DEC-DEMO.
     - P36-B — Implement Notes schema, attachment metadata and pure domain
       behavior with offline-safe storage and backup compatibility.
@@ -9941,6 +9943,24 @@ Gradle build, version bump, or release preparation was performed.
 - The P41-A regression suite passes (7 suites/292 tests), as does TypeScript.
   Demo data re-splits existing values rather than increasing the assets total;
   final before/after details are recorded at CR-108 close-out.
+
+### DEC-CR108-ONCE-ONLY (2026-11-10)
+
+- Once-only recurrence is available only for Budget items, Budget income and
+  insurance premiums. Investment plans and liabilities retain their existing
+  one-time forms and do not receive a Once-only frequency option.
+- Budget schedules require the first-due month; insurance schedules use the
+  configured first due date. A once-only item is due only in that specified
+  month/date, is not repeated in later months and cannot use percentage mode.
+- Shared schedule, pending-due, reminder, Budget-total, projected-cash-flow
+  and virtual-month paths evaluate the same due rule. Frozen month snapshots
+  retain their saved values. Schema v22 migrates identity-preservingly to
+  v23; `.premigration.v22` keeps the original serialized bytes once and is
+  removed by erase-all. Backups through v22 migrate through the chain;
+  encrypted v23 round-trip and refusal of v24 are covered by tests.
+- P41-B focused domain, migration, archive, backup and demo tests pass
+  (7 suites / 216 tests); TypeScript passes. The full ordered gates remain
+  pending until Parts 5–6 are integrated.
 
 ### CR-107 implementation integration and release cleanup (2026-11-10)
 

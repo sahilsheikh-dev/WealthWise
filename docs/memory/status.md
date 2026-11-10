@@ -1,18 +1,20 @@
-<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-11 | Updates: owner and AI agents -->
+<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-10 | Updates: owner and AI agents -->
 
 # Status
 - CR-108 is in progress. P29-Q-R1 and P20-N-R3 are merged to `develop` at
   `80eb0e4` and `f5f6e16`. P41-A's finite Real estate and Custom types,
   validated custom names, unified forms and balanced demo data are merged to
-  `develop` at `9aa6540` (task PR #97; phase PR #98). P41-B's test-first
-  commit is `f98d7dd`; Once only now applies to Budget items, income and
-  insurance premiums, with an identity-preserving v22-to-v23 migration and
-  archive support. TypeScript passes and 11 focused suites / 555 tests pass;
-  one additional focused assertion still expects the pre-P41-A investment
-  group and is being corrected separately as P41-A-R1. Parts 5–6 and the six
-  final ordered gates remain pending. The authorized Budget blob is recorded
-  in [rules.md](rules.md). No CR-108 work ships in v1.1.1; physical-device
-  checks remain unverified.
+  `develop` at `9aa6540` (task PR #97; phase PR #98); P41-A-R1 corrected its
+  stale Real estate category assertion and merged via task PR #99 / phase PR
+  #100 at `a67f54f`. P41-B's test-first commit is `f98d7dd` and implementation
+  commit is `873eed7`; Once only applies to Budget items, Budget income and
+  insurance premiums, not investment plans or liabilities. Schema v23,
+  identity-preserving v22 migration, original-byte archive and backup-chain
+  tests pass. TypeScript and the focused run (7 suites / 216 tests) pass;
+  task/phase PR integration remains pending. Parts 5–6 and the six final
+  ordered gates remain pending. The authorized Budget blob is recorded in
+  [rules.md](rules.md). No CR-108 work ships in v1.1.1; physical-device checks
+  remain unverified.
 - CR-106 adds planning rows only: P31-D privacy and P31-E CI, report-first
   P39 release audit/hardening, and P40 agent-context hygiene.
   No audit part, app-source change, phase implementation, or release work has
