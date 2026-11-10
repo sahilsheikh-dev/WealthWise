@@ -237,7 +237,7 @@ and behavior decisions.
 
 ### Schema and migrations
 
-The current persisted schema is v22 (`SCHEMA_VERSION` in
+The current persisted schema is v23 (`SCHEMA_VERSION` in
 [`src/domain/schemas.ts`](src/domain/schemas.ts)). Supported data migrates
 from schema v1 through v22, and backup-import compatibility is retained.
 Backup import validates data and applies supported migrations.

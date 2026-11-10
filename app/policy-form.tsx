@@ -36,7 +36,7 @@ const policyFormSchema = z.object({
   kind: z.enum(['term-life', 'health', 'life-savings', 'ulip', 'motor', 'home', 'other']),
   premium: z.string().trim().regex(/^\d+(?:\.\d{1,2})?$/, 'Enter a valid premium.')
     .transform(Number).pipe(z.number().positive().max(10_000_000)),
-  frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly', 'custom']),
+  frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly', 'once', 'custom']),
   customIntervalMonths: z.string(),
   nextDueDate: z.string(),
   policyNumber: optionalText(30),
@@ -71,6 +71,7 @@ const frequencyOptions: readonly DropdownOption[] = [
   { value: 'quarterly', title: 'Quarterly' },
   { value: 'half-yearly', title: 'Half-yearly' },
   { value: 'yearly', title: 'Yearly' },
+  { value: 'once', title: 'Once only' },
   { value: 'custom', title: 'Custom' },
 ];
 
@@ -382,7 +383,7 @@ function isPolicyKind(value: string): value is PolicyKind {
 
 function isPolicyFrequency(value: string): value is PolicyFrequency {
   return value === 'monthly' || value === 'quarterly' || value === 'half-yearly'
-    || value === 'yearly' || value === 'custom';
+    || value === 'yearly' || value === 'once' || value === 'custom';
 }
 
 const styles = StyleSheet.create({ footer: { gap: 8 } });
