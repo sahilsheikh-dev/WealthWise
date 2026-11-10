@@ -1,6 +1,13 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-11 | Updates: owner and AI agents -->
 
 # Status
+- v1.2.0 (minor) release candidate: the owner-approved note is finalized in
+  `docs/releases/published/v1.2.0.md` with eight supplied screenshots.
+  `app.json`, package metadata and the About-screen test now identify v1.2.0.
+  v1.1.1 remains the latest published release; no v1.2.0 tag, GitHub draft,
+  APK or release artifact exists. Task PR #112 merged into the retained P28
+  phase as `fa153da`; the phase-to-develop PR, ordered gates and
+  physical-device checks remain required before the APK build.
 - CR-108 is complete on `develop`. P29-Q-R1 and P20-N-R3 merged at
   `80eb0e4` and `f5f6e16`. P41-A and its category correction merged through
   PRs #97–#100 at `9aa6540` and `a67f54f`; P41-B merged through PRs #101/#102

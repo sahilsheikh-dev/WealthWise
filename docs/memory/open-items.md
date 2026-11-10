@@ -2,6 +2,25 @@
 
 # Open items
 
+## Proposed v1.2.0 release
+
+- The owner approved the v1.2.0 release-note content, confirmed the version,
+  and supplied the screenshots. The app/package version metadata is now
+  1.2.0; v1.1.1 remains the latest published release. No v1.2.0 tag, GitHub
+  release draft, APK or release artifact exists.
+- The owner supplied and approved use of eight v1.2.0 screenshots; they are
+  copied into the versioned screenshot directory. The approved note is
+  finalized in `docs/releases/published/v1.2.0.md`.
+- Task PR #112 merged into `phase/28-qa-and-release` as `fa153da`; the merged
+  task branch was deleted. Create and merge the phase-to-develop PR, then run
+  the six gates in order. The README Download block and screenshot gallery
+  continue to match the latest published v1.1.1 release until v1.2.0 is
+  published.
+- Physical-device font-scale and screen-reader checks for CR-108 remain
+  unverified. Complete the required device checklist before any release
+  build. APK build, verification and draft upload follow the release process;
+  publication requires separate explicit approval.
+
 ## CR-108 owner decisions and remaining scope
 
 - Decide whether an in-app GitHub update check should ever be added. CR-108

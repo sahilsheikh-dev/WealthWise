@@ -9,7 +9,7 @@ const mockConfirmAsync = jest.fn(async (_options: object) => true);
 
 jest.mock('expo-constants', () => ({
   __esModule: true,
-  default: { expoConfig: { name: 'WealthWise', version: '1.1.1' } },
+  default: { expoConfig: { name: 'WealthWise', version: '1.2.0' } },
 }));
 jest.mock('react-native', () => {
   const ReactModule = jest.requireActual('react') as typeof React;
@@ -64,7 +64,7 @@ describe('About screen', () => {
     const renderer = renderAbout();
     const text = renderer.root.findAllByType('text').map((node) => node.children.join('')).join('\n');
     expect(text).toContain('WealthWise');
-    expect(text).toContain('Version 1.1.1');
+    expect(text).toContain('Version 1.2.0');
     expect(text).toContain(`Data schema version ${SCHEMA_VERSION}`);
     expect(text).toContain('License: MIT');
     expect(text.match(/Data stays on this device; the app makes no network requests\./g)).toHaveLength(1);
