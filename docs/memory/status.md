@@ -1,30 +1,33 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-11 | Updates: owner and AI agents -->
 
 # Status
-- v1.2.0 (minor) release candidate: `app.json`, package metadata and the
-  About-screen test identify v1.2.0. The approved note now includes fourteen
+- v1.2.0 (minor) is published. `app.json`, package metadata and the
+  About-screen test identify v1.2.0. The approved note has fourteen
   screenshots, with five new settings/backup screens added to every release
-  and About only to v1.2.0. The README gallery remains for latest-published
-  v1.1.1. Task PR #112, phase PR #113 and evidence PRs #114/#115 merged into
-  `develop` at `d347526`, `5ae1b72` and `936ee25`. The prior untagged draft
-  was replaced after screenshot integration; the current draft targets
-  `199ebed307ce7755bc92c1f15544999d852db54f`. No v1.2.0 tag or published
-  release exists.
-  Screenshot task PR #116 merged into the phase as `f08f963`; phase PR #117
-  merged into `develop` at `25258ac`. All six gates were rerun on `develop`
-  at `3bd5be6`: 101 suites,
-  1,316 passed, 1 skipped; coverage is 95.96/92.15/98.02/97.62% overall,
-  `src/data` 91.06/87.47/94.48/94.19%, `src/domain` 96.94/93.00/98.80/98.31%, and
-  `src/lib` 100% in all measures. Replacement draft target:
+  and About only to v1.2.0. Release PR #124 merged `release/v1.2.0` into
+  `main` as `2e419f8c7d482adc7523b380fe5b71d3bf15dce3`; tag `v1.2.0` points to
+  the APK's exact source candidate
   `199ebed307ce7755bc92c1f15544999d852db54f`. EAS build
   `6fccf7d1-0580-46a6-9e09-ff7467fb0a30` succeeded with profile `android-apk`
-  and `versionCode` 3; its 112,163,081-byte APK is uploaded and byte-verified.
-  Build-record task PR #121 merged into the phase as
-  `e74c39a610f9ac0bbb8b5edebe3160ea5fa0f2b8`; its phase-to-develop PR is
-  pending.
-  Public-link verification, main integration, historical release-body updates,
-  previous APK asset rollover and publication remain pending. The owner
-  reports O45-O53 passed on 2026-11-11; device/tester fields were not supplied.
+  and Android `versionCode` 3; the 112,163,081-byte APK was privately
+  byte-verified against EAS and published.
+- All six gates were rerun on `develop` at `3bd5be6`: 101 suites, 1,316
+  passed, 1 skipped; coverage is 95.96/92.15/98.02/97.62% overall,
+  `src/data` 91.06/87.47/94.48/94.19%, `src/domain` 96.94/93.00/98.80/98.31%,
+  and `src/lib` 100% in all measures. The documentation-only follow-up is
+  integrated on `develop` at `cd1fa789a143803dcfe0858a4f98a039062029e3`.
+- All 104 screenshot image/link URLs returned HTTP 200; raw image sizes match
+  all 52 repository files. The latest and four versioned APK URLs returned
+  HTTP 200 with their expected artifact sizes. Historical release screenshot
+  sections were updated without changing other release-body content, and the
+  previous v1.1.1 latest APK was renamed to its versioned filename.
+- The final README/latest-release Download parity update and main-to-develop
+  back-merge are being integrated through the authorized task/phase PR flow.
+  Task PR #125 merged the README, gallery, release-note and history updates
+  into the retained phase as `87c8e8f902c313c35e7d48e154ec8d9c9f504789`.
+  The phase-to-develop PR and subsequent develop-to-main/main-to-develop
+  synchronization remain pending. O45-O53 remain owner-reported Pass; device
+  model, Android version and tester details were not supplied.
 - CR-108 is complete on `develop`. P29-Q-R1 and P20-N-R3 merged at
   `80eb0e4` and `f5f6e16`. P41-A and its category correction merged through
   PRs #97–#100 at `9aa6540` and `a67f54f`; P41-B merged through PRs #101/#102
