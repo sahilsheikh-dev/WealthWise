@@ -7,8 +7,9 @@
 - The owner approved the v1.2.0 note and supplied six additional screenshots.
   Five screens are being added to each release; About is exclusive to v1.2.0.
   The existing untagged draft at `936ee25` is authorized for replacement after
-  the screenshot revision merges. v1.1.1 remains latest published; no
-  v1.2.0 tag or APK exists.
+  the screenshot revision merges. Task PR #116 merged into the phase as
+  `f08f963`; its phase PR remains pending. v1.1.1 remains latest published;
+  no v1.2.0 tag or APK exists.
 - O45-O53 are marked owner-reported Pass (2026-11-11); device model, Android
   version and tester were not supplied. The README Download block remains
   v1.1.1 until v1.2.0 publication. Final ordered gates must be rerun after
@@ -25,8 +26,8 @@
 - CR-108 is complete: P41-B-R1 task PR #108 merged into the retained phase as
   `e1db78e`, and phase PR #109 merged to `develop` as `5cb4957`. All six
   ordered gates pass; detailed commands, coverage and PR evidence are in
-  [PROGRESS.md](../PROGRESS.md). Physical-device font-scale and screen-reader
-  checks remain unverified.
+  [PROGRESS.md](../PROGRESS.md). The owner reports O45-O53 physical-device
+  checks passed on 2026-11-11; device/tester details were not supplied.
 
 ## CR-106 owner decisions and scope
 

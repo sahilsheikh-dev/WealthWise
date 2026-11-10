@@ -8,10 +8,10 @@
   v1.1.1. Task PR #112, phase PR #113 and evidence PRs #114/#115 merged into
   `develop` at `d347526`, `5ae1b72` and `936ee25`. A v1.2.0 draft exists at
   the earlier candidate and is authorized for replacement after screenshot
-  integration; no v1.2.0 tag or APK exists. All six gates passed at
-  `936ee25`; they must be rerun after the screenshot update. The owner
-  reports O45-O53 passed on 2026-11-11; device/tester fields were not
-  supplied.
+  integration; no v1.2.0 tag or APK exists. Screenshot task PR #116 merged
+  into the phase as `f08f963`; the phase PR is pending. All six gates passed
+  at `936ee25`; they must be rerun after the screenshot update. The owner
+  reports O45-O53 passed on 2026-11-11; device/tester fields were not supplied.
 - CR-108 is complete on `develop`. P29-Q-R1 and P20-N-R3 merged at
   `80eb0e4` and `f5f6e16`. P41-A and its category correction merged through
   PRs #97–#100 at `9aa6540` and `a67f54f`; P41-B merged through PRs #101/#102
@@ -25,9 +25,9 @@
   `src/domain` 96.94/93.00/98.80/98.31%, and `src/lib` 100% in all measures.
   The current schema is v23; Once only applies to Budget items, Budget income
   and insurance premiums, not investment plans or liabilities. No CR-108 work
-  ships in v1.1.1; physical-device font-scale and screen-reader checks remain
-  unverified. The authorized Budget blob and all other protected hashes are
-  recorded in [rules.md](rules.md).
+  ships in v1.1.1. The owner reports O45-O53 physical checks passed; device
+  and tester fields remain blank. The authorized Budget blob and all other
+  protected hashes are recorded in [rules.md](rules.md).
 - CR-106 adds planning rows only: P31-D privacy and P31-E CI, report-first
   P39 release audit/hardening, and P40 agent-context hygiene.
   No audit part, app-source change, phase implementation, or release work has
