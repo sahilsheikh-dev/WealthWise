@@ -745,6 +745,21 @@ describe('makeTransactionFormSchema', () => {
       expect(schema.safeParse({ ...valid, tenureMonths: '2.5' }).success).toBe(false);
       expect(schema.safeParse({ ...valid, startDate: '2026-10-02' }).success).toBe(false);
       expect(schema.safeParse({ ...valid, startDate: '2026-10-11' }).success).toBe(false);
+      const missingPrincipal = schema.safeParse({ ...valid, principal: '' });
+      expect(missingPrincipal.success).toBe(false);
+      if (!missingPrincipal.success) {
+        expect(missingPrincipal.error.issues.some((issue) =>
+          issue.message === 'Enter an amount like 1500 or 1500.50',
+        )).toBe(true);
+      }
+      const missingStartDate = schema.safeParse({ ...valid, startDate: '' });
+      expect(missingStartDate.success).toBe(false);
+      if (!missingStartDate.success) {
+        expect(missingStartDate.error.issues.some((issue) => issue.message === 'Enter a valid date')).toBe(true);
+      }
+      expect(schema.safeParse({ ...valid, emi: '1000' }).success).toBe(true);
+      expect(schema.safeParse({ ...valid, emi: '1001' }).success).toBe(true);
+      expect(schema.safeParse({ ...valid, emi: '1000.123' }).success).toBe(false);
     });
 
     it('validates optional custom names for recurring and one-time liabilities', () => {
@@ -798,21 +813,6 @@ describe('makeTransactionFormSchema', () => {
         startDate: '2026-10-01',
         dueDate: '',
       }).success).toBe(false);
-      const missingPrincipal = schema.safeParse({ ...valid, principal: '' });
-      expect(missingPrincipal.success).toBe(false);
-      if (!missingPrincipal.success) {
-        expect(missingPrincipal.error.issues.some((issue) =>
-          issue.message === 'Enter an amount like 1500 or 1500.50',
-        )).toBe(true);
-      }
-      const missingStartDate = schema.safeParse({ ...valid, startDate: '' });
-      expect(missingStartDate.success).toBe(false);
-      if (!missingStartDate.success) {
-        expect(missingStartDate.error.issues.some((issue) => issue.message === 'Enter a valid date')).toBe(true);
-      }
-      expect(schema.safeParse({ ...valid, emi: '1000' }).success).toBe(true);
-      expect(schema.safeParse({ ...valid, emi: '1001' }).success).toBe(true);
-      expect(schema.safeParse({ ...valid, emi: '1000.123' }).success).toBe(false);
     });
 
     it('requires two solver values and fills each omitted recurring value', () => {

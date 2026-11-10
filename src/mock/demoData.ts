@@ -63,6 +63,7 @@ const EXPENSE_AMOUNTS: Record<string, number> = {
 const INVESTMENT_AMOUNTS: Record<string, number> = {
   'Mutual fund / SIP': 3_000,
   'Stocks / ETF': 1_500,
+  'Real estate': 1_500,
   'Fixed deposit / RD': 2_000,
   'Gold / Silver': 800,
   'Other investments': 1_200,
@@ -71,6 +72,7 @@ const INVESTMENT_AMOUNTS: Record<string, number> = {
 const INVESTMENT_HOLDING_IDS: Record<string, string> = {
   'Mutual fund / SIP': 'demo-holding-mutual-fund',
   'Stocks / ETF': 'demo-holding-stocks',
+  'Real estate': 'demo-holding-real-estate',
   'Fixed deposit / RD': 'demo-holding-recurring-deposit',
   'Gold / Silver': 'demo-holding-gold',
   'Other investments': 'demo-holding-epf',
@@ -262,6 +264,27 @@ function makeHoldings(today: ISODate, months: string[]): Holding[] {
       logs: [],
     },
     {
+      id: INVESTMENT_HOLDING_IDS['Real estate']!,
+      kind: 'manual',
+      name: 'Rental apartment',
+      type: 'Real estate',
+      invested: 1_400_000,
+      value: 1_500_000,
+      valueAsOf: today,
+      logs: [],
+    },
+    {
+      id: 'demo-holding-custom',
+      kind: 'manual',
+      name: 'Collectible art',
+      type: 'Custom',
+      customTypeName: 'Collectibles',
+      invested: 450_000,
+      value: 500_000,
+      valueAsOf: today,
+      logs: [],
+    },
+    {
       id: INVESTMENT_HOLDING_IDS['Gold / Silver']!,
       kind: 'manual',
       name: 'Gold savings',
@@ -276,8 +299,8 @@ function makeHoldings(today: ISODate, months: string[]): Holding[] {
       kind: 'manual',
       name: 'Employee provident fund',
       type: 'EPFO / PF',
-      invested: 3_792_800,
-      value: 3_988_800,
+      invested: 1_942_800,
+      value: 1_979_800,
       valueAsOf: today,
       logs: [],
     },
@@ -331,6 +354,16 @@ function makeLiabilities(today: ISODate, months: string[]): Liability[] {
     startDate: addMonths(startDate, -18),
     payments: [],
     settlement: { asOf: monthEnd(months[0]!), balance: 0 },
+  }, {
+    id: 'demo-liability-paid-off',
+    kind: 'one-time',
+    name: 'Paid-off personal loan',
+    type: 'Personal loan',
+    principal: 15_000,
+    ratePct: 0,
+    startDate: addMonths(startDate, -8),
+    dueDate: null,
+    payments: [],
   }];
 }
 
@@ -363,6 +396,8 @@ function makeGoals(): Goal[] {
     links: [
       { instrumentId: 'demo-holding-recurring-deposit', share: 30 },
       { instrumentId: INVESTMENT_HOLDING_IDS['Other investments']!, share: 25 },
+      { instrumentId: INVESTMENT_HOLDING_IDS['Real estate']!, share: 25 },
+      { instrumentId: 'demo-holding-custom', share: 25 },
     ],
   }, {
     id: 'demo-goal-education',
@@ -645,6 +680,17 @@ export function buildDemoData(today: ISODate): AppData {
       note: 'Monthly EMI',
     }, { newId: id });
   }
+
+  const paidOffLiability = data.liabilities.find((liability) => liability.id === 'demo-liability-paid-off');
+  if (!paidOffLiability || paidOffLiability.kind !== 'one-time') {
+    throw new Error('Demo paid-off liability is missing.');
+  }
+  data = addLiabilityPayment(data, paidOffLiability.id, {
+    date: monthDate(months[0]!, 20, today),
+    amount: paidOffLiability.principal,
+    kind: 'Payment',
+    note: 'Paid in full',
+  }, { newId: id });
 
   const borrowedStartDate = monthDate(months[0]!, 18, today);
   data = recordMoneyMovement(data, {

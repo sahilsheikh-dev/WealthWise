@@ -2488,6 +2488,8 @@ describe('route render smoke audit', () => {
   it('shows a custom holding type in goal links and investment entries', () => {
     const storeState = useAppStore((state) => state) as { data: AppData };
     const previousData = storeState.data;
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const previousRouteData = { ...routeData };
     const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
     const previousParams = routeParams();
     const today = todayISO();
@@ -2513,30 +2515,35 @@ describe('route render smoke audit', () => {
     let renderer: TestRenderer.ReactTestRenderer | undefined;
 
     try {
-      storeState.data = { ...emptyAppData(today), goals: [goal], holdings: [holding] };
+      const data = { ...emptyAppData(today), goals: [goal], holdings: [holding] };
+      Object.assign(routeData, data);
+      storeState.data = data;
       routeParams.mockReturnValue({ id: goal.id });
-      renderer = renderScreen(React.createElement(GoalFormScreen));
-      act(() => renderer?.root.findByProps({ accessibilityLabel: 'Link an asset' }).props.onPress());
-      const option = renderer.root.findAll((node) =>
+      const goalRenderer = renderScreen(React.createElement(GoalFormScreen));
+      renderer = goalRenderer;
+      act(() => goalRenderer.root.findByProps({ accessibilityLabel: 'Link an asset' }).props.onPress());
+      const option = goalRenderer.root.findAll((node) =>
         String(node.type) === 'pressable'
         && typeof node.props.accessibilityLabel === 'string'
         && node.props.accessibilityLabel.startsWith('Link Artwork collection, Fine art, current value '),
       )[0];
       if (!option) throw new Error('Goal link picker did not expose the custom holding type.');
       act(() => option.props.onPress());
-      expect(renderer.root.findAllByType('text').map((node) => node.children.join('')).join(' '))
+      expect(goalRenderer.root.findAllByType('text').map((node) => node.children.join('')).join(' '))
         .toContain('Fine art');
-      act(() => renderer.unmount());
+      act(() => goalRenderer.unmount());
       renderer = undefined;
 
       routeParams.mockReturnValue({ id: holding.id });
-      renderer = renderScreen(React.createElement(InvestmentEntriesScreen));
-      expect(renderer.root.findByProps({ testID: 'investment-type-label' })
+      const entriesRenderer = renderScreen(React.createElement(InvestmentEntriesScreen));
+      renderer = entriesRenderer;
+      expect(entriesRenderer.root.findByProps({ testID: 'investment-type-label' })
         .findAllByType('text').map((node) => node.children.join('')).join(' '))
         .toContain('Fine art');
     } finally {
       act(() => renderer?.unmount());
       storeState.data = previousData;
+      Object.assign(routeData, previousRouteData);
       routeParams.mockReturnValue(previousParams);
     }
   });
@@ -4808,12 +4815,20 @@ describe('route render smoke audit', () => {
       const typeField = () => renderer?.root.findAllByType(Dropdown)
         .find((field) => field.props.label === 'Liability type');
       expect(typeField()?.props.options.map((option: { value: string }) => option.value)).toEqual(options);
-      const oneTimeButton = renderer.root.findByProps({ accessibilityLabel: 'One-time' });
-      act(() => oneTimeButton.props.onPress());
+      const typeControl = renderer.root.findAllByProps({ accessibilityLabel: 'Liability type' })
+        .find((node) => typeof node.props.onPress === 'function');
+      if (!typeControl) throw new Error('Liability type control did not render.');
+      act(() => typeControl.props.onPress());
+      const customOption = renderer.root.findByProps({ accessibilityRole: 'radio', accessibilityLabel: 'Custom' });
+      act(() => customOption.props.onPress());
+      expect(typeField()?.props.value).toBe('Custom');
+      expect(renderer.root.findAll((node) =>
+        String(node.type) === 'textfield' && node.props.label === 'Custom type name',
+      )).not.toHaveLength(0);
+      const kindControl = renderer.root.findAll((node) => String(node.type) === 'segmentedcontrol')[0];
+      if (!kindControl) throw new Error('Liability form kind control did not render.');
+      act(() => kindControl.props.onChange('one-time'));
       expect(typeField()?.props.options.map((option: { value: string }) => option.value)).toEqual(options);
-      const customTypeField = typeField();
-      if (!customTypeField) throw new Error('Liability type field did not render.');
-      act(() => customTypeField.props.onChange('Custom'));
       expect(renderer.root.findAll((node) =>
         String(node.type) === 'textfield' && node.props.label === 'Custom type name',
       )).not.toHaveLength(0);
@@ -5196,9 +5211,11 @@ describe('route render smoke audit', () => {
       const planType = planRenderer.root.findAllByType(Dropdown)
         .find((node) => node.props.label === 'Holding type');
       if (!planType) throw new Error('Recurring holding type field did not render.');
-      expect(planType.props.options.map((option: { value: string }) => option.value)).toEqual([
+      const planOptions = planType.props.options;
+      expect(planOptions.map((option: { value: string }) => option.value)).toEqual([
         'Mutual fund / SIP',
         'Stocks / ETF',
+        'Real estate',
         'Fixed deposit',
         'Recurring deposit',
         'EPFO / PF',
@@ -5207,10 +5224,17 @@ describe('route render smoke audit', () => {
         'Gold',
         'Silver',
         'Other',
-        'Real estate',
         'Custom',
       ]);
-      act(() => planType.props.onChange('Custom'));
+      const chooseCustomType = (screen: TestRenderer.ReactTestRenderer, label: string) => {
+        const control = screen.root.findAllByProps({ accessibilityLabel: label })
+          .find((node) => typeof node.props.onPress === 'function');
+        if (!control) throw new Error(`${label} control did not render.`);
+        act(() => control.props.onPress());
+        const option = screen.root.findByProps({ accessibilityRole: 'radio', accessibilityLabel: 'Custom' });
+        act(() => option.props.onPress());
+      };
+      chooseCustomType(planRenderer, 'Holding type');
       expect(planRenderer.root.findAll((node) =>
         String(node.type) === 'textfield' && node.props.label === 'Custom type name',
       )).not.toHaveLength(0);
@@ -5223,13 +5247,13 @@ describe('route render smoke audit', () => {
       const manualType = manualRenderer.root.findAllByType(Dropdown)
         .find((field) => field.props.label === 'Holding type');
       if (!manualType) throw new Error('Manual holding type field did not render.');
-      expect(manualType.props.options).toEqual(planType.props.options);
-      act(() => manualType.props.onChange('Custom'));
+      expect(manualType.props.options).toEqual(planOptions);
+      expect(manualRenderer.root.findAllByType('text')
+        .some((node) => node.children.join('').includes('Entries from earlier are kept.'))).toBe(true);
+      chooseCustomType(manualRenderer, 'Holding type');
       expect(manualRenderer.root.findAll((node) =>
         String(node.type) === 'textfield' && node.props.label === 'Custom type name',
       )).not.toHaveLength(0);
-      expect(manualRenderer.root.findAllByType('text')
-        .some((node) => node.children.join('').includes('Entries from earlier are kept.'))).toBe(true);
 
       act(() => manualRenderer.unmount());
       renderer = undefined;

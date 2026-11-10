@@ -21,7 +21,7 @@ export const BUDGET_GROUPS: readonly BudgetGroup[] = [
     name: 'Savings and Investments',
     hint: 'Savings and every investment category.',
     weight: 20,
-    categories: ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Other investments'],
+    categories: ['Mutual fund / SIP', 'Stocks / ETF', 'Real estate', 'Fixed deposit / RD', 'Gold / Silver', 'Other investments'],
   },
   {
     id: 'wants',

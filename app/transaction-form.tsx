@@ -27,6 +27,7 @@ import { listInstruments } from '../src/domain/instruments';
 import { describeSource, investCategoryFor } from '../src/domain/links';
 import { suggestPolicyForTransaction } from '../src/domain/policySuggestions';
 import { holdingValue } from '../src/domain/portfolio';
+import { financialTypeLabel } from '../src/domain/typeLabels';
 import {
   INVESTMENT_FORM_CATEGORIES,
   makeTransactionFormSchema,
@@ -215,7 +216,7 @@ export default function TransactionFormScreen() {
     ...(pendingMode || (transaction?.type === 'invest' && !transaction.source) ? [noInvestmentChoice] : []),
   ];
   const instrumentLabels = Object.fromEntries([
-    ...depositInstruments.map((item) => [item.id, `${item.name} (${item.type})`]),
+    ...depositInstruments.map((item) => [item.id, `${item.name} (${financialTypeLabel(item.type, item.customTypeName)})`]),
     [createInvestmentChoice, '+ Create new investment'],
     [noInvestmentChoice, 'Not linked'],
   ]);

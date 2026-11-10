@@ -159,6 +159,7 @@ export default function GoalFormScreen() {
               <View key={link.instrumentId} style={styles.linkRow}>
                 <View style={styles.linkName}>
                   <AppText weight="medium">{instrument?.name ?? 'Unavailable asset'}</AppText>
+                  {instrument?.typeLabel ? <AppText style={{ color: colors.text3 }}>{instrument.typeLabel}</AppText> : null}
                   <AppText style={{ color: colors.text3 }}>
                     Current value {formatAmount(instrument?.value ?? 0, 'exact', 1)}
                   </AppText>
@@ -217,7 +218,7 @@ export default function GoalFormScreen() {
               <Pressable
                 key={instrument.id}
                 accessibilityRole="button"
-                accessibilityLabel={`Link ${instrument.name}, current value ${formatAmount(instrument.value, 'exact', 1)}`}
+                accessibilityLabel={`Link ${instrument.name}${instrument.typeLabel ? `, ${instrument.typeLabel}` : ''}, current value ${formatAmount(instrument.value, 'exact', 1)}`}
                 onPress={() => {
                   setValue('links', [...links, {
                     instrumentId: instrument.id,
@@ -228,6 +229,7 @@ export default function GoalFormScreen() {
               >
                 <View style={{ flex: 1 }}>
                   <AppText weight="semibold">{instrument.name}</AppText>
+                  {instrument.typeLabel ? <AppText style={{ color: colors.text3 }}>{instrument.typeLabel}</AppText> : null}
                   <AppText style={{ color: colors.text3 }}>
                     {formatAmount(instrument.value, 'exact', 1)}
                   </AppText>
