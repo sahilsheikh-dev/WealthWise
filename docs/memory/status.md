@@ -23,8 +23,11 @@
   previous v1.1.1 latest APK was renamed to its versioned filename.
 - The final README/latest-release Download parity update and main-to-develop
   back-merge are being integrated through the authorized task/phase PR flow.
-  O45-O53 remain owner-reported Pass; device model, Android version and
-  tester details were not supplied.
+  Task PR #125 merged the README, gallery, release-note and history updates
+  into the retained phase as `87c8e8f902c313c35e7d48e154ec8d9c9f504789`.
+  The phase-to-develop PR and subsequent develop-to-main/main-to-develop
+  synchronization remain pending. O45-O53 remain owner-reported Pass; device
+  model, Android version and tester details were not supplied.
 - CR-108 is complete on `develop`. P29-Q-R1 and P20-N-R3 merged at
   `80eb0e4` and `f5f6e16`. P41-A and its category correction merged through
   PRs #97–#100 at `9aa6540` and `a67f54f`; P41-B merged through PRs #101/#102

@@ -16,8 +16,10 @@
   52 raw image sizes matched its repository file. Historical release
   screenshot sections were updated while preserving non-screenshot body
   content, and v1.1.1's former latest APK was renamed to its versioned name.
-- The README/latest-release Download parity, post-publication release-note
-  records and main-to-develop back-merge remain to be integrated through PRs.
+- Task PR #125 merged the README/gallery/latest-note parity, prior-version
+  APK link and release-history updates into the retained phase as
+  `87c8e8f902c313c35e7d48e154ec8d9c9f504789`. The phase-to-develop PR,
+  develop-to-main synchronization and main-to-develop back-merge remain.
 - O45-O53 are owner-reported Pass (2026-11-11); device model, Android version
   and tester were not supplied.
 
