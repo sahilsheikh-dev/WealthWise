@@ -129,17 +129,31 @@ The shared project rules are in [AGENTS.md](../../AGENTS.md),
 
 ## Current release
 
-- Latest published version: v1.1.0
-- Release date: 2026-11-08
+- Latest published version: v1.1.1
+- Release date: 2026-11-09
 - GitHub release:
-  [WealthWise v1.1.0](https://github.com/sahilsheikh-dev/WealthWise/releases/tag/v1.1.0)
-- APK artifact verification: both URLs returned HTTP 200 with a content
-  length of 112,147,677 bytes. The digest was verified privately and is not
-  published.
-- v1.1.1 is the approved release candidate and remains a GitHub draft. Its
-  owner-supplied APK was verified against its finished EAS build and uploaded
-  to the draft; publication and public latest-route rollover are still
-  pending separate approval.
+  [WealthWise v1.1.1](https://github.com/sahilsheikh-dev/WealthWise/releases/tag/v1.1.1)
+- APK artifact verification: the latest and versioned URLs returned HTTP 200
+  with a content length of 112,150,605 bytes. The digest was verified
+  privately and is not published.
+- v1.2.0 is the owner-approved release candidate. Task PR #112 merged its
+  initial note/screenshots and metadata into `phase/28-qa-and-release` as
+  `fa153da`; phase PR #113 merged to `develop` as `d347526`, with evidence
+  PRs #114/#115 at `5ae1b72` and `936ee25`. Six more screenshots expand the
+  release history; About is exclusive to v1.2.0. The owner reports O45-O53
+  passed; device/tester details were not supplied. The previous untagged
+  draft was replaced after the screenshot revision reached `develop`; task PR
+  #116 merged into the phase as `f08f963`, and phase PR #117 merged into
+  `develop` at `25258ac`.
+  Build-record task PR #121 merged into the phase as `e74c39a`; its
+  phase-to-develop PR is pending. The six ordered gates pass on `develop` at
+  `3bd5be6`. EAS build
+  `6fccf7d1-0580-46a6-9e09-ff7467fb0a30` completed with the `android-apk`
+  profile and Android `versionCode` 3 on 2026-11-11. The 112,163,081-byte APK
+  is uploaded to the replacement draft and byte-identical to the EAS
+  artifact. Public-link verification, main integration, historical release
+  body updates, previous-APK asset rollover and publication remain pending;
+  no v1.2.0 tag or published release exists.
 - Production AAB: not verified.
 
 See [release-history.md](release-history.md) for the published release and

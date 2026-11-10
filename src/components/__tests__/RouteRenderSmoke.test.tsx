@@ -1294,6 +1294,7 @@ describe('route render smoke audit', () => {
           { value: 'quarterly', title: 'Quarterly' },
           { value: 'half-yearly', title: 'Half-yearly' },
           { value: 'yearly', title: 'Yearly' },
+          { value: 'once', title: 'Once only' },
         ]);
       await act(async () => {
         renderer?.root.findByProps({ accessibilityLabel: 'Budget item name' }).props.onChangeText('Pet sitting');
@@ -1620,6 +1621,14 @@ describe('route render smoke audit', () => {
       let renderer: TestRenderer.ReactTestRenderer | undefined;
       try {
         renderer = renderScreen(React.createElement(BudgetIncomeFormScreen));
+        expect(renderer.root.findByProps({ accessibilityLabel: 'Income frequency' }).props.options)
+          .toEqual([
+            { value: 'monthly', title: 'Monthly' },
+            { value: 'quarterly', title: 'Quarterly' },
+            { value: 'half-yearly', title: 'Half-yearly' },
+            { value: 'yearly', title: 'Yearly' },
+            { value: 'once', title: 'Once only' },
+          ]);
         await act(async () => {
           renderer?.root.findByProps({ accessibilityLabel: 'Income name' }).props.onChangeText('Quarterly contract');
           renderer?.root.findByProps({ accessibilityLabel: 'Income amount' }).props.onChangeText('12000');
@@ -2301,6 +2310,7 @@ describe('route render smoke audit', () => {
         { value: 'half-yearly', title: 'Half-yearly' },
         { value: 'yearly', title: 'Yearly' },
         { value: 'custom', title: 'Custom' },
+        { value: 'once', title: 'Once only' },
       ]));
       expect(renderer.root.findAllByProps({ accessibilityLabel: 'Custom interval in months' })).toHaveLength(0);
       act(() => frequency.props.onChange('custom'));
@@ -2481,6 +2491,69 @@ describe('route render smoke audit', () => {
     } finally {
       act(() => form?.unmount());
       storeState.data = previousData;
+      routeParams.mockReturnValue(previousParams);
+    }
+  });
+
+  it('shows a custom holding type in goal links and investment entries', () => {
+    const storeState = useAppStore((state) => state) as { data: AppData };
+    const previousData = storeState.data;
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const previousRouteData = { ...routeData };
+    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+    const previousParams = routeParams();
+    const today = todayISO();
+    const goal: Goal = {
+      id: 'custom-type-goal',
+      name: 'Custom type goal',
+      target: 10_000,
+      saved: 0,
+      year: 2030,
+      links: [],
+    };
+    const holding: ManualHolding = {
+      id: 'custom-type-goal-holding',
+      kind: 'manual',
+      name: 'Artwork collection',
+      type: 'Custom',
+      customTypeName: 'Fine art',
+      invested: 1_000,
+      value: 1_200,
+      valueAsOf: today,
+      logs: [],
+    };
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+
+    try {
+      const data = { ...emptyAppData(today), goals: [goal], holdings: [holding] };
+      Object.assign(routeData, data);
+      storeState.data = data;
+      routeParams.mockReturnValue({ id: goal.id });
+      const goalRenderer = renderScreen(React.createElement(GoalFormScreen));
+      renderer = goalRenderer;
+      act(() => goalRenderer.root.findByProps({ accessibilityLabel: 'Link an asset' }).props.onPress());
+      const option = goalRenderer.root.findAll((node) =>
+        String(node.type) === 'pressable'
+        && typeof node.props.accessibilityLabel === 'string'
+        && node.props.accessibilityLabel.startsWith('Link Artwork collection, Fine art, current value '),
+      )[0];
+      if (!option) throw new Error('Goal link picker did not expose the custom holding type.');
+      act(() => option.props.onPress());
+      expect(goalRenderer.root.findAllByType('text').map((node) => node.children.join('')).join(' '))
+        .toContain('Fine art');
+      act(() => goalRenderer.unmount());
+      renderer = undefined;
+
+      routeParams.mockReturnValue({ id: holding.id });
+      const entriesRenderer = renderScreen(React.createElement(InvestmentEntriesScreen));
+      renderer = entriesRenderer;
+      expect(entriesRenderer.root.findByProps({ testID: 'investment-type-label' })
+        .findAllByType('text').map((node) => node.children.join('')).join(' '))
+        .toContain('Fine art');
+    } finally {
+      act(() => renderer?.unmount());
+      storeState.data = previousData;
+      Object.assign(routeData, previousRouteData);
       routeParams.mockReturnValue(previousParams);
     }
   });
@@ -4055,6 +4128,10 @@ describe('route render smoke audit', () => {
         .find((node) => node.props.accessibilityLabel === 'Closed');
       if (!closedChip) throw new Error('Closed liability filter did not render.');
       act(() => closedChip.props.onPress());
+      expect(cardIds()).toEqual([]);
+      const completedToggle = renderer.root.findByProps({ testID: 'liability-completed-toggle' });
+      expect(completedToggle.props.accessibilityLabel).toBe('Completed (1)');
+      act(() => completedToggle.props.onPress());
       expect(cardIds()).toEqual(['liability-card-filter-liability-closed']);
       const closedActionContainer = renderer.root.findByProps({
         testID: 'liability-card-actions-filter-liability-closed',
@@ -4230,6 +4307,16 @@ describe('route render smoke audit', () => {
       { id: 'gold-antique', kind: 'manual', name: 'Antique collection', type: 'Gold', invested: 1_000, value: 1_500, logs: [] },
       { id: 'gold-retirement', kind: 'manual', name: 'Retirement reserve', type: 'Gold', invested: 1_000, value: 1_100, logs: [] },
       { id: 'cash-type', kind: 'manual', name: 'Emergency cash', type: 'Cash', invested: 500, value: 500, logs: [] },
+      {
+        id: 'custom-type',
+        kind: 'manual',
+        name: 'Artwork collection',
+        type: 'Custom',
+        customTypeName: 'Fine art',
+        invested: 5_000,
+        value: 5_500,
+        logs: [],
+      },
     ];
     const data: AppData = { ...emptyAppData(todayISO()), holdings: assets };
     Object.assign(routeData, data);
@@ -4271,6 +4358,20 @@ describe('route render smoke audit', () => {
 
       act(() => screen.root.findByProps({ accessibilityLabel: 'Search assets' }).props.onChangeText(' CASH '));
       expect(assetCards()).toEqual(['asset-card-manual-Emergency cash']);
+      const allChip = screen.root.findAll((node) => String(node.type) === 'chip')
+        .find((node) => node.props.accessibilityLabel === 'All');
+      if (!allChip) throw new Error('All asset filter did not render.');
+      act(() => allChip.props.onPress());
+      act(() => screen.root.findByProps({ accessibilityLabel: 'Search assets' }).props.onChangeText(' FINE ART '));
+      expect(assetCards()).toEqual(['asset-card-manual-Artwork collection']);
+      const customTypeChip = screen.root.findAll((node) => String(node.type) === 'chip')
+        .find((node) => node.props.accessibilityLabel === 'Fine art');
+      if (!customTypeChip) throw new Error('Custom holding name filter did not render.');
+      act(() => customTypeChip.props.onPress());
+      expect(assetCards()).toEqual(['asset-card-manual-Artwork collection']);
+      expect(screen.root.findByProps({ testID: 'asset-card-manual-Artwork collection' })
+        .findAllByType('text').map((node) => node.children.join('')).join(' '))
+        .toContain('Fine art');
       act(() => screen.unmount());
       renderer = renderScreen(React.createElement(AssetsScreen));
       expect(renderer.root.findByProps({ accessibilityLabel: 'Search assets' }).props.value).toBe('');
@@ -4645,7 +4746,14 @@ describe('route render smoke audit', () => {
       payments: [],
     };
     const other: OneTimeLiability = { ...oneTime, id: 'search-bank', name: 'Bank', type: 'Personal loan' };
-    const data: AppData = { ...emptyAppData(todayISO()), liabilities: [other, oneTime] };
+    const custom: OneTimeLiability = {
+      ...oneTime,
+      id: 'search-custom',
+      name: 'Artwork debt',
+      type: 'Custom',
+      customTypeName: 'Fine art debt',
+    };
+    const data: AppData = { ...emptyAppData(todayISO()), liabilities: [other, custom, oneTime] };
     Object.assign(routeData, data);
     store.data = data;
 
@@ -4683,6 +4791,11 @@ describe('route render smoke audit', () => {
       expect(liabilityCards()).toEqual(['liability-card-search-friend']);
       act(() => screen.root.findByProps({ accessibilityLabel: 'Search liabilities' }).props.onChangeText('  personal loan '));
       expect(liabilityCards()).toEqual(['liability-card-search-bank']);
+      act(() => screen.root.findByProps({ accessibilityLabel: 'Search liabilities' }).props.onChangeText('  FINE ART DEBT '));
+      expect(liabilityCards()).toEqual(['liability-card-search-custom']);
+      expect(screen.root.findByProps({ testID: 'liability-card-search-custom' })
+        .findAllByType('text').map((node) => node.children.join('')).join(' '))
+        .toContain('Fine art debt');
       act(() => screen.root.findByProps({ accessibilityLabel: 'Search liabilities' }).props.onChangeText('nothing'));
       expect(screen.root.findAllByProps({ testID: 'liability-no-matches' })).not.toHaveLength(0);
       act(() => screen.unmount());
@@ -4692,6 +4805,50 @@ describe('route render smoke audit', () => {
       act(() => renderer?.unmount());
       Object.assign(routeData, previousRouteData);
       store.data = previousStoreData;
+    }
+  });
+
+  it('uses the same liability type field for recurring and one-time forms', () => {
+    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+    const previousParams = routeParams();
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+
+    try {
+      routeParams.mockReturnValue({});
+      renderer = renderScreen(React.createElement(LiabilityFormScreen));
+      const options = [
+        'Home loan',
+        'Car loan',
+        'Personal loan',
+        'Education loan',
+        'Credit card',
+        'Borrowed money',
+        'Other',
+        'Custom',
+      ];
+      const typeField = () => renderer?.root.findAllByType(Dropdown)
+        .find((field) => field.props.label === 'Liability type');
+      expect(typeField()?.props.options.map((option: { value: string }) => option.value)).toEqual(options);
+      const typeControl = renderer.root.findAllByProps({ accessibilityLabel: 'Liability type' })
+        .find((node) => typeof node.props.onPress === 'function');
+      if (!typeControl) throw new Error('Liability type control did not render.');
+      act(() => typeControl.props.onPress());
+      const customOption = renderer.root.findByProps({ accessibilityRole: 'radio', accessibilityLabel: 'Custom' });
+      act(() => customOption.props.onPress());
+      expect(typeField()?.props.value).toBe('Custom');
+      expect(renderer.root.findAll((node) =>
+        String(node.type) === 'textfield' && node.props.label === 'Custom type name',
+      )).not.toHaveLength(0);
+      const kindControl = renderer.root.findAll((node) => String(node.type) === 'segmentedcontrol')[0];
+      if (!kindControl) throw new Error('Liability form kind control did not render.');
+      act(() => kindControl.props.onChange('one-time'));
+      expect(typeField()?.props.options.map((option: { value: string }) => option.value)).toEqual(options);
+      expect(renderer.root.findAll((node) =>
+        String(node.type) === 'textfield' && node.props.label === 'Custom type name',
+      )).not.toHaveLength(0);
+    } finally {
+      act(() => renderer?.unmount());
+      routeParams.mockReturnValue(previousParams);
     }
   });
 
@@ -4746,6 +4903,215 @@ describe('route render smoke audit', () => {
       act(() => renderer?.unmount());
       Object.assign(routeData, previousRouteData);
       store.data = previousStoreData;
+    }
+  });
+
+  it.each([1.3, 2])('groups completed liabilities behind a collapsed section at font scale %s', (fontScale) => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const previousRouteData = { ...routeData };
+    const store = useAppStore((state) => state);
+    const previousStoreData = store.data;
+    const previousFontScale = mockFontScale;
+    const asOf = todayISO();
+    const active: RecurringLiability = {
+      id: 'group-liability-active',
+      kind: 'recurring',
+      name: 'Active loan',
+      type: 'Home loan',
+      principal: 2_000,
+      ratePct: 0,
+      startDate: asOf,
+      tenureMonths: 12,
+      emi: 200,
+      payments: [],
+      settlement: null,
+    };
+    const nearlyCleared: OneTimeLiability = {
+      id: 'group-liability-nearly-cleared',
+      kind: 'one-time',
+      name: 'Nearly cleared loan',
+      type: 'Borrowed money',
+      principal: 1_000,
+      ratePct: 0,
+      startDate: asOf,
+      dueDate: null,
+      payments: [{ id: 'nearly-cleared-payment', date: asOf, amount: 999.5, note: '', kind: 'Payment' }],
+    };
+    const foreclosed: RecurringLiability = {
+      ...active,
+      id: 'group-liability-foreclosed',
+      name: 'Foreclosed loan',
+      settlement: { asOf, balance: 500 },
+      closure: { date: asOf, paymentId: 'foreclosure-payment', note: 'Foreclosed' },
+    };
+    const closed: RecurringLiability = {
+      ...active,
+      id: 'group-liability-closed',
+      name: 'Closed loan',
+      settlement: { asOf, balance: 400 },
+      closure: { date: asOf, paymentId: 'closed-payment', note: 'Closed' },
+    };
+    const data: AppData = {
+      ...emptyAppData(asOf),
+      liabilities: [nearlyCleared, closed, active, foreclosed],
+    };
+    Object.assign(routeData, data);
+    store.data = data;
+    mockFontScale = fontScale;
+
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      renderer = renderScreen(React.createElement(LiabilitiesScreen));
+      const card = (id: string) => renderer?.root.findAll((node) =>
+        String(node.type) === 'pressable' && node.props.testID === `liability-card-${id}`,
+      ) ?? [];
+      const toggle = () => renderer?.root.findByProps({ testID: 'liability-completed-toggle' });
+
+      expect(card(active.id)).toHaveLength(1);
+      expect(card(nearlyCleared.id)).toHaveLength(0);
+      expect(card(foreclosed.id)).toHaveLength(0);
+      expect(card(closed.id)).toHaveLength(0);
+      expect(toggle()?.props.accessibilityLabel).toBe('Completed (3)');
+      expect(toggle()?.props.accessibilityState).toEqual({ expanded: false });
+
+      act(() => toggle()?.props.onPress());
+      expect(toggle()?.props.accessibilityState).toEqual({ expanded: true });
+      expect(card(nearlyCleared.id)).toHaveLength(1);
+      expect(card(foreclosed.id)).toHaveLength(1);
+      expect(card(closed.id)).toHaveLength(1);
+      act(() => toggle()?.props.onPress());
+      expect(card(nearlyCleared.id)).toHaveLength(0);
+
+      act(() => renderer?.root.findByProps({ accessibilityLabel: 'Filter' }).props.onPress());
+      const sortChip = renderer?.root.findAll((node) =>
+        typeof node.props.accessibilityLabel === 'string'
+        && node.props.accessibilityLabel.startsWith('Sort:'),
+      )[0];
+      if (!sortChip) throw new Error('Liability sort control did not render with the filter panel.');
+      act(() => sortChip.props.onPress());
+      const nameOption = renderer?.root.findAll((node) =>
+        String(node.type) === 'pressable'
+        && node.findAll((child) => child.type === 'text' && child.children.includes('Name')).length > 0,
+      )[0];
+      if (!nameOption) throw new Error('Name sort option did not render.');
+      act(() => nameOption.props.onPress());
+      act(() => toggle()?.props.onPress());
+      expect(renderer?.root.findAll((node) =>
+        String(node.type) === 'pressable'
+        && typeof node.props.testID === 'string'
+        && [nearlyCleared.id, foreclosed.id, closed.id].some((id) => node.props.testID === `liability-card-${id}`),
+      ).map((node) => node.props.testID)).toEqual([
+        'liability-card-group-liability-nearly-cleared',
+        'liability-card-group-liability-foreclosed',
+        'liability-card-group-liability-closed',
+      ]);
+      const search = renderer?.root.findByProps({ accessibilityLabel: 'Search liabilities' });
+      act(() => search?.props.onChangeText('foreclosed'));
+      expect(toggle()?.props.accessibilityLabel).toBe('Completed (1)');
+      expect(card(foreclosed.id)).toHaveLength(1);
+      expect(card(closed.id)).toHaveLength(0);
+      act(() => search?.props.onChangeText(''));
+
+      const closedChip = renderer?.root.findAll((node) => String(node.type) === 'chip')
+        .find((node) => node.props.accessibilityLabel === 'Closed');
+      if (!closedChip) throw new Error('Closed liability filter did not render.');
+      act(() => closedChip.props.onPress());
+      expect(toggle()?.props.accessibilityLabel).toBe('Completed (2)');
+      expect(card(foreclosed.id)).toHaveLength(1);
+      expect(card(closed.id)).toHaveLength(1);
+      expect(card(nearlyCleared.id)).toHaveLength(0);
+    } finally {
+      act(() => renderer?.unmount());
+      Object.assign(routeData, previousRouteData);
+      store.data = previousStoreData;
+      mockFontScale = previousFontScale;
+    }
+  });
+
+  it.each([1.3, 2])('keeps the pinned Emergency fund goal in place while grouping achieved goals at font scale %s', (fontScale) => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const previousRouteData = { ...routeData };
+    const store = useAppStore((state) => state);
+    const previousStoreData = store.data;
+    const previousFontScale = mockFontScale;
+    const asOf = todayISO();
+    const data: AppData = {
+      ...emptyAppData(asOf),
+      holdings: [{
+        id: 'group-emergency-holding',
+        kind: 'manual',
+        name: 'Emergency savings',
+        type: 'Savings account',
+        invested: 1_000,
+        value: 1_000,
+        valueAsOf: asOf,
+        logs: [],
+      }],
+      goals: [
+        { id: 'group-goal-progress', name: 'In progress', target: 100, saved: 90, year: 2028, links: [] },
+        { id: 'group-goal-exact', name: 'Exactly at target', target: 100, saved: 100, year: 2028, links: [] },
+        { id: 'group-goal-over', name: 'Above target', target: 100, saved: 150, year: 2028, links: [] },
+        {
+          id: 'group-emergency-goal',
+          name: 'Emergency fund',
+          target: 1_000,
+          saved: 0,
+          year: 2028,
+          auto: 'ef',
+          links: [{ instrumentId: 'group-emergency-holding' }],
+        },
+      ],
+    };
+    Object.assign(routeData, data);
+    store.data = data;
+    mockFontScale = fontScale;
+
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      renderer = renderScreen(React.createElement(GoalsScreen));
+      const goalLabels = () => renderer?.root.findAll((node) =>
+        String(node.type) === 'pressable'
+        && typeof node.props.accessibilityLabel === 'string'
+        && node.props.accessibilityLabel.startsWith('Edit '),
+      ).map((node) => node.props.accessibilityLabel) ?? [];
+      const toggle = () => renderer?.root.findByProps({ testID: 'achieved-goals-toggle' });
+
+      expect(goalLabels().map((label) => label.slice(5).split(',')[0]))
+        .toEqual(['Emergency fund', 'In progress']);
+      expect(goalLabels()[0]).toContain('100.0% funded');
+      expect(toggle()?.props.accessibilityLabel).toBe('Achieved (2)');
+      expect(toggle()?.props.accessibilityState).toEqual({ expanded: false });
+
+      act(() => renderer?.root.findByProps({ accessibilityLabel: 'Filter' }).props.onPress());
+      const sortChip = renderer?.root.findAll((node) =>
+        typeof node.props.accessibilityLabel === 'string'
+        && node.props.accessibilityLabel.startsWith('Sort:'),
+      )[0];
+      if (!sortChip) throw new Error('Goal sort control did not render with the filter panel.');
+      act(() => sortChip.props.onPress());
+      const nameOption = renderer?.root.findAll((node) =>
+        String(node.type) === 'pressable'
+        && node.findAll((child) => child.type === 'text' && child.children.includes('Name')).length > 0,
+      )[0];
+      if (!nameOption) throw new Error('Name sort option did not render.');
+      act(() => nameOption.props.onPress());
+
+      act(() => toggle()?.props.onPress());
+      expect(goalLabels().map((label) => label.slice(5).split(',')[0]))
+        .toEqual(['Emergency fund', 'In progress', 'Above target', 'Exactly at target']);
+      act(() => renderer?.root.findByProps({ accessibilityLabel: 'Search goals' }).props.onChangeText('Exactly'));
+      expect(toggle()?.props.accessibilityLabel).toBe('Achieved (1)');
+      expect(goalLabels().map((label) => label.slice(5).split(',')[0])).toEqual(['Exactly at target']);
+      act(() => toggle()?.props.onPress());
+      expect(goalLabels()).toHaveLength(0);
+      act(() => renderer?.root.findByProps({ accessibilityLabel: 'Search goals' }).props.onChangeText(''));
+      expect(goalLabels().map((label) => label.slice(5).split(',')[0]))
+        .toEqual(['Emergency fund', 'In progress']);
+    } finally {
+      act(() => renderer?.unmount());
+      Object.assign(routeData, previousRouteData);
+      store.data = previousStoreData;
+      mockFontScale = previousFontScale;
     }
   });
 
@@ -4946,7 +5312,7 @@ describe('route render smoke audit', () => {
         if (holding.kind === 'plan') {
           expect(renderer.root.findAllByType(Dropdown).some((field) => field.props.label === 'Holding type')).toBe(true);
         } else {
-          const manualType = renderer.root.findAllByType(Dropdown).find((field) => field.props.label === 'Type');
+          const manualType = renderer.root.findAllByType(Dropdown).find((field) => field.props.label === 'Holding type');
           expect(manualType?.props.options.map((option: { value: string }) => option.value)).toContain('Fixed deposit');
         }
         act(() => renderer?.unmount());
@@ -5068,7 +5434,33 @@ describe('route render smoke audit', () => {
       const planType = planRenderer.root.findAllByType(Dropdown)
         .find((node) => node.props.label === 'Holding type');
       if (!planType) throw new Error('Recurring holding type field did not render.');
-      expect(planType.props.options.some((option: { value: string }) => option.value === 'Fixed deposit')).toBe(false);
+      const planOptions = planType.props.options;
+      expect(planOptions.map((option: { value: string }) => option.value)).toEqual([
+        'Mutual fund / SIP',
+        'Stocks / ETF',
+        'Real estate',
+        'Fixed deposit',
+        'Recurring deposit',
+        'EPFO / PF',
+        'Savings account',
+        'Cash',
+        'Gold',
+        'Silver',
+        'Other',
+        'Custom',
+      ]);
+      const chooseCustomType = (screen: TestRenderer.ReactTestRenderer, label: string) => {
+        const control = screen.root.findAllByProps({ accessibilityLabel: label })
+          .find((node) => typeof node.props.onPress === 'function');
+        if (!control) throw new Error(`${label} control did not render.`);
+        act(() => control.props.onPress());
+        const option = screen.root.findByProps({ accessibilityRole: 'radio', accessibilityLabel: 'Custom' });
+        act(() => option.props.onPress());
+      };
+      chooseCustomType(planRenderer, 'Holding type');
+      expect(planRenderer.root.findAll((node) =>
+        String(node.type) === 'textfield' && node.props.label === 'Custom type name',
+      )).not.toHaveLength(0);
 
       act(() => planRenderer.unmount());
       renderer = undefined;
@@ -5076,11 +5468,15 @@ describe('route render smoke audit', () => {
       const manualRenderer = renderScreen(React.createElement(InvestmentFormScreen));
       renderer = manualRenderer;
       const manualType = manualRenderer.root.findAllByType(Dropdown)
-        .find((field) => field.props.label === 'Type');
+        .find((field) => field.props.label === 'Holding type');
       if (!manualType) throw new Error('Manual holding type field did not render.');
-      expect(manualType.props.options.map((option: { value: string }) => option.value)).toContain('Fixed deposit');
+      expect(manualType.props.options).toEqual(planOptions);
       expect(manualRenderer.root.findAllByType('text')
         .some((node) => node.children.join('').includes('Entries from earlier are kept.'))).toBe(true);
+      chooseCustomType(manualRenderer, 'Holding type');
+      expect(manualRenderer.root.findAll((node) =>
+        String(node.type) === 'textfield' && node.props.label === 'Custom type name',
+      )).not.toHaveLength(0);
 
       act(() => manualRenderer.unmount());
       renderer = undefined;
@@ -5394,6 +5790,9 @@ describe('route render smoke audit', () => {
         expect(JSON.stringify(sectionActionRow.props.style)).toContain('"alignSelf":"flex-end"');
       }
       const overviewCard = renderer.root.findByProps({ testID: 'budget-overview-card' });
+      const overviewTexts = overviewCard.findAllByType('text').map((node) => node.children.join(''));
+      expect(overviewTexts).not.toContain('Pace');
+      expect(overviewTexts.some((label) => /^(?:Over by|Left ₹)/.test(label))).toBe(false);
       const overviewStyleText = overviewCard.findAll((node) => node.props.style !== undefined)
         .map((node) => JSON.stringify(node.props.style))
         .join(' ');
@@ -5411,6 +5810,9 @@ describe('route render smoke audit', () => {
       const overviewAccessibility = renderer.root.findByProps({ testID: 'budget-overview-summary' }).props.accessibilityLabel;
       expect(overviewAccessibility).toContain('Income');
       expect(overviewAccessibility).toContain('Spending');
+      const accessibleOverviewSummary = renderer.root.findByProps({ testID: 'budget-overview-summary' });
+      expect(accessibleOverviewSummary.props.accessible).toBe(true);
+      expect(accessibleOverviewSummary.props.children).toBeUndefined();
       const paceAccessibility = renderer.root.findByProps({ testID: 'pace-line-container' }).props.accessibilityLabel;
       expect(paceAccessibility).toContain('Spending pace through day');
       expect(paceAccessibility).toContain('actual');
@@ -5424,7 +5826,9 @@ describe('route render smoke audit', () => {
       expect(['income', 'spending', 'investing', 'left'].map((name) =>
         renderer.root.findByProps({ testID: `budget-overview-metric-${name}` }),
       )).toHaveLength(4);
-      expect(overviewCard.findAll((node) =>
+      expect(renderer.root.findByProps({ testID: 'budget-overview-metric-left' })
+        .findAllByType('text').some((node) => node.children.includes('Left'))).toBe(true);
+      expect(pace.findAll((node) =>
         String(JSON.stringify(node.props.style)).includes('"position":"absolute"'),
       )).toHaveLength(0);
       const rowContainer = renderer.root.findAll((node) =>

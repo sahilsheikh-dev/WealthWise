@@ -28,6 +28,7 @@ import {
   monthlyCommitment,
   portfolioTotals,
 } from '../src/domain/portfolio';
+import { financialTypeLabel } from '../src/domain/typeLabels';
 import { planSchedule } from '../src/domain/schedule';
 import { HOLDING_TYPES } from '../src/domain/types';
 import { formatAmount } from '../src/lib/amountDisplay';
@@ -42,6 +43,7 @@ const filters = [
   'Recurring',
   ...HOLDING_TYPES,
 ] as const;
+type AssetFilter = (typeof filters)[number] | { customTypeName: string };
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
@@ -50,7 +52,7 @@ export default function AssetsScreen() {
   const data = useAppData();
   const actions = useAppActions();
   const asOf = todayISO();
-  const [filter, setFilter] = useState<(typeof filters)[number]>('All');
+  const [filter, setFilter] = useState<AssetFilter>('All');
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const [query, setQuery] = useState('');
   const assetSorting = useSort('assets');
@@ -79,11 +81,17 @@ export default function AssetsScreen() {
     };
   }), [data, asOf]);
   const totals = portfolioTotals(rows);
-  const filteredRows = filterRows(rows, filter);
+  const customTypeNames = [...new Set(data.holdings
+    .filter((holding) => holding.type === 'Custom')
+    .map((holding) => financialTypeLabel(holding.type, holding.customTypeName)))];
+  const filteredRows = typeof filter === 'string'
+    ? filterRows(rows, filter)
+    : rows.filter((row) => row.holding?.type === 'Custom'
+      && financialTypeLabel(row.holding.type, row.holding.customTypeName) === filter.customTypeName);
   const normalizedQuery = query.trim().toLowerCase();
   const searchedRows = normalizedQuery
     ? filteredRows.filter((row) =>
-      `${row.name} ${row.holding?.type ?? ''}`.toLowerCase().includes(normalizedQuery),
+      `${row.name} ${row.holding ? financialTypeLabel(row.holding.type, row.holding.customTypeName) : ''}`.toLowerCase().includes(normalizedQuery),
     )
     : filteredRows;
   const visibleRows = filter === 'Recurring'
@@ -130,6 +138,14 @@ export default function AssetsScreen() {
             />
             {filters.map((item) => (
               <Chip key={item} label={item} selected={filter === item} onPress={() => setFilter(item)} />
+            ))}
+            {customTypeNames.map((name) => (
+              <Chip
+                key={`custom-${name}`}
+                label={name}
+                selected={typeof filter !== 'string' && filter.customTypeName === name}
+                onPress={() => setFilter({ customTypeName: name })}
+              />
             ))}
           </ChipRow>
         </View>

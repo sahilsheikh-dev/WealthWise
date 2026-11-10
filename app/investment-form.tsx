@@ -137,7 +137,7 @@ function PlanEditor({
     useForm<PlanFormInput, undefined, PlanFormOutput>({
       resolver: zodResolver(schema), mode: 'onTouched', reValidateMode: 'onChange',
       defaultValues: plan ? {
-        name: plan.name, type: plan.type, frequency: plan.frequency, amount: String(plan.amount),
+        name: plan.name, type: plan.type, customTypeName: plan.customTypeName ?? '', frequency: plan.frequency, amount: String(plan.amount),
         ratePct: String(plan.ratePct), stepUpPct: String(plan.stepUpPct), tenureYears: String(plan.tenureYears),
         startDate: plan.startDate, trackFrom: plan.trackFrom, opening: String(plan.opening),
         actualValue: plan.actualValue === null ? '' : String(plan.actualValue), actualValueDate: plan.actualValueDate ?? '',
@@ -145,7 +145,7 @@ function PlanEditor({
         compounding: plan.compounding ?? 'yearly',
         maturityDate: plan.maturityDate ?? '',
       } : {
-        name: nameSeed, type: 'Mutual fund / SIP', frequency: 'monthly', amount: '', ratePct: '',
+        name: nameSeed, type: 'Mutual fund / SIP', customTypeName: '', frequency: 'monthly', amount: '', ratePct: '',
         stepUpPct: '', tenureYears: '', startDate: today, trackFrom: today, opening: '',
         actualValue: '', actualValueDate: '', valuationMethod: 'manual', compounding: 'yearly', maturityDate: '',
       },
@@ -310,13 +310,13 @@ function ManualEditor({
   const { control, handleSubmit, formState: { errors, isDirty, isSubmitting, dirtyFields } } = useForm<HoldingFormInput, undefined, HoldingFormOutput>({
     resolver: zodResolver(schema), mode: 'onTouched', reValidateMode: 'onChange',
     defaultValues: holding ? {
-      name: holding.name, type: holding.type, invested: String(holding.invested), value: String(holding.value),
+      name: holding.name, type: holding.type, customTypeName: holding.customTypeName ?? '', invested: String(holding.invested), value: String(holding.value),
       valuationMethod: holding.valuationMethod ?? 'manual',
       ratePct: holding.ratePct === undefined ? '' : String(holding.ratePct),
       compounding: holding.compounding ?? 'yearly',
       maturityDate: holding.maturityDate ?? '',
     } : {
-      name: nameSeed, type: 'EPFO / PF', invested: '', value: '',
+      name: nameSeed, type: 'EPFO / PF', customTypeName: '', invested: '', value: '',
       valuationMethod: 'manual', ratePct: '', compounding: 'yearly', maturityDate: '',
     },
   });
@@ -453,7 +453,18 @@ function PlanFields({
             <TextField label="Name" accessibilityLabel="Investment name" maxLength={40} value={field.value} onChangeText={(value) => { field.onChange(value); onNameChange(value); }} onBlur={field.onBlur} error={errors.name?.message} />
           </FieldTitle>
         )} />
-        <Controller control={control} name="type" render={({ field }) => <Dropdown label="Holding type" accessibilityLabel="Holding type" options={HOLDING_TYPES.filter((type) => holdingCapabilities(type).recurring).map((type) => ({ value: type, title: type }))} value={field.value} onChange={field.onChange} error={errors.type?.message} />} />
+        <Controller control={control} name="type" render={({ field }) => (
+          <>
+            <Dropdown label="Holding type" accessibilityLabel="Holding type" options={HOLDING_TYPES.map((type) => ({ value: type, title: type }))} value={field.value} onChange={field.onChange} error={errors.type?.message} />
+            {field.value === 'Custom' ? (
+              <Controller control={control} name="customTypeName" render={({ field: customField }) => (
+                <FieldTitle title="Custom type name">
+                  <TextField label="Custom type name" accessibilityLabel="Custom holding type name" maxLength={30} value={customField.value ?? ''} onChangeText={customField.onChange} onBlur={customField.onBlur} error={errors.customTypeName?.message} />
+                </FieldTitle>
+              )} />
+            ) : null}
+          </>
+        )} />
         <Controller control={control} name="frequency" render={({ field }) => <Dropdown label="Frequency" accessibilityLabel="Frequency" options={frequencies.map((frequency) => ({ value: frequency, title: frequency }))} value={field.value} onChange={field.onChange} error={errors.frequency?.message} />} />
       </FormSection>
       <FormSection title="Contribution">
@@ -611,7 +622,18 @@ function ManualFields({
           <TextField label="Name" accessibilityLabel="Holding name" maxLength={40} value={field.value} onChangeText={(value) => { field.onChange(value); onNameChange(value); }} onBlur={field.onBlur} error={errors.name?.message} />
         </FieldTitle>
       )} />
-      <Controller control={control} name="type" render={({ field }) => <Dropdown label="Type" accessibilityLabel="Holding type" options={HOLDING_TYPES.map((type) => ({ value: type, title: type }))} value={field.value} onChange={field.onChange} error={errors.type?.message} />} />
+      <Controller control={control} name="type" render={({ field }) => (
+        <>
+          <Dropdown label="Holding type" accessibilityLabel="Holding type" options={HOLDING_TYPES.map((type) => ({ value: type, title: type }))} value={field.value} onChange={field.onChange} error={errors.type?.message} />
+          {field.value === 'Custom' ? (
+            <Controller control={control} name="customTypeName" render={({ field: customField }) => (
+              <FieldTitle title="Custom type name">
+                <TextField label="Custom type name" accessibilityLabel="Custom holding type name" maxLength={30} value={customField.value ?? ''} onChangeText={customField.onChange} onBlur={customField.onBlur} error={errors.customTypeName?.message} />
+              </FieldTitle>
+            )} />
+          ) : null}
+        </>
+      )} />
       <Controller control={control} name="invested" render={({ field }) => (
         <FieldTitle title="Invested">
           <MoneyField label="Invested" accessibilityLabel="Holding invested amount" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.invested?.message} />

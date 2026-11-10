@@ -10,10 +10,12 @@ import { monthPositions } from '../../domain/cashFlow';
 import { addMonths, monthKey, shiftMonth } from '../../domain/dates';
 import { goalProjection, goalSavedFor } from '../../domain/goalLinks';
 import { goalView } from '../../domain/goals';
+import { isLiabilityClosed, liabilitySummary } from '../../domain/liability';
 import { validateIntegrity } from '../../domain/links';
 import { duesThroughPreview } from '../../domain/dues';
 import { pendingItems } from '../../domain/pending';
 import { planReminders } from '../../domain/reminders';
+import { policySchedule } from '../../domain/policySchedule';
 import { holdingValue } from '../../domain/portfolio';
 import { homeSummary, netWorth } from '../../domain/summary';
 import { monthSummary } from '../../domain/transactions';
@@ -74,7 +76,7 @@ describe('six-month demo data', () => {
   it('includes a paid-premium Term policy and leaves the Life placeholder available', () => {
     expect(data.policies).toEqual(expect.arrayContaining([
       expect.objectContaining({ id: 'demo-policy-term-life', kind: 'term-life', sumAssured: 10_000_000, status: 'active' }),
-      expect.objectContaining({ id: 'demo-policy-health-yearly', kind: 'health', frequency: 'yearly', status: 'active' }),
+      expect.objectContaining({ id: 'demo-policy-health-yearly', kind: 'health', frequency: 'once', status: 'active' }),
       expect.objectContaining({ id: 'demo-policy-motor', kind: 'motor', status: 'active' }),
       expect.objectContaining({ id: 'demo-policy-home', kind: 'home', status: 'active' }),
       expect.objectContaining({ id: 'demo-policy-lapsed', status: 'lapsed' }),
@@ -174,7 +176,6 @@ describe('six-month demo data', () => {
     const expectations = [
       ['Recharge', 'monthly'],
       ['Streaming subscription', 'quarterly'],
-      ['Domain renewal', 'yearly'],
       ['Maintenance', 'half-yearly'],
     ] as const;
     for (const [name, frequency] of expectations) {
@@ -191,6 +192,7 @@ describe('six-month demo data', () => {
         date: expect.stringMatching(new RegExp(`^${dueMonth}-`)),
       }));
       const upcomingMonth = nextDueMonth(item, monthKey(today));
+      if (!upcomingMonth) throw new Error(`Missing projected next due for recurring demo item ${name}.`);
       expect(pendingItems(data, upcomingMonth, today)).toContainEqual(expect.objectContaining({
         title: name,
         category: name,
@@ -198,6 +200,24 @@ describe('six-month demo data', () => {
         dueDate: expect.stringMatching(new RegExp(`^${upcomingMonth}-`)),
       }));
     }
+  });
+
+  it('includes one once-only Budget item and insurance premium in the demo', () => {
+    const onceItem = data.budgetPlan?.items.find((item) => item.name === 'Domain renewal');
+    const oncePolicy = data.policies.find((policy) => policy.id === 'demo-policy-health-yearly');
+    const firstMonth = months[0];
+    if (!onceItem || !oncePolicy || !firstMonth) throw new Error('Once-only demo fixtures are missing.');
+
+    expect(onceItem).toMatchObject({
+      frequency: 'once',
+      firstDueMonth: monthKey(today),
+    });
+    expect(months.filter((month) => isItemDueInMonth(onceItem, month))).toEqual([monthKey(today)]);
+    expect(data.transactions.filter((transaction) =>
+      transaction.category === 'Domain renewal' && transaction.type === 'expense')).toHaveLength(1);
+    expect(oncePolicy.frequency).toBe('once');
+    expect(policySchedule(oncePolicy, '2026-12-31').rows.map((row) => row.dueDate))
+      .toEqual([`${firstMonth}-15`]);
   });
 
   it('shows past, current and upcoming months in the budget overview demo', () => {
@@ -417,11 +437,24 @@ describe('six-month demo data', () => {
       ))).toBe(true);
   });
 
+  it('includes a fully closed zero-balance demo loan without changing outstanding liabilities', () => {
+    const closed = data.liabilities.find((liability) =>
+      liability.kind === 'recurring' && isLiabilityClosed(liability));
+    if (!closed || closed.kind !== 'recurring') throw new Error('Demo closed liability is missing.');
+    expect(closed.settlement?.balance).toBe(0);
+    expect(liabilitySummary(closed, today).balance).toBe(0);
+    expect(netWorth(data, today).liabilities).toBe(1_000_000);
+  });
+
   it('uses assets minus liabilities for net worth and stays below the storage warning threshold', () => {
     const worth = netWorth(data, today);
     expect(worth).toEqual({ assets: 10_000_000, liabilities: 1_000_000, netWorth: 9_000_000 });
     expect(worth.netWorth).toBe(worth.assets - worth.liabilities);
     expect(data.holdings.reduce((sum, holding) => sum + holdingValue(holding, today), 0)).toBe(worth.assets);
+    expect(data.holdings.filter((holding) => holding.type === 'Real estate')).toHaveLength(1);
+    expect(data.holdings.filter((holding) => holding.type === 'Custom')).toEqual([
+      expect.objectContaining({ customTypeName: 'Collectibles' }),
+    ]);
     expect(data.efBucketLinks['fd-rd']).toContain('demo-holding-fd');
     expect(data.efBucketLinks.bank).toContain('demo-holding-emergency-bank');
     const bytes = utf8ByteLength(JSON.stringify(data));

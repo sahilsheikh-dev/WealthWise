@@ -1,4 +1,4 @@
-<!-- Purpose: Durable architecture facts and data boundaries. | Last updated: 2026-11-05 | Updates: owner and AI agents -->
+<!-- Purpose: Durable architecture facts and data boundaries. | Last updated: 2026-11-10 | Updates: owner and AI agents -->
 
 # Architecture
 
@@ -26,6 +26,17 @@ An action that changes linked entities is one domain operation, one Zustand
 `set()`, and one persisted write. Tests count writes where the behavior
 requires atomicity.
 
+## Completed list presentation
+
+The liabilities route applies existing sorting, kind/Closed filters and
+search before separating in-progress liabilities from the collapsed
+Completed section. A balance below 1 or a recorded recurring-liability
+closure marks an item completed. The Goals route similarly separates
+non-pinned goals whose saved amount is at least their displayed target into
+the collapsed Achieved section. Sorting and search remain upstream of the
+grouping; the Emergency fund goal remains pinned first and outside Achieved.
+Both sections expand the same cards used by the active lists.
+
 ## Asset values and returns
 
 Pure portfolio selectors in `src/domain/portfolio.ts` and `src/domain/sip.ts`
@@ -51,8 +62,8 @@ P29-J audit is recorded in the [progress ledger](../PROGRESS.md).
 
 ## Schema and archives
 
-Current persisted schema is v22. `src/data/migrate.ts` contains the ordered
-upgrade chain from legacy schemas v1 through v21. The v14-to-v15 migration
+Current persisted schema is v23. `src/data/migrate.ts` contains the ordered
+upgrade chain from legacy schemas v1 through v22. The v14-to-v15 migration
 converted legacy Insurance goals; the v15-to-v16 migration applies holding
 capabilities and separates legacy FD/RD records without dropping entries or
 schedules. The v16-to-v17 migration removes only retired cover-goal records
@@ -73,10 +84,15 @@ projection paths treat it as an inclusive cutoff.
 The v21-to-v22 migration is additive and marks existing Budget income items
 monthly with no first-due month. Recurrence-aware income totals use the
 shared income due-month rule while frozen month snapshots retain saved values.
+The v22-to-v23 migration is identity-preserving. It adds optional validated
+custom holding/liability display names and Once-only recurrence for Budget
+items, Budget income and insurance premiums; Once-only schedules match only
+their first-due month/date. Investment plans and liabilities do not support
+Once-only frequency.
 
 Safe storage retains original bytes once, without overwriting an existing
 archive, under `${persistName}.premigration.v1` through
-`${persistName}.premigration.v20` before the migrated write. With the current
+`${persistName}.premigration.v22` before the migrated write. With the current
 persist name `wealthwise.app.v1`, other recovery keys are
 `.prerepair-efallocation`, `.corrupt.latest`, and `.corrupt.previous`; import
 staging uses `.preimport`. Erase-all removes the persisted data, all migration
@@ -113,3 +129,11 @@ area and keyboard handling in the screen wrapper.
 options in a top-anchored sheet, supports grouped options, selected radio
 state, font-scaled row height and error/accessibility text. Frozen form input
 components are protected by the manifest and freeze test.
+
+The About route is a registered root-stack screen reachable from the Home
+app-menu builder and `useAppMenu`. It reads the app version from
+`Constants.expoConfig` and the persisted schema from `SCHEMA_VERSION`.
+Repository links and the optional update action use React Native `Linking` to
+open the user's browser; update discovery requires confirmation and performs
+no app-side request. A source scan regression guards `app/` and `src/` against
+`fetch`, `XMLHttpRequest` and `WebSocket`.

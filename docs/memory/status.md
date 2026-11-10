@@ -1,6 +1,46 @@
-<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-10 | Updates: owner and AI agents -->
+<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-11 | Updates: owner and AI agents -->
 
 # Status
+- v1.2.0 (minor) release candidate: `app.json`, package metadata and the
+  About-screen test identify v1.2.0. The approved note now includes fourteen
+  screenshots, with five new settings/backup screens added to every release
+  and About only to v1.2.0. The README gallery remains for latest-published
+  v1.1.1. Task PR #112, phase PR #113 and evidence PRs #114/#115 merged into
+  `develop` at `d347526`, `5ae1b72` and `936ee25`. The prior untagged draft
+  was replaced after screenshot integration; the current draft targets
+  `199ebed307ce7755bc92c1f15544999d852db54f`. No v1.2.0 tag or published
+  release exists.
+  Screenshot task PR #116 merged into the phase as `f08f963`; phase PR #117
+  merged into `develop` at `25258ac`. All six gates were rerun on `develop`
+  at `3bd5be6`: 101 suites,
+  1,316 passed, 1 skipped; coverage is 95.96/92.15/98.02/97.62% overall,
+  `src/data` 91.06/87.47/94.48/94.19%, `src/domain` 96.94/93.00/98.80/98.31%, and
+  `src/lib` 100% in all measures. Replacement draft target:
+  `199ebed307ce7755bc92c1f15544999d852db54f`. EAS build
+  `6fccf7d1-0580-46a6-9e09-ff7467fb0a30` succeeded with profile `android-apk`
+  and `versionCode` 3; its 112,163,081-byte APK is uploaded and byte-verified.
+  Build-record task PR #121 merged into the phase as
+  `e74c39a610f9ac0bbb8b5edebe3160ea5fa0f2b8`; its phase-to-develop PR is
+  pending.
+  Public-link verification, main integration, historical release-body updates,
+  previous APK asset rollover and publication remain pending. The owner
+  reports O45-O53 passed on 2026-11-11; device/tester fields were not supplied.
+- CR-108 is complete on `develop`. P29-Q-R1 and P20-N-R3 merged at
+  `80eb0e4` and `f5f6e16`. P41-A and its category correction merged through
+  PRs #97–#100 at `9aa6540` and `a67f54f`; P41-B merged through PRs #101/#102
+  at `b4275d3`, with evidence follow-up PR #103 at `c1e810b`; P41-C merged
+  through #104/#105 at `37a3429`; P41-D merged through #106/#107 at
+  `8e4a2d1`. P41-B-R1 corrected the stale once-only reminder count (909 to
+  893), added schedule/schema branch coverage, and merged through task PR #108
+  and phase PR #109 to `develop` at `5cb4957`. All six ordered gates pass:
+  Gate 1 has 101 suites, 1,316 passed, 1 skipped; coverage is
+  95.96/92.15/98.02/97.62% overall, `src/data` 91.06/87.47/94.48/94.19%,
+  `src/domain` 96.94/93.00/98.80/98.31%, and `src/lib` 100% in all measures.
+  The current schema is v23; Once only applies to Budget items, Budget income
+  and insurance premiums, not investment plans or liabilities. No CR-108 work
+  ships in v1.1.1. The owner reports O45-O53 physical checks passed; device
+  and tester fields remain blank. The authorized Budget blob and all other
+  protected hashes are recorded in [rules.md](rules.md).
 - CR-106 adds planning rows only: P31-D privacy and P31-E CI, report-first
   P39 release audit/hardening, and P40 agent-context hygiene.
   No audit part, app-source change, phase implementation, or release work has
@@ -279,7 +319,7 @@
   remote tag alignment are verified in P28-C-R3. The GitHub release body's
   stored `targetCommitish` still shows the original target because no release
   edit was made.
-- Schema version: v22 (`SCHEMA_VERSION` in `src/domain/schemas.ts`).
+- Schema version: v23 (`SCHEMA_VERSION` in `src/domain/schemas.ts`).
 - P29-AB is complete. Budget income recurrence supports monthly, quarterly,
   half-yearly and yearly frequencies, with a required first-due month for
   non-monthly items. Migration v21-to-v22 defaults existing income monthly
@@ -416,10 +456,10 @@
   tests (1194 passed; one opt-in stress benchmark skipped). P29-M2's
   1120-test run, P29-N's 1104-test run and P29-M's blocked reproduction remain
   historical records in [PROGRESS.md](../PROGRESS.md).
-- Test counts: 98 suites, 1279 tests (1278 passed, 1 skipped) on 2026-11-10.
-- Latest validated run: 98 suites, 1279 tests (1278 passed, 1 skipped) on
-  2026-11-10; all six gates exit 0. Coverage and exact commands are recorded
-  in [PROGRESS.md](../PROGRESS.md).
+- Test counts: 101 suites, 1317 tests (1316 passed, 1 skipped) on 2026-11-11.
+- Latest validated run: 101 suites, 1317 tests (1316 passed, 1 skipped) on
+  2026-11-11; all six CR-108 gates exit 0. Coverage and exact commands are
+  recorded in [PROGRESS.md](../PROGRESS.md).
 - All six P29-L gates exit 0: Jest coverage, TypeScript, Expo lint with zero
   warnings, Expo Doctor 21/21, Android export and iOS export. Exact commands
   and exit codes are in [PROGRESS.md](../PROGRESS.md).

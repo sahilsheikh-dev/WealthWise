@@ -1,6 +1,41 @@
-<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-10 | Updates: owner and AI agents -->
+<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-11 | Updates: owner and AI agents -->
 
 # Open items
+
+## Proposed v1.2.0 release
+
+- The owner approved the v1.2.0 note and supplied six additional screenshots.
+  Five screens are being added to each release; About is exclusive to v1.2.0.
+  The existing untagged draft at `936ee25` was replaced after screenshot
+  integration. Task PR #116 merged into the phase as `f08f963`; phase PR #117
+  merged into `develop` at `25258ac`. v1.1.1 remains latest published. The
+  replacement draft targets
+  `199ebed307ce7755bc92c1f15544999d852db54f`; no v1.2.0 tag or published
+  release exists.
+- Build-record task PR #121 merged into the retained phase as
+  `e74c39a610f9ac0bbb8b5edebe3160ea5fa0f2b8`; phase-to-develop integration
+  remains pending.
+- O45-O53 are marked owner-reported Pass (2026-11-11); device model, Android
+  version and tester were not supplied. The README Download block remains
+  v1.1.1 until v1.2.0 publication. All six ordered gates passed on `3bd5be6`.
+  EAS build `6fccf7d1-0580-46a6-9e09-ff7467fb0a30` succeeded with
+  `android-apk`/`versionCode` 3; the 112,163,081-byte APK is uploaded to the
+  draft and byte-verified against EAS. Main integration, public URL checks,
+  historical release body updates, previous APK asset rollover and
+  publication remain pending.
+
+## CR-108 owner decisions and remaining scope
+
+- Decide whether an in-app GitHub update check should ever be added. CR-108
+  keeps update discovery browser-based after confirmation; the app itself
+  makes no update request. A true in-app check remains an owner decision.
+- Confirm whether "Once only" is desired for investment plans or liabilities
+  in a future request; CR-108 deliberately excludes both.
+- CR-108 is complete: P41-B-R1 task PR #108 merged into the retained phase as
+  `e1db78e`, and phase PR #109 merged to `develop` as `5cb4957`. All six
+  ordered gates pass; detailed commands, coverage and PR evidence are in
+  [PROGRESS.md](../PROGRESS.md). The owner reports O45-O53 physical-device
+  checks passed on 2026-11-11; device/tester details were not supplied.
 
 ## CR-106 owner decisions and scope
 
@@ -37,8 +72,9 @@ Not adopted in CR-106:
   Planned, with research/reactivation requirements retained. P33-C still
   requires iOS distribution; P35-C requires the P35-B owner go/no-go before
   implementation. Notes includes text, voice/audio recordings, photos and
-  videos. Skeleton loading is planned as P38. See [PROGRESS.md](../PROGRESS.md)
-  for the recorded acceptance scope.
+  videos; its planned migration impact is now schema v24 after CR-108's v23
+  release. Skeleton loading is planned as P38. See
+  [PROGRESS.md](../PROGRESS.md) for the recorded acceptance scope.
 - **Release screenshots and APK handoff:** all 23 owner-supplied screenshots
   (7 for v1.0.0, 8 for v1.1.0 and 8 for v1.1.1) have been copied to
   `docs/releases/screenshots/vX.Y.Z/` as

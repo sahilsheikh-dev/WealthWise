@@ -71,6 +71,23 @@ edit-refresh, aggregate Pace, paid-sync/Undo, Entries, and linked one-time
 savings Paid/Undo checks are recorded as passed. Device model, Android
 version, and tester fields remain blank.
 
+## v1.2.0 release-candidate checks
+
+| ID | Test | Result | Notes |
+|---|---|---|---|
+| O45 | Install the v1.2.0 APK; confirm About shows version 1.2.0 and schema version 23. | Pass | Owner-reported, 2026-11-11. |
+| O46 | In airplane mode, verify local app behavior; cancel Check for updates, then confirm it opens the GitHub releases page in the browser without an in-app check. | Pass | Owner-reported, 2026-11-11. |
+| O47 | Create Real estate and named Custom holdings, then verify names in cards, search and filters; verify recurring and one-time asset forms use the same title and option order. | Pass | Owner-reported, 2026-11-11. |
+| O48 | Create a named Custom liability; verify recurring and one-time liability forms use the same title and options, and Fixed deposit is rejected with a clear message in recurring mode. | Pass | Owner-reported, 2026-11-11. |
+| O49 | Verify once-only Budget item, income and insurance dues occur only in their first-due month/date, do not repeat, and do not offer percentage mode. | Pass | Owner-reported, 2026-11-11. |
+| O50 | Verify in-progress and completed liabilities and goals appear in the correct collapsed sections with counts; filters, sorting, search and Closed filter still work, and Emergency fund remains pinned. | Pass | Owner-reported, 2026-11-11. |
+| O51 | Verify Budget Overview has no redundant Pace or Over by/Left summary text; confirm the chart, Left table row and accessible descriptions remain. | Pass | Owner-reported, 2026-11-11. |
+| O52 | Verify all four stress-tier choices, cancellation, Undo, and usability at font scales 1.3 and 2.0. | Pass | Owner-reported, 2026-11-11. |
+| O53 | Verify font scales 1.3 and 2.0 and screen-reader labels/reading order on About, Budget, liabilities and goals. | Pass | Owner-reported, 2026-11-11. |
+
+The owner reports O45-O53 passed on 2026-11-11. Device model, Android
+version, and tester fields were not supplied and remain blank.
+
 ## How to run
 
 1. Download the APK using the README Download link and verify its SHA-256

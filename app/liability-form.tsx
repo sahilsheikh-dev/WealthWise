@@ -60,6 +60,7 @@ export default function LiabilityFormScreen() {
             kind: 'recurring',
             name: liability.name,
             type: liability.type,
+            customTypeName: liability.customTypeName ?? '',
             principal: String(liability.principal),
             ratePct: String(liability.ratePct),
             tenureMonths: String(liability.tenureMonths),
@@ -72,6 +73,7 @@ export default function LiabilityFormScreen() {
             kind: 'one-time',
             name: liability.name,
             type: liability.type,
+            customTypeName: liability.customTypeName ?? '',
             principal: String(liability.principal),
             ratePct: String(liability.ratePct),
             startDate: liability.startDate,
@@ -84,6 +86,7 @@ export default function LiabilityFormScreen() {
           kind: 'recurring',
           name: '',
           type: 'Other',
+          customTypeName: '',
           principal: '',
           ratePct: '',
           tenureMonths: '',
@@ -248,7 +251,16 @@ export default function LiabilityFormScreen() {
         </FieldTitle>
       )} />
       <Controller control={control} name="type" render={({ field }) => (
-        <Dropdown label="Type" accessibilityLabel="Liability type" options={LIABILITY_TYPES.map((type) => ({ value: type, title: type }))} value={field.value} onChange={field.onChange} error={errors.type?.message} />
+        <>
+          <Dropdown label="Liability type" accessibilityLabel="Liability type" options={LIABILITY_TYPES.map((type) => ({ value: type, title: type }))} value={field.value} onChange={field.onChange} error={errors.type?.message} />
+          {field.value === 'Custom' ? (
+            <Controller control={control} name="customTypeName" render={({ field: customField }) => (
+              <FieldTitle title="Custom type name">
+                <TextField label="Custom type name" accessibilityLabel="Custom liability type name" maxLength={30} value={customField.value ?? ''} onChangeText={customField.onChange} onBlur={customField.onBlur} error={errors.customTypeName?.message} />
+              </FieldTitle>
+            )} />
+          ) : null}
+        </>
       )} />
       {!liabilityId ? (
         <Controller control={control} name="received" render={({ field }) => (

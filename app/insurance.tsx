@@ -185,6 +185,7 @@ function frequencyLabel(policy: Policy): string {
     quarterly: 'Quarterly',
     'half-yearly': 'Half-yearly',
     yearly: 'Yearly',
+    once: 'Once only',
   } as const;
   return labels[policy.frequency];
 }
