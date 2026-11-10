@@ -118,6 +118,29 @@ describe('useAppMenu', () => {
     }
   });
 
+  it('keeps stress tiers within the confirmation helper choice limit', () => {
+    mockState.devActions = { loadDemoData: jest.fn(), loadStressData: jest.fn() };
+    jest.mocked(choiceAsync).mockImplementation((options) => {
+      if (options.choices.length > 2) throw new RangeError('At most two choices are supported.');
+      return Promise.resolve(null);
+    });
+    const menuRef: { current: ReturnType<typeof useAppMenu> } = { current: [] };
+    function CaptureMenu() {
+      menuRef.current = useAppMenu();
+      return null;
+    }
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    act(() => { renderer = TestRenderer.create(<CaptureMenu />); });
+    if (!renderer) throw new Error('Menu hook did not render.');
+    try {
+      const loadItem = menuRef.current.find(({ label }) => label === 'Load stress data (50y/100y/126y/dense)');
+      if (!loadItem) throw new Error('Stress-data menu action did not render.');
+      expect(() => loadItem.onPress()).not.toThrow();
+    } finally {
+      act(() => renderer?.unmount());
+    }
+  });
+
   it('loads a selected stress tier, reports hydration/render timing, and offers Undo', async () => {
     const loadStressData = jest.fn(async () => ({ ok: true as const, loadMs: 125 }));
     mockState.devActions = { loadDemoData: jest.fn(), loadStressData };
