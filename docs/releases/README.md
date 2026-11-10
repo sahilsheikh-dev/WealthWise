@@ -136,9 +136,10 @@ The shared project rules are in [AGENTS.md](../../AGENTS.md),
 - APK artifact verification: the latest and versioned URLs returned HTTP 200
   with a content length of 112,150,605 bytes. The digest was verified
   privately and is not published.
-- v1.2.0 is the owner-approved release candidate. Its note and screenshots
-  are prepared for integration; no v1.2.0 release draft, build, tag or
-  artifact has been created.
+- v1.2.0 is the owner-approved release candidate. Task PR #112 merged its
+  note, screenshots and version metadata into `phase/28-qa-and-release` as
+  `fa153da`; the phase-to-develop PR remains pending. No v1.2.0 release draft,
+  build, tag or artifact has been created.
 - Production AAB: not verified.
 
 See [release-history.md](release-history.md) for the published release and
