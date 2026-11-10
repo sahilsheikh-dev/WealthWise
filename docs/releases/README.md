@@ -149,8 +149,12 @@ The shared project rules are in [AGENTS.md](../../AGENTS.md),
 - Historical release screenshot sections were updated without changing other
   release-body content. The former v1.1.1 latest-named APK was renamed to
   `WealthWise-android-v1.1.1.apk`; its GitHub Download block now uses
-  `Version`. The README/latest-note parity update and main-to-develop
-  back-merge are being integrated through PRs.
+  `Version`. Post-publication task PRs #125/#126 merged into
+  `phase/28-qa-and-release` at `87c8e8f`/`9db08be`; phase PR #127 merged into
+  `develop` at `d65ce75`; develop-to-main PR #128 merged at `48a64c0`; and
+  main-to-develop PR #129 merged at `c554c0b`. Local and remote `develop`
+  match at `c554c0b`, and the v1.2.0 tag remains at its verified build
+  candidate.
 - O45-O53 are owner-reported Pass; device model, Android version and tester
   details were not supplied.
 - Production AAB: not verified.
