@@ -16,11 +16,12 @@ More versions are listed on the [WealthWise releases page](https://github.com/sa
 
 ## Builds
 
-| EAS build ID | Profile | Android versionCode | Date | Status |
-|---|---|---:|---|---|
-| `ecc97480-7229-41ac-8aad-64ea2cd255b5` | android-apk | 2 | 2026-11-09 | Published; artifact verified against EAS |
-| `e45392bd-8146-4077-b76b-fe139993b141` | preview | 1 | 2026-11-08 | Published; artifact verified; owner-approved release exceptions |
-| `7addde9a-34df-4f00-a54a-b695c1578859` | preview | 1 | 2026-11-07 | Complete; artifact verified |
+| App version | Platform | EAS build ID | Profile | Android versionCode | Date | Status |
+|---|---|---|---|---:|---|---|
+| v1.2.0 | Android | `6fccf7d1-0580-46a6-9e09-ff7467fb0a30` | android-apk | 3 | 2026-11-11 | Successful; uploaded to v1.2.0 draft and byte-verified against EAS (112,163,081 bytes); publication pending |
+| v1.1.1 | Android | `ecc97480-7229-41ac-8aad-64ea2cd255b5` | android-apk | 2 | 2026-11-09 | Published; artifact verified against EAS |
+| v1.1.0 | Android | `e45392bd-8146-4077-b76b-fe139993b141` | preview | 1 | 2026-11-08 | Published; artifact verified; owner-approved release exceptions |
+| v1.0.0 | Android | `7addde9a-34df-4f00-a54a-b695c1578859` | preview | 1 | 2026-11-07 | Complete; artifact verified |
 
 The v1.1.1 Android APK matched the owner-supplied EAS artifact and is published
 as `WealthWise-android-latest-v1.1.1.apk`. Its latest URL returns HTTP 200 with

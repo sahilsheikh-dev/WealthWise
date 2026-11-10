@@ -141,12 +141,17 @@ The shared project rules are in [AGENTS.md](../../AGENTS.md),
   `fa153da`; phase PR #113 merged to `develop` as `d347526`, with evidence
   PRs #114/#115 at `5ae1b72` and `936ee25`. Six more screenshots expand the
   release history; About is exclusive to v1.2.0. The owner reports O45-O53
-  passed; device/tester details were not supplied. The current untagged draft
-  targets the earlier candidate and is authorized for replacement now that
-  the screenshot revision reached `develop`; task PR #116 merged into the
-  phase as `f08f963`, and phase PR #117 merged into `develop` at `25258ac`.
-  All six ordered gates pass on `25258ac`. No v1.2.0 tag or APK exists; EAS
-  build and artifact verification remain pending.
+  passed; device/tester details were not supplied. The previous untagged
+  draft was replaced after the screenshot revision reached `develop`; task PR
+  #116 merged into the phase as `f08f963`, and phase PR #117 merged into
+  `develop` at `25258ac`.
+  The six ordered gates pass on `develop` at `3bd5be6`. EAS build
+  `6fccf7d1-0580-46a6-9e09-ff7467fb0a30` completed with the `android-apk`
+  profile and Android `versionCode` 3 on 2026-11-11. The 112,163,081-byte APK
+  is uploaded to the replacement draft and byte-identical to the EAS
+  artifact. Public-link verification, main integration, historical release
+  body updates, previous-APK asset rollover and publication remain pending;
+  no v1.2.0 tag or published release exists.
 - Production AAB: not verified.
 
 See [release-history.md](release-history.md) for the published release and
