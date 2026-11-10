@@ -14,20 +14,20 @@
 - All six gates were rerun on `develop` at `3bd5be6`: 101 suites, 1,316
   passed, 1 skipped; coverage is 95.96/92.15/98.02/97.62% overall,
   `src/data` 91.06/87.47/94.48/94.19%, `src/domain` 96.94/93.00/98.80/98.31%,
-  and `src/lib` 100% in all measures. The documentation-only follow-up is
-  integrated on `develop` at `cd1fa789a143803dcfe0858a4f98a039062029e3`.
+  and `src/lib` 100% in all measures. Documentation-only release closeout
+  PRs #125–#129 completed task/phase/develop, develop-to-main and
+  main-to-develop integration; local and remote `develop` now match at
+  `c554c0b7adf76ab6066755d26775c58f34c93cc0`.
 - All 104 screenshot image/link URLs returned HTTP 200; raw image sizes match
   all 52 repository files. The latest and four versioned APK URLs returned
   HTTP 200 with their expected artifact sizes. Historical release screenshot
   sections were updated without changing other release-body content, and the
   previous v1.1.1 latest APK was renamed to its versioned filename.
-- The final README/latest-release Download parity update and main-to-develop
-  back-merge are being integrated through the authorized task/phase PR flow.
-  Task PR #125 merged the README, gallery, release-note and history updates
-  into the retained phase as `87c8e8f902c313c35e7d48e154ec8d9c9f504789`.
-  The phase-to-develop PR and subsequent develop-to-main/main-to-develop
-  synchronization remain pending. O45-O53 remain owner-reported Pass; device
-  model, Android version and tester details were not supplied.
+- The final README/latest-release Download parity update and branch
+  synchronization are complete: task PRs #125/#126, phase PR #127,
+  develop-to-main PR #128 and main-to-develop PR #129 are merged. O45-O53
+  remain owner-reported Pass; device model, Android version and tester details
+  were not supplied.
 - CR-108 is complete on `develop`. P29-Q-R1 and P20-N-R3 merged at
   `80eb0e4` and `f5f6e16`. P41-A and its category correction merged through
   PRs #97–#100 at `9aa6540` and `a67f54f`; P41-B merged through PRs #101/#102

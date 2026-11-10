@@ -19,7 +19,9 @@
 - Task PR #125 merged the README/gallery/latest-note parity, prior-version
   APK link and release-history updates into the retained phase as
   `87c8e8f902c313c35e7d48e154ec8d9c9f504789`. The phase-to-develop PR,
-  develop-to-main synchronization and main-to-develop back-merge remain.
+  develop-to-main synchronization and main-to-develop back-merge are complete
+  through PRs #127, #128 and #129; `develop` is synchronized at
+  `c554c0b7adf76ab6066755d26775c58f34c93cc0`.
 - O45-O53 are owner-reported Pass (2026-11-11); device model, Android version
   and tester were not supplied.
 
