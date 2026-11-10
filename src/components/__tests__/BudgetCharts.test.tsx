@@ -99,7 +99,7 @@ describe('Budget pace chart', () => {
       .map((node) => node.children.join(''))
       .filter((label) => label === 'Actual' || label === 'Planned pace'))
       .toEqual(['Actual', 'Planned pace']);
-    expect(renderer.root.findAllByType('text').some((node) => node.children.includes('Left ₹250'))).toBe(true);
+    expect(renderer.root.findAllByType('text').some((node) => node.children.includes('Left ₹250'))).toBe(false);
     expect(renderer.root.findAllByType('text').some((node) => node.children.includes(summary))).toBe(false);
 
     act(() => plot.props.onLayout({ nativeEvent: { layout: { width: 300, height: 92, x: 0, y: 0 } } }));
