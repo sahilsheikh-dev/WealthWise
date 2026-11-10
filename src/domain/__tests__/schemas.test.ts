@@ -1022,6 +1022,18 @@ describe('makeTransactionFormSchema', () => {
         ...holding, valuationMethod: 'accrual', ratePct: '',
       }).success).toBe(false);
       expect(holdingSchema.safeParse({ ...holding, maturityDate: '2026-02-30' }).success).toBe(false);
+      const customHolding = holdingSchema.parse({
+        ...holding, type: 'Custom', customTypeName: '  Fine art  ',
+      });
+      expect(customHolding).toMatchObject({ type: 'Custom', customTypeName: 'Fine art' });
+      const missingCustomName = holdingSchema.safeParse({ ...holding, type: 'Custom' });
+      expect(missingCustomName.success).toBe(false);
+      if (!missingCustomName.success) {
+        expect(missingCustomName.error.issues.some((issue) =>
+          issue.path[0] === 'customTypeName' &&
+          issue.message === 'Enter a custom type name up to 30 characters',
+        )).toBe(true);
+      }
       const holdingWithEntriesSchema = makeHoldingFormSchema({ otherNames: [], entriesExist: true });
       const blockedTypeChange = holdingWithEntriesSchema.safeParse({ ...holding, type: 'Fixed deposit' });
       expect(blockedTypeChange.success).toBe(false);
