@@ -302,6 +302,12 @@ describe('published release download documentation', () => {
     for (const [version, categories] of Object.entries(screenshotSets)) {
       const releasePath = markdownByVersion[version as keyof typeof markdownByVersion];
       const releaseContents = readFileSync(join(root, releasePath), 'utf8');
+      const screenshotDirectory = join(root, 'docs', 'releases', 'screenshots', version);
+      const expectedFiles = categories
+        .map((category) => `WealthWise-${version}-screenshot-${category}.png`)
+        .sort();
+      expect(readdirSync(screenshotDirectory).filter((file) => file.endsWith('.png')).sort())
+        .toEqual(expectedFiles);
       expect(releaseContents).toContain('## Screenshots');
       const releaseScreenshotTable = releaseContents.match(/<table>([\s\S]*?)<\/table>/)?.[1] ?? '';
       expect(readScreenshotCategories(releaseScreenshotTable)).toEqual(categories);
@@ -321,7 +327,7 @@ describe('published release download documentation', () => {
 
       for (const category of categories) {
         const imageName = `WealthWise-${version}-screenshot-${category}.png`;
-        const screenshotPath = join(root, 'docs', 'releases', 'screenshots', version, imageName);
+        const screenshotPath = join(screenshotDirectory, imageName);
         const relativePath = `docs/releases/screenshots/${version}/${imageName}`;
         const blobUrl = `${repositoryBaseUrl}/blob/main/${relativePath}`;
         const rawUrl = `https://raw.githubusercontent.com/sahilsheikh-dev/WealthWise/main/${relativePath}`;

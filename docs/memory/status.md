@@ -1,14 +1,17 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-11 | Updates: owner and AI agents -->
 
 # Status
-- v1.2.0 (minor) release candidate: the owner-approved note is finalized in
-  `docs/releases/published/v1.2.0.md` with eight supplied screenshots.
-  `app.json`, package metadata and the About-screen test now identify v1.2.0.
-  v1.1.1 remains the latest published release; no v1.2.0 tag, GitHub draft,
-  APK or release artifact exists. Task PR #112 merged into the retained P28
-  phase as `fa153da`; phase PR #113 merged into `develop` as `d347526`, with
-  evidence PR #114 merged as `5ae1b72`. All six ordered gates pass; physical
-  device checks O45-O53 remain unverified before the APK build.
+- v1.2.0 (minor) release candidate: `app.json`, package metadata and the
+  About-screen test identify v1.2.0. The approved note now includes fourteen
+  screenshots, with five new settings/backup screens added to every release
+  and About only to v1.2.0. The README gallery remains for latest-published
+  v1.1.1. Task PR #112, phase PR #113 and evidence PRs #114/#115 merged into
+  `develop` at `d347526`, `5ae1b72` and `936ee25`. A v1.2.0 draft exists at
+  the earlier candidate and is authorized for replacement after screenshot
+  integration; no v1.2.0 tag or APK exists. All six gates passed at
+  `936ee25`; they must be rerun after the screenshot update. The owner
+  reports O45-O53 passed on 2026-11-11; device/tester fields were not
+  supplied.
 - CR-108 is complete on `develop`. P29-Q-R1 and P20-N-R3 merged at
   `80eb0e4` and `f5f6e16`. P41-A and its category correction merged through
   PRs #97–#100 at `9aa6540` and `a67f54f`; P41-B merged through PRs #101/#102
