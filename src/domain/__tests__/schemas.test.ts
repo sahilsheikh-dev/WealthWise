@@ -34,10 +34,74 @@ const validInput = {
 };
 
 describe('appDataSchema', () => {
-  it('accepts the typed mock app data and exports schema version twenty-two', () => {
+  it('accepts the typed mock app data and exports schema version twenty-three', () => {
     expect(appDataSchema.parse(mockAppData)).toEqual(mockAppData);
-    expect(SCHEMA_VERSION).toBe(22);
+    expect(SCHEMA_VERSION).toBe(23);
     expect(new Set(TRANSACTION_CATEGORIES.expense).size).toBe(TRANSACTION_CATEGORIES.expense.length);
+  });
+
+  it('accepts once-only Budget and policy schedules only with a first due date', () => {
+    const plan = budgetPlanFromLines([{
+      category: 'One-time expense',
+      mode: 'amount',
+      value: 250,
+      frequency: 'monthly',
+      firstDueMonth: '2026-03',
+    }], {
+      incomes: [{
+        id: 'one-time-income',
+        name: 'One-time income',
+        category: 'Freelance',
+        amount: 1_000,
+        frequency: 'monthly',
+        firstDueMonth: '2026-03',
+      }],
+      repeatMonthly: true,
+      repeatFrom: '2026-03',
+    });
+    const item = plan.items[0];
+    const income = plan.incomes[0];
+    const policyFixture = mockAppData.policies[0];
+    const planHolding = mockAppData.holdings.find((holding) => holding.kind === 'plan');
+    const liability = mockAppData.liabilities[0];
+    if (!item || !income || !policyFixture || !planHolding || !liability) {
+      throw new Error('Once-only fixtures are incomplete.');
+    }
+    const onceItem = Object.assign(item, { frequency: 'once' });
+    const onceIncome = Object.assign(income, { frequency: 'once' });
+    const policy = Object.assign({ ...policyFixture }, { frequency: 'once' });
+    const data = {
+      ...mockAppData,
+      budgetPlan: { ...plan, items: [onceItem], incomes: [onceIncome] },
+      policies: [policy],
+    };
+
+    expect(appDataSchema.safeParse(data).success).toBe(true);
+    expect(validateImportData(data).ok).toBe(true);
+    expect(appDataSchema.safeParse({
+      ...data,
+      budgetPlan: {
+        ...data.budgetPlan,
+        items: data.budgetPlan.items.map((item) => ({ ...item, firstDueMonth: undefined })),
+      },
+    }).success).toBe(false);
+    expect(appDataSchema.safeParse({
+      ...data,
+      budgetPlan: {
+        ...data.budgetPlan,
+        items: data.budgetPlan.items.map((item) => ({ ...item, mode: 'percent' })),
+      },
+    }).success).toBe(false);
+    const unsupportedPlanFrequency = Object.assign({ ...planHolding }, { frequency: 'once' });
+    expect(appDataSchema.safeParse({
+      ...mockAppData,
+      holdings: mockAppData.holdings.map((holding) =>
+        holding.id === planHolding.id ? unsupportedPlanFrequency : holding),
+    }).success).toBe(false);
+    expect(validateImportData({
+      ...mockAppData,
+      liabilities: [{ ...liability, frequency: 'once' }],
+    }).ok).toBe(false);
   });
 
   it('continues loading legacy goal links with explicit shares', () => {

@@ -231,6 +231,79 @@ describe('budget plans and monthly views', () => {
     expect(nextDueMonth(item('yearly', '2026-12'), '2027-12')).toBe('2028-12');
   });
 
+  it('projects once-only items and income in one month, preserves frozen snapshots, and never repeats', () => {
+    const income = Object.assign({
+      id: 'one-time-income',
+      name: 'One-time income',
+      category: 'Freelance' as const,
+      amount: 1_000,
+      frequency: 'monthly' as const,
+      firstDueMonth: '2026-03',
+    }, { frequency: 'once' });
+    const budgetPlan = budgetPlanFromLines([{
+      category: 'One-time expense',
+      mode: 'amount',
+      value: 250,
+      frequency: 'monthly',
+      firstDueMonth: '2026-03',
+    }], {
+      incomes: [income],
+      repeatMonthly: true,
+      repeatFrom: '2026-03',
+    });
+    const item = budgetPlan.items[0];
+    if (!item) throw new Error('Once-only Budget item fixture is missing.');
+    Object.assign(item, { frequency: 'once' });
+    const onceItem = item;
+
+    expect(isItemDueInMonth(onceItem, '2026-02')).toBe(false);
+    expect(isItemDueInMonth(onceItem, '2026-03')).toBe(true);
+    expect(isItemDueInMonth(onceItem, '2026-04')).toBe(false);
+    expect(plannedForMonth(onceItem, '2026-03')).toBe(250);
+    expect(plannedForMonth(onceItem, '2026-04')).toBe(0);
+    expect(nextDueMonth(onceItem, '2026-02')).toBe('2026-03');
+    expect(nextDueMonth(onceItem, '2026-04')).toBeUndefined();
+    expect(isIncomeDueInMonth(income, '2026-03')).toBe(true);
+    expect(isIncomeDueInMonth(income, '2026-04')).toBe(false);
+    expect(plannedIncomeOf({ incomes: [income] }, '2026-03')).toBe(1_000);
+    expect(plannedIncomeOf({ incomes: [income] }, '2026-04')).toBe(0);
+
+    const data = { ...emptyAppData('2026-03-01'), budgetPlan };
+    expect(budgetMonthView(data, '2026-03', '2026-03-01')).toMatchObject({
+      plannedIncome: 1_000,
+      plannedSpend: 250,
+    });
+    expect(projectedCashFlow(data, '2026-03', '2026-03-01')).toEqual({
+      opening: 0, closing: 750, projected: true,
+    });
+    expect(effectiveMonthBudget(data, '2026-04', '2026-03-01')).toMatchObject({
+      virtual: true,
+      budget: { source: 'plan' },
+    });
+    expect(budgetMonthView(data, '2026-04', '2026-03-01')).toMatchObject({
+      plannedIncome: 0,
+      plannedSpend: 0,
+    });
+    expect(projectedCashFlow(data, '2026-04', '2026-03-01')).toEqual({
+      opening: 750, closing: 750, projected: true,
+    });
+
+    const snapshot = monthBudgetFromLines('2026-03', [{
+      category: 'One-time expense',
+      planned: 300,
+      frequency: 'monthly',
+      firstDueMonth: '2026-03',
+    }], {
+      incomes: [{ id: 'snapshot-income', name: 'Saved income', category: 'Salary', amount: 1_500 }],
+      source: 'custom',
+    });
+    const snapshotItem = snapshot.items[0];
+    if (!snapshotItem) throw new Error('Frozen once-only snapshot fixture is missing.');
+    Object.assign(snapshotItem, { frequency: 'once' });
+    expect(budgetMonthView({ ...data, monthBudgets: [snapshot] }, '2026-03', '2026-04-01'))
+      .toMatchObject({ plannedIncome: 1_500, plannedSpend: 300 });
+  });
+
   it('uses recurring planned amounts for future totals and projections while retaining frozen snapshots', () => {
     const budgetPlan = budgetPlanFromLines([
       { category: 'Food', mode: 'amount', value: 200 },

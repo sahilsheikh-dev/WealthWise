@@ -1294,6 +1294,7 @@ describe('route render smoke audit', () => {
           { value: 'quarterly', title: 'Quarterly' },
           { value: 'half-yearly', title: 'Half-yearly' },
           { value: 'yearly', title: 'Yearly' },
+          { value: 'once', title: 'Once only' },
         ]);
       await act(async () => {
         renderer?.root.findByProps({ accessibilityLabel: 'Budget item name' }).props.onChangeText('Pet sitting');
@@ -1620,6 +1621,14 @@ describe('route render smoke audit', () => {
       let renderer: TestRenderer.ReactTestRenderer | undefined;
       try {
         renderer = renderScreen(React.createElement(BudgetIncomeFormScreen));
+        expect(renderer.root.findByProps({ accessibilityLabel: 'Income frequency' }).props.options)
+          .toEqual([
+            { value: 'monthly', title: 'Monthly' },
+            { value: 'quarterly', title: 'Quarterly' },
+            { value: 'half-yearly', title: 'Half-yearly' },
+            { value: 'yearly', title: 'Yearly' },
+            { value: 'once', title: 'Once only' },
+          ]);
         await act(async () => {
           renderer?.root.findByProps({ accessibilityLabel: 'Income name' }).props.onChangeText('Quarterly contract');
           renderer?.root.findByProps({ accessibilityLabel: 'Income amount' }).props.onChangeText('12000');
@@ -2301,6 +2310,7 @@ describe('route render smoke audit', () => {
         { value: 'half-yearly', title: 'Half-yearly' },
         { value: 'yearly', title: 'Yearly' },
         { value: 'custom', title: 'Custom' },
+        { value: 'once', title: 'Once only' },
       ]));
       expect(renderer.root.findAllByProps({ accessibilityLabel: 'Custom interval in months' })).toHaveLength(0);
       act(() => frequency.props.onChange('custom'));
