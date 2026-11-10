@@ -2,6 +2,15 @@
 
 # Open items
 
+## CR-108 owner decisions and remaining scope
+
+- Decide whether an in-app GitHub update check should ever be added. CR-108
+  keeps the app offline and uses an explicit browser link only.
+- Confirm whether "Once only" is desired for investment plans or liabilities
+  in a future request; CR-108 deliberately excludes both.
+- Complete Parts 2–6, final six-gate integration verification, task/phase PRs
+  and physical-device checks before closing CR-108.
+
 ## CR-106 owner decisions and scope
 
 - Decide whether public adoption is a goal. If it is not, drop public-launch
