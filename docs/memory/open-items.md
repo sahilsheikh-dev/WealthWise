@@ -20,8 +20,10 @@
   APK link and release-history updates into the retained phase as
   `87c8e8f902c313c35e7d48e154ec8d9c9f504789`. The phase-to-develop PR,
   develop-to-main synchronization and main-to-develop back-merge are complete
-  through PRs #127, #128 and #129; `develop` is synchronized at
-  `c554c0b7adf76ab6066755d26775c58f34c93cc0`.
+  through PRs #127, #128 and #129. Final ledger/test evidence was merged and
+  synchronized through PRs #130–#133; `main` and `develop` trees match.
+- The final ledger/test correction task PR #134 merged into the retained
+  `phase/28-qa-and-release` at `2d3a0f6`; see the P28-F-R6-R2 ledger entry.
 - O45-O53 are owner-reported Pass (2026-11-11); device model, Android version
   and tester were not supplied.
 
