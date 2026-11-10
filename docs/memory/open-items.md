@@ -6,14 +6,22 @@
 
 - The owner approved the v1.2.0 note and supplied six additional screenshots.
   Five screens are being added to each release; About is exclusive to v1.2.0.
-  The existing untagged draft at `936ee25` is authorized for replacement now
-  that the screenshot revision is integrated. Task PR #116 merged into the
-  phase as `f08f963`; phase PR #117 merged into `develop` at `25258ac`.
-  v1.1.1 remains latest published; no v1.2.0 tag or APK exists.
+  The existing untagged draft at `936ee25` was replaced after screenshot
+  integration. Task PR #116 merged into the phase as `f08f963`; phase PR #117
+  merged into `develop` at `25258ac`. v1.1.1 remains latest published. The
+  replacement draft targets
+  `199ebed307ce7755bc92c1f15544999d852db54f`; no v1.2.0 tag or published
+  release exists.
+- Build-record task PR #121 merged into the retained phase as
+  `e74c39a610f9ac0bbb8b5edebe3160ea5fa0f2b8`; phase-to-develop integration
+  remains pending.
 - O45-O53 are marked owner-reported Pass (2026-11-11); device model, Android
   version and tester were not supplied. The README Download block remains
-  v1.1.1 until v1.2.0 publication. All six ordered gates passed on
-  `25258ac`; EAS build, artifact verification, final release links and
+  v1.1.1 until v1.2.0 publication. All six ordered gates passed on `3bd5be6`.
+  EAS build `6fccf7d1-0580-46a6-9e09-ff7467fb0a30` succeeded with
+  `android-apk`/`versionCode` 3; the 112,163,081-byte APK is uploaded to the
+  draft and byte-verified against EAS. Main integration, public URL checks,
+  historical release body updates, previous APK asset rollover and
   publication remain pending.
 
 ## CR-108 owner decisions and remaining scope
