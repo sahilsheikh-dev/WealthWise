@@ -548,14 +548,17 @@ For every GitHub release:
    README, published Markdown, `release-history.md` and GitHub release assets
    agree. The release remains incomplete until every check passes.
 8. Add every supplied screenshot to the release's published Markdown and
-   GitHub Release body. Name assets
-   `WealthWise-vX.Y.Z-screenshot-<screen>.png` and attach them to the
-   matching GitHub Release only; do not retain screenshot files in the
-   repository.
+   GitHub Release body. Store files in
+   `docs/releases/screenshots/vX.Y.Z/` as
+   `WealthWise-vX.Y.Z-screenshot-<screen>.png` and commit them with the
+   release note; do not attach screenshots as GitHub Release assets.
+   Link each thumbnail to its absolute `blob/main` URL and load it from its
+   matching absolute `raw.githubusercontent.com/.../main/` URL. The README
+   may use equivalent relative paths.
    Keep only the latest published release's complete screenshot set in the
-   README Screenshots section, without a version title. Use absolute URLs for
-   the attached release assets and verify that each rendered image link
-   works. Display thumbnails at 150 pixels wide, with no more than four per
+   README Screenshots section, without a version title. Verify each rendered
+   image link after merge to `main`. Display thumbnails at 150 pixels wide,
+   with no more than four per
    row, ordered Home, Assets, Liabilities, Emergency Fund, Goals, Insurance,
    Budget, Transactions; omit unavailable screens. For v1.0.0, v1.1.0 and future releases, use screenshots from
    the matching release build, not a newer app. Exception: the owner has
@@ -700,11 +703,12 @@ Before considering the release complete, verify:
 - Matching README, published Markdown, release-history build record and GitHub
   release assets.
 - Every supplied version-specific screenshot appears in that release's
-  published Markdown and GitHub Release body and is attached to that GitHub
-  Release under `WealthWise-vX.Y.Z-screenshot-<screen>.png` names. The README
+  published Markdown and GitHub Release body and is committed under
+  `docs/releases/screenshots/vX.Y.Z/` with
+  `WealthWise-vX.Y.Z-screenshot-<screen>.png` names. The README
   Screenshots section contains only the latest published release's complete
-  screenshot set and has no version title. Do not retain screenshots in the
-  repository. If none were supplied, reuse the previous published release's
+  screenshot set and has no version title. Only the APK is a GitHub Release
+  asset. If none were supplied, reuse the previous published release's
   complete screenshot set for the new release and README. Order thumbnails
   Home, Assets, Liabilities, Emergency Fund,
   Goals, Insurance, Budget, Transactions. Each image renders. Release notes

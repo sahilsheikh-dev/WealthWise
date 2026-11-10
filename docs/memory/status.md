@@ -8,6 +8,13 @@
   98 suites, 1,271 passed, 1 skipped; 95.96/92.04/98.02/97.63% overall
   statement/branch/function/line coverage. Per-directory results are recorded
   in [PROGRESS.md](../PROGRESS.md).
+- CR-107 is in progress under its owner authorization. P32-A/B/C screenshot
+  capture is cancelled because the owner supplied all 23 images. The release
+  screenshot files and links are being moved into versioned repository paths;
+  release bodies and asset cleanup must wait until the authorized merge to
+  `main` and successful URL checks. Demo-data and notation revisions will be
+  handled in separate task branches. The published v1.1.1 APK does not contain
+  the new demo data.
 - The owner-approved v1.1.1 patch release was published on 2026-11-09. The
   app, package and lockfile versions are aligned to 1.1.1. All six ordered
   gates passed on the release candidate: 98 suites, 1,271 passed, 1 skipped;
@@ -30,10 +37,12 @@
   artifact, owner-provided APK and published 112,150,605-byte asset
   `WealthWise-android-latest-v1.1.1.apk`. The latest URL returns HTTP 200 at
   the expected size; no digest is recorded here.
-- N44 is owner-reported Pass. All 23 screenshots are attached to their
-  matching public GitHub releases as `WealthWise-vX.Y.Z-screenshot-<screen>.png`;
-  `docs/releases/screenshots/` is removed. The README gallery points to the
-  v1.1.1 screenshots. All eight screenshot URLs return HTTP 200. The v1.1.0
+- N44 is owner-reported Pass. The 23 screenshots are being moved from GitHub
+  Release assets into `docs/releases/screenshots/vX.Y.Z/` as
+  `WealthWise-vX.Y.Z-screenshot-<screen>.png`; release-body updates and
+  screenshot-asset deletion are pending the authorized main merge and URL
+  verification. The README gallery points to the v1.1.1 screenshots. The
+  existing screenshot URL checks predate the new repository links. The v1.1.0
   APK was renamed to its versioned filename after publication; the v1.1.0 and
   v1.0.0 versioned APK URLs return HTTP 200 at their expected sizes. The
   release prompt heading sequence is corrected, including “Generate Release
@@ -44,21 +53,18 @@
   persistence repair and its SQLite storage implementation matches current
   develop; v1.0.0 predates that repair.
 - Owner roadmap decisions: accessibility means a statement plus audit
-  checklist, not new app features. Screenshot capture is planned with
-  Device Hub.app, synthetic demo data and a one-off script kept outside the
-  repository and deleted after use. The owner requests every supplied
-  versioned screenshot in README, its release note and matching GitHub
-  release, with all images attached. All 23 supplied screenshots are attached
-  to v1.0.0, v1.1.0 and the v1.1.1 release; no screenshot files remain in the
-  repository.
+  checklist, not new app features. The owner supplied all 23 versioned
+  screenshots, so no additional capture or capture script is needed. The
+  repository-backed galleries and browser-viewable links are part of CR-107;
+  screenshot asset removal awaits post-main URL verification.
   Release-note Contributors sections were removed. The updated rule requires
   owner approval, full note completion and moving the note to `published/`
   before GitHub draft creation; after draft creation, the agent builds with
   EAS `android-apk`, uploads and verifies the APK. The owner-run v1.1.1 build
   already in progress is handled as an exception without starting a duplicate.
-  Widgets, quick capture and SMS/notification
-  detection are Held; Notes now includes text, recordings, photos and videos;
-  skeleton loading is planned as Phase 38. Details and safeguards are in
+  Widgets, quick capture and SMS/notification detection are Planned with their
+  owner/research gates retained; Notes includes text, recordings, photos and
+  videos; skeleton loading is planned as P38. Details and safeguards are in
   [open-items.md](open-items.md) and [PROGRESS.md](../PROGRESS.md).
 - P28-F-R4-R1-R1-R1-R1-R1 release-asset revision: the release naming and
   latest-published rules, screenshot embeds and release bodies are aligned;

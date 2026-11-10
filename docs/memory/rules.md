@@ -83,11 +83,13 @@
   affected versioned link with `curl -I -L`; require HTTP 200 and expected
   artifact size. The Builds table records EAS build ID, profile, Android
   `versionCode`, date and status, but no source commit or digest.
-- Name each screenshot `WealthWise-vX.Y.Z-screenshot-<screen>.png` and attach
-  it only to its matching GitHub Release. Use absolute release-asset URLs in
-  the README and release notes; do not retain image files under
-  `docs/releases/screenshots/`. Keep the README gallery limited to the latest
-  published release.
+- Name each screenshot `WealthWise-vX.Y.Z-screenshot-<screen>.png` and store
+  it under `docs/releases/screenshots/vX.Y.Z/`, committed with its published
+  release note. Do not attach screenshots as GitHub Release assets. In release
+  notes, link thumbnails to absolute `blob/main` URLs and load images from
+  matching absolute `raw.githubusercontent.com/.../main/` URLs; the README may
+  use equivalent relative paths. Keep the README gallery limited to the
+  latest published release.
 - No null-silencing `!` or `as` in `app/` or `src/components/`.
 - Format monetary values through `AmountText`/`formatAmount` with an explicit
   display tier.
@@ -111,10 +113,10 @@
   Download blocks identical; update README Download/What's new and the
   releases-page link for every release. Verify the current latest URL and
   every affected versioned link with `curl -I -L`, HTTP 200 and expected size.
-  Name screenshots `WealthWise-vX.Y.Z-screenshot-<screen>.png`, attach them
-  to the corresponding GitHub Release, and reference those assets directly
-  in Markdown; remove `docs/releases/screenshots/` from the repository after
-  verifying the uploaded assets. README screenshots come from the latest
+  Name screenshots `WealthWise-vX.Y.Z-screenshot-<screen>.png`, commit them
+  under `docs/releases/screenshots/vX.Y.Z/` with the corresponding release
+  note, and reference the repository files in Markdown; only the APK is
+  uploaded to the GitHub Release. README screenshots come from the latest
   published release only.
   Record EAS build ID, profile, Android `versionCode`, date and status in
   Builds, omitting source commits and digests.

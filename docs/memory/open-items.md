@@ -30,21 +30,21 @@ Not adopted in CR-106:
 ## Recently resolved
 
 - **Owner roadmap decisions (2026-11-09):** accessibility is the planned
-  statement and audit checklist, not new app features. Use Device Hub.app for
-  screenshots, not Android tooling; capture synthetic demo data only, keep a
-  one-off script outside the repository and delete it after use. The owner
-  explicitly requests version-specific feature screenshots in README,
-  release Markdown and GitHub Release bodies, attached to each release,
-  including v1.0.0 and v1.1.0.
-  Widgets, quick capture (shake, double-tap back or key combination) and
-  notification/SMS detection are Held for later. Notes includes text, voice/
-  audio recordings, photos and videos. Skeleton loading is planned in Phase
-  38. See [PROGRESS.md](../PROGRESS.md) for the recorded acceptance scope.
+  statement and audit checklist, not new app features. The owner supplied all
+  23 versioned screenshots, so P32-A/B/C capture work is cancelled; no new
+  captures or capture script are needed. Widgets, quick capture (shake,
+  double-tap back or key combination) and notification/SMS detection are
+  Planned, with research/reactivation requirements retained. P33-C still
+  requires iOS distribution; P35-C requires the P35-B owner go/no-go before
+  implementation. Notes includes text, voice/audio recordings, photos and
+  videos. Skeleton loading is planned as P38. See [PROGRESS.md](../PROGRESS.md)
+  for the recorded acceptance scope.
 - **Release screenshots and APK handoff:** all 23 owner-supplied screenshots
-  (7 for v1.0.0, 8 for v1.1.0 and 8 for v1.1.1) are attached to their
-  matching GitHub releases as `WealthWise-vX.Y.Z-screenshot-<screen>.png`.
-  The local screenshot folder is removed; Markdown embeds absolute asset
-  URLs. All eight public v1.1.1 screenshot URLs return HTTP 200.
+  (7 for v1.0.0, 8 for v1.1.0 and 8 for v1.1.1) have been copied to
+  `docs/releases/screenshots/vX.Y.Z/` as
+  `WealthWise-vX.Y.Z-screenshot-<screen>.png`. CR-107 is updating Markdown
+  links and guides; the old release screenshot assets remain until after
+  merge-to-main URL verification.
   The owner-provided APK for EAS build
   `ecc97480-7229-41ac-8aad-64ea2cd255b5` is byte-verified against EAS
   (app 1.1.1, `android-apk`, `versionCode` 2), and the published
@@ -52,7 +52,7 @@ Not adopted in CR-106:
   latest-published. The v1.1.0 APK now uses its versioned filename; the latest
   and affected versioned APK URLs return HTTP 200 with expected sizes.
   README, latest release notes, screenshot gallery and release history are
-  aligned.
+  being aligned without changing any APK Download block.
 - **Remote branch audit (2026-11-09):** fetched all 36 remote branches and
   checked their ancestry against `develop` and `main`. Every remote branch is
   integrated into `develop`; `release/v1.1.1` is integrated into `main`;
@@ -170,24 +170,12 @@ Not adopted in CR-106:
   remain absent. Final gate results and PR integration are in
   [`PROGRESS.md`](../PROGRESS.md). Implementation commit `d36103e` is in
   task-to-phase PR #42; phase-to-develop PR #43.
-- **Phase 32 screenshots:** supplied screenshots are embedded in README and
-  versioned Markdown. The owner supplied 23 versioned screenshots, visually
-  showing synthetic demo content. Their version-specific assets are attached
-  to the corresponding v1.0.0, v1.1.0 and v1.1.1 GitHub releases. The
-  v1.1.1 published body and release note use its versioned screenshot asset
-  URLs. The local screenshot
-  folder has been removed. All galleries use 150-pixel thumbnails, with at
-  most four screenshots per row. README contains only the latest published
-  set under the generic Screenshots heading; historical galleries remain in
-  their release notes. Galleries follow the requested Home, Assets,
-  Liabilities, Emergency Fund, Goals, Insurance, Budget, Transactions order,
-  omitting unavailable screens.
-  The v1.1.1 note contains all template sections, has owner approval and is
-  moved to `published/`; task PR #64 is merged, and Phase PR #65 promotes the
-  screenshot/documentation update to `develop`.
-  No capture script is in the repository; any future one-off script must stay
-  outside it, never be uploaded or included in an app build, and be deleted
-  after use.
+- **CR-107 screenshot repository verification:** P32-A/B/C capture work is
+  cancelled because the owner supplied all 23 screenshots. The files and
+  browser-viewable links are being moved into versioned repository paths.
+  After the authorized merge to `main`, verify all 46 blob/raw URLs, update
+  only the three release-body screenshot sections, then remove only those
+  23 screenshot assets. No screenshot capture or capture script is planned.
 - **v1.1.1 release:** the owner-approved patch release was published on
   2026-11-09 after PR #69 merged it to `main` and PR #70 back-merged it to
   `develop`. Tag `v1.1.1` points to the main merge commit. The owner-run EAS
