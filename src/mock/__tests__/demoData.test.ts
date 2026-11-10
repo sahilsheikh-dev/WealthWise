@@ -422,6 +422,10 @@ describe('six-month demo data', () => {
     expect(worth).toEqual({ assets: 10_000_000, liabilities: 1_000_000, netWorth: 9_000_000 });
     expect(worth.netWorth).toBe(worth.assets - worth.liabilities);
     expect(data.holdings.reduce((sum, holding) => sum + holdingValue(holding, today), 0)).toBe(worth.assets);
+    expect(data.holdings.filter((holding) => holding.type === 'Real estate')).toHaveLength(1);
+    expect(data.holdings.filter((holding) => holding.type === 'Custom')).toEqual([
+      expect.objectContaining({ customTypeName: 'Collectibles' }),
+    ]);
     expect(data.efBucketLinks['fd-rd']).toContain('demo-holding-fd');
     expect(data.efBucketLinks.bank).toContain('demo-holding-emergency-bank');
     const bytes = utf8ByteLength(JSON.stringify(data));

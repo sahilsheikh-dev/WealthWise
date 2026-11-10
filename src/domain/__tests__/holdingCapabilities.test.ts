@@ -1,6 +1,7 @@
 import { emptyAppData } from '../actions';
 import { holdingCapabilities } from '../holdingCapabilities';
-import { validateIntegrity } from '../links';
+import { investCategoryFor, validateIntegrity } from '../links';
+import { budgetGroupFor } from '../budgetGroups';
 import { addPlan, updatePlan } from '../planActions';
 import { appDataSchema } from '../schemas';
 import { HOLDING_TYPES } from '../types';
@@ -18,7 +19,16 @@ describe('holding capabilities', () => {
       Gold: { entries: true, recurring: true, returns: true },
       Silver: { entries: true, recurring: true, returns: true },
       Other: { entries: true, recurring: true, returns: true },
+      'Real estate': { entries: true, recurring: true, returns: true },
+      Custom: { entries: true, recurring: true, returns: true },
     });
+  });
+
+  it('maps Real estate and Custom investment activity into deliberate Budget categories', () => {
+    expect(investCategoryFor('Real estate')).toBe('Real estate');
+    expect(investCategoryFor('Custom')).toBe('Other investments');
+    expect(budgetGroupFor(investCategoryFor('Real estate'))?.id).toBe('savings-investments');
+    expect(budgetGroupFor(investCategoryFor('Custom'))?.id).toBe('savings-investments');
   });
 
   it('rejects adding or changing a plan to a one-time holding type', () => {

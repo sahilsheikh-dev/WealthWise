@@ -60,6 +60,31 @@ describe('backup validation and serialization', () => {
       .toBe('wealthwise-backup-20261010-1005Z-encrypted.json');
   });
 
+  it('round-trips custom holding and liability type names through strict backups', async () => {
+    const holding = mockAppData.holdings[0];
+    const liability = mockAppData.liabilities[0];
+    if (!holding || !liability) throw new Error('Custom backup fixtures are incomplete.');
+    const data = {
+      ...mockAppData,
+      holdings: mockAppData.holdings.map((item) => item.id === holding.id
+        ? { ...item, type: 'Custom' as const, customTypeName: 'Collectibles' }
+        : item),
+      liabilities: mockAppData.liabilities.map((item) => item.id === liability.id
+        ? { ...item, type: 'Custom' as const, customTypeName: 'Family loan' }
+        : item),
+    };
+    const text = await createBackup(data, {
+      exportedAt: '2026-10-10T10:00:00.000Z',
+      digest,
+    });
+    const imported = await parseBackup(text, { digest });
+    if (!imported.ok) throw new Error(`${imported.reason}: ${imported.message}`);
+    expect(imported.data.holdings.find((item) => item.id === holding.id))
+      .toMatchObject({ type: 'Custom', customTypeName: 'Collectibles' });
+    expect(imported.data.liabilities.find((item) => item.id === liability.id))
+      .toMatchObject({ type: 'Custom', customTypeName: 'Family loan' });
+  });
+
   it('accepts historical backup dates from 1900 and rejects dates before that floor', () => {
     const transaction = mockAppData.transactions[0];
     if (!transaction) throw new Error('Expected transaction fixture.');

@@ -683,6 +683,33 @@ describe('makeTransactionFormSchema', () => {
       expect(schema.safeParse({ ...planValues, startDate: '2026-02-30' }).success).toBe(false);
     });
 
+    it('accepts named Custom and Real estate plans but keeps Fixed deposit one-time only', () => {
+      const schema = makePlanFormSchema('2026-10-10', { otherNames: [], earliestLogDate: null });
+      const custom = schema.safeParse({
+        ...planValues,
+        type: 'Custom',
+        customTypeName: '  Private credit  ',
+      });
+      expect(custom.success).toBe(true);
+      if (custom.success) {
+        expect(custom.data).toMatchObject({ type: 'Custom', customTypeName: 'Private credit' });
+      }
+      expect(schema.safeParse({ ...planValues, type: 'Real estate' }).success).toBe(true);
+
+      const fixedDeposit = schema.safeParse({ ...planValues, type: 'Fixed deposit' });
+      expect(fixedDeposit.success).toBe(false);
+      if (!fixedDeposit.success) {
+        expect(fixedDeposit.error.issues.find((issue) => issue.path[0] === 'type')?.message)
+          .toBe('Fixed deposit does not support a recurring deposit schedule.');
+      }
+      const missingCustomName = schema.safeParse({ ...planValues, type: 'Custom', customTypeName: '   ' });
+      expect(missingCustomName.success).toBe(false);
+      const longCustomName = schema.safeParse({
+        ...planValues, type: 'Custom', customTypeName: 'x'.repeat(31),
+      });
+      expect(longCustomName.success).toBe(false);
+    });
+
     it('validates investment entries including date, kind and withdrawal bounds', () => {
       const schema = makeInvestmentEntryFormSchema('2026-10-10', { startDate: '2026-09-01', currentValue: 100 });
       const valid = { kind: 'Deposit', date: '2026-10-10', amount: '100000000', note: '  Monthly  ' };
@@ -718,6 +745,59 @@ describe('makeTransactionFormSchema', () => {
       expect(schema.safeParse({ ...valid, tenureMonths: '2.5' }).success).toBe(false);
       expect(schema.safeParse({ ...valid, startDate: '2026-10-02' }).success).toBe(false);
       expect(schema.safeParse({ ...valid, startDate: '2026-10-11' }).success).toBe(false);
+    });
+
+    it('validates optional custom names for recurring and one-time liabilities', () => {
+      const schema = makeLiabilityFormSchema('2026-10-10', {
+        otherNames: [],
+        earliestPaymentDate: null,
+      });
+      const recurring = schema.safeParse({
+        kind: 'recurring',
+        name: 'Private debt',
+        type: 'Custom',
+        customTypeName: '  Family loan  ',
+        principal: '100000',
+        ratePct: '12',
+        tenureMonths: '12',
+        startDate: '2026-10-01',
+        emi: '',
+      });
+      expect(recurring.success).toBe(true);
+      if (recurring.success) {
+        expect(recurring.data).toMatchObject({ type: 'Custom', customTypeName: 'Family loan' });
+      }
+      const oneTime = schema.safeParse({
+        kind: 'one-time',
+        name: 'Artwork debt',
+        type: 'Custom',
+        customTypeName: 'Art loan',
+        principal: '100000',
+        ratePct: '0',
+        startDate: '2026-10-01',
+        dueDate: '',
+      });
+      expect(oneTime.success).toBe(true);
+      expect(schema.safeParse({
+        kind: 'one-time',
+        name: 'Unnamed debt',
+        type: 'Custom',
+        customTypeName: '   ',
+        principal: '100000',
+        ratePct: '0',
+        startDate: '2026-10-01',
+        dueDate: '',
+      }).success).toBe(false);
+      expect(schema.safeParse({
+        kind: 'one-time',
+        name: 'Long name debt',
+        type: 'Custom',
+        customTypeName: 'x'.repeat(31),
+        principal: '100000',
+        ratePct: '0',
+        startDate: '2026-10-01',
+        dueDate: '',
+      }).success).toBe(false);
       const missingPrincipal = schema.safeParse({ ...valid, principal: '' });
       expect(missingPrincipal.success).toBe(false);
       if (!missingPrincipal.success) {
