@@ -8,7 +8,7 @@
   checklist items that depend on adoption as a goal.
 - Approve or decline P31-D's privacy statement as a root document before that
   part is executed; its content must use verified source facts only.
-- After P40-A, choose whether Phase 40 remains report-only or proceeds with
+- After P40-A, choose whether P40 remains report-only or proceeds with
   the P40-B narrative/archive split.
 - Confirm the holder of the MIT license.
 - After P31-E has a successful real PR run, set branch protection to require
@@ -78,7 +78,7 @@ Not adopted in CR-106:
   that a holding entry is created, and confirming Undo removes it. The
   checklist records Pass; device identity fields remain blank.
 - **P28-F-R1 GitHub sync:** owner-reported N39-N43 results are included in
-  merged PRs #1-#3. Phase 28 was integrated into develop, the release branch
+  merged PRs #1-#3. P28 was integrated into develop, the release branch
   into main, and main back into develop. The merged PRs and remote tips are
   recorded in [PROGRESS.md](../PROGRESS.md).
 - **P28-F-R2 contributor correction:** the v1.1.0 draft matches the linked
@@ -89,7 +89,7 @@ Not adopted in CR-106:
   verified EAS source commit; the uploaded artifact matched the EAS build,
   and latest/versioned links returned HTTP 200 at 112,147,677 bytes. The
   owner-approved `preview` profile and reused versionCode 1 exceptions are
-  recorded in the release history. PRs #11-#15 merged task -> Phase 28 ->
+  recorded in the release history. PRs #11-#15 merged task -> P28 ->
   develop -> release -> main -> develop; all four remote trees match and the
   v1.1.0 tag remains unchanged.
 - **P28-F-R3-R2 historical asset rollover:** v1.0.0 now downloads from its
@@ -101,15 +101,15 @@ Not adopted in CR-106:
   history and GitHub release body match. Latest and versioned v1.1.0 routes
   return HTTP 200 at 112,147,677 bytes. The old v1.0.0 filename has no
   `latest` marker and returns HTTP 200 at 112,133,413 bytes. PRs #21-#25
-  merged task -> Phase 28 -> develop -> release -> main -> develop. The four
+  merged task -> P28 -> develop -> release -> main -> develop. The four
   remote trees match; the v1.1.0 tag was not changed.
-- **P28-F-R2-R1 audit correction:** task PR #4 merged into Phase 28 and PR #5
-  merged Phase 28 into develop; PR #6 carries the release branch to main and
+- **P28-F-R2-R1 audit correction:** task PR #4 merged into P28 and PR #5
+  merged P28 into develop; PR #6 carries the release branch to main and
   PR #7 is the main-to-develop back-merge. The full sequence preserves
   task -> phase -> develop -> release -> main -> develop.
 - **P29-O-R1 scope close-out:** P29-O is superseded by the accepted P29-O1
   holding workflow and the explicit P29-S cancellation of the separate
-  ledger-only migration. No app implementation remains in scope; Phase 29 is
+  ledger-only migration. No app implementation remains in scope; P29 is
   41/41. The P29-O1 physical-device checks below remain open.
 - **Local `codex-changes` branch:** deleted on 2026-11-08 at the owner's
   direction. Its sole commit (`d033d6a`) was an October schema-v2 alternative
@@ -132,20 +132,20 @@ Not adopted in CR-106:
   annotated phase completion tags were pushed and verified. `main`, `develop`,
   and the v1.0.0 tag were also verified; v1.0.0 was not changed. No force push
   was used.
-- **P28-E-R4 history graph integration:** task PR #49 merged into Phase 28
-  (`7f9221a`), then Phase 28 PR #50 merged into `develop` (`b5dbe5f`). The
+- **P28-E-R4 history graph integration:** task PR #49 merged into P28
+  (`7f9221a`), then P28 PR #50 merged into `develop` (`b5dbe5f`). The
   `history/by-phase` tip and every remote branch tip are reachable from
   `develop`. `main` and `release/v1.1.0` remain at
   `7bea8e62c10f641f1fe9aeb9e3ef605b3620250a`, with tree
   `207ed97e541e55919d5cb58afbd25c4b0ed835c0`. The task branch was deleted;
-  Phase 28 is retained. Verification is in [PROGRESS.md](../PROGRESS.md).
+  P28 is retained. Verification is in [PROGRESS.md](../PROGRESS.md).
 - **P28-E-R5 historical main commit audit:** the 403 non-merge commits after
   the initial commit are already integrated into `main` and `develop`; 84
   legacy subjects fail the current Conventional Commit hook. Do not rewrite
   these original commits: a PR cannot change commit provenance or subjects
   retroactively. The owner-selected `release/v1.0.0` branch was created at
   the existing v1.0.0 tag target and is already an ancestor of `main` and
-  `develop`. Task PR #52 merged into Phase 28 as `f9bb715`, and Phase 28 PR
+  `develop`. Task PR #52 merged into P28 as `f9bb715`, and P28 PR
   #53 merged into `develop` as `0402592`. P28-E-R5-R1 records this final
   integration; no application code or protected branch tip changes.
   Evidence is in [PROGRESS.md](../PROGRESS.md).
@@ -154,14 +154,14 @@ Not adopted in CR-106:
   changing the captured `develop` tree. The accompanying changes are limited
   to ledger/memory documentation and a ledger test. At R3 completion, the
   archive was still separate; P28-E-R4 is connecting it. `main` and its
-  v1.1.0 tag remain untouched. Task PR #47 merged into Phase 28 and PR #48
+  v1.1.0 tag remain untouched. Task PR #47 merged into P28 and PR #48
   promoted R3 to `develop`. Details are in [PROGRESS.md](../PROGRESS.md).
 - **P28-F-R3 GitHub integration:** PR #11 merged the publication task into
-  Phase 28 (`a2f9db2`), #12 promoted Phase 28 to develop (`3e2a5a8`), #13
+  P28 (`a2f9db2`), #12 promoted P28 to develop (`3e2a5a8`), #13
   merged develop to `release/v1.1.0` (`d4d69fa`), #14 merged that release to
   main (`b0aeef9`), and #15 back-merged main into develop (`6f5df18`). The
   publication task branch was deleted; the phase branch remains at its
-  recorded tip. Main, develop, release and Phase 28 have identical trees.
+  recorded tip. Main, develop, release and P28 have identical trees.
 
 ## Unresolved
 
@@ -179,6 +179,11 @@ Not adopted in CR-106:
 - **CR-107 demo display:** route tests verify the Rs 1 crore Assets total at
   simulated font scales 1.3 and 2.0. Physical-device rendering at both scales
   remains unverified.
+- **CR-107 integration:** P22-A-R1 and screenshot work are in P28; P28-G
+  is converting phase labels to PN notation and adding the derived glossary
+  and regression guards. Finish the task/phase integration, six ordered gates,
+  authorized main merge, URL checks and screenshot-only release cleanup before
+  closing CR-107.
 - **v1.1.1 release:** the owner-approved patch release was published on
   2026-11-09 after PR #69 merged it to `main` and PR #70 back-merged it to
   `develop`. Tag `v1.1.1` points to the main merge commit. The owner-run EAS

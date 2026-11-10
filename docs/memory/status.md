@@ -2,7 +2,7 @@
 
 # Status
 - CR-106 adds planning rows only: P31-D privacy and P31-E CI, report-first
-  Phase 39 release audit/hardening, and Phase 40 agent-context hygiene.
+  P39 release audit/hardening, and P40 agent-context hygiene.
   No audit part, app-source change, phase implementation, or release work has
   started. All six ordered gates passed for this ledger/test-only change:
   98 suites, 1,271 passed, 1 skipped; 95.96/92.04/98.02/97.63% overall
@@ -15,7 +15,10 @@
   `main` and successful URL checks. P22-A-R1 now seeds six months of deterministic
   demo data with Rs 1 lakh earned income, Rs 1 crore in assets and Rs 10 lakh
   in liabilities; focused data, selector, goal, valuation and route tests pass.
-  P28-G notation work remains on its separate task branch. The published
+  P28-G is converting ledger and memory phase labels to PN notation, adding a
+  ledger-derived glossary and guarding the documented historical exclusions.
+  Its focused verification passes 2 suites/15 tests; it remains on its
+  separate task branch. The published
   v1.1.1 APK does not contain the new demo data. Physical-device rendering at
   font scales 1.3 and 2.0 remains unverified.
 - The owner-approved v1.1.1 patch release was published on 2026-11-09. The
@@ -73,23 +76,23 @@
   latest-published rules, screenshot embeds and release bodies are aligned;
   the local screenshot folder and temporary asset/APK copies are removed.
   The focused documentation tests and all six ordered gates pass. Task PR
-  #64 merged into Phase 28 as `dd8c6b6`; Phase PR #65 carries the change to
+  #64 merged into P28 as `dd8c6b6`; Phase PR #65 carries the change to
   `develop`. The follow-up release workflow is now complete: v1.1.1 is
   published and latest, and v1.1.0 uses its versioned APK asset.
 - Current instruction update: P20-S-R1-R1 adds R5 to
   [AGENTS.md](../../AGENTS.md) at the owner's request. When owner edits follow
   agent changes, ask before changing the affected file; revert or overwrite
   those edits only on explicit request. Commit `e955021` is merged by task PR
-  #44 into Phase 20; phase PR #45 is the promotion to `develop`. Details are
+  #44 into P20; phase PR #45 is the promotion to `develop`. Details are
   recorded in [PROGRESS.md](../PROGRESS.md).
-- P28-E-R3 records the selected P25-F, v1.1.0 merge and Phase 1 commits as
+- P28-E-R3 records the selected P25-F, v1.1.0 merge and P1 commits as
   ancestry through `task/P28-E-R3-record-selected-ancestry` and
   `phase/28-qa-and-release`. The ancestry merges preserve the captured
   `develop` tree; the task adds only ledger/memory documentation and a ledger
-  test. PR #47 merged to Phase 28 and PR #48 merged to `develop`; no
+  test. PR #47 merged to P28 and PR #48 merged to `develop`; no
   application source or `main` changes were included.
 - P28-E-R4 connected the complete `history/by-phase` ancestry through task PR
-  #49 (`7f9221a`) and Phase 28 PR #50 (`b5dbe5f`) to `develop`. The `ours`
+  #49 (`7f9221a`) and P28 PR #50 (`b5dbe5f`) to `develop`. The `ours`
   merge preserves the captured application tree; every remote branch tip is
   reachable from `develop`. `main` and `release/v1.1.0` remain unchanged.
 - P28-E-R5 audits the 403 non-merge first-parent commits after the initial
@@ -98,12 +101,12 @@
   messages or hashes were changed because that requires rewriting history.
   The new `release/v1.0.0` branch points to the existing tag target
   `cac6fed`; it is already an ancestor of `main` and `develop`. The audit
-  record's task PR #52 merged into Phase 28 as `f9bb715`, and Phase 28 PR #53
+  record's task PR #52 merged into P28 as `f9bb715`, and P28 PR #53
   merged into `develop` as `0402592`. P28-E-R5-R1 records the completed
   integration and verifies `main` and both release branch refs remain
   unchanged.
 - Current integration: P28-D, P28-C-R4, P28-E, P20-A-R1, P20-N-R2,
-  P29-AB-R2, P29-O1-R1, P29-W-R1, P28-F-R1/R2 and the Phase 30 work are
+  P29-AB-R2, P29-O1-R1, P29-W-R1, P28-F-R1/R2 and the P30 work are
   integrated into GitHub `main` and `develop`. P28-E-R4 is integrated into
   `develop` only and did not change `main`. `develop` began at main baseline
   `a258579c4b580d6f3a157b8d13de53334aa8d34d`, which contains legacy
@@ -111,9 +114,9 @@
   The earlier P28-E authorized pushes verified `main`, `develop`, all 30 phase
   branches, `history/by-phase`, and all 30 phase completion tags at that time.
   The `v1.0.0` tag was not changed; no force push was used.
-- Release 2 PRs #1-#7 follow the chronological flow: Phase 28 to develop (#1),
-  release to main (#2), main back to develop (#3), audit task to Phase 28
-  (#4), Phase 28 to develop (#5), release branch to main (#6), and main back
+- Release 2 PRs #1-#7 follow the chronological flow: P28 to develop (#1),
+  release to main (#2), main back to develop (#3), audit task to P28
+  (#4), P28 to develop (#5), release branch to main (#6), and main back
   to develop (#7). The contributor-credit correction and owner-reported
   N39-N43 results are on main and develop; the audit records are carried
   through the same release/back-merge path.
@@ -165,10 +168,10 @@
   `src/lib`: 100% in all four measures.
   TypeScript, lint, Expo Doctor 21/21, Android export and iOS export pass.
   N44 is owner-reported Pass on a physical device; no feature from planned or
-  held Phases 31-38 has been started. Owner decisions are listed in
+  held P31–P38 has been started. Owner decisions are listed in
   [open-items.md](./open-items.md), with full evidence in
   [PROGRESS.md](../PROGRESS.md). Integration route: task PR #40 merged into
-  Phase 20; phase PR #41 carries the synchronized branch to develop after
+  P20; phase PR #41 carries the synchronized branch to develop after
   sync merge `6982ff2`.
 - Ordered release-branch gates on `release/v1.1.0`: all six exit 0. Gate 1
   has 98 suites, 1,242 passed, 1 skipped; coverage is 95.96/92.01/98.01/97.62%
@@ -204,13 +207,13 @@
   and release-history entry match. Both latest-route and versioned v1.1.0
   links return HTTP 200 at 112,147,677 bytes; v1.0.0's versioned link returns
   HTTP 200 at 112,133,413 bytes. The changes reached `main` and `develop`
-  through PRs #21-#25: task to Phase 28, Phase 28 to develop, develop to
+  through PRs #21-#25: task to P28, P28 to develop, develop to
   `release/v1.1.0`, release to main, then main back to develop. Remote trees
-  for main, develop, release and Phase 28 are identical; the tag was not
+  for main, develop, release and P28 are identical; the tag was not
   changed.
-- P29-O-R1 closes the only uncompleted Phase 29 implementation row. The
+- P29-O-R1 closes the only uncompleted P29 implementation row. The
   proposed ledger-only migration was explicitly cancelled as unnecessary;
-  P29-O1's accepted unified holding workflow remains. Phase 29 is 41/41 after
+  P29-O1's accepted unified holding workflow remains. P29 is 41/41 after
   the close-out. P29-O1's physical-device checks remain unverified.
 - The owner directed deletion of local `codex-changes` (`d033d6a`). Its
   October schema-v2 loan/liability alternative was stale against schema v22,
@@ -224,7 +227,7 @@
   latest commits on their respective phase branches. Tags were not moved;
   whether to update them remains an owner decision.
 - Branch audit (2026-11-08): the chronological PR path carries the task
-  correction through Phase 28, develop, the release branch and main, then
+  correction through P28, develop, the release branch and main, then
   back-merges main into develop. The relevant branch refs are verified in the
   GitHub PRs. The v1.1.0 tag points to the verified EAS source commit and its
   GitHub release is published. `phase/25-release-and-backups` remains outside
@@ -236,20 +239,20 @@
   bug and a failing migration assertion. No unsafe branch content was pushed.
 - P28-F-R2 contributor-credit correction and owner-reported device results
   are integrated through PRs #1-#3. P28-F-R2-R1 audit records use PRs #4-#7
-  to follow task -> Phase 28 -> develop -> release -> main -> develop.
+  to follow task -> P28 -> develop -> release -> main -> develop.
   P28-F-R3 published v1.1.0 after the owner uploaded the verified APK; PRs
-  #11-#15 complete task -> Phase 28 -> develop -> release -> main -> develop.
-  The remote trees for main, develop, release/v1.1.0 and Phase 28 are
+  #11-#15 complete task -> P28 -> develop -> release -> main -> develop.
+  The remote trees for main, develop, release/v1.1.0 and P28 are
   identical; the tag remains at the verified build source.
 - P29-O1-R2 and P29-W-R2 align recurring-asset and liability completed/pending
   month counts in two-column summary cells and sort pending schedule rows with
   dated entries (newest first). Route regressions pass at font scales 1.0,
-  1.3 and 2.0; all six ordered gates exit 0. Gate 1 on the reopened Phase 29
+  1.3 and 2.0; all six ordered gates exit 0. Gate 1 on the reopened P29
   branch: 98 suites, 1,242 passed, 1 skipped; coverage is
   95.96/92.01/98.01/97.62% overall, `src/data`
   91.03/87.39/94.46/94.17%, `src/domain` 96.95/92.85/98.80/98.32%, and
   `src/lib` 100% in all measures. No schema change. Task commit `601a731` and
-  Phase 29 merge `22a0ec4` are included in GitHub main/develop through the
+  P29 merge `22a0ec4` are included in GitHub main/develop through the
   Release 2 PR chain. Physical-device verification remains pending.
 - Corrected the five historical checkpoint commit subjects and force-pushed
   the rewritten `main` history to `origin/main` with explicit owner
@@ -390,7 +393,7 @@
   inspected read-only: it imports `policySummary` for its Insurance box and
   generic pending dues for Upcoming and due; it does not depend on cover goals.
   `app/(tabs)/index.tsx` remains user-owned and was not edited.
-- Phase 29 status: P29-O2 is Cancelled by the owner; P29-S, P29-T, P29-U,
+- P29 status: P29-O2 is Cancelled by the owner; P29-S, P29-T, P29-U,
   P29-V and P29-W are Done. P29-M is
   Superseded by P29-M2; P29-O is superseded by P29-O1/P29-S and closed by
   P29-O-R1. P29-O1 remains Done. P29-S makes no behavior or schema change.
