@@ -108,17 +108,19 @@ Before creating a release build:
    then commit the approved note with the release changes and merge through
    task -> phase -> `develop`.
 7. After merge to `develop`, create `release/vX.Y.Z` from that source and
-   create the GitHub Release draft at the release-branch commit. Attach every
-   supplied screenshot as
-   `WealthWise-vX.Y.Z-screenshot-<screen>.png` and use each absolute asset
-   URL in the draft body. Do not retain screenshots in the repository; after
-   upload verification, remove the local `docs/releases/screenshots/` folder.
+   create the GitHub Release draft at the release-branch commit. Use every
+   supplied screenshot committed under `docs/releases/screenshots/vX.Y.Z/`
+   in the published note and draft body. Link each thumbnail to its absolute
+   `blob/main` URL and load the image from its matching absolute
+   `raw.githubusercontent.com/.../main/` URL. Do not attach screenshots as
+   GitHub Release assets; only the APK is uploaded.
    Then run `eas build --platform android --profile android-apk` from the
    release branch, wait for a successful build, download the APK outside the
    repository, and upload it to the draft as
    `WealthWise-android-latest-vX.Y.Z.apk`.
 8. Privately verify the uploaded APK against the EAS build artifact, record
-   its verified build details, and finish the post-build checks. Obtain
+   its verified build details, verify each screenshot URL after merge to
+   `main`, and finish the post-build checks. Obtain
    explicit publication approval, merge the release branch `--no-ff` into
    `main`, and verify the tag target before publishing.
 9. Production Android AABs for Google Play are separate owner-authorized

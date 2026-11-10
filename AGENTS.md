@@ -164,14 +164,16 @@ local Gradle builds still require explicit authorization.
   Every release updates the README Download and What's new sections and its
   releases-page link. Include all screenshots explicitly supplied for a
   release in its Markdown and GitHub Release body, named
-  `WealthWise-vX.Y.Z-screenshot-<screen>.png`. Store them only as assets on
-  the matching GitHub Release; do not retain
-  `docs/releases/screenshots/` in the repository. If no screenshots are
-  supplied, reuse the previous release's complete image set and attach it
-  under the new version's filenames. The README Screenshots section contains
-  only the latest published release's screenshot set and has no version title.
-  Display images at 150 pixels wide in table rows, with no more than four
-  screenshots per row. Keep capture scripts outside the app and
+  `WealthWise-vX.Y.Z-screenshot-<screen>.png`. Commit them under
+  `docs/releases/screenshots/vX.Y.Z/` with the published note; do not attach
+  screenshots as GitHub Release assets. Link each release-note thumbnail to
+  its absolute `blob/main` URL and load the image from its matching absolute
+  `raw.githubusercontent.com/.../main/` URL. The README may use equivalent
+  relative paths. If no screenshots are supplied, reuse the previous release's
+  complete image set under the new version's filenames. The README Screenshots
+  section contains only the latest published release's screenshot set and has
+  no version title. Display images at 150 pixels wide in table rows, with no
+  more than four screenshots per row. Keep capture scripts outside the app and
   repository. Display categories in this order, omitting unavailable screens:
   Home, Assets, Liabilities, Emergency Fund, Goals, Insurance, Budget,
   Transactions. Release notes and GitHub release bodies must not contain a

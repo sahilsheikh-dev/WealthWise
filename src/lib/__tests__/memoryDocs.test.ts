@@ -20,6 +20,12 @@ function readMemoryFile(name: string): string {
 }
 
 describe('shared AI memory documents', () => {
+  it('uses PN notation for phase labels', () => {
+    for (const name of memoryFiles) {
+      expect(readMemoryFile(name)).not.toMatch(/\bPhases?\s+\d+\b|\bPhase-\d+\b/);
+    }
+  });
+
   it('keeps all memory pages indexed, headed and aligned with source schema/test records', () => {
     const index = readMemoryFile('README.md');
     for (const name of memoryFiles) {

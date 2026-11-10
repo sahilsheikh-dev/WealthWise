@@ -28,16 +28,19 @@ The shared project rules are in [AGENTS.md](../../AGENTS.md),
    code and release notes, and ask the owner to approve the Markdown draft.
    Do not commit the release candidate before this approval.
 3. Use every screenshot supplied for that release in its release notes and
-   GitHub Release body. Name each asset
-   `WealthWise-vX.Y.Z-screenshot-<screen>.png` and store it only on the
-   matching GitHub Release; do not check screenshot files into the repository.
-   The README Screenshots section contains only the latest published release's
-   complete screenshot set and has no version title. If none are supplied,
-   reuse the previous published release's complete image set and attach it
-   under the new version's filenames. Render thumbnails 150 pixels wide in
-   table rows with no more than four images per row, ordered Home, Assets,
-   Liabilities, Emergency Fund, Goals, Insurance, Budget, Transactions;
-   omit screens that are unavailable for that release.
+   GitHub Release body. Name each file
+   `WealthWise-vX.Y.Z-screenshot-<screen>.png`, store it in
+   `docs/releases/screenshots/vX.Y.Z/`, and commit it with the published
+   release note. Do not attach screenshots as GitHub Release assets. In
+   release notes, link each thumbnail to the absolute `blob/main` URL and load
+   its image from the matching absolute `raw.githubusercontent.com/.../main/`
+   URL; the README may use equivalent relative paths. The README Screenshots
+   section contains only the latest published release's complete screenshot
+   set and has no version title. If none are supplied, reuse the previous
+   published release's complete image set under the new version's filenames.
+   Render thumbnails 150 pixels wide in table rows with no more than four
+   images per row, ordered Home, Assets, Liabilities, Emergency Fund, Goals,
+   Insurance, Budget, Transactions; omit unavailable screens.
 4. After the owner approves the Markdown draft, finalize it with all release
    details and screenshots, move it to `docs/releases/published/`, and include
    the approved note in the release-work commit before creating the GitHub draft.
@@ -49,10 +52,11 @@ The shared project rules are in [AGENTS.md](../../AGENTS.md),
 6. Once the approved code is merged to `develop`, create
    `release/vX.Y.Z` from that commit and create the GitHub Release draft at
    the release-branch commit. This draft may create the version tag; never
-   retarget it. Attach every version screenshot under its required
-   version-specific filename and use each absolute asset URL in the draft
-   body. Verify the uploaded assets, then remove any local screenshot folder
-   and confirm no `docs/releases/screenshots/` repository folder remains.
+   retarget it. Use the published note's absolute repository screenshot links
+   in the body and verify that each rendered image opens the expected
+   repository file. Screenshots remain committed under
+   `docs/releases/screenshots/vX.Y.Z/`; only the APK is uploaded as a release
+   asset.
    Then run
    `eas build --platform android --profile android-apk`, wait for success,
    download the APK outside the repository, and upload it to the draft as
@@ -112,10 +116,12 @@ The shared project rules are in [AGENTS.md](../../AGENTS.md),
   URL/filename and contain no `latest` wording. On publication of a newer
   version, rename the previous APK to `WealthWise-android-vX.Y.Z.apk` and
   update its Download block and history link.
-- Name screenshots `WealthWise-vX.Y.Z-screenshot-<screen>.png`, attach them
-  only to the matching GitHub Release, and embed absolute asset URLs in
-  release notes. Do not retain screenshots in `docs/releases/screenshots/`;
-  verify the uploaded assets before removing any local screenshot folder.
+- Store screenshots named `WealthWise-vX.Y.Z-screenshot-<screen>.png` under
+  `docs/releases/screenshots/vX.Y.Z/` with the published note. Do not attach
+  screenshots as GitHub Release assets. Link release-note thumbnails to
+  absolute `blob/main` URLs and load images from matching
+  `raw.githubusercontent.com/.../main/` URLs; README may use relative paths.
+  Verify the rendered links and repository files after merge to `main`.
 - A release is incomplete until links, expected artifact size, notes, README,
   release history and GitHub assets agree.
 - Never commit signing credentials, publish without approval, or rewrite

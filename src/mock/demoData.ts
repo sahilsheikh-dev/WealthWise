@@ -2,9 +2,7 @@ import { addInvestmentEntry } from '../domain/investmentActions';
 import { addLiabilityPayment } from '../domain/liabilityActions';
 import {
   allocateSurplus,
-  fundShortfall,
   recordMoneyMovement,
-  shortfallForMonth,
 } from '../domain/cashFlow';
 import {
   applyBudgetPlanToMonth,
@@ -209,14 +207,17 @@ function makeReminderDemoItems(today: ISODate): BudgetItem[] {
 }
 
 function makeHoldings(today: ISODate, months: string[]): Holding[] {
+  const firstMonth = months[0];
+  if (!firstMonth) throw new Error('The demo requires at least one month.');
+  // Direct opening valuations are adjusted only by the generated linked entries.
   const manuals: Holding[] = [
     {
       id: 'demo-holding-emergency-cash',
       kind: 'manual',
       name: 'Emergency cash',
       type: 'Cash',
-      invested: 25_000,
-      value: 25_000,
+      invested: 450_000,
+      value: 500_000,
       valueAsOf: today,
       logs: [],
     },
@@ -225,8 +226,8 @@ function makeHoldings(today: ISODate, months: string[]): Holding[] {
       kind: 'manual',
       name: 'Emergency savings account',
       type: 'Savings account',
-      invested: 85_000,
-      value: 92_000,
+      invested: 650_000,
+      value: 700_000,
       valueAsOf: today,
       logs: [],
     },
@@ -235,8 +236,8 @@ function makeHoldings(today: ISODate, months: string[]): Holding[] {
       kind: 'manual',
       name: 'Emergency fixed deposit',
       type: 'Fixed deposit',
-      invested: 65_000,
-      value: 70_000,
+      invested: 750_000,
+      value: 800_000,
       valueAsOf: today,
       logs: [],
     },
@@ -245,8 +246,8 @@ function makeHoldings(today: ISODate, months: string[]): Holding[] {
       kind: 'manual',
       name: 'Index mutual fund',
       type: 'Mutual fund / SIP',
-      invested: 38_000,
-      value: 42_000,
+      invested: 882_000,
+      value: 982_000,
       valueAsOf: today,
       logs: [],
     },
@@ -255,8 +256,8 @@ function makeHoldings(today: ISODate, months: string[]): Holding[] {
       kind: 'manual',
       name: 'Broad market ETF',
       type: 'Stocks / ETF',
-      invested: 24_000,
-      value: 27_500,
+      invested: 1_782_000,
+      value: 1_991_000,
       valueAsOf: today,
       logs: [],
     },
@@ -265,8 +266,8 @@ function makeHoldings(today: ISODate, months: string[]): Holding[] {
       kind: 'manual',
       name: 'Gold savings',
       type: 'Gold',
-      invested: 18_000,
-      value: 20_500,
+      invested: 895_200,
+      value: 995_200,
       valueAsOf: today,
       logs: [],
     },
@@ -275,13 +276,13 @@ function makeHoldings(today: ISODate, months: string[]): Holding[] {
       kind: 'manual',
       name: 'Employee provident fund',
       type: 'EPFO / PF',
-      invested: 180_000,
-      value: 205_000,
+      invested: 3_792_800,
+      value: 3_988_800,
       valueAsOf: today,
       logs: [],
     },
   ];
-  const firstPlanDate = `${months[0]}-25` as ISODate;
+  const firstPlanDate = `${firstMonth}-25` as ISODate;
   const plan: Holding = {
     id: 'demo-holding-recurring-deposit',
     kind: 'plan',
@@ -294,15 +295,15 @@ function makeHoldings(today: ISODate, months: string[]): Holding[] {
     tenureYears: 5,
     startDate: firstPlanDate,
     trackFrom: firstPlanDate,
-    opening: 12_000,
-    actualValue: null,
-    actualValueDate: null,
+    opening: 0,
+    actualValue: 0,
+    actualValueDate: today,
     logs: [],
   };
   return [...manuals, plan];
 }
 
-function makeLiabilities(months: string[]): Liability[] {
+function makeLiabilities(today: ISODate, months: string[]): Liability[] {
   const currentMonth = months.at(-1);
   if (!currentMonth) throw new Error('The demo requires a current month.');
   const startDate = addMonths(`${currentMonth}-12`, -2);
@@ -317,7 +318,7 @@ function makeLiabilities(months: string[]): Liability[] {
     emi: 5_500,
     startDate,
     payments: [],
-    settlement: { asOf: monthEnd(months[1]!), balance: 274_000 },
+    settlement: { asOf: today, balance: 982_500 },
   }, {
     id: 'demo-liability-settled',
     kind: 'recurring',
@@ -337,7 +338,7 @@ function makeGoals(): Goal[] {
   return [{
     id: 'demo-goal-emergency',
     name: 'Emergency fund',
-    target: 250_000,
+    target: 2_500_000,
     saved: 0,
     year: 2029,
     auto: 'ef',
@@ -349,14 +350,14 @@ function makeGoals(): Goal[] {
   }, {
     id: 'demo-goal-retirement',
     name: 'Retirement portfolio',
-    target: 1_000_000,
+    target: 20_000,
     saved: 0,
     year: 2040,
     links: [{ instrumentId: 'demo-holding-recurring-deposit', share: 60 }],
   }, {
     id: 'demo-goal-home',
     name: 'Home deposit',
-    target: 800_000,
+    target: 4_700_000,
     saved: 0,
     year: 2040,
     links: [
@@ -366,14 +367,14 @@ function makeGoals(): Goal[] {
   }, {
     id: 'demo-goal-education',
     name: 'Education fund',
-    target: 200_000,
+    target: 2_500_000,
     saved: 10_000,
     year: 2032,
     links: [{ instrumentId: INVESTMENT_HOLDING_IDS['Stocks / ETF']!, share: 25 }],
   }, {
     id: 'demo-goal-travel',
     name: 'Family holiday',
-    target: 500_000,
+    target: 125_000,
     saved: 25_000,
     year: 2029,
     links: [],
@@ -477,17 +478,16 @@ function makePolicies(today: ISODate, firstMonth: string): Policy[] {
 export function buildDemoData(today: ISODate): AppData {
   if (!isValidISO(today)) throw new RangeError(`Invalid ISO date: ${today}`);
   const currentMonth = monthKey(today);
-  const months = Array.from({ length: 4 }, (_, index) => shiftMonth(currentMonth, index - 3));
+  const months = Array.from({ length: 6 }, (_, index) => shiftMonth(currentMonth, index - 5));
   const id = generatedIdFactory();
   const holdings = makeHoldings(today, months);
-  const liabilities = makeLiabilities(months);
+  const liabilities = makeLiabilities(today, months);
   const goals = makeGoals();
   const policies = makePolicies(today, months[0]!);
   const budgetPlan: BudgetPlan = {
     incomes: [
-      { id: 'demo-income-salary', name: 'Salary', category: 'Salary', amount: 68_500, day: 1 },
-      { id: 'demo-income-freelance', name: 'Freelance', category: 'Freelance', amount: 6_500, day: 15, frequency: 'quarterly', firstDueMonth: months[0] },
-      { id: 'demo-income-bonus', name: 'Annual bonus', category: 'Other', amount: 25_000, day: 20, frequency: 'yearly', firstDueMonth: months[0] },
+      { id: 'demo-income-salary', name: 'Salary', category: 'Salary', amount: 80_000, day: 1 },
+      { id: 'demo-income-freelance', name: 'Freelance', category: 'Freelance', amount: 20_000, day: 15 },
     ],
     sections: [
       ...defaultBudgetSections(),
@@ -498,7 +498,7 @@ export function buildDemoData(today: ISODate): AppData {
     repeatFrom: shiftMonth(currentMonth, 1),
   };
   let data: AppData = {
-    settings: { name: 'Demo User', theme: 'system', monthlySalary: 75_000, onboarded: true },
+    settings: { name: 'Demo User', theme: 'system', monthlySalary: 80_000, onboarded: true },
     transactions: [],
     goals,
     holdings,
@@ -540,56 +540,33 @@ export function buildDemoData(today: ISODate): AppData {
   };
 
   for (const [monthIndex, month] of months.entries()) {
-    const payDate = monthDate(month, 5, today);
+    const payDate = monthDate(month, 1, today);
     data.transactions.push({
       id: `demo-salary-${month}`,
       type: 'income',
-      amount: 75_000,
+      amount: 80_000,
       category: 'Salary',
       note: 'Monthly salary',
       date: payDate,
     });
-    if (monthIndex === 1 || monthIndex === 3) {
-      data.transactions.push({
-        id: `demo-freelance-${month}`,
-        type: 'income',
-        amount: 6_500,
-        category: 'Freelance',
-        note: 'Design project',
-        date: monthDate(month, 8, today),
-      });
-    }
-    if (monthIndex === 2) {
-      data.transactions.push({
-        id: `demo-rental-${month}`,
-        type: 'income',
-        amount: 12_000,
-        category: 'Rental',
-        note: 'Room rental',
-        date: monthDate(month, 9, today),
-      });
-    }
-    if (monthIndex === 0) {
-      data.transactions.push({
-        id: `demo-business-${month}`,
-        type: 'income',
-        amount: 4_000,
-        category: 'Business',
-        note: 'Consulting work',
-        date: monthDate(month, 11, today),
-      });
-    }
+    data.transactions.push({
+      id: `demo-freelance-${month}`,
+      type: 'income',
+      amount: 20_000,
+      category: 'Freelance',
+      note: 'Monthly project income',
+      date: monthDate(month, 15, today),
+    });
 
     for (const category of TRANSACTION_CATEGORIES.expense) {
       const base = EXPENSE_AMOUNTS[category];
       if (base === undefined) throw new Error(`Missing demo expense amount for ${category}.`);
-      const exceptionalRepair = category === 'Unexpected' && monthIndex === 1 ? 120_000 : 0;
       data.transactions.push({
         id: `demo-expense-${month}-${category.toLowerCase().replaceAll(/[^a-z0-9]+/g, '-')}`,
         type: 'expense',
-        amount: base + exceptionalRepair,
+        amount: base,
         category,
-        note: exceptionalRepair > 0 ? 'Major emergency home repair' : `${category} spending`,
+        note: `${category} spending`,
         date: monthDate(month, category === 'Recharge' ? 5 : 12, today),
       });
     }
@@ -616,7 +593,7 @@ export function buildDemoData(today: ISODate): AppData {
         date: monthDate(month, 13, today),
       });
     }
-    if (monthIndex === 3) {
+    if (monthIndex === months.length - 1) {
       data.transactions.push({
         id: `demo-unbudgeted-vet-${month}`,
         type: 'expense',
@@ -644,8 +621,8 @@ export function buildDemoData(today: ISODate): AppData {
   const plan = data.holdings.find((holding) =>
     holding.id === 'demo-holding-recurring-deposit' && holding.kind === 'plan');
   if (!plan || plan.kind !== 'plan') throw new Error('Demo recurring deposit plan is missing.');
-  for (const month of months.slice(0, 2)) {
-    const dueDate = addMonths(plan.startDate, months.indexOf(month));
+  for (const month of months.slice(-2)) {
+    const dueDate = monthDate(month, 25, today);
     data = addInvestmentEntry(data, plan.id, {
       date: dueDate,
       amount: plan.amount,
@@ -659,8 +636,8 @@ export function buildDemoData(today: ISODate): AppData {
   if (!recurringLiability || recurringLiability.kind !== 'recurring') {
     throw new Error('Demo recurring liability is missing.');
   }
-  for (const month of months.slice(0, 2)) {
-    const dueDate = addMonths(recurringLiability.startDate, months.indexOf(month) + 1);
+  for (const month of months.slice(-2)) {
+    const dueDate = monthDate(month, 12, today);
     data = addLiabilityPayment(data, recurringLiability.id, {
       date: dueDate,
       amount: recurringLiability.emi,
@@ -689,8 +666,10 @@ export function buildDemoData(today: ISODate): AppData {
   if (!friendLiability || friendLiability.kind !== 'one-time') {
     throw new Error('Demo borrowed liability was not created.');
   }
+  const partialPaymentMonth = months.at(-2);
+  if (!partialPaymentMonth) throw new Error('The demo requires a partial-payment month.');
   data = addLiabilityPayment(data, friendLiability.id, {
-    date: monthDate(months[1]!, 20, today),
+    date: monthDate(partialPaymentMonth, 20, today),
     amount: 2_500,
     kind: 'Payment',
     note: 'Partial repayment',
@@ -718,14 +697,6 @@ export function buildDemoData(today: ISODate): AppData {
     });
   }
 
-  const shortfallMonth = months[1]!;
-  const shortfall = shortfallForMonth(data, shortfallMonth);
-  if (shortfall <= 0) throw new Error('The demo shortfall month must be negative before funding.');
-  data = fundShortfall(data, {
-    month: shortfallMonth,
-    allocations: [{ kind: 'borrowed', amount: shortfall, lenderName: 'Demo lender' }],
-  }, id);
-
   const surplusMonth = months[0]!;
   data = allocateSurplus(data, {
     date: monthEnd(surplusMonth),
@@ -747,10 +718,9 @@ export function buildDemoData(today: ISODate): AppData {
     });
   }
 
-  for (const month of months.slice(0, 3)) {
+  for (const month of months) {
     data = applyBudgetPlanToMonth(data, month, { newId: id, today });
   }
-  data = applyBudgetPlanToMonth(data, currentMonth, { newId: id, today });
   const currentBudget = data.monthBudgets?.find((budget) => budget.month === currentMonth);
   if (!currentBudget) throw new Error('Demo current-month applied budget was not created.');
   const linkedCurrentBudget = data.monthBudgets?.find((budget) => budget.month === currentMonth);

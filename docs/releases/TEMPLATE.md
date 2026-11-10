@@ -32,16 +32,19 @@ the `/latest/` route. Do not include an APK checksum in release material.
 
 ## Screenshots
 
-Use synthetic demo data only. Embed reviewed, version-specific image assets
-attached to the matching GitHub Release using their absolute URLs. Name each
-asset `WealthWise-vX.Y.Z-screenshot-<screen>.png`; do not store screenshot
-files in the repository. Include every screenshot supplied for the release.
-If none are supplied, reuse the previous published release's complete set and
-attach it under the new version's filenames. The README uses the complete
-screenshot set from the latest published release only. Render thumbnails at
-150 pixels wide in table rows with no more than four screenshots per row.
-Order them Home, Assets, Liabilities, Emergency Fund, Goals, Insurance,
-Budget, Transactions; omit screens unavailable for the release.
+Use synthetic demo data only. Store reviewed, version-specific screenshots in
+`docs/releases/screenshots/vX.Y.Z/` and commit them with the published release
+note. Name each file `WealthWise-vX.Y.Z-screenshot-<screen>.png`; do not
+attach screenshots as GitHub Release assets. Include every screenshot supplied
+for the release. If none are supplied, reuse the previous published release's
+complete set under the new version's filenames. In release notes, link each
+thumbnail to its absolute `blob/main` URL and load the image from the matching
+absolute `raw.githubusercontent.com/.../main/` URL. The README may use
+equivalent relative paths. The README uses the complete screenshot set from
+the latest published release only. Render thumbnails at 150 pixels wide in
+table rows with no more than four screenshots per row. Order them Home,
+Assets, Liabilities, Emergency Fund, Goals, Insurance, Budget, Transactions;
+omit screens unavailable for the release.
 Never include personal phone data or a capture script.
 
 ## What's Included

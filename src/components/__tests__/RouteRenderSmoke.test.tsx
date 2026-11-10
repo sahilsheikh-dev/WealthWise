@@ -966,7 +966,7 @@ describe('route render smoke audit', () => {
     }
   });
 
-  it('renders every registered screen with the four-month demo data', () => {
+  it('renders every registered screen with the six-month demo data', () => {
     const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
     const storeState = useAppStore((state) => state);
     const previousRouteData = { ...routeData };
@@ -988,6 +988,32 @@ describe('route render smoke audit', () => {
       if (renderer) act(() => renderer?.unmount());
       Object.assign(routeData, previousRouteData);
       storeState.data = previousStoreData;
+    }
+  });
+
+  it.each([1.3, 2])('renders the crore-tier demo asset total at font scale %s', (fontScale) => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const previousRouteData = { ...routeData };
+    const store = useAppStore((state) => state);
+    const previousStoreData = store.data;
+    const previousFontScale = mockFontScale;
+    const data = buildDemoData(todayISO());
+    Object.assign(routeData, data);
+    store.data = data;
+    mockFontScale = fontScale;
+
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      renderer = renderScreen(React.createElement(AssetsScreen));
+      expect(visibleText(renderer)).toContain('₹1.00 Cr');
+      expect(renderer.root.findAllByProps({
+        accessibilityLabel: '₹1,00,00,000',
+      })).not.toHaveLength(0);
+    } finally {
+      act(() => renderer?.unmount());
+      Object.assign(routeData, previousRouteData);
+      store.data = previousStoreData;
+      mockFontScale = previousFontScale;
     }
   });
 
