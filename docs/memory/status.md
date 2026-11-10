@@ -18,6 +18,9 @@
   through task PR #130 (`202dabe`), phase PR #131 (`6f4f4df`), develop-to-main
   PR #132 (`b678493`) and main-to-develop PR #133 (`eedff48`); `main` and
   `develop` trees match.
+- P28-F-R6-R2's ledger regression correction merged from task PR #134 into
+  `phase/28-qa-and-release` at `2d3a0f6`. Its evidence records the prior
+  release sync and exact P28 38/38 completion status.
 - All 104 screenshot image/link URLs returned HTTP 200; raw image sizes match
   all 52 repository files. The latest and four versioned APK URLs returned
   HTTP 200 with their expected artifact sizes. Historical release screenshot
