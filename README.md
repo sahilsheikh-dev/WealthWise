@@ -90,6 +90,15 @@ confirmed browser link to the latest release. See the
 <td><a href="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-screenshot-budget.png"><img src="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-screenshot-budget.png" width="150" alt="WealthWise v1.1.1 Budget"></a></td>
 <td><a href="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-screenshot-transactions.png"><img src="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-screenshot-transactions.png" width="150" alt="WealthWise v1.1.1 Transactions"></a></td>
 </tr>
+<tr>
+<td><a href="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-screenshot-backup-and-restore.png"><img src="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-screenshot-backup-and-restore.png" width="150" alt="WealthWise v1.1.1 Backup and Restore"></a></td>
+<td><a href="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-screenshot-reminders.png"><img src="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-screenshot-reminders.png" width="150" alt="WealthWise v1.1.1 Reminders"></a></td>
+<td><a href="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-screenshot-security.png"><img src="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-screenshot-security.png" width="150" alt="WealthWise v1.1.1 Security"></a></td>
+<td><a href="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-screenshot-profile.png"><img src="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-screenshot-profile.png" width="150" alt="WealthWise v1.1.1 Profile"></a></td>
+</tr>
+<tr>
+<td><a href="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-screenshot-theme.png"><img src="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-screenshot-theme.png" width="150" alt="WealthWise v1.1.1 Theme"></a></td>
+</tr>
 </table>
 
 ### Data and privacy
