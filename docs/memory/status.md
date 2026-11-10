@@ -8,19 +8,21 @@
   98 suites, 1,271 passed, 1 skipped; 95.96/92.04/98.02/97.63% overall
   statement/branch/function/line coverage. Per-directory results are recorded
   in [PROGRESS.md](../PROGRESS.md).
-- CR-107 is in progress under its owner authorization. P32-A/B/C screenshot
-  capture is cancelled because the owner supplied all 23 images. The release
-  screenshot files and links are being moved into versioned repository paths;
-  release bodies and asset cleanup must wait until the authorized merge to
-  `main` and successful URL checks. P22-A-R1 now seeds six months of deterministic
-  demo data with Rs 1 lakh earned income, Rs 1 crore in assets and Rs 10 lakh
-  in liabilities; focused data, selector, goal, valuation and route tests pass.
-  P28-G is converting ledger and memory phase labels to PN notation, adding a
-  ledger-derived glossary and guarding the documented historical exclusions.
-  Its focused verification passes 2 suites/15 tests; it remains on its
-  separate task branch. The published
-  v1.1.1 APK does not contain the new demo data. Physical-device rendering at
-  font scales 1.3 and 2.0 remains unverified.
+- CR-107 is complete under its owner authorization. P32-A/B/C screenshot
+  capture is cancelled because the owner supplied all 23 images; all are
+  committed in versioned repository paths. All 46 blob/raw URLs returned
+  HTTP 200, raw sizes matched, the three release-body screenshot sections
+  were updated and only the 23 screenshot assets were removed. The three
+  APKs remain unchanged. P22-A-R1 provides six deterministic months, Rs 1 lakh
+  earned income/month, Rs 1 crore in assets and Rs 10 lakh in liabilities;
+  P28-G standardized phase labels and added the ledger-derived glossary.
+  Final verification passed all six ordered gates: 98 suites, 1,278 passed,
+  1 skipped; 95.96/92.04/98.02/97.63% overall coverage. The detailed demo
+  before/after table, goal percentages, PR SHAs and APK sizes are in
+  [PROGRESS.md](../PROGRESS.md). Directly seeded holding openings are an
+  explicit sample-data assumption. The v1.1.1 APK does not contain the demo
+  change. Physical-device rendering at font scales 1.3 and 2.0 remains
+  unverified.
 - The owner-approved v1.1.1 patch release was published on 2026-11-09. The
   app, package and lockfile versions are aligned to 1.1.1. All six ordered
   gates passed on the release candidate: 98 suites, 1,271 passed, 1 skipped;
@@ -414,8 +416,8 @@
   tests (1194 passed; one opt-in stress benchmark skipped). P29-M2's
   1120-test run, P29-N's 1104-test run and P29-M's blocked reproduction remain
   historical records in [PROGRESS.md](../PROGRESS.md).
-- Test counts: 98 suites, 1272 tests (1271 passed, 1 skipped) on 2026-11-10.
-- Latest validated run: 98 suites, 1272 tests (1271 passed, 1 skipped) on
+- Test counts: 98 suites, 1279 tests (1278 passed, 1 skipped) on 2026-11-10.
+- Latest validated run: 98 suites, 1279 tests (1278 passed, 1 skipped) on
   2026-11-10; all six gates exit 0. Coverage and exact commands are recorded
   in [PROGRESS.md](../PROGRESS.md).
 - All six P29-L gates exit 0: Jest coverage, TypeScript, Expo lint with zero
