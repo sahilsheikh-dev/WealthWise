@@ -9,13 +9,11 @@
   makes no update request. A true in-app check remains an owner decision.
 - Confirm whether "Once only" is desired for investment plans or liabilities
   in a future request; CR-108 deliberately excludes both.
-- P41-C is integrated through PR #105 (`37a3429`); P41-D is integrated through
-  phase PR #107 (`8e4a2d1`). The initial Gate 1 run failed on the stale demo
-  reminder expectation (909 expected; 893 actual) and branch-coverage
-  thresholds. P41-B-R1's task PR #108 merged into the phase as `e1db78e`; the
-  phase PR to `develop` and full restart of the six ordered gates remain open.
-  Its focused domain and ledger run passes (4 suites / 86 tests), as do
-  TypeScript and Expo lint. Physical-device checks remain unverified.
+- CR-108 is complete: P41-B-R1 task PR #108 merged into the retained phase as
+  `e1db78e`, and phase PR #109 merged to `develop` as `5cb4957`. All six
+  ordered gates pass; detailed commands, coverage and PR evidence are in
+  [PROGRESS.md](../PROGRESS.md). Physical-device font-scale and screen-reader
+  checks remain unverified.
 
 ## CR-106 owner decisions and scope
 

@@ -1,37 +1,22 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-11 | Updates: owner and AI agents -->
 
 # Status
-- CR-108 is in progress. P29-Q-R1 and P20-N-R3 are merged to `develop` at
-  `80eb0e4` and `f5f6e16`. P41-A's finite Real estate and Custom types,
-  validated custom names, unified forms and balanced demo data are merged to
-  `develop` at `9aa6540` (task PR #97; phase PR #98); P41-A-R1 corrected its
-  stale Real estate category assertion and merged via task PR #99 / phase PR
-  #100 at `a67f54f`. P41-B's test-first commit is `f98d7dd` and implementation
-  commit is `873eed7`; Once only applies to Budget items, Budget income and
-  insurance premiums, not investment plans or liabilities. Schema v23,
-  identity-preserving v22 migration, original-byte archive and backup-chain
-  tests pass. TypeScript, Expo lint and the expanded focused run (9 suites /
-  233 tests) pass; task PR #101 merged into phase at `9ab6e79`, and phase PR
-  #102 merged to `develop` at `b4275d3`. P41-C has test-first commits
-  `0fae9e5` and `538046b`; its liability/goal grouping and closed-loan demo
-  fixture are integrated through task PR #104 and phase PR #105 at
-  `37a3429`. P41-D test-first commit `bd980ad` exposed the missing About
-  route/menu; its About screen, browser-confirmed update action and offline API
-  regression pass focused verification (8 suites / 47 tests) and
-  RouteRenderSmoke (1 suite / 174 tests), TypeScript and Expo lint. Task PR
-  #106 merged into the phase as `7ddfef5`, and phase PR #107 merged to
-  `develop` as `8e4a2d1`. Initial Gate 1 failed in 100 suites / 1,314 passed /
-  1 failed / 1 skipped: the demo reminder expectation was 909 while the
-  once-only schedule correctly yields 893; domain branch-coverage thresholds
-  also need verification after correction. P41-B-R1 test-first commit
-  `bd8f1c9` updates the assertion and adds focused schedule/schema coverage.
-  Its documentation follow-up `efbf9ac` and test commit are merged through
-  task PR #108 into the phase as `e1db78e`; the phase PR to `develop` is
-  pending. The corrected focused run passes (4 suites / 86 tests), and
-  TypeScript and Expo lint pass. Restart the six ordered gates from Gate 1
-  only after phase integration. The authorized Budget blob is recorded in
-  [rules.md](rules.md).
-  No CR-108 work ships in v1.1.1; physical-device checks remain unverified.
+- CR-108 is complete on `develop`. P29-Q-R1 and P20-N-R3 merged at
+  `80eb0e4` and `f5f6e16`. P41-A and its category correction merged through
+  PRs #97–#100 at `9aa6540` and `a67f54f`; P41-B merged through PRs #101/#102
+  at `b4275d3`, with evidence follow-up PR #103 at `c1e810b`; P41-C merged
+  through #104/#105 at `37a3429`; P41-D merged through #106/#107 at
+  `8e4a2d1`. P41-B-R1 corrected the stale once-only reminder count (909 to
+  893), added schedule/schema branch coverage, and merged through task PR #108
+  and phase PR #109 to `develop` at `5cb4957`. All six ordered gates pass:
+  Gate 1 has 101 suites, 1,316 passed, 1 skipped; coverage is
+  95.96/92.15/98.02/97.62% overall, `src/data` 91.06/87.47/94.48/94.19%,
+  `src/domain` 96.94/93.00/98.80/98.31%, and `src/lib` 100% in all measures.
+  The current schema is v23; Once only applies to Budget items, Budget income
+  and insurance premiums, not investment plans or liabilities. No CR-108 work
+  ships in v1.1.1; physical-device font-scale and screen-reader checks remain
+  unverified. The authorized Budget blob and all other protected hashes are
+  recorded in [rules.md](rules.md).
 - CR-106 adds planning rows only: P31-D privacy and P31-E CI, report-first
   P39 release audit/hardening, and P40 agent-context hygiene.
   No audit part, app-source change, phase implementation, or release work has
@@ -447,10 +432,10 @@
   tests (1194 passed; one opt-in stress benchmark skipped). P29-M2's
   1120-test run, P29-N's 1104-test run and P29-M's blocked reproduction remain
   historical records in [PROGRESS.md](../PROGRESS.md).
-- Test counts: 98 suites, 1279 tests (1278 passed, 1 skipped) on 2026-11-10.
-- Latest validated run: 98 suites, 1279 tests (1278 passed, 1 skipped) on
-  2026-11-10; all six gates exit 0. Coverage and exact commands are recorded
-  in [PROGRESS.md](../PROGRESS.md).
+- Test counts: 101 suites, 1317 tests (1316 passed, 1 skipped) on 2026-11-11.
+- Latest validated run: 101 suites, 1317 tests (1316 passed, 1 skipped) on
+  2026-11-11; all six CR-108 gates exit 0. Coverage and exact commands are
+  recorded in [PROGRESS.md](../PROGRESS.md).
 - All six P29-L gates exit 0: Jest coverage, TypeScript, Expo lint with zero
   warnings, Expo Doctor 21/21, Android export and iOS export. Exact commands
   and exit codes are in [PROGRESS.md](../PROGRESS.md).

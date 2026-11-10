@@ -51,9 +51,9 @@ runtime synchronization.
   pure utilities and platform helpers in `src/lib/`; demo data in `src/mock/`.
 - Other source groups: `src/hooks/`, `src/theme/`, `src/constants/`, `assets/`
   and `scripts/`.
-- Test counts: 98 suites, 1279 tests (1278 passed; one skipped) on
-  2026-11-10. All six ordered gates exited 0 on CR-107's final evidence tree;
-  remaining physical-device checks are in [status.md](status.md). See
+- Test counts: 101 suites, 1317 tests (1316 passed; one skipped) on
+  2026-11-11. All six ordered gates exited 0 on CR-108's integrated develop
+  tree; remaining physical-device checks are in [status.md](status.md). See
   [status.md](status.md) and the
   [progress ledger](../PROGRESS.md) for exact gate results and coverage.
 
