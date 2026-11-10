@@ -8,8 +8,9 @@
   keeps the app offline and uses an explicit browser link only.
 - Confirm whether "Once only" is desired for investment plans or liabilities
   in a future request; CR-108 deliberately excludes both.
-- Complete Parts 2–6, final six-gate integration verification, task/phase PRs
-  and physical-device checks before closing CR-108.
+- Complete Part 2's task/phase PRs; implement Parts 3–6; then run the six
+  ordered gates after all parts reach `develop`. Physical-device checks remain
+  unverified and must be recorded before closing CR-108.
 
 ## CR-106 owner decisions and scope
 

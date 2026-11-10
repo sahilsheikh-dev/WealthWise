@@ -10,12 +10,10 @@ export function PaceLine({
   pace,
   spendingSectionIds,
   summary,
-  shortSummary,
 }: {
   pace: NonNullable<BudgetOverview['pace']>;
   spendingSectionIds: readonly string[];
   summary: string;
-  shortSummary: string;
 }) {
   const { colors } = useTheme();
   const [width, setWidth] = useState(0);
@@ -58,9 +56,6 @@ export function PaceLine({
         <LegendItem label="Actual" color={colors.ok} />
         <LegendItem label="Planned pace" color={colors.primary} />
       </View>
-      <AppText numberOfLines={1} style={[typography.meta, { color: colors.text2 }]}>
-        {shortSummary}
-      </AppText>
     </View>
   );
 }
