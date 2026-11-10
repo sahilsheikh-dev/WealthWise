@@ -321,8 +321,8 @@ describe('permanent progress ledger', () => {
         expect(count?.done).toBe(2);
         expect(count?.total).toBe(2);
       } else if (phase === 28) {
-        expect(count?.done).toBe(34);
-        expect(count?.total).toBe(35);
+        expect(count?.done).toBe(35);
+        expect(count?.total).toBe(36);
         expect(dashboard.split('\n').find((line) => line.startsWith('| P28-E-R4 |')))
           .toContain('| Done |');
         expect(dashboard.split('\n').find((line) => line.startsWith('| P28-E-R5 |')))
@@ -334,7 +334,7 @@ describe('permanent progress ledger', () => {
         expect(dashboard.split('\n').find((line) => line.startsWith('| P28-F-R4-R1 |')))
           .toContain('Done; Revised by P28-F-R4-R1-R1');
         expect(dashboard.split('\n').find((line) => line.startsWith('| P28-F-R4-R1-R1 |')))
-          .toContain('In progress; Revised by P28-F-R4-R1-R1-R1');
+          .toContain('Done; Revised by P28-F-R4-R1-R1-R1');
         expect(dashboard.split('\n').find((line) => line.startsWith('| P28-F-R4-R1-R1-R1 |')))
           .toContain('Done; Revised by P28-F-R4-R1-R1-R1-R1');
         expect(dashboard.split('\n').find((line) => line.startsWith('| P28-F-R4-R1-R1-R1-R1 |')))
@@ -345,6 +345,8 @@ describe('permanent progress ledger', () => {
           .toContain('Done; Revised by P28-F-R4-R1-R1-R1-R1-R1-R1-R1');
         expect(dashboard.split('\n').find((line) => line.startsWith('| P28-F-R4-R1-R1-R1-R1-R1-R1-R1 |')))
           .toContain('| Done |');
+        expect(dashboard.split('\n').find((line) => line.startsWith('| P28-F-R6 |')))
+          .toContain('| In progress |');
       } else {
         expect(count?.done).toBe(count?.total);
       }
@@ -419,6 +421,7 @@ describe('permanent progress ledger', () => {
     }
     expect(promptLog).toContain('| P18-LEDGER |');
     expect(promptLog).toContain('| P19-C |');
+    expect(promptLog).toContain('| P28-F-R6 |');
     expect(register).toContain('| CR-16 | Templates joins History and Month review; remove Budget header menu. | Superseded by CR-17 |');
     expect(register).toContain('| CR-17 | Put History, Month review and Templates in the Budget header as ordered, accessible right-side icons; no body action row or header menu. | Superseded by CR-24 |');
     expect(register).toContain('| CR-18 | Compact expandable Transactions balance card with four balanced metrics, secondary money/pending caption and review action. | Superseded by CR-22 |');
