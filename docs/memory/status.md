@@ -11,9 +11,9 @@
   insurance premiums, not investment plans or liabilities. Schema v23,
   identity-preserving v22 migration, original-byte archive and backup-chain
   tests pass. TypeScript, Expo lint and the expanded focused run (9 suites /
-  233 tests) pass; task PR #101 is merged into the phase at `9ab6e79`, while
-  the phase PR to `develop` remains pending. Parts 5–6 and the six final
-  ordered gates remain pending. The authorized Budget blob is recorded in
+  233 tests) pass; task PR #101 merged into phase at `9ab6e79`, and phase PR
+  #102 merged to `develop` at `b4275d3`. P41-C/P41-D and the six final ordered
+  gates remain pending. The authorized Budget blob is recorded in
   [rules.md](rules.md). No CR-108 work ships in v1.1.1; physical-device checks
   remain unverified.
 - CR-106 adds planning rows only: P31-D privacy and P31-E CI, report-first
