@@ -42,17 +42,29 @@ Not adopted in CR-106:
 - **Release screenshots and APK handoff:** all 23 owner-supplied screenshots
   (7 for v1.0.0, 8 for v1.1.0 and 8 for v1.1.1) have been copied to
   `docs/releases/screenshots/vX.Y.Z/` as
-  `WealthWise-vX.Y.Z-screenshot-<screen>.png`. CR-107 is updating Markdown
-  links and guides; the old release screenshot assets remain until after
-  merge-to-main URL verification.
+  `WealthWise-vX.Y.Z-screenshot-<screen>.png`. All 46 main-branch blob/raw
+  URLs returned HTTP 200; raw image sizes matched the committed files. The
+  release bodies now use browser-viewable links and the 23 screenshot assets
+  were removed; each release retains only its unchanged APK.
   The owner-provided APK for EAS build
   `ecc97480-7229-41ac-8aad-64ea2cd255b5` is byte-verified against EAS
   (app 1.1.1, `android-apk`, `versionCode` 2), and the published
   `WealthWise-android-latest-v1.1.1.apk` matches the approved APK. v1.1.1 is
   latest-published. The v1.1.0 APK now uses its versioned filename; the latest
   and affected versioned APK URLs return HTTP 200 with expected sizes.
-  README, latest release notes, screenshot gallery and release history are
-  being aligned without changing any APK Download block.
+  The README Download block remains byte-identical to the latest published
+  note; its screenshot gallery contains the v1.1.1 set. No APK Download block
+  changed.
+- **CR-107 decisions and closeout:** the owner resolved the repository
+  screenshot decision as YES; this supersedes the earlier "no screenshots in
+  the repository" decision. Capture work P32-A/B/C remains cancelled because
+  the owner supplied all images. The owner-authorized `develop` -> `main` ->
+  `develop` exception changed no version, tag or release publication state.
+  Only the v1.0.0 screenshot section was changed in its release body; its
+  existing non-screenshot difference from the published note was preserved
+  at the owner's direction. The v1.1.1 APK does not contain the demo-data
+  revision. All six gates and output/asset evidence are recorded in
+  [PROGRESS.md](../PROGRESS.md).
 - **Remote branch audit (2026-11-09):** fetched all 36 remote branches and
   checked their ancestry against `develop` and `main`. Every remote branch is
   integrated into `develop`; `release/v1.1.1` is integrated into `main`;
@@ -170,20 +182,9 @@ Not adopted in CR-106:
   remain absent. Final gate results and PR integration are in
   [`PROGRESS.md`](../PROGRESS.md). Implementation commit `d36103e` is in
   task-to-phase PR #42; phase-to-develop PR #43.
-- **CR-107 screenshot repository verification:** P32-A/B/C capture work is
-  cancelled because the owner supplied all 23 screenshots. The files and
-  browser-viewable links are being moved into versioned repository paths.
-  After the authorized merge to `main`, verify all 46 blob/raw URLs, update
-  only the three release-body screenshot sections, then remove only those
-  23 screenshot assets. No screenshot capture or capture script is planned.
 - **CR-107 demo display:** route tests verify the Rs 1 crore Assets total at
   simulated font scales 1.3 and 2.0. Physical-device rendering at both scales
   remains unverified.
-- **CR-107 integration:** P22-A-R1 and screenshot work are in P28; P28-G
-  is converting phase labels to PN notation and adding the derived glossary
-  and regression guards. Finish the task/phase integration, six ordered gates,
-  authorized main merge, URL checks and screenshot-only release cleanup before
-  closing CR-107.
 - **v1.1.1 release:** the owner-approved patch release was published on
   2026-11-09 after PR #69 merged it to `main` and PR #70 back-merged it to
   `develop`. Tag `v1.1.1` points to the main merge commit. The owner-run EAS
