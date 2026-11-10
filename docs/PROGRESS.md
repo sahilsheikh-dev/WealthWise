@@ -73,7 +73,7 @@ parts count in the numerator and denominator. P1–P14 count as one part
 each.
 
 ```text
-Overall progress ████████░░ 83% (175/211)
+Overall progress ████████░░ 83% (176/211)
 P1          ██████████ 100% (1/1)
 P2          ██████████ 100% (1/1)
 P3          ██████████ 100% (1/1)
@@ -101,7 +101,7 @@ P24         ██████████ 100% (1/1)
 P25         ██████████ 100% (6/6)
 P26         ██████████ 100% (1/1)
 P27         ██████████ 100% (1/1)
-P28         █████████░ 95% (35/37)
+P28         ██████████ 97% (36/37)
 P29         ██████████ 100% (42/42)
 P30         ██████████ 100% (3/3)
 P31         ░░░░░░░░░░ 0% (0/5)
@@ -240,7 +240,7 @@ P41         ██████████ 100% (5/5)
 | P28-F | — | Done; Revised by P28-F-R1, P28-F-R2, P28-F-R2-R1, P28-F-R3, P28-F-R3-R1, P28-F-R3-R2, P28-F-R3-R3, P28-F-R3-R3-R1, P28-F-R4, P28-F-R4-R1-R1, P28-F-R4-R1-R1-R1-R1-R1, P28-F-R4-R1-R1-R1-R1-R1-R1, P28-F-R4-R1-R1-R1-R1-R1-R1-R1, P28-F-R5 and P28-F-R6 | Prepared v1.1.0 on `release/v1.1.0`; all six gates passed. PR #2 merged the release into main and PR #3 back-merged main into develop. Revised by P28-F-R3 for verified EAS build, tag and publication evidence, P28-F-R3-R1 for the completed publication PR chain, P28-F-R3-R2 for historical asset rollover and checksum removal, P28-F-R3-R3 for versioned latest-asset naming, P28-F-R3-R3-R1 for the merged filename-policy PR chain, Revised by P28-F-R4 for a review-only v1.1.1 candidate, P28-F-R4-R1 for supplied screenshot integration and owner-led release workflow, P28-F-R4-R1-R1 for the approved v1.1.1 release integration, P28-F-R4-R1-R1-R1-R1-R1 for screenshot-asset naming, latest-version rules and APK handoff corrections, P28-F-R4-R1-R1-R1-R1-R1-R1 for template-aligned historical metadata and release preparation, P28-F-R4-R1-R1-R1-R1-R1-R1-R1 for v1.1.1 publication and post-publication asset/doc rollover, and P28-F-R5 for repository-backed, browser-viewable screenshots and roadmap cancellation. | 2026-11-08 |
 | P28-F-R5 | — | Done | `ff5a5a6`; cancelled screenshot capture because the owner supplied all 23 images, stored them by release in the repository and changed thumbnails to browser-viewable blob links. Release-note links, guide/tests and the screenshot decision are updated; PR #83 merged into P28. | 2026-11-10 |
 | P28-F-R6 | — | In progress | Revised by P28-F-R6-R1. Prepare the owner-approved v1.2.0 minor release candidate with aligned app/package metadata and release documentation; v1.1.1 remains latest published. Initial task PR #112 merged into phase as `fa153da`; phase PR #113 merged into `develop` as `d347526`; evidence PRs #114/#115 merged as `5ae1b72`/`936ee25`. All six ordered gates passed on `936ee25`. The owner reports O45-O53 Pass. The v1.2.0 draft targets the earlier candidate and is authorized for replacement; EAS build, artifact verification and publication remain pending. | 2026-11-11 |
-| P28-F-R6-R1 | — | In progress | Expand release screenshots with five owner-supplied screens in every release, About only in v1.2.0; update the latest-published README gallery and record owner-reported O45-O53 Pass. Test-first commit `cb1db2b`, implementation commit `6bf46f8`; task PR #116 merged into phase as `f08f963`. Phase PR, final six gates, draft replacement, EAS build, artifact/link verification and publication remain pending. | 2026-11-11 |
+| P28-F-R6-R1 | — | Done | Expand release screenshots with five owner-supplied screens in every release, About only in v1.2.0; update the latest-published README gallery and record owner-reported O45-O53 Pass. Test-first commit `cb1db2b`, implementation commit `6bf46f8`; task PR #116 merged into phase as `f08f963`; phase PR #117 merged into `develop` as `25258ac`. All six ordered gates pass on `25258ac`; draft replacement, EAS build, artifact/link verification and publication remain pending. | 2026-11-11 |
 | P28-G | — | Done | `e6395a1`; converted ledger/shared-memory phase labels to PN notation, added the derived glossary and notation/exclusion/prefix regression guards. Focused tests passed 2 suites/15 tests; PR #85 merged into P28. | 2026-11-10 |
 | P28-F-R1 | — | Done | Recorded owner-reported Pass results for device checklist N39-N43; device identification fields remain blank. | 2026-11-08 |
 | P28-F-R2 | — | Done; Revised by P28-F-R2-R1 | Corrected the v1.1.0 draft contributor credits using the published v1.0.0 format, added contributor guidance, and verified the PR integration path. | 2026-11-08 |
@@ -3480,8 +3480,8 @@ completion checks without hardcoding totals.
 | CR-108 | P29/P20/P41 | — | current | 2026-11-11 | Deliver the six owner-authorized menu, Budget, type/form, once-only/schema, completed-section, and offline About/update changes; preserve all stated protected surfaces and release boundaries. | All six parts are integrated into `develop`; P41-B-R1 task PR #108 merged into phase as `e1db78e` and phase PR #109 merged to `develop` as `5cb4957`. All six ordered gates passed: 101 suites, 1,316 passed, 1 skipped; 95.96/92.15/98.02/97.62% overall coverage. Demo constraints and protected hashes are verified; O45-O53 are owner-reported Pass, with device/tester details absent. No v1.1.1 artifact changes. | P29-Q-R1: task/phase PRs #93/#94; P20-N-R3: #95/#96; P41-A: #97/#98 and correction #99/#100; P41-B: #101/#102 and evidence PR #103; P41-C: #104/#105; P41-D: #106/#107; P41-B-R1: #108/#109. Retained phase: `phase/41-types-frequency-completion`. | Old: four stress tiers were sent to a helper capped at two choices; Budget Overview exposed redundant Pace/Over by/Left lines; holding types lacked finite Real estate/Custom options; once-only frequency was unsupported for Budget items/income and policies. New: Parts 1–6 are integrated, including exact-once recurrence/schema v23, completed sections and offline About/browser update navigation. Reason: owner-directed CR-108 scope. P41-B-R1 replaces the stale reminder assertion (909→893) and closes the phase ledger from 4/5 to 5/5. Old completion assertions and their reasons are listed in the close-out evidence below; none were weakened. No CR-108 changes were made to v1.1.1, release branches, tags or release artifacts. | current request |
 | P41-B-R1 | P41 | P41-B | current | 2026-11-11 | Correct CR-108 Gate 1's once-only demo reminder assertion and cover schedule/schema branches without changing production behavior. | Initial Gate 1 failed in 100 suites / 1,314 passed / 1 failed / 1 skipped: reminders expected 909 but Once-only behavior correctly yields 893. The corrected focused run passes (4 suites / 86 tests); TypeScript and Expo lint pass. Task PR #108 merged into `phase/41-types-frequency-completion` as `e1db78e`; phase PR #109 merged to `develop` as `5cb4957`. Final ordered gates pass (101 suites / 1,316 passed / 1 skipped). | Test-first commit `bd8f1c9d286dd32a2b94065d729455d747a00a08`; documentation follow-up `efbf9ac0d4ca0846c542e9203fd8684949017e49`; task merge `e1db78e7f67a60ab5c833d856e1bedce894388ff`; develop merge `5cb4957d854da5cec2bb38694d48e9d12ea2cbce`. | Old: demo reminder aggregate asserted 909. New: it asserts 893. Reason: the Once-only policy creates a single due slot rather than recurring across the demo horizon. Old: P41 phase index asserted 4 subtasks and the dashboard showed 3/4; new: the revision adds the fifth task and the completed phase is 5/5. Reason: the revision is integrated and done. Added boundaries for the custom-policy default interval, Once-only after its end date, pre-trackFrom legacy payment exclusion, and required/trimmed Custom holding names. No production assertion or behavior was weakened. | current request |
 
-| P28-F-R6 | P28 | P28-F | current | 2026-11-11 | Prepare the owner-approved v1.2.0 minor release candidate with aligned app/package metadata and documentation; preserve v1.1.1 as latest published until v1.2.0 publication. | Revised by P28-F-R6-R1. App/package versions are 1.2.0, the approved note and initial eight screenshots are integrated. Task PR #112 merged into phase as `fa153da`; phase PR #113 merged to `develop` as `d347526`; evidence PRs #114/#115 merged at `5ae1b72`/`936ee25`. All six gates passed on `936ee25`; owner reports O45-O53 Pass. Screenshot revision P28-F-R6-R1 is in progress; current draft targets the earlier candidate and is authorized for replacement. EAS build and publication remain pending. | Commit `55559c7`; task PR #112 → `fa153da`; phase PR #113 → `d347526`; evidence PRs #114/#115 → `5ae1b72`/`936ee25`; release branch `release/v1.2.0` at `936ee25`. | Old: About tests and app/package metadata were pinned to 1.1.1, the README described v1.1.1 as current What's new, and release docs identified v1.1.0 as latest published. New: candidate metadata/docs target v1.2.0 while the README Download block and gallery retain v1.1.1 until publication. Reason: prepare the approved candidate without misrepresenting the latest published release. | current request |
-| P28-F-R6-R1 | P28 | P28-F-R6 | current | 2026-11-11 | Add five supplied settings/backup screens to every release screenshot set and keep About exclusive to v1.2.0; update the latest-published README gallery and record owner-reported O45-O53 results. | Task PR #116 merged into `phase/28-qa-and-release` as `f08f963`; phase PR is pending. The 3 focused documentation suites / 26 tests pass; TypeScript, Expo lint and byte comparisons pass. O45-O53 are owner-reported Pass; final gates, draft replacement, EAS build, artifact/link verification and publication remain pending. | Test-first commit `cb1db2b`; implementation commit `6bf46f8`; task PR #116 → `f08f963`; task branch `task/P28-F-R6-R1-release-screenshots`; phase branch `phase/28-qa-and-release`. | Old: the screenshot regression expected only 7/8 categories and two rows of four for README/latest-release screenshots. New: release sets are 12/13/13/14 images with no more than four per row; the five added screens appear in all releases and About appears only in v1.2.0. Reason: the owner supplied new screens and scoped About to its feature release. Old: P28 ledger and branch-index count was 36 (35/36); new: 37 (35/37). Reason: the revision adds one open P28 task. Old: O45-O53 were `Not run`; new: owner-reported `Pass` on 2026-11-11, with device/tester fields left blank. Reason: the owner reported the checklist complete; no device details were supplied. No assertion was weakened. | current request |
+| P28-F-R6 | P28 | P28-F | current | 2026-11-11 | Prepare the owner-approved v1.2.0 minor release candidate with aligned app/package metadata and documentation; preserve v1.1.1 as latest published until v1.2.0 publication. | Revised by P28-F-R6-R1. App/package versions are 1.2.0 and the approved note/screenshots are integrated. Task PR #112 merged into phase as `fa153da`; phase PR #113 merged to `develop` as `d347526`; evidence PRs #114/#115 merged at `5ae1b72`/`936ee25`. Screenshot task PR #116 merged into phase as `f08f963`; phase PR #117 merged into `develop` as `25258ac`, where all six gates pass. Owner reports O45-O53 Pass. The current draft targets the earlier candidate and is authorized for replacement. EAS build and publication remain pending. | Commit `55559c7`; task PR #112 → `fa153da`; phase PR #113 → `d347526`; evidence PRs #114/#115 → `5ae1b72`/`936ee25`; screenshot PRs #116/#117 → `f08f963`/`25258ac`; release branch `release/v1.2.0` at `936ee25`. | Old: About tests and app/package metadata were pinned to 1.1.1, the README described v1.1.1 as current What's new, and release docs identified v1.1.0 as latest published. New: candidate metadata/docs target v1.2.0 while the README Download block and gallery retain v1.1.1 until publication. Reason: prepare the approved candidate without misrepresenting the latest published release. | current request |
+| P28-F-R6-R1 | P28 | P28-F-R6 | complete | 2026-11-11 | Add five supplied settings/backup screens to every release screenshot set and keep About exclusive to v1.2.0; update the latest-published README gallery and record owner-reported O45-O53 results. | Done. Task PR #116 merged into `phase/28-qa-and-release` as `f08f963`; phase PR #117 merged into `develop` as `25258ac`. The final six gates pass on `25258ac`: 101 suites, 1,316 passed, 1 skipped; 95.96/92.15/98.02/97.62% overall coverage; `src/data` 91.06/87.47/94.48/94.19%, `src/domain` 96.94/93.00/98.80/98.31%, and `src/lib` 100% in all measures. O45-O53 are owner-reported Pass; physical device/tester details were not supplied. Draft replacement, EAS build, artifact/link verification and publication remain pending. | Test-first commit `cb1db2b`; implementation commit `6bf46f8`; task PR #116 → `f08f963`; phase PR #117 → `25258ac`; gate-evidence task branch `task/P28-F-R6-R1-final-gate-evidence`; retained phase `phase/28-qa-and-release`. | Old: the screenshot regression expected only 7/8 categories and two rows of four for README/latest-release screenshots. New: release sets are 12/13/13/14 images with no more than four per row; the five added screens appear in all releases and About appears only in v1.2.0. Reason: the owner supplied new screens and scoped About to its feature release. Old: P28 ledger and branch-index count was 36 (35/36); new: it increased to 37 tasks (35/37) while this revision was open, and the final close-out now records 36/37 complete. Reason: the revision added and then completed one P28 task. Old: the ledger regression expected 35 completed P28 tasks; new: it expects 36. Reason: P28-F-R6-R1 is now integrated into `develop` and closed. Old: O45-O53 were `Not run`; new: owner-reported `Pass` on 2026-11-11, with device/tester fields left blank. Reason: the owner reported the checklist complete; no device details were supplied. The old status implied phase integration and final gates were pending; the new status records task/phase PR merges and the six successful gates. Reason: merge and gate evidence is now verified. No assertion was weakened. | current request |
 
 ## 7. Change-request register
 
@@ -3982,6 +3982,29 @@ work remain in their original phase and use `<ID>-R<n>` (for example,
 An item is `Done` only when its named source and test evidence are available.
 Paths below are repository-relative. Baseline results are not completion
 evidence for the fixes.
+
+### 2026-11-11 — P28-F-R6-R1 final screenshot integration
+
+- The screenshot revision is integrated into `develop` at `25258ac` (phase
+  PR #117). The six required gates ran sequentially against that commit and
+  all exited 0:
+
+  | Gate | Command | Exit / result |
+  |---:|---|---|
+  | 1 | `npm test -- --coverage` | 0; 101 suites; 1,316 passed, 1 skipped (1,317 total); coverage 95.96/92.15/98.02/97.62% statements/branches/functions/lines |
+  | 2 | `npx tsc --noEmit` | 0 |
+  | 3 | `npx expo lint` | 0 |
+  | 4 | `npx expo-doctor` | 0; 21/21 checks |
+  | 5 | `npx expo export --platform android` | 0; Android bundle 5.6 MB |
+  | 6 | `npx expo export --platform ios` | 0; iOS bundle 5.3 MB |
+
+- Gate 1 coverage by immediate `src/` directory, statements/branches/
+  functions/lines: `src/data` 91.06/87.47/94.48/94.19%;
+  `src/domain` 96.94/93.00/98.80/98.31%; `src/lib` 100% in all measures.
+- Focused documentation/ledger verification after recording results passed
+  3 suites / 26 tests. Physical-device checks were not independently run;
+  O45-O53 remain owner-reported Pass with device/tester details absent. No
+  EAS or Gradle build was run as part of gate verification.
 
 ### 2026-11-10 — CR-106 roadmap planning
 
@@ -11025,11 +11048,11 @@ branches, versions, tags or release artifacts.
 - Task PR #112 merged into the retained phase as `fa153da`; phase PR #113
   merged into `develop` as `d347526`; evidence PR #114 merged as `5ae1b72`,
   with evidence PR #115 merged as `936ee25`; the original task branch was
-  deleted. All six gates passed on `936ee25`. The owner reports O45-O53 Pass.
-  Screenshot revision P28-F-R6-R1 is integrated into the phase by task PR
-  #116 (`f08f963`); phase PR, post-update gates, replacement draft, EAS
-  build/upload and artifact/link verification remain pending. The owner
-  authorized publication in the current request.
+deleted. Screenshot task PR #116 merged into the phase as `f08f963`;
+phase PR #117 merged into `develop` as `25258ac`. All six ordered gates
+pass on `25258ac`. The owner reports O45-O53 Pass. Replacement of the
+earlier untagged draft, EAS build/upload and artifact/link verification
+remain pending. The owner authorized publication in the current request.
 
 ### P28-F-R6-R1 expanded release screenshots (2026-11-11)
 
@@ -11044,9 +11067,20 @@ branches, versions, tags or release artifacts.
 - The owner reports O45-O53 physical checks passed on 2026-11-11; device and
   tester details were not supplied. The checklist records these as
   owner-reported, not independently performed by the agent.
-- Task PR #116 merged to the phase as `f08f963`. The phase PR, final ordered
-  gates, replacement of the earlier untagged draft, EAS build, APK/link
-  verification and publication are pending.
+- Task PR #116 merged into the phase as `f08f963`; phase PR #117 merged into
+  `develop` as `25258ac`. The final six ordered gates passed on that commit:
+  1. `npm test -- --coverage` — exit 0; 101 suites; 1,316 passed, 1 skipped,
+     1,317 total. Coverage (statements/branches/functions/lines): overall
+     95.96/92.15/98.02/97.62%; `src/data` 91.06/87.47/94.48/94.19%;
+     `src/domain` 96.94/93.00/98.80/98.31%; `src/lib` 100/100/100/100%.
+  2. `npx tsc --noEmit` — exit 0.
+  3. `npx expo lint` — exit 0.
+  4. `npx expo-doctor` — exit 0; 21/21 checks passed.
+  5. `npx expo export --platform android` — exit 0; Android bundle 5.6 MB.
+  6. `npx expo export --platform ios` — exit 0; iOS bundle 5.3 MB.
+- The untagged v1.2.0 draft replacement, EAS APK build/upload, artifact and
+  link verification, main integration and publication remain pending. The
+  owner authorized publication in the current request.
 
 ## 12. Phase branch index
 
