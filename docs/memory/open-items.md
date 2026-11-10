@@ -8,7 +8,7 @@
   keeps the app offline and uses an explicit browser link only.
 - Confirm whether "Once only" is desired for investment plans or liabilities
   in a future request; CR-108 deliberately excludes both.
-- Complete P41-B task/phase PR integration, implement and integrate P41-C and
+- Complete the P41-B phase-to-`develop` PR, implement and integrate P41-C and
   P41-D, then run the six ordered gates after all parts reach `develop`.
   Physical-device checks remain unverified and must be recorded before
   closing CR-108.
