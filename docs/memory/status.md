@@ -14,13 +14,15 @@
   233 tests) pass; task PR #101 merged into phase at `9ab6e79`, and phase PR
   #102 merged to `develop` at `b4275d3`. P41-C has test-first commits
   `0fae9e5` and `538046b`; its liability/goal grouping and closed-loan demo
-  fixture are implemented on `task/P41-C-completed-liabilities-achieved-goals`.
-  Task PR #104 merged to the phase as `c255ada`. Focused verification passes
-  (4 suites / 209 tests), as do TypeScript and Expo lint; phase-to-`develop`
-  PR integration remains. P41-D and the six final ordered gates remain pending.
-  The authorized Budget blob is recorded in
-  [rules.md](rules.md). No CR-108 work ships in v1.1.1; physical-device checks
-  remain unverified.
+  fixture are integrated through task PR #104 and phase PR #105 at
+  `37a3429`. P41-D test-first commit `bd980ad` exposed the missing About
+  route/menu; its About screen, browser-confirmed update action and offline API
+  regression pass focused verification (8 suites / 47 tests) and
+  RouteRenderSmoke (1 suite / 174 tests), TypeScript and Expo lint. Task PR
+  #106 merged into the phase as `7ddfef5`; phase-to-`develop` integration and
+  the six final ordered gates remain pending. The authorized Budget blob is
+  recorded in [rules.md](rules.md). No CR-108 work ships in v1.1.1;
+  physical-device checks remain unverified.
 - CR-106 adds planning rows only: P31-D privacy and P31-E CI, report-first
   P39 release audit/hardening, and P40 agent-context hygiene.
   No audit part, app-source change, phase implementation, or release work has

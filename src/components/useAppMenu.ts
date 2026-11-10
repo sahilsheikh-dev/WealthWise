@@ -25,6 +25,7 @@ const destinations: Record<string, string> = {
   Security: '/security',
   Profile: '/profile-form',
   Theme: '/theme',
+  About: '/about',
   'Erase all data': '/erase-data',
 };
 
