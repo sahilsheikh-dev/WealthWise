@@ -19,7 +19,7 @@ describe('permanent progress ledger', () => {
     expect(sections[sections.length - 1]?.title).toBe('Phase branch index');
   });
 
-  it('tracks CR-108 while its remaining authorized parts are open', () => {
+  it('tracks CR-108 completion while physical-device checks remain open', () => {
     const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
     const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
     const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
@@ -28,12 +28,14 @@ describe('permanent progress ledger', () => {
     const promptRows = promptLog.split('\n').filter((line) => line.startsWith('| CR-108 |'));
 
     expect(dashboardRows).toHaveLength(1);
-    expect(dashboardRows[0]).toContain('| In progress |');
+    expect(dashboardRows[0]).toContain('| Done (device checks outstanding) |');
     expect(registerRows).toHaveLength(1);
-    expect(registerRows[0]).toContain('| In progress |');
+    expect(registerRows[0]).toContain('| Done (device checks outstanding) |');
     expect(promptRows).toHaveLength(1);
+    expect(promptRows[0]).toContain('All six ordered gates passed');
     expect(dashboard).toContain('Revised by P29-Q-R1');
     expect(dashboard).toContain('| P29-Q-R1 | — | Done |');
+    expect(dashboard).toContain('| P41-B-R1 | — | Done |');
   });
 
   it('lists every fix and CR in the dashboard or register', () => {
