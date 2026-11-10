@@ -40,7 +40,7 @@ describe('permanent progress ledger', () => {
       'CR-58', 'CR-59', 'CR-60', 'CR-61', 'CR-62', 'CR-63', 'CR-64', 'CR-65',
       'CR-66', 'CR-67', 'CR-68', 'CR-69', 'CR-70', 'CR-71', 'CR-72', 'CR-73', 'CR-74', 'CR-75',
       'CR-76', 'CR-77', 'CR-78', 'CR-79', 'CR-80', 'CR-81', 'CR-82', 'CR-83', 'CR-84', 'CR-85', 'CR-86', 'CR-87',
-      'CR-88', 'CR-89', 'CR-90', 'CR-91', 'CR-92', 'CR-93', 'CR-94', 'CR-95', 'CR-96', 'CR-97', 'CR-98', 'CR-99', 'CR-100', 'CR-101', 'CR-102', 'CR-103',
+      'CR-88', 'CR-89', 'CR-90', 'CR-91', 'CR-92', 'CR-93', 'CR-94', 'CR-95', 'CR-96', 'CR-97', 'CR-98', 'CR-99', 'CR-100', 'CR-101', 'CR-102', 'CR-103', 'CR-106',
     ]) {
       expect(statusRecords).toContain(id);
     }
@@ -75,7 +75,7 @@ describe('permanent progress ledger', () => {
       'P28-A', 'P28-A-R1', 'P28-B', 'P28-C', 'P28-C-R1', 'P28-C-R2', 'P28-C-R3', 'P28-C-R4', 'P28-D', 'P28-E', 'P28-E-R1', 'P28-E-R2', 'P28-E-R3', 'P28-E-R4', 'P28-E-R5', 'P28-E-R5-R1', 'P28-F', 'P28-F-R1', 'P28-F-R2', 'P28-F-R2-R1', 'P28-F-R3', 'P28-F-R3-R1', 'P28-F-R3-R2', 'P28-F-R3-R3', 'P28-F-R3-R3-R1', 'P28-F-R4', 'P28-F-R4-R1', 'P28-F-R4-R1-R1', 'P28-F-R4-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1-R1-R1',
       'P29-A', 'P29-B', 'P29-C', 'P29-D', 'P29-E', 'P29-F', 'P29-F2', 'P29-F3', 'P29-F4', 'P29-G', 'P29-H', 'P29-I', 'P29-J', 'P29-K', 'P29-L', 'P29-M', 'P29-N', 'P29-M2', 'P29-O', 'P29-O-R1', 'P29-O1-R1', 'P29-O1-R2', 'P29-O2', 'P29-Q', 'P29-R', 'P29-S', 'P29-T', 'P29-U', 'P29-V', 'P29-W', 'P29-W-R1', 'P29-W-R2', 'P29-X', 'P29-Y', 'P29-Z',
       'P29-AA', 'P29-AB', 'P29-AB-R1', 'P29-AB-R2', 'P29-AB-R2-R1', 'P30-A', 'P30-B', 'P30-C',
-      'CR-92', 'CR-93', 'CR-94', 'CR-95', 'CR-96',
+      'CR-92', 'CR-93', 'CR-94', 'CR-95', 'CR-96', 'CR-106',
     ];
 
     const loggedIds = promptLog.split('\n')
@@ -110,12 +110,12 @@ describe('permanent progress ledger', () => {
     }
   });
 
-  it('keeps roadmap phases planned or held and out of the prompt log', () => {
+  it('keeps roadmap statuses, owner gates, and prompt-log scope aligned', () => {
     const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
     const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
     const roadmap = ledger.split('## 9. Upcoming roadmap')[1]?.split('## 10. Verification matrix')[0] ?? '';
     const plannedPartIds = [
-      'P31-A', 'P31-B', 'P31-C',
+      'P31-A', 'P31-B', 'P31-C', 'P31-D', 'P31-E',
       'P32-A', 'P32-B', 'P32-C',
       'P33-A', 'P33-B', 'P33-C',
       'P34-A', 'P34-B', 'P34-C',
@@ -123,25 +123,90 @@ describe('permanent progress ledger', () => {
       'P36-A', 'P36-B', 'P36-C', 'P36-D',
       'P37-A', 'P37-B', 'P37-C',
       'P38-A', 'P38-B', 'P38-C',
+      'P39-A', 'P39-B', 'P39-C', 'P39-D', 'P39-E', 'P39-F', 'P39-G', 'P39-H',
+      'P40-A', 'P40-B',
     ];
-    const heldPartIds = new Set([
-      'P33-A', 'P33-B', 'P33-C',
-      'P34-A', 'P34-B', 'P34-C',
-      'P35-A', 'P35-B', 'P35-C',
-    ]);
+    const cancelledPartIds = new Set(['P32-A', 'P32-B', 'P32-C']);
 
     for (const id of plannedPartIds) {
       const dashboardRows = dashboard.split('\n').filter((line) => line.startsWith(`| ${id} |`));
       expect(dashboardRows).toHaveLength(1);
-      expect(dashboardRows[0]).toContain(
-        heldPartIds.has(id) ? '| Held by owner |' : '| Planned |',
-      );
+      const expectedStatus = id === 'P40-B'
+        ? '| Held pending owner approval |'
+        : cancelledPartIds.has(id) ? '| Cancelled by owner |' : '| Planned |';
+      expect(dashboardRows[0]).toContain(expectedStatus);
       expect(roadmap.split('\n').filter((line) => line.includes(`${id} —`))).toHaveLength(1);
       expect(promptLog.split('\n').find((line) => line.startsWith(`| ${id} |`))).toBeUndefined();
     }
-    for (const phase of [31, 32, 33, 34, 35, 36, 37, 38]) {
-      expect(roadmap).toContain(`**Phase ${phase} —`);
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P33-C |')))
+      .toContain('iOS distribution');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P35-C |')))
+      .toContain('P35-B owner go/no-go approval');
+    for (const phase of [31, 32, 33, 34, 35, 36, 37, 38, 39, 40]) {
+      expect(roadmap).toContain(`**P${phase} —`);
     }
+  });
+
+  it('uses PN notation outside documented historical commit-subject exclusions', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const progressBlock = dashboard.match(/```text\n([\s\S]*?)\n```/)?.[1] ?? '';
+    const roadmap = ledger.split('## 9. Upcoming roadmap')[1]?.split('## 10. Verification matrix')[0] ?? '';
+    const branchIndex = ledger.split('## 12. Phase branch index')[1] ?? '';
+    const dashboardIds = dashboard.split('\n')
+      .filter((line) => /^\| P\d+(?:-[A-Za-z0-9-]+)* \|/.test(line))
+      .map((line) => line.split('|')[1]?.trim() ?? '');
+    const bars = progressBlock.split('\n').slice(1);
+    const roadmapLabels = [...roadmap.matchAll(/^\d+\. \*\*(P\d+) —/gm)].map(([, id]) => id);
+    const branchLabels = branchIndex.split('\n')
+      .filter((line) => /^\| P\d+ \|/.test(line))
+      .map((line) => line.split('|')[1]?.trim() ?? '');
+
+    expect(dashboardIds).toContain('P1');
+    expect(dashboardIds).toContain('P28-G');
+    expect(dashboardIds.every((id) => /^P\d+(?:-[A-Za-z0-9-]+)*$/.test(id))).toBe(true);
+    expect(bars.every((line) => /^(?:P\d+|Overall progress)\s/.test(line))).toBe(true);
+    expect(roadmapLabels).toContain('P31');
+    expect(branchLabels).toEqual(Array.from({ length: 30 }, (_, index) => `P${index + 1}`));
+
+    let inSubjectMap = false;
+    const outsideOriginalSubjects = ledger.split('\n').map((line) => {
+      if (line.startsWith('### Commit label map')) inSubjectMap = true;
+      if (line.startsWith('### Original prompt records')) inSubjectMap = false;
+      if (inSubjectMap && line.startsWith('|')) {
+        const cells = line.split('|');
+        cells[2] = '';
+        return cells.join('|');
+      }
+      return line;
+    }).join('\n')
+      .replace(/docs: align Phase 29\s+progress counter/g, '')
+      .replace(/https?:\/\/\S+/g, '');
+    expect(outsideOriginalSubjects).not.toMatch(/\bPhases?\s+\d+\b|\bPhase-\d+\b/);
+    expect(ledger).toContain('docs: align Phase 29');
+    expect(ledger).toContain('Original subject (`git log --format=%s`)');
+  });
+
+  it('documents every identifier prefix used in the dashboard and register', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const glossary = ledger.split('### Glossary')[1]?.split('\n## 2. Status dashboard')[0] ?? '';
+    const identifiers = `${dashboard}\n${register}`.match(
+      /\b(?:P\d+(?:-[A-Za-z0-9]+)*|CR-\d+|FX-[A-Za-z0-9-]+|CH-\d+|CM-\d+|DEC-[A-Za-z0-9-]+|[NAX]\d+)\b/g,
+    ) ?? [];
+    const prefixes = new Set<string>();
+
+    for (const id of identifiers) {
+      if (id.startsWith('P')) prefixes.add('P');
+      if (/-R\d+/.test(id)) prefixes.add('-R<n>');
+      for (const prefix of ['CR', 'FX', 'CH', 'CM', 'DEC', 'N', 'X', 'A']) {
+        if (id.startsWith(`${prefix}-`) || new RegExp(`^${prefix}\\d`).test(id)) prefixes.add(prefix);
+      }
+    }
+
+    for (const prefix of prefixes) {
+      expect(glossary).toContain(`| \`${prefix}\` |`);
+    }
+    expect(glossary).toContain('| `P<n>-<part>` |');
   });
 
   it('maps every legacy ID exactly once in the dashboard Legacy ID column', () => {
@@ -163,7 +228,7 @@ describe('permanent progress ledger', () => {
     const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
     const progressBlock = dashboard.match(/```text\n([\s\S]*?)\n```/)?.[1] ?? '';
     const rows = dashboard.split('\n').filter((line) =>
-      /^\| (?:Phase \d+|P\d+-[A-Z0-9-]+) \|/.test(line),
+      /^\| P\d+(?:-[A-Za-z0-9-]+)* \|/.test(line),
     );
     const rowIds = rows.map((row) => row.split('|')[1]?.trim());
     const counts = new Map<number, { done: number; total: number }>();
@@ -174,7 +239,7 @@ describe('permanent progress ledger', () => {
       const id = cells[1];
       const status = cells[3];
       if (!id || !status) continue;
-      const phaseMatch = id.match(/^Phase (\d+)$/) ?? id.match(/^P(\d+)-/);
+      const phaseMatch = id.match(/^P(\d+)(?:-|$)/);
       if (!phaseMatch) continue;
       const phase = Number(phaseMatch[1]);
       const count = counts.get(phase) ?? { done: 0, total: 0 };
@@ -193,14 +258,14 @@ describe('permanent progress ledger', () => {
       ...Array.from({ length: lastPhase }, (_, index): [string, number, number] => {
         const phase = index + 1;
         const count = counts.get(phase) ?? { done: 0, total: 0 };
-        return [`Phase ${phase}`, count.done, count.total];
+        return [`P${phase}`, count.done, count.total];
       }),
     ];
     const lines = progressBlock.split('\n');
     expect(lines).toHaveLength(expected.length);
 
     expected.forEach(([name, completed, partCount], index) => {
-      const match = lines[index]?.match(/^(Overall progress|Phase \d+)\s+([█░]{10})\s+(\d+)%\s+\((\d+)\/(\d+)\)$/);
+      const match = lines[index]?.match(/^(Overall progress|P\d+)\s+([█░]{10})\s+(\d+)%\s+\((\d+)\/(\d+)\)$/);
       expect(match?.[1]).toBe(name);
       const percentage = partCount === 0 ? 0 : Math.round((completed / partCount) * 100);
       const filled = partCount === 0 ? 0 : Math.round((completed / partCount) * 10);
@@ -226,9 +291,12 @@ describe('permanent progress ledger', () => {
           .toContain('Done; Revised by P20-S-R1-R1');
         expect(dashboard.split('\n').find((line) => line.startsWith('| P20-S-R1-R1 |')))
           .toContain('| Done |');
+      } else if (phase === 22) {
+        expect(count?.done).toBe(1);
+        expect(count?.total).toBe(2);
       } else if (phase === 28) {
         expect(count?.done).toBe(32);
-        expect(count?.total).toBe(33);
+        expect(count?.total).toBe(35);
         expect(dashboard.split('\n').find((line) => line.startsWith('| P28-E-R4 |')))
           .toContain('| Done |');
         expect(dashboard.split('\n').find((line) => line.startsWith('| P28-E-R5 |')))
@@ -275,23 +343,24 @@ describe('permanent progress ledger', () => {
     const counts = new Map<number, number>();
     for (const line of dashboard.split('\n')) {
       const id = line.split('|')[1]?.trim();
-      const phase = id?.match(/^Phase (\d+)$/) ?? id?.match(/^P(\d+)-/);
+      const phase = id?.match(/^P(\d+)(?:-|$)/);
       if (phase) counts.set(Number(phase[1]), (counts.get(Number(phase[1])) ?? 0) + 1);
     }
 
-    const rows = index.split('\n').filter((line) => /^\| \d{2} \|/.test(line));
+    const rows = index.split('\n').filter((line) => /^\| P\d+ \|/.test(line));
     expect(rows).toHaveLength(30);
     for (const line of rows) {
       const [, phase, branch, tag, commit, count] = line.split('|').map((cell) => cell.trim().replaceAll('`', ''));
-      const number = Number(phase);
-      expect(branch).toMatch(new RegExp(`^phase/${phase}-[a-z0-9-]+$`));
-      expect(tag).toBe(`phase-${phase}-complete`);
+      const number = Number(phase?.match(/^P(\d+)$/)?.[1]);
+      const paddedPhase = String(number).padStart(2, '0');
+      expect(branch).toMatch(new RegExp(`^phase/${paddedPhase}-[a-z0-9-]+$`));
+      expect(tag).toBe(`phase-${paddedPhase}-complete`);
       expect(commit).toMatch(/^[0-9a-f]{40}$/);
       expect(Number(count)).toBe(counts.get(number));
     }
   });
 
-  it('records the unchanged FX/CH IDs, CR-4 through CR-97 and current phase work', () => {
+  it('records the unchanged FX/CH IDs, CR-4 through CR-106 and current phase work', () => {
     const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
     const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
     const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
@@ -311,7 +380,7 @@ describe('permanent progress ledger', () => {
       'CR-62', 'CR-63', 'CR-64', 'CR-65', 'CR-66', 'CR-67', 'CR-68', 'CR-69',
       'CR-70', 'CR-71', 'CR-72', 'CR-73', 'CR-74', 'CR-75', 'CR-76', 'CR-77',
       'CR-78', 'CR-79', 'CR-80', 'CR-81', 'CR-82', 'CR-83', 'CR-84', 'CR-85', 'CR-86', 'CR-87',
-      'CR-88', 'CR-89', 'CR-90', 'CR-91', 'CR-92', 'CR-93', 'CR-94', 'CR-95', 'CR-96', 'CR-97',
+      'CR-88', 'CR-89', 'CR-90', 'CR-91', 'CR-92', 'CR-93', 'CR-94', 'CR-95', 'CR-96', 'CR-97', 'CR-106',
     ]) {
       expect(`${dashboard}\n${register}`).toContain(id);
     }
@@ -487,7 +556,7 @@ describe('permanent progress ledger', () => {
     expect(ledger).toContain('Revised by P28-A-R1');
     expect(ledger).toContain('Revised by P28-C-R4 and earlier revisions');
     expect(dashboard).toContain('Revised by P28-B');
-    expect(ledger).toContain('Phase 30 — Release 2 stabilization');
+    expect(ledger).toContain('P30 — Release 2 stabilization');
     const release2Roadmap = ledger.split('## 9. Upcoming roadmap')[1]?.split('## 10. Verification matrix')[0] ?? '';
     expect(release2Roadmap).toContain('P30-A — Failing persistence/restart tests');
     expect(release2Roadmap).toContain('P30-B — Verified fallback authority markers');

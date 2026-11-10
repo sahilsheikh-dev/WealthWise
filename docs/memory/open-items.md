@@ -1,25 +1,50 @@
-<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-09 | Updates: owner and AI agents -->
+<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-10 | Updates: owner and AI agents -->
 
 # Open items
+
+## CR-106 owner decisions and scope
+
+- Decide whether public adoption is a goal. If it is not, drop public-launch
+  checklist items that depend on adoption as a goal.
+- Approve or decline P31-D's privacy statement as a root document before that
+  part is executed; its content must use verified source facts only.
+- After P40-A, choose whether P40 remains report-only or proceeds with
+  the P40-B narrative/archive split.
+- Confirm the holder of the MIT license.
+- After P31-E has a successful real PR run, set branch protection to require
+  the workflow.
+
+Not adopted in CR-106:
+
+- ClaudEx Loop and the agent-swarm kit: no demonstrated repository need for
+  additional external agent orchestration or its maintenance surface.
+- Shunt: it is not Claude Code and relies on a third-party 0.1.0 hook; the
+  identified root cause is progress-ledger size, not a missing tool hook.
+- GDPR consent/processor items: no server or analytics is described in the
+  verified app architecture; do not add server-processing controls without a
+  verified processing surface.
+- Show HN, GitHub Discussions and issue-response items: not adopted while the
+  public-adoption goal and ongoing community-response capacity remain
+  undecided.
 
 ## Recently resolved
 
 - **Owner roadmap decisions (2026-11-09):** accessibility is the planned
-  statement and audit checklist, not new app features. Use Device Hub.app for
-  screenshots, not Android tooling; capture synthetic demo data only, keep a
-  one-off script outside the repository and delete it after use. The owner
-  explicitly requests version-specific feature screenshots in README,
-  release Markdown and GitHub Release bodies, attached to each release,
-  including v1.0.0 and v1.1.0.
-  Widgets, quick capture (shake, double-tap back or key combination) and
-  notification/SMS detection are Held for later. Notes includes text, voice/
-  audio recordings, photos and videos. Skeleton loading is planned in Phase
-  38. See [PROGRESS.md](../PROGRESS.md) for the recorded acceptance scope.
+  statement and audit checklist, not new app features. The owner supplied all
+  23 versioned screenshots, so P32-A/B/C capture work is cancelled; no new
+  captures or capture script are needed. Widgets, quick capture (shake,
+  double-tap back or key combination) and notification/SMS detection are
+  Planned, with research/reactivation requirements retained. P33-C still
+  requires iOS distribution; P35-C requires the P35-B owner go/no-go before
+  implementation. Notes includes text, voice/audio recordings, photos and
+  videos. Skeleton loading is planned as P38. See [PROGRESS.md](../PROGRESS.md)
+  for the recorded acceptance scope.
 - **Release screenshots and APK handoff:** all 23 owner-supplied screenshots
-  (7 for v1.0.0, 8 for v1.1.0 and 8 for v1.1.1) are attached to their
-  matching GitHub releases as `WealthWise-vX.Y.Z-screenshot-<screen>.png`.
-  The local screenshot folder is removed; Markdown embeds absolute asset
-  URLs. All eight public v1.1.1 screenshot URLs return HTTP 200.
+  (7 for v1.0.0, 8 for v1.1.0 and 8 for v1.1.1) have been copied to
+  `docs/releases/screenshots/vX.Y.Z/` as
+  `WealthWise-vX.Y.Z-screenshot-<screen>.png`. CR-107 is updating Markdown
+  links and guides; the old release screenshot assets remain until after
+  merge-to-main URL verification.
   The owner-provided APK for EAS build
   `ecc97480-7229-41ac-8aad-64ea2cd255b5` is byte-verified against EAS
   (app 1.1.1, `android-apk`, `versionCode` 2), and the published
@@ -27,12 +52,17 @@
   latest-published. The v1.1.0 APK now uses its versioned filename; the latest
   and affected versioned APK URLs return HTTP 200 with expected sizes.
   README, latest release notes, screenshot gallery and release history are
-  aligned.
+  being aligned without changing any APK Download block.
 - **Remote branch audit (2026-11-09):** fetched all 36 remote branches and
   checked their ancestry against `develop` and `main`. Every remote branch is
   integrated into `develop`; `release/v1.1.1` is integrated into `main`;
   `main`, `develop` and the release branch have identical trees. No open PRs
   or pending merge work remain. The stale local `main` was fast-forwarded.
+- **APK handoff rule (2026-11-09):** the existing guide already required
+  `eas build --platform android --profile android-apk`, artifact download and
+  draft upload without waiting for the owner to build or upload. Clarified in
+  the shared rules and all release guides that the agent must not ask the
+  owner/developer to provide an APK or local APK path.
 - **Owner-edit handling:** P20-S-R1-R1 records R5 in root
   [AGENTS.md](../../AGENTS.md): ask before changing a file with owner edits
   made after agent changes, and revert or overwrite those edits only when
@@ -48,7 +78,7 @@
   that a holding entry is created, and confirming Undo removes it. The
   checklist records Pass; device identity fields remain blank.
 - **P28-F-R1 GitHub sync:** owner-reported N39-N43 results are included in
-  merged PRs #1-#3. Phase 28 was integrated into develop, the release branch
+  merged PRs #1-#3. P28 was integrated into develop, the release branch
   into main, and main back into develop. The merged PRs and remote tips are
   recorded in [PROGRESS.md](../PROGRESS.md).
 - **P28-F-R2 contributor correction:** the v1.1.0 draft matches the linked
@@ -59,7 +89,7 @@
   verified EAS source commit; the uploaded artifact matched the EAS build,
   and latest/versioned links returned HTTP 200 at 112,147,677 bytes. The
   owner-approved `preview` profile and reused versionCode 1 exceptions are
-  recorded in the release history. PRs #11-#15 merged task -> Phase 28 ->
+  recorded in the release history. PRs #11-#15 merged task -> P28 ->
   develop -> release -> main -> develop; all four remote trees match and the
   v1.1.0 tag remains unchanged.
 - **P28-F-R3-R2 historical asset rollover:** v1.0.0 now downloads from its
@@ -71,15 +101,15 @@
   history and GitHub release body match. Latest and versioned v1.1.0 routes
   return HTTP 200 at 112,147,677 bytes. The old v1.0.0 filename has no
   `latest` marker and returns HTTP 200 at 112,133,413 bytes. PRs #21-#25
-  merged task -> Phase 28 -> develop -> release -> main -> develop. The four
+  merged task -> P28 -> develop -> release -> main -> develop. The four
   remote trees match; the v1.1.0 tag was not changed.
-- **P28-F-R2-R1 audit correction:** task PR #4 merged into Phase 28 and PR #5
-  merged Phase 28 into develop; PR #6 carries the release branch to main and
+- **P28-F-R2-R1 audit correction:** task PR #4 merged into P28 and PR #5
+  merged P28 into develop; PR #6 carries the release branch to main and
   PR #7 is the main-to-develop back-merge. The full sequence preserves
   task -> phase -> develop -> release -> main -> develop.
 - **P29-O-R1 scope close-out:** P29-O is superseded by the accepted P29-O1
   holding workflow and the explicit P29-S cancellation of the separate
-  ledger-only migration. No app implementation remains in scope; Phase 29 is
+  ledger-only migration. No app implementation remains in scope; P29 is
   41/41. The P29-O1 physical-device checks below remain open.
 - **Local `codex-changes` branch:** deleted on 2026-11-08 at the owner's
   direction. Its sole commit (`d033d6a`) was an October schema-v2 alternative
@@ -102,20 +132,20 @@
   annotated phase completion tags were pushed and verified. `main`, `develop`,
   and the v1.0.0 tag were also verified; v1.0.0 was not changed. No force push
   was used.
-- **P28-E-R4 history graph integration:** task PR #49 merged into Phase 28
-  (`7f9221a`), then Phase 28 PR #50 merged into `develop` (`b5dbe5f`). The
+- **P28-E-R4 history graph integration:** task PR #49 merged into P28
+  (`7f9221a`), then P28 PR #50 merged into `develop` (`b5dbe5f`). The
   `history/by-phase` tip and every remote branch tip are reachable from
   `develop`. `main` and `release/v1.1.0` remain at
   `7bea8e62c10f641f1fe9aeb9e3ef605b3620250a`, with tree
   `207ed97e541e55919d5cb58afbd25c4b0ed835c0`. The task branch was deleted;
-  Phase 28 is retained. Verification is in [PROGRESS.md](../PROGRESS.md).
+  P28 is retained. Verification is in [PROGRESS.md](../PROGRESS.md).
 - **P28-E-R5 historical main commit audit:** the 403 non-merge commits after
   the initial commit are already integrated into `main` and `develop`; 84
   legacy subjects fail the current Conventional Commit hook. Do not rewrite
   these original commits: a PR cannot change commit provenance or subjects
   retroactively. The owner-selected `release/v1.0.0` branch was created at
   the existing v1.0.0 tag target and is already an ancestor of `main` and
-  `develop`. Task PR #52 merged into Phase 28 as `f9bb715`, and Phase 28 PR
+  `develop`. Task PR #52 merged into P28 as `f9bb715`, and P28 PR
   #53 merged into `develop` as `0402592`. P28-E-R5-R1 records this final
   integration; no application code or protected branch tip changes.
   Evidence is in [PROGRESS.md](../PROGRESS.md).
@@ -124,14 +154,14 @@
   changing the captured `develop` tree. The accompanying changes are limited
   to ledger/memory documentation and a ledger test. At R3 completion, the
   archive was still separate; P28-E-R4 is connecting it. `main` and its
-  v1.1.0 tag remain untouched. Task PR #47 merged into Phase 28 and PR #48
+  v1.1.0 tag remain untouched. Task PR #47 merged into P28 and PR #48
   promoted R3 to `develop`. Details are in [PROGRESS.md](../PROGRESS.md).
 - **P28-F-R3 GitHub integration:** PR #11 merged the publication task into
-  Phase 28 (`a2f9db2`), #12 promoted Phase 28 to develop (`3e2a5a8`), #13
+  P28 (`a2f9db2`), #12 promoted P28 to develop (`3e2a5a8`), #13
   merged develop to `release/v1.1.0` (`d4d69fa`), #14 merged that release to
   main (`b0aeef9`), and #15 back-merged main into develop (`6f5df18`). The
   publication task branch was deleted; the phase branch remains at its
-  recorded tip. Main, develop, release and Phase 28 have identical trees.
+  recorded tip. Main, develop, release and P28 have identical trees.
 
 ## Unresolved
 
@@ -140,24 +170,20 @@
   remain absent. Final gate results and PR integration are in
   [`PROGRESS.md`](../PROGRESS.md). Implementation commit `d36103e` is in
   task-to-phase PR #42; phase-to-develop PR #43.
-- **Phase 32 screenshots:** supplied screenshots are embedded in README and
-  versioned Markdown. The owner supplied 23 versioned screenshots, visually
-  showing synthetic demo content. Their version-specific assets are attached
-  to the corresponding v1.0.0, v1.1.0 and v1.1.1 GitHub releases. The
-  v1.1.1 published body and release note use its versioned screenshot asset
-  URLs. The local screenshot
-  folder has been removed. All galleries use 150-pixel thumbnails, with at
-  most four screenshots per row. README contains only the latest published
-  set under the generic Screenshots heading; historical galleries remain in
-  their release notes. Galleries follow the requested Home, Assets,
-  Liabilities, Emergency Fund, Goals, Insurance, Budget, Transactions order,
-  omitting unavailable screens.
-  The v1.1.1 note contains all template sections, has owner approval and is
-  moved to `published/`; task PR #64 is merged, and Phase PR #65 promotes the
-  screenshot/documentation update to `develop`.
-  No capture script is in the repository; any future one-off script must stay
-  outside it, never be uploaded or included in an app build, and be deleted
-  after use.
+- **CR-107 screenshot repository verification:** P32-A/B/C capture work is
+  cancelled because the owner supplied all 23 screenshots. The files and
+  browser-viewable links are being moved into versioned repository paths.
+  After the authorized merge to `main`, verify all 46 blob/raw URLs, update
+  only the three release-body screenshot sections, then remove only those
+  23 screenshot assets. No screenshot capture or capture script is planned.
+- **CR-107 demo display:** route tests verify the Rs 1 crore Assets total at
+  simulated font scales 1.3 and 2.0. Physical-device rendering at both scales
+  remains unverified.
+- **CR-107 integration:** P22-A-R1 and screenshot work are in P28; P28-G
+  is converting phase labels to PN notation and adding the derived glossary
+  and regression guards. Finish the task/phase integration, six ordered gates,
+  authorized main merge, URL checks and screenshot-only release cleanup before
+  closing CR-107.
 - **v1.1.1 release:** the owner-approved patch release was published on
   2026-11-09 after PR #69 merged it to `main` and PR #70 back-merged it to
   `develop`. Tag `v1.1.1` points to the main merge commit. The owner-run EAS

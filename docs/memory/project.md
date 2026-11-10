@@ -1,4 +1,4 @@
-<!-- Purpose: Stable product and repository facts for AI contributors. | Last updated: 2026-11-09 | Updates: owner and AI agents -->
+<!-- Purpose: Stable product and repository facts for AI contributors. | Last updated: 2026-11-10 | Updates: owner and AI agents -->
 
 # Project
 
@@ -41,9 +41,9 @@ runtime synchronization.
   pure utilities and platform helpers in `src/lib/`; demo data in `src/mock/`.
 - Other source groups: `src/hooks/`, `src/theme/`, `src/constants/`, `assets/`
   and `scripts/`.
-- Test counts: 98 suites, 1270 tests (1269 passed; one skipped) on
-  2026-11-09. All six ordered gates exited 0 on the approved v1.1.1 candidate
-  task tree; the current release-readiness conditions and remaining
+- Test counts: 98 suites, 1272 tests (1271 passed; one skipped) on
+  2026-11-10. All six ordered gates exited 0 on CR-106's ledger/test-only
+  branch; the approved v1.1.1 candidate's release-readiness conditions and remaining
   physical-device check are in [status.md](status.md). See
   [status.md](status.md) and the
   [progress ledger](../PROGRESS.md) for exact gate results and coverage.

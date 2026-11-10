@@ -22,7 +22,7 @@ export function buildAppMenu({
   ];
   if (isDev) {
     items.push(
-      { label: 'Load demo data (4 months)', icon: 'database' },
+      { label: 'Load demo data (6 months)', icon: 'database' },
       { label: 'Load stress data (50y/100y/126y/dense)', icon: 'database', destructive: true },
       { label: 'Simulate corrupt storage', icon: 'alert-triangle', destructive: true },
     );

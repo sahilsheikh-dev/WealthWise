@@ -53,17 +53,17 @@ export function useAppMenu(): HeaderMenuItem[] {
       const destination = destinations[item.label];
       if (destination) {
         if (pathname !== destination) router.push(destination as Href);
-      } else if (item.label === 'Load demo data (4 months)' && devActions) {
+      } else if (item.label === 'Load demo data (6 months)' && devActions) {
         void confirmAsync({
           title: 'Load demo data?',
-          message: 'Replace local app data with four months of sample data?',
+          message: 'Replace local app data with six months of sample data?',
           confirmLabel: 'Load demo data',
           destructive: true,
         }).then((confirmed) => {
           if (!confirmed) return;
           void devActions.loadDemoData().then((result) => {
             if (result.ok) {
-              Alert.alert('Demo data loaded', 'Four months of sample data are ready.', [
+              Alert.alert('Demo data loaded', 'Six months of sample data are ready.', [
                 {
                   text: 'Undo',
                   style: 'cancel',

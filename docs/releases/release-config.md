@@ -104,19 +104,23 @@ Exclude:
    unmerged branch. Release notes and GitHub release bodies must not contain a
    Contributors section.
 3. Use all screenshots explicitly supplied for a release. Name each image
-   `WealthWise-vX.Y.Z-screenshot-<screen>.png` and attach it to the matching
-   GitHub Release. Do not retain screenshot files in the repository. If none
-   are supplied, reuse the previous published release's complete set and
-   attach it under the new version's filenames.
+   `WealthWise-vX.Y.Z-screenshot-<screen>.png` and store it under
+   `docs/releases/screenshots/vX.Y.Z/` with the published note. Do not attach
+   screenshots as GitHub Release assets. If none are supplied, reuse the
+   previous published release's complete set under the new version's
+   filenames.
 4. After the changes merge to `develop`, create `release/vX.Y.Z` at that
    source and create the GitHub Release draft at the release-branch commit.
-   The draft may create the version tag; do not retarget it. Attach every
-   screenshot, use each absolute attached-asset URL in the draft body, then
+   The draft may create the version tag; do not retarget it. Use each
+   screenshot's absolute `blob/main` link and matching
+   `raw.githubusercontent.com/.../main/` image URL in the draft body, then
    run `eas build --platform android --profile android-apk` from the release
    branch. Wait for the successful build, download the APK outside the
    repository, and upload it to the draft as
    `WealthWise-android-latest-vX.Y.Z.apk`. Do not wait for the owner to build
-   or upload it manually.
+   or upload it manually, and do not ask the owner/developer to supply an APK
+   or local APK path. The release agent owns the build, artifact download and
+   draft upload.
 5. Privately verify the uploaded APK against its EAS artifact and verify the
    digest, links, release notes and build-history record. After separate
    explicit publication approval, merge the release branch `--no-ff` into
@@ -191,18 +195,20 @@ Follow the shared repository rules in [`AGENTS.md`](../../AGENTS.md),
   - Update the README Download and What's new sections and its releases-page
     link for every release.
   - Include every supplied screenshot in that version's release Markdown and
-    GitHub Release body using absolute asset URLs. Name each asset
-    `WealthWise-vX.Y.Z-screenshot-<screen>.png` and store it only on the
-    matching GitHub Release; do not retain a `docs/releases/screenshots/`
-    directory. README's Screenshots section contains only the latest
+    GitHub Release body. Store files as
+    `docs/releases/screenshots/vX.Y.Z/WealthWise-vX.Y.Z-screenshot-<screen>.png`
+    and commit them with the published note; do not attach screenshots as
+    GitHub Release assets. In release notes, link each thumbnail to its
+    absolute `blob/main` URL and load the image from the matching absolute
+    `raw.githubusercontent.com/.../main/` URL. README may use equivalent
+    relative paths. README's Screenshots section contains only the latest
     published release's complete image set, without a version title. If no
     screenshots are supplied, reuse the previous published release's complete
-    image set and attach it under the new version's filenames. Verify every
-    rendered asset URL before removing any local screenshot folder.
-    Render images at 150 pixels wide in table rows, with no more than four
-    screenshots per row. Order categories Home, Assets, Liabilities,
-    Emergency Fund, Goals, Insurance, Budget, Transactions; omit unavailable
-    screens.
+    image set under the new version's filenames. Verify each rendered URL
+    after the change is merged to `main`. Render images at 150 pixels wide in
+    table rows, with no more than four screenshots per row. Order categories
+    Home, Assets, Liabilities, Emergency Fund, Goals, Insurance, Budget,
+    Transactions; omit unavailable screens.
   - Capture screenshots with deterministic synthetic demo data on the
     owner-designated test setup. Never capture personal phone data. Keep any
     one-off capture script outside the repository, do not package or upload
@@ -233,9 +239,8 @@ build, upload the APK under the required versioned asset filename, and verify
 the artifact before requesting separate publication approval. Do not wait
 for the owner to build or upload the APK manually.
 
-Use the finalized published Markdown as the release-body source. For images
-in GitHub release bodies, replace repository-relative screenshot paths with
-the absolute URLs of the matching attached release assets.
+Use the finalized published Markdown as the release-body source, retaining
+the absolute repository screenshot URLs in GitHub release bodies.
 
 The worktree and release rules are shared policy, not release-specific
 exceptions.

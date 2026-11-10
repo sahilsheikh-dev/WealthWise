@@ -81,7 +81,7 @@ describe('useAppMenu', () => {
     act(() => { renderer = TestRenderer.create(<CaptureMenu />); });
     if (!renderer) throw new Error('Menu hook did not render.');
     try {
-      const loadItem = menuRef.current.find(({ label }) => label === 'Load demo data (4 months)');
+      const loadItem = menuRef.current.find(({ label }) => label === 'Load demo data (6 months)');
       if (!loadItem) throw new Error('Demo data menu action did not render.');
       await act(async () => {
         loadItem.onPress();
@@ -91,12 +91,12 @@ describe('useAppMenu', () => {
 
       expect(mockConfirmAsync).toHaveBeenCalledWith({
         title: 'Load demo data?',
-        message: 'Replace local app data with four months of sample data?',
+        message: 'Replace local app data with six months of sample data?',
         confirmLabel: 'Load demo data',
         destructive: true,
       });
       expect(loadDemoData).toHaveBeenCalledTimes(1);
-      expect(mockAlert).toHaveBeenCalledWith('Demo data loaded', 'Four months of sample data are ready.', [
+      expect(mockAlert).toHaveBeenCalledWith('Demo data loaded', 'Six months of sample data are ready.', [
         expect.objectContaining({ text: 'Undo', style: 'cancel', onPress: expect.any(Function) }),
         { text: 'OK' },
       ]);
