@@ -29,7 +29,7 @@ const budgetIncomeFormSchema = z.object({
   day: z.string(),
   category: z.enum(EARNED_INCOME_CATEGORIES),
   scope: z.enum(['month', 'following']),
-  frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly']),
+  frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly', 'once']),
   firstDueMonth: z.string(),
 }).superRefine((values, context) => {
   if (values.day !== '' && (!/^\d+$/.test(values.day) || Number(values.day) < 1 || Number(values.day) > 31)) {
@@ -60,6 +60,7 @@ const incomeFrequencyOptions: readonly DropdownOption[] = [
   { value: 'quarterly', title: 'Quarterly' },
   { value: 'half-yearly', title: 'Half-yearly' },
   { value: 'yearly', title: 'Yearly' },
+  { value: 'once', title: 'Once only' },
 ];
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';

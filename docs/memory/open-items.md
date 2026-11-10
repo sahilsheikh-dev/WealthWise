@@ -1,4 +1,4 @@
-<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-10 | Updates: owner and AI agents -->
+<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-11 | Updates: owner and AI agents -->
 
 # Open items
 
@@ -8,10 +8,10 @@
   keeps the app offline and uses an explicit browser link only.
 - Confirm whether "Once only" is desired for investment plans or liabilities
   in a future request; CR-108 deliberately excludes both.
-- Complete P41-A's task-to-phase and phase-to-`develop` PRs; implement Parts
-  4–6; then run the six ordered gates after all parts reach `develop`.
-  Physical-device checks remain unverified and must be recorded before closing
-  CR-108.
+- Complete P41-A-R1's test correction and PR integration, finish P41-B's
+  implementation/PR integration, implement P41-C and P41-D, then run the six
+  ordered gates after all parts reach `develop`. Physical-device checks remain
+  unverified and must be recorded before closing CR-108.
 
 ## CR-106 owner decisions and scope
 

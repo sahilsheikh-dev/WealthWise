@@ -14,6 +14,7 @@ import { validateIntegrity } from '../../domain/links';
 import { duesThroughPreview } from '../../domain/dues';
 import { pendingItems } from '../../domain/pending';
 import { planReminders } from '../../domain/reminders';
+import { policySchedule } from '../../domain/policySchedule';
 import { holdingValue } from '../../domain/portfolio';
 import { homeSummary, netWorth } from '../../domain/summary';
 import { monthSummary } from '../../domain/transactions';
@@ -74,7 +75,7 @@ describe('six-month demo data', () => {
   it('includes a paid-premium Term policy and leaves the Life placeholder available', () => {
     expect(data.policies).toEqual(expect.arrayContaining([
       expect.objectContaining({ id: 'demo-policy-term-life', kind: 'term-life', sumAssured: 10_000_000, status: 'active' }),
-      expect.objectContaining({ id: 'demo-policy-health-yearly', kind: 'health', frequency: 'yearly', status: 'active' }),
+      expect.objectContaining({ id: 'demo-policy-health-yearly', kind: 'health', frequency: 'once', status: 'active' }),
       expect.objectContaining({ id: 'demo-policy-motor', kind: 'motor', status: 'active' }),
       expect.objectContaining({ id: 'demo-policy-home', kind: 'home', status: 'active' }),
       expect.objectContaining({ id: 'demo-policy-lapsed', status: 'lapsed' }),
@@ -174,7 +175,6 @@ describe('six-month demo data', () => {
     const expectations = [
       ['Recharge', 'monthly'],
       ['Streaming subscription', 'quarterly'],
-      ['Domain renewal', 'yearly'],
       ['Maintenance', 'half-yearly'],
     ] as const;
     for (const [name, frequency] of expectations) {
@@ -191,6 +191,7 @@ describe('six-month demo data', () => {
         date: expect.stringMatching(new RegExp(`^${dueMonth}-`)),
       }));
       const upcomingMonth = nextDueMonth(item, monthKey(today));
+      if (!upcomingMonth) throw new Error(`Missing projected next due for recurring demo item ${name}.`);
       expect(pendingItems(data, upcomingMonth, today)).toContainEqual(expect.objectContaining({
         title: name,
         category: name,
@@ -198,6 +199,24 @@ describe('six-month demo data', () => {
         dueDate: expect.stringMatching(new RegExp(`^${upcomingMonth}-`)),
       }));
     }
+  });
+
+  it('includes one once-only Budget item and insurance premium in the demo', () => {
+    const onceItem = data.budgetPlan?.items.find((item) => item.name === 'Domain renewal');
+    const oncePolicy = data.policies.find((policy) => policy.id === 'demo-policy-health-yearly');
+    const firstMonth = months[0];
+    if (!onceItem || !oncePolicy || !firstMonth) throw new Error('Once-only demo fixtures are missing.');
+
+    expect(onceItem).toMatchObject({
+      frequency: 'once',
+      firstDueMonth: monthKey(today),
+    });
+    expect(months.filter((month) => isItemDueInMonth(onceItem, month))).toEqual([monthKey(today)]);
+    expect(data.transactions.filter((transaction) =>
+      transaction.category === 'Domain renewal' && transaction.type === 'expense')).toHaveLength(1);
+    expect(oncePolicy.frequency).toBe('once');
+    expect(policySchedule(oncePolicy, '2026-12-31').rows.map((row) => row.dueDate))
+      .toEqual([`${firstMonth}-15`]);
   });
 
   it('shows past, current and upcoming months in the budget overview demo', () => {

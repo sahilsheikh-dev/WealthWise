@@ -17,7 +17,7 @@ import {
   type Transaction,
 } from './types';
 
-export const SCHEMA_VERSION = 22;
+export const SCHEMA_VERSION = 23;
 
 export function makeStopRecurringFormSchema(
   today: ISODate,
@@ -229,7 +229,7 @@ export const policySchema = z.object({
   insurer: z.string().max(40),
   kind: policyKindSchema,
   premium: moneySchema.positive().max(10_000_000),
-  frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly', 'custom']),
+  frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly', 'once', 'custom']),
   customIntervalMonths: z.number().int().min(1).max(120).optional(),
   startDate: isoDateSchema,
   status: z.enum(['active', 'lapsed', 'matured', 'cancelled']),
@@ -273,7 +273,7 @@ export const BUDGET_CATEGORIES = [
   ...investmentBudgetCategories,
 ] as const;
 const earnedIncomeCategories = EARNED_INCOME_CATEGORIES;
-const budgetItemFrequencySchema = z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly']).optional();
+const budgetItemFrequencySchema = z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly', 'once']).optional();
 const budgetFirstDueMonthSchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional();
 const budgetIncomeSchema = z.object({
   id: idSchema,
@@ -301,7 +301,7 @@ const budgetItemSchedulingFields = {
   firstDueMonth: budgetFirstDueMonthSchema,
 };
 function validateBudgetItemScheduling(
-  item: { mode: 'amount' | 'percent'; frequency?: 'monthly' | 'quarterly' | 'half-yearly' | 'yearly'; firstDueMonth?: string },
+  item: { mode: 'amount' | 'percent'; frequency?: 'monthly' | 'quarterly' | 'half-yearly' | 'yearly' | 'once'; firstDueMonth?: string },
   context: z.RefinementCtx,
 ): void {
   if ((item.frequency ?? 'monthly') !== 'monthly' && item.firstDueMonth === undefined) {

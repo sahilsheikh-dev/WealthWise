@@ -187,7 +187,7 @@ export type PolicyKind =
   | 'home'
   | 'other';
 
-export type PolicyFrequency = 'monthly' | 'quarterly' | 'half-yearly' | 'yearly' | 'custom';
+export type PolicyFrequency = 'monthly' | 'quarterly' | 'half-yearly' | 'yearly' | 'once' | 'custom';
 export type PolicyStatus = 'active' | 'lapsed' | 'matured' | 'cancelled';
 
 export type PolicyPayment = {
@@ -256,7 +256,7 @@ export type BudgetSection = {
   system?: 'income' | 'debt' | 'insurance';
 };
 
-export type BudgetItemFrequency = 'monthly' | 'quarterly' | 'half-yearly' | 'yearly';
+export type BudgetItemFrequency = 'monthly' | 'quarterly' | 'half-yearly' | 'yearly' | 'once';
 
 export type BudgetItem = {
   id: string;

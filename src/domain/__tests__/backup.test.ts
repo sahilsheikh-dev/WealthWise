@@ -92,7 +92,7 @@ describe('backup validation and serialization', () => {
     });
     const v22 = await reChecksum(raw, (envelope) => { envelope.schemaVersion = 22; });
 
-    await expect(parseBackup(v22, { digest })).resolves.toMatchObject({
+    await expect(parseBackup(v22, migrationOptions)).resolves.toMatchObject({
       ok: true,
       data: mockAppData,
     });

@@ -255,6 +255,11 @@ describe('budget plans and monthly views', () => {
     if (!item) throw new Error('Once-only Budget item fixture is missing.');
     Object.assign(item, { frequency: 'once' });
     const onceItem = item;
+    const oncePolicy = Object.assign({
+      ...policy,
+      trackFrom: '2026-03-15',
+      endDate: '2026-12-31',
+    }, { frequency: 'once' });
 
     expect(isItemDueInMonth(onceItem, '2026-02')).toBe(false);
     expect(isItemDueInMonth(onceItem, '2026-03')).toBe(true);
@@ -268,24 +273,24 @@ describe('budget plans and monthly views', () => {
     expect(plannedIncomeOf({ incomes: [income] }, '2026-03')).toBe(1_000);
     expect(plannedIncomeOf({ incomes: [income] }, '2026-04')).toBe(0);
 
-    const data = { ...emptyAppData('2026-03-01'), budgetPlan };
-    expect(budgetMonthView(data, '2026-03', '2026-03-01')).toMatchObject({
+    const data = { ...emptyAppData('2026-02-01'), budgetPlan, policies: [oncePolicy] };
+    expect(budgetMonthView(data, '2026-03', '2026-02-01')).toMatchObject({
       plannedIncome: 1_000,
-      plannedSpend: 250,
+      plannedSpend: 310,
     });
-    expect(projectedCashFlow(data, '2026-03', '2026-03-01')).toEqual({
-      opening: 0, closing: 750, projected: true,
+    expect(projectedCashFlow(data, '2026-03', '2026-02-01')).toEqual({
+      opening: 0, closing: 690, projected: true,
     });
-    expect(effectiveMonthBudget(data, '2026-04', '2026-03-01')).toMatchObject({
+    expect(effectiveMonthBudget(data, '2026-04', '2026-02-01')).toMatchObject({
       virtual: true,
       budget: { source: 'plan' },
     });
-    expect(budgetMonthView(data, '2026-04', '2026-03-01')).toMatchObject({
+    expect(budgetMonthView(data, '2026-04', '2026-02-01')).toMatchObject({
       plannedIncome: 0,
       plannedSpend: 0,
     });
-    expect(projectedCashFlow(data, '2026-04', '2026-03-01')).toEqual({
-      opening: 750, closing: 750, projected: true,
+    expect(projectedCashFlow(data, '2026-04', '2026-02-01')).toEqual({
+      opening: 690, closing: 690, projected: true,
     });
 
     const snapshot = monthBudgetFromLines('2026-03', [{
@@ -300,7 +305,7 @@ describe('budget plans and monthly views', () => {
     const snapshotItem = snapshot.items[0];
     if (!snapshotItem) throw new Error('Frozen once-only snapshot fixture is missing.');
     Object.assign(snapshotItem, { frequency: 'once' });
-    expect(budgetMonthView({ ...data, monthBudgets: [snapshot] }, '2026-03', '2026-04-01'))
+    expect(budgetMonthView({ ...emptyAppData('2026-04-01'), monthBudgets: [snapshot] }, '2026-03', '2026-04-01'))
       .toMatchObject({ plannedIncome: 1_500, plannedSpend: 300 });
   });
 
@@ -626,7 +631,7 @@ describe('budget plans and monthly views', () => {
   it('maps every budget category to exactly one requested group and demonstrates each in mock budget data', () => {
     expect(BUDGET_GROUPS.map(({ name, weight, categories }) => [name, weight, categories])).toEqual([
       ['Survival (Needs)', 50, ['Living', 'Rent', 'Utilities', 'Recharge', 'Food', 'Transport', 'Family', 'Health', 'Bills', 'Education', 'EMI']],
-      ['Savings and Investments', 20, ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Other investments']],
+      ['Savings and Investments', 20, ['Mutual fund / SIP', 'Stocks / ETF', 'Real estate', 'Fixed deposit / RD', 'Gold / Silver', 'Other investments']],
       ['Wants', 15, ['Shopping', 'Other', 'Eating out', 'Entertainment', 'Fashion', 'Subscriptions', 'Personal spending', 'Travel']],
       ['Festival, Donations, Culture', 5, ['Festival', 'Donation', 'Gifts', 'Culture']],
       ['Unexpected Extras', 10, ['Unexpected']],

@@ -141,14 +141,14 @@ describe('pending item projection', () => {
     Object.assign(item, { frequency: 'once' });
     const oncePolicy = policy({ name: 'One-time premium', trackFrom: '2026-03-20' });
     Object.assign(oncePolicy, { frequency: 'once' });
-    const data = { ...base(), budgetPlan, policies: [oncePolicy] };
+    const data = { ...emptyAppData('2026-02-01'), budgetPlan, policies: [oncePolicy] };
 
-    expect(pendingItems(data, '2026-03', '2026-03-01')).toEqual(expect.arrayContaining([
+    expect(pendingItems(data, '2026-03', '2026-02-01')).toEqual(expect.arrayContaining([
       expect.objectContaining({ title: 'One-time expense', dueDate: '2026-03-15' }),
       expect.objectContaining({ title: 'One-time income', dueDate: '2026-03-10' }),
       expect.objectContaining({ title: 'One-time premium', dueDate: '2026-03-20' }),
     ]));
-    expect(pendingItems(data, '2026-04', '2026-03-01')).not.toEqual(expect.arrayContaining([
+    expect(pendingItems(data, '2026-04', '2026-02-01')).not.toEqual(expect.arrayContaining([
       expect.objectContaining({ title: 'One-time expense' }),
       expect.objectContaining({ title: 'One-time income' }),
       expect.objectContaining({ title: 'One-time premium' }),
