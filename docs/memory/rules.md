@@ -130,8 +130,9 @@ Git blob IDs at the P25-C preflight (verify with `git hash-object` before
 relying on them after an authorized edit):
 
 All six protected files were verified at CR-108 preflight. Reverified with
-`git hash-object` on 2026-11-10 after the authorized Part 2 edit; five files
-remain unchanged and the Budget blob is recorded below.
+`git hash-object` on 2026-11-10 after the authorized Part 2 edit and again
+after P41-C changes; all six still match the IDs below and the Budget blob
+remains unchanged.
 
 | File | Git blob ID | Rule |
 |---|---|---|

@@ -12,7 +12,11 @@
   identity-preserving v22 migration, original-byte archive and backup-chain
   tests pass. TypeScript, Expo lint and the expanded focused run (9 suites /
   233 tests) pass; task PR #101 merged into phase at `9ab6e79`, and phase PR
-  #102 merged to `develop` at `b4275d3`. P41-C/P41-D and the six final ordered
+  #102 merged to `develop` at `b4275d3`. P41-C has test-first commits
+  `0fae9e5` and `538046b`; its liability/goal grouping and closed-loan demo
+  fixture are implemented on `task/P41-C-completed-liabilities-achieved-goals`.
+  Focused verification passes (4 suites / 209 tests), as do TypeScript and
+  Expo lint; task/phase PR integration remains. P41-D and the six final ordered
   gates remain pending. The authorized Budget blob is recorded in
   [rules.md](rules.md). No CR-108 work ships in v1.1.1; physical-device checks
   remain unverified.
