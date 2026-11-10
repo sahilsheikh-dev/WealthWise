@@ -10,7 +10,7 @@ import {
   EARNED_INCOME_CATEGORIES,
   SCHEMA_VERSION,
 } from './schemas';
-import { THEME_IDS, type AppData, type ISODate } from './types';
+import { HOLDING_TYPES, LIABILITY_TYPES, THEME_IDS, type AppData, type ISODate } from './types';
 
 export const BACKUP_APP = 'wealthwise';
 export const BACKUP_FORMAT_VERSION = 1;
@@ -58,10 +58,8 @@ const goalSchema = z.strictObject({
     share: z.number().finite().min(0.1).max(100).refine((share) => Number.isInteger(share * 10)).optional(),
   })).max(1000),
 });
-const holdingType = z.enum([
-  'Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit', 'Recurring deposit',
-  'EPFO / PF', 'Savings account', 'Cash', 'Gold', 'Silver', 'Other',
-]);
+const holdingType = z.enum(HOLDING_TYPES);
+const customTypeName = z.string().trim().min(1).max(30).optional();
 const valuationFields = {
   valuationMethod: z.enum(['balance', 'balanceInterest', 'accrual', 'manual', 'unitsPrice']).optional(),
   ratePct: z.number().finite().min(0).max(100).optional(),
@@ -72,12 +70,14 @@ const valuationFields = {
 };
 const manualHoldingSchema = z.strictObject({
   id: idSchema, kind: z.literal('manual'), name, type: holdingType,
+  customTypeName,
   invested: money, value: money, valueAsOf: dateSchema.optional(),
   ...valuationFields,
   logs: z.array(investmentEntrySchema).max(100_000),
 });
 const planHoldingSchema = z.strictObject({
   id: idSchema, kind: z.literal('plan'), name, type: holdingType,
+  customTypeName,
   ...valuationFields,
   frequency: z.enum(['daily', 'weekly', 'monthly', 'yearly']),
   amount: money, ratePct: z.number().min(0).max(100), stepUpPct: z.number().min(0).max(100),
@@ -88,7 +88,8 @@ const planHoldingSchema = z.strictObject({
 });
 const liabilityCommon = {
   id: idSchema, name,
-  type: z.enum(['Home loan', 'Car loan', 'Personal loan', 'Education loan', 'Credit card', 'Borrowed money', 'Other']),
+  type: z.enum(LIABILITY_TYPES),
+  customTypeName,
   principal: money, ratePct: z.number().min(0).max(100), startDate: dateSchema,
   payments: z.array(liabilityPaymentSchema).max(100_000),
 };

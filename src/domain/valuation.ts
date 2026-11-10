@@ -23,9 +23,11 @@ export function suggestedValuationMethod(
       return ratePct === undefined ? 'manual' : 'accrual';
     case 'Mutual fund / SIP':
     case 'Stocks / ETF':
+    case 'Real estate':
     case 'Gold':
     case 'Silver':
       return hasPricedEntry ? 'unitsPrice' : 'manual';
+    case 'Custom':
     case 'Other':
       return 'manual';
   }

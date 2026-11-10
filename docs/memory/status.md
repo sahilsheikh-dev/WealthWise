@@ -1,18 +1,21 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-10 | Updates: owner and AI agents -->
 
 # Status
-- CR-108 is in progress. P29-Q-R1 reproduces the four-choice `choiceAsync`
-  RangeError before production changes, replaces the stress picker with a
-  centered scalable selection dialog, and keeps the helper's two-choice limit.
-  Five focused suites / 30 tests and TypeScript pass; task PR #93 and phase PR
-  #94 are merged to `develop` at `80eb0e4`. P20-N-R3's failing tests were
-  committed first as `bba05be`; the Budget overview implementation now removes
-  the visible Pace/Over by/Left lines while retaining chart/table accessible
-  descriptions, and focused tests, TypeScript and targeted lint pass. Task PR
-  #95 merged to `phase/20-budget` as `77bdef5`; the phase-to-`develop` PR is
-  pending. Parts 3–6, schema v23, demo updates and the six final ordered gates
-  remain pending. The new Budget blob is recorded in
-  [rules.md](rules.md); physical-device checks remain unverified.
+- CR-108 is in progress. P29-Q-R1's four-choice `choiceAsync` RangeError was
+  reproduced before production changes, and the stress picker now uses a
+  centered scalable selection dialog without changing the helper's two-choice
+  limit. Five focused suites / 30 tests and TypeScript pass; task PR #93 and
+  phase PR #94 are merged to `develop` at `80eb0e4`. P20-N-R3's failing tests
+  were committed first as `bba05be`; the Budget overview removes the visible
+  Pace/Over by/Left lines while retaining chart/table accessible descriptions.
+  Focused tests, TypeScript and targeted lint pass; task PR #95 and phase PR
+  #96 are merged to `develop` at `f5f6e16`. P41-A adds finite Real estate and
+  Custom types and validated custom names; its test-first commit is `5b83d27`,
+  and 7 focused suites / 292 tests plus TypeScript pass. Its implementation
+  commit and task/phase PR integration are pending. Parts 4–6, schema v23,
+  remaining demo updates and the six final ordered gates remain pending. The
+  authorized Budget blob is recorded in [rules.md](rules.md). No CR-108 work
+  ships in v1.1.1; physical-device checks remain unverified.
 - CR-106 adds planning rows only: P31-D privacy and P31-E CI, report-first
   P39 release audit/hardening, and P40 agent-context hygiene.
   No audit part, app-source change, phase implementation, or release work has

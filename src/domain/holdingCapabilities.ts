@@ -9,6 +9,7 @@ export type HoldingCapabilities = {
 const capabilities: Record<HoldingType, HoldingCapabilities> = {
   'Mutual fund / SIP': { entries: true, recurring: true, returns: true },
   'Stocks / ETF': { entries: true, recurring: true, returns: true },
+  'Real estate': { entries: true, recurring: true, returns: true },
   'Fixed deposit': { entries: false, recurring: false, returns: true },
   'Recurring deposit': { entries: true, recurring: true, returns: true },
   'EPFO / PF': { entries: true, recurring: true, returns: true },
@@ -17,6 +18,7 @@ const capabilities: Record<HoldingType, HoldingCapabilities> = {
   Gold: { entries: true, recurring: true, returns: true },
   Silver: { entries: true, recurring: true, returns: true },
   Other: { entries: true, recurring: true, returns: true },
+  Custom: { entries: true, recurring: true, returns: true },
 };
 
 export function holdingCapabilities(type: HoldingType): HoldingCapabilities {
