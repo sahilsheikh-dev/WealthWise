@@ -239,7 +239,7 @@ P41         ██████████ 100% (5/5)
 | P28-E-R5-R1 | — | Done | Finalized P28-E-R5 integration evidence: P28 PR #53 merged into `develop` as `0402592`; no historical commit subjects or hashes were changed, and `main` and release branch trees remain unchanged. | 2026-11-09 |
 | P28-F | — | Done; Revised by P28-F-R1, P28-F-R2, P28-F-R2-R1, P28-F-R3, P28-F-R3-R1, P28-F-R3-R2, P28-F-R3-R3, P28-F-R3-R3-R1, P28-F-R4, P28-F-R4-R1-R1, P28-F-R4-R1-R1-R1-R1-R1, P28-F-R4-R1-R1-R1-R1-R1-R1, P28-F-R4-R1-R1-R1-R1-R1-R1-R1, P28-F-R5 and P28-F-R6 | Prepared v1.1.0 on `release/v1.1.0`; all six gates passed. PR #2 merged the release into main and PR #3 back-merged main into develop. Revised by P28-F-R3 for verified EAS build, tag and publication evidence, P28-F-R3-R1 for the completed publication PR chain, P28-F-R3-R2 for historical asset rollover and checksum removal, P28-F-R3-R3 for versioned latest-asset naming, P28-F-R3-R3-R1 for the merged filename-policy PR chain, Revised by P28-F-R4 for a review-only v1.1.1 candidate, P28-F-R4-R1 for supplied screenshot integration and owner-led release workflow, P28-F-R4-R1-R1 for the approved v1.1.1 release integration, P28-F-R4-R1-R1-R1-R1-R1 for screenshot-asset naming, latest-version rules and APK handoff corrections, P28-F-R4-R1-R1-R1-R1-R1-R1 for template-aligned historical metadata and release preparation, P28-F-R4-R1-R1-R1-R1-R1-R1-R1 for v1.1.1 publication and post-publication asset/doc rollover, and P28-F-R5 for repository-backed, browser-viewable screenshots and roadmap cancellation. | 2026-11-08 |
 | P28-F-R5 | — | Done | `ff5a5a6`; cancelled screenshot capture because the owner supplied all 23 images, stored them by release in the repository and changed thumbnails to browser-viewable blob links. Release-note links, guide/tests and the screenshot decision are updated; PR #83 merged into P28. | 2026-11-10 |
-| P28-F-R6 | — | In progress | Prepare the owner-approved v1.2.0 minor release candidate with eight supplied screenshots, aligned app/package metadata, release documentation and v1.1.1 retained as latest published. Focused release/About tests, TypeScript and lint pass. Task PR #112 merged into the retained phase as `fa153da`; phase PR #113 merged into `develop` as `d347526`. Six gates, device checks, GitHub draft, EAS build and publication remain pending. | 2026-11-11 |
+| P28-F-R6 | — | In progress | Prepare the owner-approved v1.2.0 minor release candidate with eight supplied screenshots, aligned app/package metadata, release documentation and v1.1.1 retained as latest published. Task PR #112 merged into the retained phase as `fa153da`; phase PR #113 merged into `develop` as `d347526`; evidence PR #114 merged as `5ae1b72`. All six ordered gates pass; physical-device checks, GitHub draft, EAS build and publication remain pending. | 2026-11-11 |
 | P28-G | — | Done | `e6395a1`; converted ledger/shared-memory phase labels to PN notation, added the derived glossary and notation/exclusion/prefix regression guards. Focused tests passed 2 suites/15 tests; PR #85 merged into P28. | 2026-11-10 |
 | P28-F-R1 | — | Done | Recorded owner-reported Pass results for device checklist N39-N43; device identification fields remain blank. | 2026-11-08 |
 | P28-F-R2 | — | Done; Revised by P28-F-R2-R1 | Corrected the v1.1.0 draft contributor credits using the published v1.0.0 format, added contributor guidance, and verified the PR integration path. | 2026-11-08 |
@@ -3479,7 +3479,7 @@ completion checks without hardcoding totals.
 | CR-108 | P29/P20/P41 | — | current | 2026-11-11 | Deliver the six owner-authorized menu, Budget, type/form, once-only/schema, completed-section, and offline About/update changes; preserve all stated protected surfaces and release boundaries. | All six parts are integrated into `develop`; P41-B-R1 task PR #108 merged into phase as `e1db78e` and phase PR #109 merged to `develop` as `5cb4957`. All six ordered gates passed: 101 suites, 1,316 passed, 1 skipped; 95.96/92.15/98.02/97.62% overall coverage. Demo constraints and protected hashes are verified; physical-device checks remain unverified. No v1.1.1 artifact changes. | P29-Q-R1: task/phase PRs #93/#94; P20-N-R3: #95/#96; P41-A: #97/#98 and correction #99/#100; P41-B: #101/#102 and evidence PR #103; P41-C: #104/#105; P41-D: #106/#107; P41-B-R1: #108/#109. Retained phase: `phase/41-types-frequency-completion`. | Old: four stress tiers were sent to a helper capped at two choices; Budget Overview exposed redundant Pace/Over by/Left lines; holding types lacked finite Real estate/Custom options; once-only frequency was unsupported for Budget items/income and policies. New: Parts 1–6 are integrated, including exact-once recurrence/schema v23, completed sections and offline About/browser update navigation. Reason: owner-directed CR-108 scope. P41-B-R1 replaces the stale reminder assertion (909→893) and closes the phase ledger from 4/5 to 5/5. Old completion assertions and their reasons are listed in the close-out evidence below; none were weakened. No CR-108 changes were made to v1.1.1, release branches, tags or release artifacts. | current request |
 | P41-B-R1 | P41 | P41-B | current | 2026-11-11 | Correct CR-108 Gate 1's once-only demo reminder assertion and cover schedule/schema branches without changing production behavior. | Initial Gate 1 failed in 100 suites / 1,314 passed / 1 failed / 1 skipped: reminders expected 909 but Once-only behavior correctly yields 893. The corrected focused run passes (4 suites / 86 tests); TypeScript and Expo lint pass. Task PR #108 merged into `phase/41-types-frequency-completion` as `e1db78e`; phase PR #109 merged to `develop` as `5cb4957`. Final ordered gates pass (101 suites / 1,316 passed / 1 skipped). | Test-first commit `bd8f1c9d286dd32a2b94065d729455d747a00a08`; documentation follow-up `efbf9ac0d4ca0846c542e9203fd8684949017e49`; task merge `e1db78e7f67a60ab5c833d856e1bedce894388ff`; develop merge `5cb4957d854da5cec2bb38694d48e9d12ea2cbce`. | Old: demo reminder aggregate asserted 909. New: it asserts 893. Reason: the Once-only policy creates a single due slot rather than recurring across the demo horizon. Old: P41 phase index asserted 4 subtasks and the dashboard showed 3/4; new: the revision adds the fifth task and the completed phase is 5/5. Reason: the revision is integrated and done. Added boundaries for the custom-policy default interval, Once-only after its end date, pre-trackFrom legacy payment exclusion, and required/trimmed Custom holding names. No production assertion or behavior was weakened. | current request |
 
-| P28-F-R6 | P28 | P28-F | current | 2026-11-11 | Prepare the owner-approved v1.2.0 minor release candidate with the supplied screenshots, aligned metadata and required documentation; preserve v1.1.1 as latest published pending publication. | In progress; the approved note is finalized, version metadata is aligned to 1.2.0, and release/About tests, TypeScript and lint pass. Task PR #112 merged into the retained phase as `fa153da`; phase PR #113 merged into `develop` as `d347526`. Six ordered gates, physical-device checks, GitHub draft, EAS build/upload and separate publication approval remain pending. | Commit `55559c7` (`docs: draft v1.2.0 release notes`); task PR #112 → `fa153da`; phase PR #113 → `d347526`; task branch deleted; phase branch retained. | Old: About tests and app/package metadata were pinned to 1.1.1, the README described v1.1.1 as current What's new, and release docs identified v1.1.0 as latest published. New: candidate metadata/docs target v1.2.0 while the README Download block and gallery retain v1.1.1 until publication. Reason: prepare the approved candidate without misrepresenting the latest published release. | current request |
+| P28-F-R6 | P28 | P28-F | current | 2026-11-11 | Prepare the owner-approved v1.2.0 minor release candidate with the supplied screenshots, aligned metadata and required documentation; preserve v1.1.1 as latest published pending publication. | In progress; the approved note is finalized, version metadata is aligned to 1.2.0, and focused release/About/ledger tests, TypeScript and lint pass. Task PR #112 merged into the retained phase as `fa153da`; phase PR #113 merged into `develop` as `d347526`; evidence PR #114 merged as `5ae1b72`. All six ordered gates pass. Physical-device checks, GitHub draft, EAS build/upload and separate publication approval remain pending. | Commit `55559c7` (`docs: draft v1.2.0 release notes`); task PR #112 → `fa153da`; phase PR #113 → `d347526`; evidence PR #114 → `5ae1b72`; task branch deleted; phase branch retained. | Old: About tests and app/package metadata were pinned to 1.1.1, the README described v1.1.1 as current What's new, and release docs identified v1.1.0 as latest published. New: candidate metadata/docs target v1.2.0 while the README Download block and gallery retain v1.1.1 until publication. Reason: prepare the approved candidate without misrepresenting the latest published release. | current request |
 
 ## 7. Change-request register
 
@@ -9919,7 +9919,7 @@ Unverified: physical-device rendering and interaction at font scales 1.3 and
 These are simulated/export checks, not physical-device verification. No EAS or
 Gradle build, version bump, or release preparation was performed.
 
-### 2026-11-11 — P28-F-R6 pre-final-gate verification
+### 2026-11-11 — P28-F-R6 final integrated-develop gates
 
 - `npm test -- --runInBand src/lib/__tests__/releaseDownloadDocs.test.ts src/components/__tests__/AboutScreen.test.tsx`
   passed 2 suites / 11 tests. `npx tsc --noEmit` exited 0;
@@ -9928,8 +9928,24 @@ Gradle build, version bump, or release preparation was performed.
   passed 3 suites / 26 tests; TypeScript, Expo lint and the commit whitespace
   check also exited 0. Task PR #112 merged into the phase as `fa153da`; phase
   PR #113 merged into `develop` as `d347526`.
-- These are focused checks, not the six release gates. The final six-gate
-  sequence has not run. Physical Android checks O45-O53 remain `Not run`.
+- After phase PR #113 integrated the candidate and evidence PR #114 recorded
+  the merge into `develop`, all six required gates passed in order:
+
+  | Gate | Command | Exit / result |
+  |---:|---|---|
+  | 1 | `npm test -- --coverage` | 0; 101 suites, 1,316 passed, 1 skipped (1,317 total); coverage 95.96/92.15/98.02/97.62% overall |
+  | 2 | `npx tsc --noEmit` | 0 |
+  | 3 | `npx expo lint` | 0 |
+  | 4 | `npx expo-doctor` | 0; 21/21 checks |
+  | 5 | `npx expo export --platform android` | 0; exported 5.6 MB bundle |
+  | 6 | `npx expo export --platform ios` | 0; exported 5.3 MB bundle |
+
+- Gate 1 coverage by `src/` directory, in statements/branches/functions/lines
+  order: `src/data` 91.06/87.47/94.48/94.19%;
+  `src/domain` 96.94/93.00/98.80/98.31%; `src/lib` 100% in all measures.
+- Physical Android checks O45-O53 remain `Not run`; Expo exports do not
+  replace native-device or screen-reader verification. No EAS or Gradle build
+  was run.
 
 ## 11. Session and release log
 
@@ -11004,10 +11020,11 @@ branches, versions, tags or release artifacts.
   latest published v1.1.1 note. The release overview now identifies v1.1.1 as
   latest published.
 - Task PR #112 merged into the retained phase as `fa153da`; phase PR #113
-  merged into `develop` as `d347526`, and the task branch was deleted. The six
-  ordered gates, physical-device checks, GitHub draft, EAS build/upload,
-  artifact/link verification and publication remain pending. Publication
-  requires separate explicit approval.
+  merged into `develop` as `d347526`; evidence PR #114 merged as `5ae1b72`,
+  and the task branch was deleted. All six ordered gates pass. Physical-device
+  checks, GitHub draft, EAS build/upload, artifact/link verification and
+  publication remain pending. Publication requires separate explicit
+  approval.
 
 ## 12. Phase branch index
 
