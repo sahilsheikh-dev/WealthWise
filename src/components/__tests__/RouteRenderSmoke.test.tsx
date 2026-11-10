@@ -4128,6 +4128,10 @@ describe('route render smoke audit', () => {
         .find((node) => node.props.accessibilityLabel === 'Closed');
       if (!closedChip) throw new Error('Closed liability filter did not render.');
       act(() => closedChip.props.onPress());
+      expect(cardIds()).toEqual([]);
+      const completedToggle = renderer.root.findByProps({ testID: 'liability-completed-toggle' });
+      expect(completedToggle.props.accessibilityLabel).toBe('Completed (1)');
+      act(() => completedToggle.props.onPress());
       expect(cardIds()).toEqual(['liability-card-filter-liability-closed']);
       const closedActionContainer = renderer.root.findByProps({
         testID: 'liability-card-actions-filter-liability-closed',
@@ -4899,6 +4903,215 @@ describe('route render smoke audit', () => {
       act(() => renderer?.unmount());
       Object.assign(routeData, previousRouteData);
       store.data = previousStoreData;
+    }
+  });
+
+  it.each([1.3, 2])('groups completed liabilities behind a collapsed section at font scale %s', (fontScale) => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const previousRouteData = { ...routeData };
+    const store = useAppStore((state) => state);
+    const previousStoreData = store.data;
+    const previousFontScale = mockFontScale;
+    const asOf = todayISO();
+    const active: RecurringLiability = {
+      id: 'group-liability-active',
+      kind: 'recurring',
+      name: 'Active loan',
+      type: 'Home loan',
+      principal: 2_000,
+      ratePct: 0,
+      startDate: asOf,
+      tenureMonths: 12,
+      emi: 200,
+      payments: [],
+      settlement: null,
+    };
+    const nearlyCleared: OneTimeLiability = {
+      id: 'group-liability-nearly-cleared',
+      kind: 'one-time',
+      name: 'Nearly cleared loan',
+      type: 'Borrowed money',
+      principal: 1_000,
+      ratePct: 0,
+      startDate: asOf,
+      dueDate: null,
+      payments: [{ id: 'nearly-cleared-payment', date: asOf, amount: 999.5, note: '', kind: 'Payment' }],
+    };
+    const foreclosed: RecurringLiability = {
+      ...active,
+      id: 'group-liability-foreclosed',
+      name: 'Foreclosed loan',
+      settlement: { asOf, balance: 500 },
+      closure: { date: asOf, paymentId: 'foreclosure-payment', note: 'Foreclosed' },
+    };
+    const closed: RecurringLiability = {
+      ...active,
+      id: 'group-liability-closed',
+      name: 'Closed loan',
+      settlement: { asOf, balance: 400 },
+      closure: { date: asOf, paymentId: 'closed-payment', note: 'Closed' },
+    };
+    const data: AppData = {
+      ...emptyAppData(asOf),
+      liabilities: [nearlyCleared, closed, active, foreclosed],
+    };
+    Object.assign(routeData, data);
+    store.data = data;
+    mockFontScale = fontScale;
+
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      renderer = renderScreen(React.createElement(LiabilitiesScreen));
+      const card = (id: string) => renderer?.root.findAll((node) =>
+        String(node.type) === 'pressable' && node.props.testID === `liability-card-${id}`,
+      ) ?? [];
+      const toggle = () => renderer?.root.findByProps({ testID: 'liability-completed-toggle' });
+
+      expect(card(active.id)).toHaveLength(1);
+      expect(card(nearlyCleared.id)).toHaveLength(0);
+      expect(card(foreclosed.id)).toHaveLength(0);
+      expect(card(closed.id)).toHaveLength(0);
+      expect(toggle()?.props.accessibilityLabel).toBe('Completed (3)');
+      expect(toggle()?.props.accessibilityState).toEqual({ expanded: false });
+
+      act(() => toggle()?.props.onPress());
+      expect(toggle()?.props.accessibilityState).toEqual({ expanded: true });
+      expect(card(nearlyCleared.id)).toHaveLength(1);
+      expect(card(foreclosed.id)).toHaveLength(1);
+      expect(card(closed.id)).toHaveLength(1);
+      act(() => toggle()?.props.onPress());
+      expect(card(nearlyCleared.id)).toHaveLength(0);
+
+      act(() => renderer?.root.findByProps({ accessibilityLabel: 'Filter' }).props.onPress());
+      const sortChip = renderer?.root.findAll((node) =>
+        typeof node.props.accessibilityLabel === 'string'
+        && node.props.accessibilityLabel.startsWith('Sort:'),
+      )[0];
+      if (!sortChip) throw new Error('Liability sort control did not render with the filter panel.');
+      act(() => sortChip.props.onPress());
+      const nameOption = renderer?.root.findAll((node) =>
+        String(node.type) === 'pressable'
+        && node.findAll((child) => child.type === 'text' && child.children.includes('Name')).length > 0,
+      )[0];
+      if (!nameOption) throw new Error('Name sort option did not render.');
+      act(() => nameOption.props.onPress());
+      act(() => toggle()?.props.onPress());
+      expect(renderer?.root.findAll((node) =>
+        String(node.type) === 'pressable'
+        && typeof node.props.testID === 'string'
+        && [nearlyCleared.id, foreclosed.id, closed.id].some((id) => node.props.testID === `liability-card-${id}`),
+      ).map((node) => node.props.testID)).toEqual([
+        'liability-card-group-liability-nearly-cleared',
+        'liability-card-group-liability-foreclosed',
+        'liability-card-group-liability-closed',
+      ]);
+      const search = renderer?.root.findByProps({ accessibilityLabel: 'Search liabilities' });
+      act(() => search?.props.onChangeText('foreclosed'));
+      expect(toggle()?.props.accessibilityLabel).toBe('Completed (1)');
+      expect(card(foreclosed.id)).toHaveLength(1);
+      expect(card(closed.id)).toHaveLength(0);
+      act(() => search?.props.onChangeText(''));
+
+      const closedChip = renderer?.root.findAll((node) => String(node.type) === 'chip')
+        .find((node) => node.props.accessibilityLabel === 'Closed');
+      if (!closedChip) throw new Error('Closed liability filter did not render.');
+      act(() => closedChip.props.onPress());
+      expect(toggle()?.props.accessibilityLabel).toBe('Completed (2)');
+      expect(card(foreclosed.id)).toHaveLength(1);
+      expect(card(closed.id)).toHaveLength(1);
+      expect(card(nearlyCleared.id)).toHaveLength(0);
+    } finally {
+      act(() => renderer?.unmount());
+      Object.assign(routeData, previousRouteData);
+      store.data = previousStoreData;
+      mockFontScale = previousFontScale;
+    }
+  });
+
+  it.each([1.3, 2])('keeps the pinned Emergency fund goal in place while grouping achieved goals at font scale %s', (fontScale) => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const previousRouteData = { ...routeData };
+    const store = useAppStore((state) => state);
+    const previousStoreData = store.data;
+    const previousFontScale = mockFontScale;
+    const asOf = todayISO();
+    const data: AppData = {
+      ...emptyAppData(asOf),
+      holdings: [{
+        id: 'group-emergency-holding',
+        kind: 'manual',
+        name: 'Emergency savings',
+        type: 'Savings account',
+        invested: 1_000,
+        value: 1_000,
+        valueAsOf: asOf,
+        logs: [],
+      }],
+      goals: [
+        { id: 'group-goal-progress', name: 'In progress', target: 100, saved: 90, year: 2028, links: [] },
+        { id: 'group-goal-exact', name: 'Exactly at target', target: 100, saved: 100, year: 2028, links: [] },
+        { id: 'group-goal-over', name: 'Above target', target: 100, saved: 150, year: 2028, links: [] },
+        {
+          id: 'group-emergency-goal',
+          name: 'Emergency fund',
+          target: 1_000,
+          saved: 0,
+          year: 2028,
+          auto: 'ef',
+          links: [{ instrumentId: 'group-emergency-holding' }],
+        },
+      ],
+    };
+    Object.assign(routeData, data);
+    store.data = data;
+    mockFontScale = fontScale;
+
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      renderer = renderScreen(React.createElement(GoalsScreen));
+      const goalLabels = () => renderer?.root.findAll((node) =>
+        String(node.type) === 'pressable'
+        && typeof node.props.accessibilityLabel === 'string'
+        && node.props.accessibilityLabel.startsWith('Edit '),
+      ).map((node) => node.props.accessibilityLabel) ?? [];
+      const toggle = () => renderer?.root.findByProps({ testID: 'achieved-goals-toggle' });
+
+      expect(goalLabels().map((label) => label.slice(5).split(',')[0]))
+        .toEqual(['Emergency fund', 'In progress']);
+      expect(goalLabels()[0]).toContain('100.0% funded');
+      expect(toggle()?.props.accessibilityLabel).toBe('Achieved (2)');
+      expect(toggle()?.props.accessibilityState).toEqual({ expanded: false });
+
+      act(() => renderer?.root.findByProps({ accessibilityLabel: 'Filter' }).props.onPress());
+      const sortChip = renderer?.root.findAll((node) =>
+        typeof node.props.accessibilityLabel === 'string'
+        && node.props.accessibilityLabel.startsWith('Sort:'),
+      )[0];
+      if (!sortChip) throw new Error('Goal sort control did not render with the filter panel.');
+      act(() => sortChip.props.onPress());
+      const nameOption = renderer?.root.findAll((node) =>
+        String(node.type) === 'pressable'
+        && node.findAll((child) => child.type === 'text' && child.children.includes('Name')).length > 0,
+      )[0];
+      if (!nameOption) throw new Error('Name sort option did not render.');
+      act(() => nameOption.props.onPress());
+
+      act(() => toggle()?.props.onPress());
+      expect(goalLabels().map((label) => label.slice(5).split(',')[0]))
+        .toEqual(['Emergency fund', 'In progress', 'Above target', 'Exactly at target']);
+      act(() => renderer?.root.findByProps({ accessibilityLabel: 'Search goals' }).props.onChangeText('Exactly'));
+      expect(toggle()?.props.accessibilityLabel).toBe('Achieved (1)');
+      expect(goalLabels().map((label) => label.slice(5).split(',')[0])).toEqual(['Exactly at target']);
+      act(() => toggle()?.props.onPress());
+      expect(goalLabels()).toHaveLength(0);
+      act(() => renderer?.root.findByProps({ accessibilityLabel: 'Search goals' }).props.onChangeText(''));
+      expect(goalLabels().map((label) => label.slice(5).split(',')[0]))
+        .toEqual(['Emergency fund', 'In progress']);
+    } finally {
+      act(() => renderer?.unmount());
+      Object.assign(routeData, previousRouteData);
+      store.data = previousStoreData;
+      mockFontScale = previousFontScale;
     }
   });
 

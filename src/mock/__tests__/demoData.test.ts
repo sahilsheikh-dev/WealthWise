@@ -10,6 +10,7 @@ import { monthPositions } from '../../domain/cashFlow';
 import { addMonths, monthKey, shiftMonth } from '../../domain/dates';
 import { goalProjection, goalSavedFor } from '../../domain/goalLinks';
 import { goalView } from '../../domain/goals';
+import { isLiabilityClosed, liabilitySummary } from '../../domain/liability';
 import { validateIntegrity } from '../../domain/links';
 import { duesThroughPreview } from '../../domain/dues';
 import { pendingItems } from '../../domain/pending';
@@ -434,6 +435,15 @@ describe('six-month demo data', () => {
       .every((payment) => data.transactions.some((transaction) =>
         transaction.source?.kind === 'policy-payment' && transaction.source.entryId === payment.id,
       ))).toBe(true);
+  });
+
+  it('includes a fully closed zero-balance demo loan without changing outstanding liabilities', () => {
+    const closed = data.liabilities.find((liability) =>
+      liability.kind === 'recurring' && isLiabilityClosed(liability));
+    if (!closed || closed.kind !== 'recurring') throw new Error('Demo closed liability is missing.');
+    expect(closed.settlement?.balance).toBe(0);
+    expect(liabilitySummary(closed, today).balance).toBe(0);
+    expect(netWorth(data, today).liabilities).toBe(1_000_000);
   });
 
   it('uses assets minus liabilities for net worth and stays below the storage warning threshold', () => {

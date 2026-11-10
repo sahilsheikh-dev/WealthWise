@@ -1,5 +1,5 @@
 import { addInvestmentEntry } from '../domain/investmentActions';
-import { addLiabilityPayment } from '../domain/liabilityActions';
+import { addLiabilityPayment, closeRecurringLiability } from '../domain/liabilityActions';
 import {
   allocateSurplus,
   recordMoneyMovement,
@@ -364,6 +364,18 @@ function makeLiabilities(today: ISODate, months: string[]): Liability[] {
     startDate: addMonths(startDate, -8),
     dueDate: null,
     payments: [],
+  }, {
+    id: 'demo-liability-fully-closed',
+    kind: 'recurring',
+    name: 'Fully closed personal loan',
+    type: 'Personal loan',
+    principal: 1_000,
+    ratePct: 0,
+    tenureMonths: 12,
+    emi: 100,
+    startDate: addMonths(startDate, -12),
+    payments: [],
+    settlement: null,
   }];
 }
 
@@ -691,6 +703,18 @@ export function buildDemoData(today: ISODate): AppData {
     kind: 'Payment',
     note: 'Paid in full',
   }, { newId: id });
+
+  const fullyClosedLiability = data.liabilities.find((liability) =>
+    liability.id === 'demo-liability-fully-closed' && liability.kind === 'recurring');
+  if (!fullyClosedLiability || fullyClosedLiability.kind !== 'recurring') {
+    throw new Error('Demo fully closed liability is missing.');
+  }
+  data = closeRecurringLiability(data, fullyClosedLiability.id, {
+    date: today,
+    amountPaid: fullyClosedLiability.principal,
+    note: 'Paid in full',
+    writeOffConfirmed: false,
+  }, { today, newId: id });
 
   const borrowedStartDate = monthDate(months[0]!, 18, today);
   data = recordMoneyMovement(data, {

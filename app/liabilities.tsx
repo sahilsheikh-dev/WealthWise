@@ -47,6 +47,7 @@ export default function LiabilitiesScreen() {
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const [kindFilter, setKindFilter] = useState<(typeof LIABILITY_FILTERS)[number]>('All');
   const [query, setQuery] = useState('');
+  const [completedExpanded, setCompletedExpanded] = useState(false);
   const asOf = todayISO();
   const [extraText, setExtraText] = useState('0');
   const hasRecurring = data.liabilities.some((liability) =>
@@ -86,6 +87,12 @@ export default function LiabilitiesScreen() {
         || (!isLiabilityClosed(liability)
           && (kindFilter === 'Recurring' ? liability.kind === 'recurring' : liability.kind === 'one-time')))
     && (!normalizedQuery || `${liability.name} ${financialTypeLabel(liability.type, liability.customTypeName)}`.toLowerCase().includes(normalizedQuery)),
+  );
+  const completedLiabilities = visibleLiabilities.filter((liability) =>
+    liability.balance < 1 || isLiabilityClosed(liability),
+  );
+  const inProgressLiabilities = visibleLiabilities.filter((liability) =>
+    liability.balance >= 1 && !isLiabilityClosed(liability),
   );
 
   return (
@@ -176,9 +183,31 @@ export default function LiabilitiesScreen() {
           ) : null}
         </Card>
 
-        {visibleLiabilities.map((liability) => liability.kind === 'recurring'
+        {inProgressLiabilities.map((liability) => liability.kind === 'recurring'
           ? <RecurringCard key={liability.id} liability={liability} asOf={asOf} extra={extra} />
           : <OneTimeCard key={liability.id} liability={liability} asOf={asOf} />)}
+        {completedLiabilities.length > 0 ? (
+          <View style={styles.completedSection}>
+            <Pressable
+              testID="liability-completed-toggle"
+              accessibilityRole="button"
+              accessibilityLabel={`Completed (${completedLiabilities.length})`}
+              accessibilityHint={completedExpanded ? 'Hides completed liabilities' : 'Shows completed liabilities'}
+              accessibilityState={{ expanded: completedExpanded }}
+              onPress={() => setCompletedExpanded((expanded) => !expanded)}
+              style={[styles.completedToggle, { borderColor: colors.border }]}>
+              <AppText weight="semibold" style={[typography.label, { color: colors.text1 }]}>
+                Completed ({completedLiabilities.length})
+              </AppText>
+              <AppText style={[typography.meta, { color: colors.text3 }]}>
+                {completedExpanded ? 'Hide' : 'Show'}
+              </AppText>
+            </Pressable>
+            {completedExpanded ? completedLiabilities.map((liability) => liability.kind === 'recurring'
+              ? <RecurringCard key={liability.id} liability={liability} asOf={asOf} extra={extra} />
+              : <OneTimeCard key={liability.id} liability={liability} asOf={asOf} />) : null}
+          </View>
+        ) : null}
         {visibleLiabilities.length === 0 && (normalizedQuery.length > 0 || data.liabilities.length > 0) ? (
           <View testID="liability-no-matches">
             <EmptyState title="No matches" />
@@ -387,6 +416,18 @@ const styles = StyleSheet.create({
   rupee: { fontSize: 13 },
   extraInput: { minWidth: 82, paddingVertical: 6, fontSize: 13, textAlign: 'right', fontFamily: 'Montserrat_600SemiBold' },
   inputError: { marginTop: 5 },
+  completedSection: { marginTop: 8 },
+  completedToggle: {
+    minHeight: 48,
+    marginHorizontal: 20,
+    marginTop: 10,
+    paddingHorizontal: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   liabilityCard: { marginHorizontal: 20, marginTop: 12, padding: 14, borderWidth: StyleSheet.hairlineWidth, borderRadius: 14 },
   liabilityStatus: { marginTop: 8, lineHeight: 18 },
   scenario: { marginTop: 7 },
