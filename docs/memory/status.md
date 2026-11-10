@@ -1,6 +1,13 @@
-<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-09 | Updates: owner and AI agents -->
+<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-10 | Updates: owner and AI agents -->
 
 # Status
+- CR-106 adds planning rows only: P31-D privacy and P31-E CI, report-first
+  Phase 39 release audit/hardening, and Phase 40 agent-context hygiene.
+  No audit part, app-source change, phase implementation, or release work has
+  started. All six ordered gates passed for this ledger/test-only change:
+  98 suites, 1,271 passed, 1 skipped; 95.96/92.04/98.02/97.63% overall
+  statement/branch/function/line coverage. Per-directory results are recorded
+  in [PROGRESS.md](../PROGRESS.md).
 - The owner-approved v1.1.1 patch release was published on 2026-11-09. The
   app, package and lockfile versions are aligned to 1.1.1. All six ordered
   gates passed on the release candidate: 98 suites, 1,271 passed, 1 skipped;
@@ -395,9 +402,9 @@
   tests (1194 passed; one opt-in stress benchmark skipped). P29-M2's
   1120-test run, P29-N's 1104-test run and P29-M's blocked reproduction remain
   historical records in [PROGRESS.md](../PROGRESS.md).
-- Test counts: 98 suites, 1270 tests (1269 passed, 1 skipped) on 2026-11-09.
-- Latest validated run: 98 suites, 1270 tests (1269 passed, 1 skipped) on
-  2026-11-09; all six gates exit 0. Coverage and exact commands are recorded
+- Test counts: 98 suites, 1272 tests (1271 passed, 1 skipped) on 2026-11-10.
+- Latest validated run: 98 suites, 1272 tests (1271 passed, 1 skipped) on
+  2026-11-10; all six gates exit 0. Coverage and exact commands are recorded
   in [PROGRESS.md](../PROGRESS.md).
 - All six P29-L gates exit 0: Jest coverage, TypeScript, Expo lint with zero
   warnings, Expo Doctor 21/21, Android export and iOS export. Exact commands
