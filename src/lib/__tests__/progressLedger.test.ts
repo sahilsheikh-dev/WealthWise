@@ -346,7 +346,7 @@ describe('permanent progress ledger', () => {
         expect(dashboard.split('\n').find((line) => line.startsWith('| P28-F-R4-R1-R1-R1-R1-R1-R1-R1 |')))
           .toContain('| Done |');
         expect(dashboard.split('\n').find((line) => line.startsWith('| P28-F-R6 |')))
-          .toContain('| Done |');
+          .toContain('| Done; Revised by P28-F-R6-R1 and P28-F-R6-R2 |');
         expect(dashboard.split('\n').find((line) => line.startsWith('| P28-F-R6-R2 |')))
           .toContain('| Done |');
       } else {
