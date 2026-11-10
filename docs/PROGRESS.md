@@ -704,8 +704,8 @@ changes.
   months ending with the current month. Keep `src/mock/data.ts` and its
   established fixtures stable. The data covers all current budget/investment
   categories, linked instrument/payment transactions, an overdue SIP, upcoming
-  EMI, future-month due, later installment and planned-budget rows, a
-  recorded shortfall funding and surplus allocations, goals, linked emergency
+  EMI, future-month due, later installment and planned-budget rows, monthly
+  spending within earned income, a surplus allocation, goals, linked emergency
   assets, allocation, policies and stored month budgets. P20-G extends the
   current snapshot from one repeatable plan with all five groups, a Bills due
   day, `linkedIncluded: true`, and linked rows from recurring holdings,

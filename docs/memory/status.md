@@ -12,9 +12,12 @@
   capture is cancelled because the owner supplied all 23 images. The release
   screenshot files and links are being moved into versioned repository paths;
   release bodies and asset cleanup must wait until the authorized merge to
-  `main` and successful URL checks. Demo-data and notation revisions will be
-  handled in separate task branches. The published v1.1.1 APK does not contain
-  the new demo data.
+  `main` and successful URL checks. P22-A-R1 now seeds six months of deterministic
+  demo data with Rs 1 lakh earned income, Rs 1 crore in assets and Rs 10 lakh
+  in liabilities; focused data, selector, goal, valuation and route tests pass.
+  P28-G notation work remains on its separate task branch. The published
+  v1.1.1 APK does not contain the new demo data. Physical-device rendering at
+  font scales 1.3 and 2.0 remains unverified.
 - The owner-approved v1.1.1 patch release was published on 2026-11-09. The
   app, package and lockfile versions are aligned to 1.1.1. All six ordered
   gates passed on the release candidate: 98 suites, 1,271 passed, 1 skipped;
