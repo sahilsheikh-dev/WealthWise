@@ -71,6 +71,12 @@ describe('route kind registry', () => {
     expect(() => routeKindForPath('/missing')).toThrow('No route kind is registered');
   });
 
+  it('registers the About route as a root stack screen', () => {
+    expect(routeKindForPath('/about')).toBe('stack');
+    const rootLayout = readFileSync(join(process.cwd(), 'app/_layout.tsx'), 'utf8');
+    expect(rootLayout).toMatch(/<Stack\.Screen name="about"\s*\/>/);
+  });
+
   it('configures local notification support without changing app identifiers', () => {
     const config = JSON.parse(readFileSync(join(process.cwd(), 'app.json'), 'utf8')) as {
       expo: { plugins: unknown[]; slug: string; ios: { bundleIdentifier: string }; android: { package: string } };
