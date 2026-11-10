@@ -129,31 +129,30 @@ The shared project rules are in [AGENTS.md](../../AGENTS.md),
 
 ## Current release
 
-- Latest published version: v1.1.1
-- Release date: 2026-11-09
+- Latest published version: v1.2.0
+- Release date: 2026-11-11
 - GitHub release:
-  [WealthWise v1.1.1](https://github.com/sahilsheikh-dev/WealthWise/releases/tag/v1.1.1)
-- APK artifact verification: the latest and versioned URLs returned HTTP 200
-  with a content length of 112,150,605 bytes. The digest was verified
-  privately and is not published.
-- v1.2.0 is the owner-approved release candidate. Task PR #112 merged its
-  initial note/screenshots and metadata into `phase/28-qa-and-release` as
-  `fa153da`; phase PR #113 merged to `develop` as `d347526`, with evidence
-  PRs #114/#115 at `5ae1b72` and `936ee25`. Six more screenshots expand the
-  release history; About is exclusive to v1.2.0. The owner reports O45-O53
-  passed; device/tester details were not supplied. The previous untagged
-  draft was replaced after the screenshot revision reached `develop`; task PR
-  #116 merged into the phase as `f08f963`, and phase PR #117 merged into
-  `develop` at `25258ac`.
-  Build-record task PR #121 merged into the phase as `e74c39a`; its
-  phase-to-develop PR is pending. The six ordered gates pass on `develop` at
-  `3bd5be6`. EAS build
-  `6fccf7d1-0580-46a6-9e09-ff7467fb0a30` completed with the `android-apk`
-  profile and Android `versionCode` 3 on 2026-11-11. The 112,163,081-byte APK
-  is uploaded to the replacement draft and byte-identical to the EAS
-  artifact. Public-link verification, main integration, historical release
-  body updates, previous-APK asset rollover and publication remain pending;
-  no v1.2.0 tag or published release exists.
+  [WealthWise v1.2.0](https://github.com/sahilsheikh-dev/WealthWise/releases/tag/v1.2.0)
+- APK artifact verification: latest and versioned URLs returned HTTP 200 with
+  a content length of 112,163,081 bytes; the artifact was byte-verified
+  against EAS privately.
+- v1.2.0 was published after release PR #124 merged
+  `release/v1.2.0` into `main` at `2e419f8`; tag `v1.2.0` points to the exact
+  built candidate `199ebed307ce7755bc92c1f15544999d852db54f`. Release-sync PR
+  #123 merged the final build record into the release branch at `0c8b380`.
+  The final six gates passed on integrated `develop` commit `3bd5be6`; the
+  documentation-only follow-up is integrated at `cd1fa78`. EAS build
+  `6fccf7d1-0580-46a6-9e09-ff7467fb0a30` completed with profile `android-apk`
+  and Android `versionCode` 3. All 104 rendered screenshot links returned
+  HTTP 200, with all 52 raw image sizes matching repository files. The latest
+  and four versioned APK URLs returned HTTP 200 at their expected sizes.
+- Historical release screenshot sections were updated without changing other
+  release-body content. The former v1.1.1 latest-named APK was renamed to
+  `WealthWise-android-v1.1.1.apk`; its GitHub Download block now uses
+  `Version`. The README/latest-note parity update and main-to-develop
+  back-merge are being integrated through PRs.
+- O45-O53 are owner-reported Pass; device model, Android version and tester
+  details were not supplied.
 - Production AAB: not verified.
 
 See [release-history.md](release-history.md) for the published release and

@@ -59,9 +59,9 @@ requests at runtime.
   Encrypted backup export is available with a passphrase.
 
 ## Download
-Latest version: v1.1.1
-Release date: 2026-11-09
-- [Download the latest Android app (v1.1.1)](https://github.com/sahilsheikh-dev/WealthWise/releases/latest/download/WealthWise-android-latest-v1.1.1.apk)
+Latest version: v1.2.0
+Release date: 2026-11-11
+- [Download the latest Android app (v1.2.0)](https://github.com/sahilsheikh-dev/WealthWise/releases/latest/download/WealthWise-android-latest-v1.2.0.apk)
 - iOS: Distribution is not offered.
 - [Click here to check older versions](https://github.com/sahilsheikh-dev/WealthWise/releases)
 To install the APK, allow installs from this source in Android settings when prompted. This is a direct APK, not a Google Play Store-signed app.
@@ -79,25 +79,26 @@ confirmed browser link to the latest release. See the
 
 <table>
 <tr>
-<td><a href="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-screenshot-home.png"><img src="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-screenshot-home.png" width="150" alt="WealthWise v1.1.1 Home"></a></td>
-<td><a href="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-screenshot-assets.png"><img src="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-screenshot-assets.png" width="150" alt="WealthWise v1.1.1 Assets"></a></td>
-<td><a href="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-screenshot-liabilities.png"><img src="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-screenshot-liabilities.png" width="150" alt="WealthWise v1.1.1 Liabilities"></a></td>
-<td><a href="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-screenshot-emergency-fund.png"><img src="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-screenshot-emergency-fund.png" width="150" alt="WealthWise v1.1.1 Emergency Fund"></a></td>
+<td><a href="docs/releases/screenshots/v1.2.0/WealthWise-v1.2.0-screenshot-home.png"><img src="docs/releases/screenshots/v1.2.0/WealthWise-v1.2.0-screenshot-home.png" width="150" alt="WealthWise v1.2.0 Home"></a></td>
+<td><a href="docs/releases/screenshots/v1.2.0/WealthWise-v1.2.0-screenshot-assets.png"><img src="docs/releases/screenshots/v1.2.0/WealthWise-v1.2.0-screenshot-assets.png" width="150" alt="WealthWise v1.2.0 Assets"></a></td>
+<td><a href="docs/releases/screenshots/v1.2.0/WealthWise-v1.2.0-screenshot-liabilities.png"><img src="docs/releases/screenshots/v1.2.0/WealthWise-v1.2.0-screenshot-liabilities.png" width="150" alt="WealthWise v1.2.0 Liabilities"></a></td>
+<td><a href="docs/releases/screenshots/v1.2.0/WealthWise-v1.2.0-screenshot-emergency-fund.png"><img src="docs/releases/screenshots/v1.2.0/WealthWise-v1.2.0-screenshot-emergency-fund.png" width="150" alt="WealthWise v1.2.0 Emergency Fund"></a></td>
 </tr>
 <tr>
-<td><a href="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-screenshot-goals.png"><img src="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-screenshot-goals.png" width="150" alt="WealthWise v1.1.1 Goals"></a></td>
-<td><a href="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-screenshot-insurance.png"><img src="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-screenshot-insurance.png" width="150" alt="WealthWise v1.1.1 Insurance"></a></td>
-<td><a href="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-screenshot-budget.png"><img src="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-screenshot-budget.png" width="150" alt="WealthWise v1.1.1 Budget"></a></td>
-<td><a href="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-screenshot-transactions.png"><img src="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-screenshot-transactions.png" width="150" alt="WealthWise v1.1.1 Transactions"></a></td>
+<td><a href="docs/releases/screenshots/v1.2.0/WealthWise-v1.2.0-screenshot-goals.png"><img src="docs/releases/screenshots/v1.2.0/WealthWise-v1.2.0-screenshot-goals.png" width="150" alt="WealthWise v1.2.0 Goals"></a></td>
+<td><a href="docs/releases/screenshots/v1.2.0/WealthWise-v1.2.0-screenshot-insurance.png"><img src="docs/releases/screenshots/v1.2.0/WealthWise-v1.2.0-screenshot-insurance.png" width="150" alt="WealthWise v1.2.0 Insurance"></a></td>
+<td><a href="docs/releases/screenshots/v1.2.0/WealthWise-v1.2.0-screenshot-budget.png"><img src="docs/releases/screenshots/v1.2.0/WealthWise-v1.2.0-screenshot-budget.png" width="150" alt="WealthWise v1.2.0 Budget"></a></td>
+<td><a href="docs/releases/screenshots/v1.2.0/WealthWise-v1.2.0-screenshot-transactions.png"><img src="docs/releases/screenshots/v1.2.0/WealthWise-v1.2.0-screenshot-transactions.png" width="150" alt="WealthWise v1.2.0 Transactions"></a></td>
 </tr>
 <tr>
-<td><a href="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-screenshot-backup-and-restore.png"><img src="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-screenshot-backup-and-restore.png" width="150" alt="WealthWise v1.1.1 Backup and Restore"></a></td>
-<td><a href="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-screenshot-reminders.png"><img src="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-screenshot-reminders.png" width="150" alt="WealthWise v1.1.1 Reminders"></a></td>
-<td><a href="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-screenshot-security.png"><img src="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-screenshot-security.png" width="150" alt="WealthWise v1.1.1 Security"></a></td>
-<td><a href="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-screenshot-profile.png"><img src="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-screenshot-profile.png" width="150" alt="WealthWise v1.1.1 Profile"></a></td>
+<td><a href="docs/releases/screenshots/v1.2.0/WealthWise-v1.2.0-screenshot-backup-and-restore.png"><img src="docs/releases/screenshots/v1.2.0/WealthWise-v1.2.0-screenshot-backup-and-restore.png" width="150" alt="WealthWise v1.2.0 Backup and Restore"></a></td>
+<td><a href="docs/releases/screenshots/v1.2.0/WealthWise-v1.2.0-screenshot-reminders.png"><img src="docs/releases/screenshots/v1.2.0/WealthWise-v1.2.0-screenshot-reminders.png" width="150" alt="WealthWise v1.2.0 Reminders"></a></td>
+<td><a href="docs/releases/screenshots/v1.2.0/WealthWise-v1.2.0-screenshot-security.png"><img src="docs/releases/screenshots/v1.2.0/WealthWise-v1.2.0-screenshot-security.png" width="150" alt="WealthWise v1.2.0 Security"></a></td>
+<td><a href="docs/releases/screenshots/v1.2.0/WealthWise-v1.2.0-screenshot-profile.png"><img src="docs/releases/screenshots/v1.2.0/WealthWise-v1.2.0-screenshot-profile.png" width="150" alt="WealthWise v1.2.0 Profile"></a></td>
 </tr>
 <tr>
-<td><a href="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-screenshot-theme.png"><img src="docs/releases/screenshots/v1.1.1/WealthWise-v1.1.1-screenshot-theme.png" width="150" alt="WealthWise v1.1.1 Theme"></a></td>
+<td><a href="docs/releases/screenshots/v1.2.0/WealthWise-v1.2.0-screenshot-theme.png"><img src="docs/releases/screenshots/v1.2.0/WealthWise-v1.2.0-screenshot-theme.png" width="150" alt="WealthWise v1.2.0 Theme"></a></td>
+<td><a href="docs/releases/screenshots/v1.2.0/WealthWise-v1.2.0-screenshot-about.png"><img src="docs/releases/screenshots/v1.2.0/WealthWise-v1.2.0-screenshot-about.png" width="150" alt="WealthWise v1.2.0 About"></a></td>
 </tr>
 </table>
 

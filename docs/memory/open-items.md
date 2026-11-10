@@ -2,27 +2,24 @@
 
 # Open items
 
-## Proposed v1.2.0 release
+## v1.2.0 release close-out
 
-- The owner approved the v1.2.0 note and supplied six additional screenshots.
-  Five screens are being added to each release; About is exclusive to v1.2.0.
-  The existing untagged draft at `936ee25` was replaced after screenshot
-  integration. Task PR #116 merged into the phase as `f08f963`; phase PR #117
-  merged into `develop` at `25258ac`. v1.1.1 remains latest published. The
-  replacement draft targets
-  `199ebed307ce7755bc92c1f15544999d852db54f`; no v1.2.0 tag or published
-  release exists.
-- Build-record task PR #121 merged into the retained phase as
-  `e74c39a610f9ac0bbb8b5edebe3160ea5fa0f2b8`; phase-to-develop integration
-  remains pending.
-- O45-O53 are marked owner-reported Pass (2026-11-11); device model, Android
-  version and tester were not supplied. The README Download block remains
-  v1.1.1 until v1.2.0 publication. All six ordered gates passed on `3bd5be6`.
-  EAS build `6fccf7d1-0580-46a6-9e09-ff7467fb0a30` succeeded with
-  `android-apk`/`versionCode` 3; the 112,163,081-byte APK is uploaded to the
-  draft and byte-verified against EAS. Main integration, public URL checks,
-  historical release body updates, previous APK asset rollover and
-  publication remain pending.
+- v1.2.0 was published on 2026-11-11. Release PR #124 merged
+  `release/v1.2.0` into `main` at
+  `2e419f8c7d482adc7523b380fe5b71d3bf15dce3`; tag `v1.2.0` points to exact
+  candidate `199ebed307ce7755bc92c1f15544999d852db54f`.
+- EAS build `6fccf7d1-0580-46a6-9e09-ff7467fb0a30` succeeded with profile
+  `android-apk` and `versionCode` 3; its 112,163,081-byte artifact was
+  byte-verified against EAS. The latest and four versioned APK URLs returned
+  HTTP 200 with expected sizes.
+- All 104 release screenshot image/link URLs returned HTTP 200; each of the
+  52 raw image sizes matched its repository file. Historical release
+  screenshot sections were updated while preserving non-screenshot body
+  content, and v1.1.1's former latest APK was renamed to its versioned name.
+- The README/latest-release Download parity, post-publication release-note
+  records and main-to-develop back-merge remain to be integrated through PRs.
+- O45-O53 are owner-reported Pass (2026-11-11); device model, Android version
+  and tester were not supplied.
 
 ## CR-108 owner decisions and remaining scope
 
