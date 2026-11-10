@@ -8,9 +8,10 @@
   #94 are merged to `develop` at `80eb0e4`. P20-N-R3's failing tests were
   committed first as `bba05be`; the Budget overview implementation now removes
   the visible Pace/Over by/Left lines while retaining chart/table accessible
-  descriptions, and focused tests, TypeScript and targeted lint pass. Part 2's
-  task/phase PRs remain pending. Parts 3–6, schema v23, demo updates and the six
-  final ordered gates remain pending. The new Budget blob is recorded in
+  descriptions, and focused tests, TypeScript and targeted lint pass. Task PR
+  #95 merged to `phase/20-budget` as `77bdef5`; the phase-to-`develop` PR is
+  pending. Parts 3–6, schema v23, demo updates and the six final ordered gates
+  remain pending. The new Budget blob is recorded in
   [rules.md](rules.md); physical-device checks remain unverified.
 - CR-106 adds planning rows only: P31-D privacy and P31-E CI, report-first
   P39 release audit/hardening, and P40 agent-context hygiene.
