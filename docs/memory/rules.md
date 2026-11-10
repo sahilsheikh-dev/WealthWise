@@ -1,4 +1,4 @@
-<!-- Purpose: Engineering invariants, protected surfaces and verification commands. | Last updated: 2026-11-09 | Updates: owner and AI agents -->
+<!-- Purpose: Engineering invariants, protected surfaces and verification commands. | Last updated: 2026-11-10 | Updates: owner and AI agents -->
 
 # Rules
 
@@ -129,13 +129,14 @@
 Git blob IDs at the P25-C preflight (verify with `git hash-object` before
 relying on them after an authorized edit):
 
-Reverified with `git hash-object` on 2026-11-08; all six current blob IDs below
-match the recorded values.
+All six protected files were verified at CR-108 preflight. Reverified with
+`git hash-object` on 2026-11-10 after the authorized Part 2 edit; five files
+remain unchanged and the Budget blob is recorded below.
 
 | File | Git blob ID | Rule |
 |---|---|---|
 | `app/(tabs)/index.tsx` | `d3d1e465fe9f5d238d338afeb033e2a54889ddc6` | User-owned; no Copilot edits authorized. |
-| `app/(tabs)/budget.tsx` | `b60f77af4f76d47f2cee07393fe9d8f3fa6bd04c` | P20-N-R2 and the authorized recurrence revision updated this screen; preserve Cash flow labels, removed controls, no bottom border on Insurance/Transactions balance sections, and Stop/Resume investment labels. |
+| `app/(tabs)/budget.tsx` | `ddc1369da3a9b982e6b377990234c29f4ff051c9` | Updated only for authorized CR-108 Part 2 overview text removal; preserve Opening/Closing balance labels, Cash flow labels, removed controls, no bottom border on Insurance/Transactions balance sections, and Stop/Resume investment labels. |
 | `src/components/SortChip.tsx` | `837a675af94dd056532bc63fc4697efc905a5af3` | Leave unchanged. |
 | `src/lib/sorting.ts` | `7491663f0987d83d03f3ed72b01de5b376e3572d` | Leave unchanged. |
 | `src/components/form/frozen-manifest.json` | `476418c7084f0774f1b6fb86ddfe08c7a265fc40` | Frozen inputs are governed by this manifest. |

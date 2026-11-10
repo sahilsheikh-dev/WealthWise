@@ -5394,6 +5394,9 @@ describe('route render smoke audit', () => {
         expect(JSON.stringify(sectionActionRow.props.style)).toContain('"alignSelf":"flex-end"');
       }
       const overviewCard = renderer.root.findByProps({ testID: 'budget-overview-card' });
+      const overviewTexts = overviewCard.findAllByType('text').map((node) => node.children.join(''));
+      expect(overviewTexts).not.toContain('Pace');
+      expect(overviewTexts.some((label) => /^(?:Over by|Left ₹)/.test(label))).toBe(false);
       const overviewStyleText = overviewCard.findAll((node) => node.props.style !== undefined)
         .map((node) => JSON.stringify(node.props.style))
         .join(' ');
@@ -5411,6 +5414,9 @@ describe('route render smoke audit', () => {
       const overviewAccessibility = renderer.root.findByProps({ testID: 'budget-overview-summary' }).props.accessibilityLabel;
       expect(overviewAccessibility).toContain('Income');
       expect(overviewAccessibility).toContain('Spending');
+      const accessibleOverviewSummary = renderer.root.findByProps({ testID: 'budget-overview-summary' });
+      expect(accessibleOverviewSummary.props.accessible).toBe(true);
+      expect(accessibleOverviewSummary.props.children).toBeUndefined();
       const paceAccessibility = renderer.root.findByProps({ testID: 'pace-line-container' }).props.accessibilityLabel;
       expect(paceAccessibility).toContain('Spending pace through day');
       expect(paceAccessibility).toContain('actual');
@@ -5424,7 +5430,9 @@ describe('route render smoke audit', () => {
       expect(['income', 'spending', 'investing', 'left'].map((name) =>
         renderer.root.findByProps({ testID: `budget-overview-metric-${name}` }),
       )).toHaveLength(4);
-      expect(overviewCard.findAll((node) =>
+      expect(renderer.root.findByProps({ testID: 'budget-overview-metric-left' })
+        .findAllByType('text').some((node) => node.children.includes('Left'))).toBe(true);
+      expect(pace.findAll((node) =>
         String(JSON.stringify(node.props.style)).includes('"position":"absolute"'),
       )).toHaveLength(0);
       const rowContainer = renderer.root.findAll((node) =>
