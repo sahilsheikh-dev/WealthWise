@@ -102,7 +102,9 @@ describe('published release download documentation', () => {
       const assetName = version === latestVersion
         ? `WealthWise-android-latest-${version}.apk`
         : `WealthWise-android-${version}.apk`;
-      const assetUrl = `${releasesBaseUrl}/download/${version}/${assetName}`;
+      const assetUrl = version === latestVersion
+        ? `${releasesBaseUrl}/latest/download/${assetName}`
+        : `${releasesBaseUrl}/download/${version}/${assetName}`;
       expect(releaseHistory).toContain(assetUrl);
     }
   });
@@ -294,8 +296,8 @@ describe('published release download documentation', () => {
       expect([...table.matchAll(/<td><a href="([^"]+)"><img src="([^"]+)"[^>]*><\/a><\/td>/g)])
         .toHaveLength(readmeCategories.length);
       for (const [, href = '', src = ''] of table.matchAll(/<td><a href="([^"]+)"><img src="([^"]+)"[^>]*><\/a><\/td>/g)) {
-        expect(href).toContain('docs/releases/screenshots/v1.1.1/');
-        expect(src).toContain('docs/releases/screenshots/v1.1.1/');
+        expect(href).toContain(`docs/releases/screenshots/${readmeVersion}/`);
+        expect(src).toContain(`docs/releases/screenshots/${readmeVersion}/`);
       }
     }
 
@@ -340,16 +342,16 @@ describe('published release download documentation', () => {
         }
       }
     }
-    expect(readme).toContain('docs/releases/screenshots/v1.1.1/');
-    expect(readme).not.toContain('docs/releases/screenshots/v1.1.0/');
+    expect(readme).toContain(`docs/releases/screenshots/${readmeVersion}/`);
+    expect(readme).not.toContain('docs/releases/screenshots/v1.1.1/');
 
     const releaseNote = readFileSync(
-      join(root, 'docs', 'releases', 'published', 'v1.1.1.md'),
+      join(publishedDirectory, `${readmeVersion}.md`),
       'utf8',
     );
     for (const heading of [
       '## Download',
-      '## What\'s new in v1.1.1',
+      `## What's new in ${readmeVersion}`,
       '## Screenshots',
       '## What\'s Included',
       '### New Features',
@@ -362,7 +364,9 @@ describe('published release download documentation', () => {
     ]) {
       expect(releaseNote).toContain(heading);
     }
-    expect(releaseNote).toContain('releases/latest/download/WealthWise-android-latest-v1.1.1.apk');
+    expect(releaseNote).toContain(
+      `releases/latest/download/WealthWise-android-latest-${readmeVersion}.apk`,
+    );
     expect(releaseNote).not.toContain('Not available. The owner will upload the APK');
     expect(releaseNote).not.toContain('**Status:**');
   });
