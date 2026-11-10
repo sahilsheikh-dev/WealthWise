@@ -6,6 +6,7 @@ Each entry links to the architecture/decision section in the complete
 [progress ledger](../PROGRESS.md); that section, not this index, contains the
 authoritative rationale and history.
 
+- [DEC-CR108-MENU-STRESS-DIALOG](../PROGRESS.md#dec-cr108-menu-stress-dialog-2026-11-10)
 - [DEC-BACKUP-RECONCILIATION](../PROGRESS.md#dec-backup-reconciliation-2026-11-01)
 - [DEC-P25B](../PROGRESS.md#dec-p25b-2026-11-01)
 - [DEC-P29F3](../PROGRESS.md#dec-p29f3-assertion-and-coverage-correction)
