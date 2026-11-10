@@ -1,4 +1,4 @@
-<!-- Purpose: Stable product and repository facts for AI contributors. | Last updated: 2026-11-10 | Updates: owner and AI agents -->
+<!-- Purpose: Stable product and repository facts for AI contributors. | Last updated: 2026-11-11 | Updates: owner and AI agents -->
 
 # Project
 
@@ -11,7 +11,9 @@ runtime synchronization.
   migration), Zod, React Hook Form and Jest.
 - Toolchain: Node.js 26; `.nvmrc` selects 26.13.0 and `engines` allows
   `>=26.0.0 <27`.
-- Schema version: v22 (`SCHEMA_VERSION` in `src/domain/schemas.ts`).
+- Schema version: v23 (`SCHEMA_VERSION` in `src/domain/schemas.ts`). Once-only
+  recurrence applies to Budget items, Budget income and insurance premiums;
+  investment plans and liabilities remain excluded.
 - Insurance is a simple editable policy tracker with scheduled premiums;
   cover-goal management and policy lifecycle controls were removed in P29-L.
 - Backup encryption protects exported files only; app data on device remains

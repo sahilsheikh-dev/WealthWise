@@ -155,7 +155,7 @@ const policySchema = z.strictObject({
   insurer: z.string().max(40),
   kind: z.enum(['term-life', 'health', 'life-savings', 'ulip', 'motor', 'home', 'other']),
   premium: z.number().finite().positive().max(10_000_000),
-  frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly', 'custom']),
+  frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly', 'once', 'custom']),
   customIntervalMonths: z.number().int().min(1).max(120).optional(),
   startDate: dateSchema,
   status: z.enum(['active', 'lapsed', 'matured', 'cancelled']),
@@ -206,7 +206,7 @@ const budgetIncomeSchema = z.strictObject({
   category: z.enum(EARNED_INCOME_CATEGORIES),
   amount: z.number().finite().positive().max(1_000_000_000),
   day: z.number().int().min(1).max(31).optional(),
-  frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly']).optional(),
+  frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly', 'once']).optional(),
   firstDueMonth: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional(),
 });
 const budgetOtherIncomeSchema = z.strictObject({
@@ -222,7 +222,7 @@ const budgetSectionSchema = z.strictObject({
   type: z.enum(['spend', 'invest']),
   system: z.enum(['income', 'debt', 'insurance']).optional(),
 });
-const budgetItemFrequencySchema = z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly']).optional();
+const budgetItemFrequencySchema = z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly', 'once']).optional();
 const budgetFirstDueMonthSchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional();
 const budgetItemSchema = z.strictObject({
   id: idSchema,

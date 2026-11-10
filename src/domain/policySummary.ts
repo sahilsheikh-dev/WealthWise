@@ -4,7 +4,7 @@ import { normalizeMoney } from './cashFlow';
 import { policySchedule } from './policySchedule';
 import { EARNED_INCOME_CATEGORIES, type AppData, type ISODate, type Policy } from './types';
 
-const PAYMENTS_PER_YEAR: Record<Exclude<Policy['frequency'], 'custom'>, number> = {
+const PAYMENTS_PER_YEAR: Record<Exclude<Policy['frequency'], 'custom' | 'once'>, number> = {
   monthly: 12,
   quarterly: 4,
   'half-yearly': 2,
@@ -72,11 +72,12 @@ export function policySummary(data: AppData, today: ISODate): PolicySummary {
   const totalCover = normalizeMoney(activePolicies.reduce(
     (total, policy) => total + (policy.sumAssured ?? 0), 0,
   ));
-  const yearlyPremium = normalizeMoney(activePolicies.reduce(
-    (total, policy) =>     total + policy.premium * (policy.frequency === 'custom'
+  const yearlyPremium = normalizeMoney(activePolicies.reduce((total, policy) => {
+    if (policy.frequency === 'once') return total;
+    return total + policy.premium * (policy.frequency === 'custom'
       ? 12 / (policy.customIntervalMonths ?? 1)
-      : PAYMENTS_PER_YEAR[policy.frequency]), 0,
-  ));
+      : PAYMENTS_PER_YEAR[policy.frequency]);
+  }, 0));
   return {
     activeCount: activePolicies.length,
     totalCover,

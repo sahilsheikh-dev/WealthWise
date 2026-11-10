@@ -30,7 +30,7 @@ const budgetItemFormSchema = z.object({
   name: z.string().trim().min(1, 'Enter an item name.').max(30, 'Keep the name under 30 characters.'),
   mode: z.enum(['amount', 'percent']),
   value: z.string().trim(),
-  frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly']),
+  frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly', 'once']),
   firstDueMonth: z.string(),
   day: z.string(),
   scope: z.enum(['month', 'following']),
@@ -344,6 +344,7 @@ export default function BudgetItemFormScreen() {
                 { value: 'quarterly', title: 'Quarterly' },
                 { value: 'half-yearly', title: 'Half-yearly' },
                 { value: 'yearly', title: 'Yearly' },
+                { value: 'once', title: 'Once only' },
               ]),
             ]}
             onChange={field.onChange}

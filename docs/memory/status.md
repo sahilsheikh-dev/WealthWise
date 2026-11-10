@@ -1,21 +1,21 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-10 | Updates: owner and AI agents -->
 
 # Status
-- CR-108 is in progress. P29-Q-R1's four-choice `choiceAsync` RangeError was
-  reproduced before production changes, and the stress picker now uses a
-  centered scalable selection dialog without changing the helper's two-choice
-  limit. Five focused suites / 30 tests and TypeScript pass; task PR #93 and
-  phase PR #94 are merged to `develop` at `80eb0e4`. P20-N-R3's failing tests
-  were committed first as `bba05be`; the Budget overview removes the visible
-  Pace/Over by/Left lines while retaining chart/table accessible descriptions.
-  Focused tests, TypeScript and targeted lint pass; task PR #95 and phase PR
-  #96 are merged to `develop` at `f5f6e16`. P41-A adds finite Real estate and
-  Custom types and validated custom names; its test-first commit is `5b83d27`,
-  and 7 focused suites / 292 tests plus TypeScript pass. Its implementation
-  commit and task/phase PR integration are pending. Parts 4–6, schema v23,
-  remaining demo updates and the six final ordered gates remain pending. The
-  authorized Budget blob is recorded in [rules.md](rules.md). No CR-108 work
-  ships in v1.1.1; physical-device checks remain unverified.
+- CR-108 is in progress. P29-Q-R1 and P20-N-R3 are merged to `develop` at
+  `80eb0e4` and `f5f6e16`. P41-A's finite Real estate and Custom types,
+  validated custom names, unified forms and balanced demo data are merged to
+  `develop` at `9aa6540` (task PR #97; phase PR #98); P41-A-R1 corrected its
+  stale Real estate category assertion and merged via task PR #99 / phase PR
+  #100 at `a67f54f`. P41-B's test-first commit is `f98d7dd` and implementation
+  commit is `873eed7`; Once only applies to Budget items, Budget income and
+  insurance premiums, not investment plans or liabilities. Schema v23,
+  identity-preserving v22 migration, original-byte archive and backup-chain
+  tests pass. TypeScript, Expo lint and the expanded focused run (9 suites /
+  233 tests) pass; task PR #101 is merged into the phase at `9ab6e79`, while
+  the phase PR to `develop` remains pending. Parts 5–6 and the six final
+  ordered gates remain pending. The authorized Budget blob is recorded in
+  [rules.md](rules.md). No CR-108 work ships in v1.1.1; physical-device checks
+  remain unverified.
 - CR-106 adds planning rows only: P31-D privacy and P31-E CI, report-first
   P39 release audit/hardening, and P40 agent-context hygiene.
   No audit part, app-source change, phase implementation, or release work has
@@ -294,7 +294,7 @@
   remote tag alignment are verified in P28-C-R3. The GitHub release body's
   stored `targetCommitish` still shows the original target because no release
   edit was made.
-- Schema version: v22 (`SCHEMA_VERSION` in `src/domain/schemas.ts`).
+- Schema version: v23 (`SCHEMA_VERSION` in `src/domain/schemas.ts`).
 - P29-AB is complete. Budget income recurrence supports monthly, quarterly,
   half-yearly and yearly frequencies, with a required first-due month for
   non-monthly items. Migration v21-to-v22 defaults existing income monthly
