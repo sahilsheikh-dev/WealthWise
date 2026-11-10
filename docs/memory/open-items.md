@@ -9,10 +9,11 @@
   makes no update request. A true in-app check remains an owner decision.
 - Confirm whether "Once only" is desired for investment plans or liabilities
   in a future request; CR-108 deliberately excludes both.
-- P41-C is integrated through PR #105 (`37a3429`). Finish task/phase PR
-  integration for P41-D, then run the six ordered gates after all parts reach
-  `develop`. Physical-device checks remain unverified and must be recorded
-  before closing CR-108.
+- P41-C is integrated through PR #105 (`37a3429`); P41-D task PR #106 merged
+  into the phase as `7ddfef5`. Finish phase-to-`develop` integration for P41-D,
+  then run the six ordered gates after all parts reach `develop`.
+  Physical-device checks remain unverified and must be recorded before
+  closing CR-108.
 
 ## CR-106 owner decisions and scope
 
