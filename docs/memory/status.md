@@ -15,9 +15,10 @@
   #102 merged to `develop` at `b4275d3`. P41-C has test-first commits
   `0fae9e5` and `538046b`; its liability/goal grouping and closed-loan demo
   fixture are implemented on `task/P41-C-completed-liabilities-achieved-goals`.
-  Focused verification passes (4 suites / 209 tests), as do TypeScript and
-  Expo lint; task/phase PR integration remains. P41-D and the six final ordered
-  gates remain pending. The authorized Budget blob is recorded in
+  Task PR #104 merged to the phase as `c255ada`. Focused verification passes
+  (4 suites / 209 tests), as do TypeScript and Expo lint; phase-to-`develop`
+  PR integration remains. P41-D and the six final ordered gates remain pending.
+  The authorized Budget blob is recorded in
   [rules.md](rules.md). No CR-108 work ships in v1.1.1; physical-device checks
   remain unverified.
 - CR-106 adds planning rows only: P31-D privacy and P31-E CI, report-first
