@@ -11048,8 +11048,11 @@ branches, versions, tags or release artifacts.
 - The final six gates passed on `develop` at `3bd5be6`; the documentation-only
   follow-up is integrated at `cd1fa78`. Screenshot URLs and final APK links
   were checked after main integration; URL results and sizes are in
-  `release-history.md`. The latest Download block and README gallery are now
-  updated for v1.2.0 in the post-publication task branch.
+  `release-history.md`. Post-publication task PR #125 merged the README,
+  gallery, published-note and release-history updates into the retained phase
+  at `87c8e8f902c313c35e7d48e154ec8d9c9f504789`; the focused regression run
+  passed 2 suites / 24 tests. The phase-to-develop PR and main/develop
+  synchronization remain pending.
 - Task PR #112 merged into the retained phase as `fa153da`; phase PR #113
   merged into `develop` as `d347526`; evidence PR #114 merged as `5ae1b72`,
   with evidence PR #115 merged as `936ee25`; the original task branch was
