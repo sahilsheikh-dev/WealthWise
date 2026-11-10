@@ -152,9 +152,11 @@ The shared project rules are in [AGENTS.md](../../AGENTS.md),
   `Version`. Post-publication task PRs #125/#126 merged into
   `phase/28-qa-and-release` at `87c8e8f`/`9db08be`; phase PR #127 merged into
   `develop` at `d65ce75`; develop-to-main PR #128 merged at `48a64c0`; and
-  main-to-develop PR #129 merged at `c554c0b`. Local and remote `develop`
-  match at `c554c0b`, and the v1.2.0 tag remains at its verified build
-  candidate.
+  main-to-develop PR #129 merged at `c554c0b`. Final ledger/test evidence was
+  then synchronized by task PR #130 (`202dabe`), phase PR #131 (`6f4f4df`),
+  develop-to-main PR #132 (`b678493`) and main-to-develop PR #133 (`eedff48`).
+  The `main` and `develop` trees match, and the v1.2.0 tag remains at its
+  verified build candidate.
 - O45-O53 are owner-reported Pass; device model, Android version and tester
   details were not supplied.
 - Production AAB: not verified.
