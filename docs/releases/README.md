@@ -138,8 +138,9 @@ The shared project rules are in [AGENTS.md](../../AGENTS.md),
   privately and is not published.
 - v1.2.0 is the owner-approved release candidate. Task PR #112 merged its
   note, screenshots and version metadata into `phase/28-qa-and-release` as
-  `fa153da`; the phase-to-develop PR remains pending. No v1.2.0 release draft,
-  build, tag or artifact has been created.
+  `fa153da`; phase PR #113 merged it into `develop` as `d347526`. The six
+  ordered gates and physical-device checks remain pending. No v1.2.0 release
+  draft, build, tag or artifact has been created.
 - Production AAB: not verified.
 
 See [release-history.md](release-history.md) for the published release and

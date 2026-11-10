@@ -11,11 +11,11 @@
 - The owner supplied and approved use of eight v1.2.0 screenshots; they are
   copied into the versioned screenshot directory. The approved note is
   finalized in `docs/releases/published/v1.2.0.md`.
-- Task PR #112 merged into `phase/28-qa-and-release` as `fa153da`; the merged
-  task branch was deleted. Create and merge the phase-to-develop PR, then run
-  the six gates in order. The README Download block and screenshot gallery
-  continue to match the latest published v1.1.1 release until v1.2.0 is
-  published.
+- Task PR #112 merged into `phase/28-qa-and-release` as `fa153da`; phase PR
+  #113 merged into `develop` as `d347526`, and the merged task branch was
+  deleted. The six gates in order and physical-device checks O45-O53 remain
+  outstanding. The README Download block and screenshot gallery continue to
+  match the latest published v1.1.1 release until v1.2.0 is published.
 - Physical-device font-scale and screen-reader checks for CR-108 remain
   unverified. Complete the required device checklist before any release
   build. APK build, verification and draft upload follow the release process;
