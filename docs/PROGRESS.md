@@ -73,7 +73,7 @@ parts count in the numerator and denominator. P1–P14 count as one part
 each.
 
 ```text
-Overall progress ████████░░ 81% (164/202)
+Overall progress ████████░░ 83% (167/202)
 P1          ██████████ 100% (1/1)
 P2          ██████████ 100% (1/1)
 P3          ██████████ 100% (1/1)
@@ -95,13 +95,13 @@ P18         ██████████ 100% (9/9)
 P19         ██████████ 100% (3/3)
 P20         ██████████ 100% (29/29)
 P21         ██████████ 100% (6/6)
-P22         █████░░░░░ 50% (1/2)
+P22         ██████████ 100% (2/2)
 P23         ██████████ 100% (4/4)
 P24         ██████████ 100% (1/1)
 P25         ██████████ 100% (6/6)
 P26         ██████████ 100% (1/1)
 P27         ██████████ 100% (1/1)
-P28         █████████░ 91% (32/35)
+P28         ██████████ 97% (34/35)
 P29         ██████████ 100% (41/41)
 P30         ██████████ 100% (3/3)
 P31         ░░░░░░░░░░ 0% (0/5)
@@ -190,7 +190,7 @@ P40         ░░░░░░░░░░ 0% (0/2)
 | P21-D | — | Done | CR-51; null/default/repair targets are Cash 10, Bank account 40, FD / RD 50. Full tests/coverage and all required gates pass; schema v8 unchanged. | 2026-10-18 |
 | P21-E | `c199c8e` | Done | CR-90: replace the predefined allocation-item picker and custom-option modal with a shared-shell add/edit item route form. Schema v13 remains unchanged; full gates pass. | 2026-10-21 |
 | P22-A | — | Done; Revised by P22-A-R1 | `1f2d9c8`; deterministic four-month linked demo and undoable dev loader; final acceptance tests and all required gates pass. | 2026-10-16 |
-| P22-A-R1 | — | In progress | Expand deterministic demo data to six months, Rs 1,00,000 earned income/month, Rs 1 crore assets, Rs 10 lakh liabilities, and goals capped at 87%; preserve fixture coverage and document directly seeded holding openings. | 2026-11-10 |
+| P22-A-R1 | — | Done | `00faeb2`; six deterministic months ending the injected current month, Rs 1,00,000 earned income per month, Rs 1 crore assets, Rs 10 lakh liabilities, and every goal at or below 87%. Holdings use directly seeded opening values, not six months of accumulated flows. PR #84 merged into P28. | 2026-11-10 |
 | P23-A | P15-F | Done | Schema v11 policy model, migration/archive, pure actions/summary, active-only schedule and budget dues, Undo and demo coverage; no screens. Six final gates pass. | 2026-10-21 |
 | P23-B | — | Done | CR-80/CR-81: schema v12 cover goals, typed insurance categories, domain summary/target/suggestion actions, and Budget reconciliation. 78 suites/914 tests and all six gates pass; native device checks remain. | 2026-10-21 |
 | P23-C | — | Done | CR-82–CR-85: Insurance cover and policy screens, cover targets, premium linking, and Goals/Budget/Home entry points; screen, form, transaction and store tests. Schema v12 preserved. Goals link and compact Home gap/missing row superseded by P23-D. | 2026-10-21 |
@@ -235,8 +235,8 @@ P40         ░░░░░░░░░░ 0% (0/2)
 | P28-E-R5 | — | Done; Revised by P28-E-R5-R1 | Audited the 403 non-merge first-parent commits after the initial commit. They are already present in `main` and `develop`; all 30 phase branches exist, and none of these commits can be newly introduced by PR without rewriting history. Created `release/v1.0.0` at the existing v1.0.0 tag target. Task PR #52 merged into P28 as `f9bb715`; phase PR #53 later merged into `develop`. | 2026-11-09 |
 | P28-E-R5-R1 | — | Done | Finalized P28-E-R5 integration evidence: P28 PR #53 merged into `develop` as `0402592`; no historical commit subjects or hashes were changed, and `main` and release branch trees remain unchanged. | 2026-11-09 |
 | P28-F | — | Done; Revised by P28-F-R1, P28-F-R2, P28-F-R2-R1, P28-F-R3, P28-F-R3-R1, P28-F-R3-R2, P28-F-R3-R3, P28-F-R3-R3-R1, P28-F-R4, P28-F-R4-R1-R1, P28-F-R4-R1-R1-R1-R1-R1, P28-F-R4-R1-R1-R1-R1-R1-R1, P28-F-R4-R1-R1-R1-R1-R1-R1-R1 and P28-F-R5 | Prepared v1.1.0 on `release/v1.1.0`; all six gates passed. PR #2 merged the release into main and PR #3 back-merged main into develop. Revised by P28-F-R3 for verified EAS build, tag and publication evidence, P28-F-R3-R1 for the completed publication PR chain, P28-F-R3-R2 for historical asset rollover and checksum removal, P28-F-R3-R3 for versioned latest-asset naming, P28-F-R3-R3-R1 for the merged filename-policy PR chain, Revised by P28-F-R4 for a review-only v1.1.1 candidate, P28-F-R4-R1 for supplied screenshot integration and owner-led release workflow, P28-F-R4-R1-R1 for the approved v1.1.1 release integration, P28-F-R4-R1-R1-R1-R1-R1 for screenshot-asset naming, latest-version rules and APK handoff corrections, P28-F-R4-R1-R1-R1-R1-R1-R1 for template-aligned historical metadata and release preparation, P28-F-R4-R1-R1-R1-R1-R1-R1-R1 for v1.1.1 publication and post-publication asset/doc rollover, and P28-F-R5 for repository-backed, browser-viewable screenshots and roadmap cancellation. | 2026-11-08 |
-| P28-F-R5 | — | In progress | Cancel screenshot-capture work because the owner already supplied the images; commit the 23 versioned screenshots in-repository with browser-viewable links, update release guides, and resolve the repository screenshot open decision. | 2026-11-10 |
-| P28-G | — | In progress | Replace ledger phase labels with PN notation in `docs/PROGRESS.md` and `docs/memory/*`; add a ledger-derived glossary and regression guards while preserving documented exclusions. | 2026-11-10 |
+| P28-F-R5 | — | Done | `ff5a5a6`; cancelled screenshot capture because the owner supplied all 23 images, stored them by release in the repository and changed thumbnails to browser-viewable blob links. Release-note links, guide/tests and the screenshot decision are updated; PR #83 merged into P28. | 2026-11-10 |
+| P28-G | — | Done | `e6395a1`; converted ledger/shared-memory phase labels to PN notation, added the derived glossary and notation/exclusion/prefix regression guards. Focused tests passed 2 suites/15 tests; PR #85 merged into P28. | 2026-11-10 |
 | P28-F-R1 | — | Done | Recorded owner-reported Pass results for device checklist N39-N43; device identification fields remain blank. | 2026-11-08 |
 | P28-F-R2 | — | Done; Revised by P28-F-R2-R1 | Corrected the v1.1.0 draft contributor credits using the published v1.0.0 format, added contributor guidance, and verified the PR integration path. | 2026-11-08 |
 | P28-F-R2-R1 | — | Done; Revised by P28-F-R3 | Corrected stale branch/GitHub audit records; task and P28 PRs are integrated into develop, with release and back-merge PRs carrying the correction through main. Latest six ordered gates pass: 98 suites, 1,243 passed, 1 skipped; coverage 95.96/92.01/98.01/97.62% overall, `src/data` 91.03/87.39/94.46/94.17%, `src/domain` 96.95/92.85/98.80/98.32%, `src/lib` 100%; TypeScript, lint, Doctor 21/21, Android export and iOS export all pass. At that revision v1.1.0 was untagged; publication is recorded by P28-F-R3. | 2026-11-08 |
@@ -3458,6 +3458,7 @@ completion checks without hardcoding totals.
 | P28-E-R5 | P28 | P28-E | current | 2026-11-09 | Audit requested first-parent commit subjects and create `release/v1.0.0` at the existing `v1.0.0` tag target without rewriting history or changing protected branch trees. | Done; Revised by P28-E-R5-R1. 403 non-merge commits after the initial commit are already ancestors of `main` and `develop`. All 30 phase branches exist and every requested commit is reachable from at least one. Eighty-four old subjects do not pass the current Conventional Commit hook; rewording would rewrite history, so no commit IDs or messages were changed. New historical branch `release/v1.0.0` points to tagged commit `cac6fedc6242b495558f11cc6d7fe8551fd354ea`, already an ancestor of `main` and `develop`. Task PR #52 merged into P28 as `f9bb715`; phase PR #53 merged into `develop` as `0402592`. | Task branch `task/P28-E-R5-record-v1.0-release-branch`; P28 branch `phase/28-qa-and-release`; PRs #52 and #53 merged task -> phase -> `develop`. | Old: the v1.0.0 tag existed but no matching release branch was present, and 403 historical commits appeared on the first-parent main line. New: a branch points at the published tag; commits remain unchanged because ordinary PRs cannot re-introduce existing ancestors and rewriting is prohibited. Reason: preserve existing code/history while making the historical release branch explicit. |
 | P28-E-R5-R1 | P28 | P28-E-R5 | current | 2026-11-09 | Record final integration of P28-E-R5 to `develop` and reconcile status/memory evidence without changing application code or protected release branches. | Done; P28 PR #53 merged into `develop` as `04025926a95b8dda22f15e67b4ea3c3c8769a994`. `main` remains `7bea8e62c10f641f1fe9aeb9e3ef605b3620250a`; `release/v1.0.0` remains at the existing v1.0.0 tag target and `release/v1.1.0` remains unchanged. | Task branch `task/P28-E-R5-R1-record-develop-merge`; phase branch `phase/28-qa-and-release`. | Old: the P28-E-R5 record said P28 -> `develop` was pending after PR #53 had merged. New: this revision records PR #53's merge SHA and verifies the protected refs. Reason: synchronize the permanent ledger with completed PR integration. |
 | CR-106 | P28 | — | current | 2026-11-10 | Plan report-first external-guidance work for P31, P39 and P40, with roadmap, owner decisions and test expectations. | Done; planning rows only, with no audit, implementation or app-source change. All six ordered gates passed; Gate 1: 98 suites, 1,271 passed, 1 skipped; 95.96/92.04/98.02/97.63% overall coverage. | This task commit; task/phase PR references are reported in chat. | Old: roadmap checks enumerated P31-A-C/P32-P38 and CR/prompt coverage stopped at CR-103/CR-96. New: exact-once checks include P31-D/E, P39-A-H, P40-A/B and CR-106, with P40-B's owner-approval hold checked explicitly. Reason: assert the added planning inventory without weakening prior checks. `memoryDocs.test.ts` remains unchanged because its count expectations are derived from the documented values; the verified counts changed from 98 suites/1,270 tests (1,269 passed, 1 skipped) to 98 suites/1,272 tests (1,271 passed, 1 skipped). | current request |
+| CR-107 | P28 | — | current | 2026-11-10 | Complete the owner-authorized roadmap/demo/screenshot/notation work, verify release assets and URLs, and record final evidence. | Done; P22-A-R1, P28-F-R5 and P28-G are closed. All 23 screenshots are committed under versioned paths; all 46 blob/raw URLs returned HTTP 200 and each raw size matched its local file. Screenshot sections are updated in all three release bodies, then the 23 screenshot assets were removed; only the unchanged APK remains on each release. Demo data is six months, Rs 1 lakh earned income/month, Rs 1 crore assets and Rs 10 lakh liabilities; direct opening values are assumed. All six gates and the final task/phase/develop/main/back-merge PR chain are recorded in Section 10/11. | P22-A-R1 `00faeb2` / PR #84; P28-F-R5 `ff5a5a6` / PR #83; P28-G `e6395a1` / PR #85; final evidence branch and PR chain below. | Old: screenshot references used downloadable release-asset URLs; new: versioned main-branch repository blob/raw links. Reason: thumbnails should open the image in the browser. Old: phase labels used `Phase <n>` and documentation assertions expected that form; new: ledger/shared memory use PN labels while preserving specified Git/release exclusions. Reason: consistent notation without changing refs or original subjects. Old: four-month/lower-scale demo fixtures; new: deterministic six-month lakh/crore values and every goal at or below 87%. Reason: requested regression coverage for the production-like sample. Old test guards stopped at CR-106 and had no CR-107 completion check; new guards include one exact-once register row, one prompt-log row and all three completed dashboard parts. Reason: ensure final status cannot drift. `memoryDocs.test.ts` remains unchanged because it derives test-count expectations from documented counts. Owner chose screenshot-only edits to v1.0.0's release body because its non-screenshot text differs from the published note; that difference remains intentional. The v1.1.1 APK does not contain this demo change. | current request |
 
 ## 7. Change-request register
 
@@ -3562,6 +3563,7 @@ completion checks without hardcoding totals.
 | CR-97 | P29-L: Replace cover-goal/lifecycle Insurance complexity with a simple editable policy list and recurring premium dues. | Done | The P29-L acceptance matrix, migration/backup evidence and six ordered gates are recorded in the final P29-L section. |
 | CR-98 | Audit requested first-parent commits and create the historical `release/v1.0.0` branch. | Done | The 403 requested non-merge commits are already ancestors of `main` and `develop`; 84 legacy subjects do not pass the current Conventional Commit hook. Do not rewrite history. `release/v1.0.0` points at the existing v1.0.0 tag target. Task PR #52 and P28 PR #53 are merged through `develop`. |
 | CR-103 | Correct v1.0.0 release metadata to match the template and publish the owner-approved v1.1.1 release with all latest-version links/assets aligned. | Done | P28-F-R4-R1-R1-R1-R1-R1-R1-R1; release published, latest links aligned and previous APK asset renamed after verification. |
+| CR-107 | Complete owner-authorized roadmap, demo-data, screenshot-storage, and PN-notation work; verify release links/assets and record final evidence. | Done | P22-A-R1, P28-F-R5 and P28-G complete. All six gates passed; screenshots are repository-backed and browser-viewable; 23 screenshot release assets were removed only after all 46 blob/raw URLs returned HTTP 200 and raw sizes matched. The three release APKs remain unchanged. See Sections 6, 10 and 11 for outputs, gate results, owner decisions and PR evidence. |
 
 ## 8. Known issues and risks
 
@@ -3773,9 +3775,11 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
    allocation table (CR-14, CR-15); P21-C normal-mode presentation and
    allocation item editing (CR-37, CR-38); P21-C1 invalid-allocation crash
    repair (CR-39), with schema v8 unchanged.
-4. **P22 — Demo data**: P22-A's four-month demo data (CR-12) is Done;
-   P22-A-R1 is revising it to six complete months and crore-scale assets and
-   liabilities while keeping the existing demo fixtures stable.
+4. **P22 — Demo data**: P22-A's original four-month demo data (CR-12) is
+   complete; P22-A-R1 now uses six complete months, Rs 1,00,000 earned
+   income/month, Rs 1 crore in assets and Rs 10 lakh in liabilities while
+   preserving the existing demo fixtures. Holding opening values are seeded
+   directly rather than accumulated from six months of flows.
 5. **P23 — Insurance** (Done) [P15-F].
 6. **P24 — Reminders and notifications** (Done), including CR-1
    [P15-K]. P24-A implemented local reminders and confirmation; CR-1's former
@@ -3788,14 +3792,19 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
 9. **P27 — Cleanup** (Done): dead-code/dependency cleanup, bundle audit,
    README update and robust schedule benchmark.
 10. **P28 — QA and release** (release records and approved tag verified):
-    P28-A/P28-B/P28-C and their recorded revisions plus P28-D/P28-E are
-    complete. The v1.0.0
+    P28-A/P28-B/P28-C and their recorded revisions plus P28-D/P28-E,
+    P28-F-R5 and P28-G are complete. CR-107 moved all 23 screenshots into
+    versioned repository paths, changed release thumbnails to browser-viewable
+    links, removed only the screenshot release assets after URL verification,
+    and standardized ledger/memory phase labels. The v1.0.0
     APK, EAS build metadata, public latest/versioned links and checksum are
     verified; the approved tag points to the build commit on `origin/main`.
     The earlier 43-row Pass report was superseded by P29-AB-R1/R2, P30-A/B/C,
     P20-N-R1/R2 and the P20-A-R1/P29-O1-R1/P29-W-R1 device-checklist updates;
-    device re-test remains pending. The
-    GitHub release-body edit is pending. See
+    device re-test remains pending. The v1.0.0 release body intentionally
+    retains its pre-existing non-screenshot difference from the published
+    note; only its screenshot section was changed at the owner's direction.
+    See
     [`docs/releases/build-config.md`](releases/build-config.md), the
     release-build record and the device checklist.
 11. **P29 — Product delivery** (41/41 closed): P29-O-R1 closes the
@@ -3973,6 +3982,108 @@ evidence for the fixes.
   Final `git diff --check` exited 0. No
   physical-device behavior was claimed or tested; no EAS or Gradle build was
   run.
+
+### 2026-11-10 — CR-107 final verification
+
+- Gate 1 passed with 98 suites, 1,278 passed and 1 skipped (1,279 total).
+  Coverage, in statements/branches/functions/lines order:
+
+  | Scope | Statements | Branches | Functions | Lines |
+  |---|---:|---:|---:|---:|
+  | Overall | 95.96% | 92.04% | 98.02% | 97.63% |
+  | `src/data` | 91.03% | 87.41% | 94.46% | 94.17% |
+  | `src/domain` | 96.94% | 92.87% | 98.80% | 98.33% |
+  | `src/lib` | 100% | 100% | 100% | 100% |
+
+- All six gates passed in order:
+
+  | Gate | Command | Exit / result |
+  |---:|---|---|
+  | 1 | `npm test -- --coverage` | 0; 98 suites, 1,278 passed, 1 skipped (1,279 total); coverage as above |
+  | 2 | `npx tsc --noEmit` | 0 |
+  | 3 | `npx expo lint` | 0 |
+  | 4 | `npx expo-doctor` | 0; 21/21 checks |
+  | 5 | `npx expo export --platform android` | 0 |
+  | 6 | `npx expo export --platform ios` | 0 |
+
+- Focused `progressLedger.test.ts` and `memoryDocs.test.ts` passed 2 suites /
+  16 tests. `memoryDocs.test.ts` needed no assertion change because its test
+  counts are derived from the documented values. This focused run was repeated
+  after the final ledger/memory updates; the full ordered gates had already
+  passed on the completed feature and regression-test tree. The test
+  replacements were:
+
+  | Old assertion | New assertion | Reason |
+  |---|---|---|
+  | Dashboard counts expected P22 at 1/2, P28 at 32/35 and overall at 164/202. | Derived counts are P22 2/2, P28 34/35 and overall 167/202; bars are 100%, 97% and 83%. | P22-A-R1, P28-F-R5 and P28-G are now closed; the denominator and rounding rule are unchanged. |
+  | Change-request and prompt-log guards stopped at CR-106; no CR-107 row was required. | Guards require CR-107 exactly once in the register and prompt log, and assert all three revised/completed dashboard rows. | Keep final task status and completion evidence synchronized without weakening prior inventory checks. |
+  | `demoData.test.ts` expected four complete months and menu labels/copy said four months. | Tests and user-visible demo-menu copy require six complete months. | Keep the sample horizon clear and match the six-month fixtures. |
+  | Demo assertions used Rs 75,000 monthly earned income, the former asset/liability scale and prior valuation/net-worth fixtures. | Plan incomes sum to Rs 1,00,000 each month, expenses plus investments stay within income, and the injected-date portfolio is Rs 1 crore assets / Rs 10 lakh liabilities / Rs 90 lakh net worth. | Verify the new lakh/crore data contract instead of stale aggregate values. |
+  | `goalLinks.test.ts` expected Rs 1,87,000 for the linked Emergency Fund at 2026-10-12; demo checks covered projections but had no every-goal percentage cap. | It expects Rs 20,00,000 at that as-of date; acceptance now caps every goal, including the automatic Emergency Fund, at 87% and retains a broad spread. | Reflect directly seeded linked assets and enforce the owner-specified cap across all goals. |
+  | Selector snapshots expected 34 pending dues / Rs 38,900 and 869 uncapped reminders; the Emergency Fund available bucket used Rs 1,87,000. | Snapshots expect 33 / Rs 41,650 and 909 reminders; the available bucket is Rs 20,00,000. | Reconcile dependent selector, reminder and bucket outputs to the expanded deterministic fixture. |
+  | The demo route had no explicit crore-tier render assertion at larger font scales. | `RouteRenderSmoke` requires `₹1.00 Cr` at simulated font scales 1.3 and 2.0. | Verify the expected amount tier and layout contract; physical-device rendering remains separate. |
+  | Screenshot thumbnails used GitHub Release asset links that open as downloads. | Documentation tests require the versioned main-branch blob/raw repository links. | Images should open in the browser and remain part of the repository rather than release assets. |
+  | Phase-label checks expected `Phase <n>` in dashboard, bars and roadmap. | Checks require `P<n>` / PN labels and allow `Phase <digits>` only in documented exclusions. | Consistent notation while preserving original subjects, Git refs, URLs, release docs, changelog and app source. |
+
+- Demo outputs at the fixed injected date 2026-11-04:
+
+  | Output | Before (four-month fixture) | After (six-month fixture) |
+  |---|---:|---:|
+  | Earned income per month | Rs 75,000 | Rs 1,00,000 |
+  | Assets | Rs 5,24,000 | Rs 1,00,00,000 |
+  | Liabilities outstanding | Rs 3,89,107.93 | Rs 10,00,000 |
+  | Net worth | Rs 1,34,892.07 | Rs 90,00,000 |
+  | Goal savings total | Rs 4,87,300 | Rs 80,29,000 |
+  | Emergency Fund available | Rs 1,87,000 | Rs 20,00,000 |
+  | Pending dues | 34 / Rs 38,900 | 33 / Rs 41,650 |
+  | Uncapped reminder count | 869 | 909 |
+
+  | Goal | Before saved / target | Before progress | After saved / target | After progress |
+  |---|---:|---:|---:|---:|
+  | Emergency Fund | Rs 1,87,000 / Rs 2,50,000 | 74.80% | Rs 20,00,000 / Rs 25,00,000 | 80.00% |
+  | Retirement portfolio | Rs 16,400 / Rs 10,00,000 | 1.64% | Rs 4,000 / Rs 20,000 | 20.00% |
+  | Home deposit | Rs 2,21,400 / Rs 8,00,000 | 27.68% | Rs 40,00,000 / Rs 47,00,000 | 85.11% |
+  | Education fund | Rs 37,500 / Rs 2,00,000 | 18.75% | Rs 20,00,000 / Rs 25,00,000 | 80.00% |
+  | Family holiday | Rs 25,000 / Rs 5,00,000 | 5.00% | Rs 25,000 / Rs 1,25,000 | 20.00% |
+
+  Linked asset values count in full for each linked goal. Holding opening
+  valuations are directly seeded at the injected `today`; they are not derived
+  from six months of contributions. Monthly expenses plus investments remain
+  within earned income; existing categories, custom Pets/Domestic help items,
+  policies, linked records, overdue SIP and paid/partial/overdue/future Budget
+  rows remain covered. The simulated screen-level route test renders the
+  crore tier at font scales 1.3 and 2.0; physical-device rendering remains
+  unverified.
+
+- Screenshot/release verification:
+
+  | Release | Repository screenshots | Release screenshot assets before → after | Retained APK (bytes) |
+  |---|---:|---:|---|
+  | v1.0.0 | 7 | 7 → 0 | `WealthWise-android-v1.0.0.apk` (112,133,413) |
+  | v1.1.0 | 8 | 8 → 0 | `WealthWise-android-v1.1.0.apk` (112,147,677) |
+  | v1.1.1 | 8 | 8 → 0 | `WealthWise-android-latest-v1.1.1.apk` (112,150,605) |
+
+  All 46 main-branch blob/raw screenshot URLs returned HTTP 200; all 23 raw
+  image sizes matched the committed files. Rendered releases show 7/8/8
+  images. After screenshot-asset deletion, each release has only its APK;
+  all three APK URLs still return HTTP 200 at the recorded byte sizes. The
+  README Download block remains byte-identical to the latest published note.
+  At the owner's direction, only the screenshot section of the v1.0.0 release
+  body changed because its pre-existing non-screenshot body differs from the
+  published note. The v1.1.0 and v1.1.1 bodies match their notes outside
+  screenshot-section updates. The published v1.1.1 APK does not contain the
+  demo-data change.
+
+- The feature integration chain is verified: task PR #83 merged to P28 as
+  `c9fe4660602fc443fcfa9c4bd00cacccb98c3173`; task PR #84 as
+  `77cdc9e2f1899b18e0cf108bfb4eba6dc8652f4e`; task PR #85 as
+  `8afd37401ef8abcf7e5fe8ee4a91468b20c58b97`; P28 PR #86 to `develop` as
+  `d6cc56822ee332f609e2d7800df0fca657453623`; authorized `develop` to `main`
+  PR #87 as `c8a58abbc2ebcc9b9e25e80c47e5472d58294620`; and main-to-develop
+  back-merge PR #88 as `8da39bd8653ceee6ea066e7ee78d7b3f05e38033`. The three
+  integrated refs had tree `2667fd423730bb2a25406b3634c9f2ff58d2a6d7`;
+  final evidence-branch integration is recorded in Section 11 and the task
+  report.
 
 ### 2026-11-09 — current develop verification and roadmap decisions
 
@@ -9785,6 +9896,31 @@ These are simulated/export checks, not physical-device verification. No EAS or
 Gradle build, version bump, or release preparation was performed.
 
 ## 11. Session and release log
+
+### CR-107 implementation integration and release cleanup (2026-11-10)
+
+- P28-F-R5 task PR #83 merged to `phase/28-qa-and-release` as
+  `c9fe4660602fc443fcfa9c4bd00cacccb98c3173`; P22-A-R1 task PR #84 merged as
+  `77cdc9e2f1899b18e0cf108bfb4eba6dc8652f4e`; P28-G task PR #85 merged as
+  `8afd37401ef8abcf7e5fe8ee4a91468b20c58b97`. Phase PR #86 merged to
+  `develop` as `d6cc56822ee332f609e2d7800df0fca657453623`.
+- Under the owner exception DEC-CR107-MAIN-MERGE, `develop` -> `main` PR #87
+  merged as `c8a58abbc2ebcc9b9e25e80c47e5472d58294620`, followed by main ->
+  develop PR #88 as `8da39bd8653ceee6ea066e7ee78d7b3f05e38033`. The
+  `main`, `develop` and P28 phase trees match at
+  `2667fd423730bb2a25406b3634c9f2ff58d2a6d7`.
+- The 23 repository screenshots cover v1.0.0/v1.1.0/v1.1.1 at 7/8/8 images.
+  All 46 blob/raw URLs returned HTTP 200, all raw sizes matched, and rendered
+  release pages display the expected image counts. Only screenshot sections
+  were updated before deleting the 23 screenshot release assets; all three
+  APK assets remain at their recorded names and sizes, and their URLs return
+  HTTP 200. No APK, tag, version or release publication state changed.
+- The owner chose screenshot-only edits to the v1.0.0 release body because
+  its pre-existing non-screenshot text differs from the published note; that
+  difference remains. The v1.1.1 APK predates and does not contain the demo
+  data revision. CR-107 final evidence gates and before/after outputs are in
+  Section 10; the final evidence task branch/PR chain is reported with the
+  closeout.
 
 ### CR-106 roadmap planning (2026-11-10)
 
