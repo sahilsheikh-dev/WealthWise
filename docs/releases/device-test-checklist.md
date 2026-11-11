@@ -84,8 +84,15 @@ version, and tester fields remain blank.
 | O51 | Verify Budget Overview has no redundant Pace or Over by/Left summary text; confirm the chart, Left table row and accessible descriptions remain. | Pass | Owner-reported, 2026-11-11. |
 | O52 | Verify all four stress-tier choices, cancellation, Undo, and usability at font scales 1.3 and 2.0. | Pass | Owner-reported, 2026-11-11. |
 | O53 | Verify font scales 1.3 and 2.0 and screen-reader labels/reading order on About, Budget, liabilities and goals. | Pass | Owner-reported, 2026-11-11. |
+| O54 | Verify accessibility and large text across remaining screens: font scales 1.3/2.0, screen-reader announcements and focus order, touch targets, and form validation on iOS/Android. | Pass | Owner-reported, 2026-11-11. |
+| O55 | Verify native dialogs and navigation: backdrop taps, Android Back, scope-picker dismissal, and Home-only menu visibility/behavior. | Pass | Owner-reported, 2026-11-11. |
+| O56 | Verify reminder/notification permission granted, denied and blocked flows; delivery/timing, lock-screen content, cold-start taps, and paying/undoing dues from each entry point. | Pass | Owner-reported, 2026-11-11. |
+| O57 | Verify persistence/storage on device: SQLite migration/restart, AsyncStorage fallback, large-data loading, storage capacity/responsiveness, and stress-data load/Undo. | Pass | Owner-reported, 2026-11-11. |
+| O58 | Verify financial flows on device: holding entries/valuations, linked transaction/goal/Emergency Fund updates and Undo, recurring-plan stop/resume, and liability closure/foreclosure. | Pass | Owner-reported, 2026-11-11. |
+| O59 | Verify backup/restore on device: encrypted export/import, wrong-passphrase handling, native file picker/share sheet, and erase-all. | Pass | Owner-reported, 2026-11-11. |
+| O60 | Verify Budget/list layouts: recurring holding/liability summaries, completed/pending counts and date ordering at larger font scales. | Pass | Owner-reported, 2026-11-11. |
 
-The owner reports O45-O53 passed on 2026-11-11. Device model, Android
+The owner reports O45-O60 passed on 2026-11-11. Device model, Android
 version, and tester fields were not supplied and remain blank.
 
 ## How to run
