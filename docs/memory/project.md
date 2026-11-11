@@ -53,7 +53,7 @@ runtime synchronization.
   and `scripts/`.
 - Test counts: 101 suites, 1317 tests (1316 passed; one skipped) on
   2026-11-11 for CR-108's integrated develop tree. P28-F-R6-R3 later added a
-  ledger regression; its focused run passed 16 tests, and the full suite was
+  ledger regression; its focused run passed 17 tests, and the full suite was
   not rerun. All six CR-108 gates exited 0; the owner reports all listed
   physical-device checks passed. See [status.md](status.md) and the
   [progress ledger](../PROGRESS.md) for exact gate results and coverage.
