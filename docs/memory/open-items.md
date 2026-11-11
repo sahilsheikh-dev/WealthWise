@@ -24,8 +24,8 @@
   synchronized through PRs #130–#133; `main` and `develop` trees match.
 - The final ledger/test correction task PR #134 merged into the retained
   `phase/28-qa-and-release` at `2d3a0f6`; see the P28-F-R6-R2 ledger entry.
-- O45-O53 are owner-reported Pass (2026-11-11); device model, Android version
-  and tester were not supplied.
+- O45-O60 are owner-reported Pass (2026-11-11); device model, OS version and
+  tester were not supplied.
 
 ## CR-108 owner decisions and remaining scope
 
@@ -37,7 +37,7 @@
 - CR-108 is complete: P41-B-R1 task PR #108 merged into the retained phase as
   `e1db78e`, and phase PR #109 merged to `develop` as `5cb4957`. All six
   ordered gates pass; detailed commands, coverage and PR evidence are in
-  [PROGRESS.md](../PROGRESS.md). The owner reports O45-O53 physical-device
+  [PROGRESS.md](../PROGRESS.md). The owner reports O45-O60 physical-device
   checks passed on 2026-11-11; device/tester details were not supplied.
 
 ## CR-106 owner decisions and scope
