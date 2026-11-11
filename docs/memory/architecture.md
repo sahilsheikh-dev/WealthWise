@@ -16,11 +16,11 @@ store.
 The SQLite adapter remains a key-value blob, not a normalized AppData schema.
 It preserves the existing Zustand envelope, safe-storage archives, schema
 version and replace/Undo semantics. The installed Expo SQLite adapter has no
-app-level per-value limit; device disk capacity and native performance still
-require physical-device verification. See the P29-Q record in the
-[progress ledger](../PROGRESS.md). The measured 50-year state is 2.67 MB,
-above the requested 1.5 MB target; this remains a documented size miss, not a
-device-capacity result.
+app-level per-value limit. The owner reports physical-device capacity and
+responsiveness checks passed on 2026-11-11; device details were not supplied.
+See the P29-Q record in the [progress ledger](../PROGRESS.md). The measured
+50-year state is 2.67 MB, above the requested 1.5 MB target; this remains a
+documented size miss independent of the owner-reported device check.
 
 An action that changes linked entities is one domain operation, one Zustand
 `set()`, and one persisted write. Tests count writes where the behavior

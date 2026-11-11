@@ -33,6 +33,7 @@ describe('permanent progress ledger', () => {
     expect(registerRows[0]).toContain('| Done (owner-reported device checks Pass) |');
     expect(promptRows).toHaveLength(1);
     expect(promptRows[0]).toContain('All six ordered gates passed');
+    expect(promptRows[0]).toContain('O45-O60 are owner-reported Pass (2026-11-11)');
     expect(dashboard).toContain('Revised by P29-Q-R1');
     expect(dashboard).toContain('| P29-Q-R1 | — | Done |');
     expect(dashboard).toContain('| P41-B-R1 | — | Done |');
