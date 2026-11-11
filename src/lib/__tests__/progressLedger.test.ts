@@ -451,7 +451,7 @@ describe('permanent progress ledger', () => {
       if (number === 42) {
         expect(branch).toBe('phase/42-owner-decision-reconciliation');
         expect(tag).toBe('—');
-        expect(commit).toBe('217179e93a7e6766aee5b5d8ee1ab1722e2d2990');
+        expect(commit).toBe('15c517573ab892f8c26e2e9722669e389f8dd98f');
         expect(Number(count)).toBe(1);
         continue;
       }
