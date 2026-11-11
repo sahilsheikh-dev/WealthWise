@@ -24,6 +24,9 @@
   synchronized through PRs #130–#133; `main` and `develop` trees match.
 - The final ledger/test correction task PR #134 merged into the retained
   `phase/28-qa-and-release` at `2d3a0f6`; see the P28-F-R6-R2 ledger entry.
+- P28-F-R6-R3 task PR #138 merged into the retained phase at `6f5b1cb`;
+  phase PR #139 merged to `develop` at `fd7ba55`. O45-O60 are recorded as
+  owner-reported Pass, with device identity details absent.
 - O45-O60 are owner-reported Pass (2026-11-11); device model, OS version and
   tester were not supplied.
 
