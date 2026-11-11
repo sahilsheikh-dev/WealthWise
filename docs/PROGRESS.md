@@ -73,7 +73,7 @@ parts count in the numerator and denominator. P1–P14 count as one part
 each.
 
 ```text
-Overall progress ████████░░ 84% (181/215)
+Overall progress ████████░░ 84% (182/216)
 P1          ██████████ 100% (1/1)
 P2          ██████████ 100% (1/1)
 P3          ██████████ 100% (1/1)
@@ -115,7 +115,7 @@ P38         ░░░░░░░░░░ 0% (0/3)
 P39         ░░░░░░░░░░ 0% (0/8)
 P40         ░░░░░░░░░░ 0% (0/2)
 P41         ██████████ 100% (5/5)
-P42         ██████████ 100% (1/1)
+P42         ██████████ 100% (2/2)
 ```
 
 | ID | Legacy ID | Status | Evidence | Last updated |
@@ -349,7 +349,8 @@ P42         ██████████ 100% (1/1)
 | P41-B-R1 | — | Done | Correct the stale once-only demo reminder expectation and cover schema/schedule branches exposed by Gate 1 without changing production behavior. Task PR #108 merged into `phase/41-types-frequency-completion` as `e1db78e`; phase PR #109 merged into `develop` as `5cb4957`; all six ordered gates pass. | 2026-11-11 |
 | P41-C | — | Done | Separate completed liabilities and achieved goals into labelled collapsed sections while retaining filters, sorting, search and the pinned Emergency fund goal. Task PR #104 merged into `phase/41-types-frequency-completion` as `c255ada`; phase PR #105 merged to `develop` as `37a3429`. Dependencies: P41-A. | 2026-11-10 |
 | P41-D | — | Done | Add the offline About route, app-menu access, confirmed browser update link, route tests and offline regression evidence. Test-first commit `bd980ad`; task PR #106 merged into `phase/41-types-frequency-completion` as `7ddfef5`; phase PR #107 merged to `develop` as `8e4a2d1`. Dependencies: none. | 2026-11-10 |
-| P42-A | — | Done | Reconcile owner-approved future plans and close accepted follow-ups; record the deleted codex branch contents and preserve historical evidence. No application behavior changes. | 2026-11-11 |
+| P42-A | — | Done; Revised by P42-A-R1 | Reconcile owner-approved future plans and close accepted follow-ups; record the deleted codex branch contents and preserve historical evidence. No application behavior changes. | 2026-11-11 |
+| P42-A-R1 | — | Done | Record P42-A task/phase PR integration and rerun the six gates on the integrated develop tree. No application behavior changes. | 2026-11-11 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
 DEC-P29AA-EF-LINK-INTEGRITY: Assumed valid Emergency Fund links are holding IDs
@@ -3202,8 +3203,9 @@ evidence present in exports/checkpoints.
 
 | ID | Phase | Legacy ID | Session | Date | Purpose | Outcome | Commits (Git only) | Agent mistakes / review findings | Text |
 |---|---|---|---:|---|---|---|---|---|---|
-| P42-A | P42 | — | current | 2026-11-11 | Reconcile owner-approved future plans, accepted follow-ups, and pending-item records. | Done; decisions are recorded without changing app behavior, dependencies, backups, tags or releases. Focused ledger verification and all six ordered gates are recorded in the CR-109 verification entry. | Test-first commit `217179e`; implementation commit `15c517573ab892f8c26e2e9722669e389f8dd98f`. | Old: P40-B was Planned but owner approval remained open; CR-3, dependency-audit, backup, Node 24 and P29-J follow-ups were listed as unresolved. New: future plans are approved and current accepted behaviors are recorded separately from incomplete audit/implementation work. Reason: reflect the owner's 2026-11-11 direction without implying unperformed work. | current request |
-| CR-109 | P42 | — | current | 2026-11-11 | Update the planned/pending list from the owner's decisions and explain the deleted `codex-changes` work. | Done; detailed future work and resolved items are in [open-items.md](memory/open-items.md); no app changes. | Test-first commit `217179e`; implementation commit `15c517573ab892f8c26e2e9722669e389f8dd98f`. | Old: several accepted behaviors and owner decisions appeared unresolved. New: each is classified as Planned, accepted/resolved, or still dependent on a later task. Reason: provide an accurate actionable list. | current request |
+| P42-A-R1 | P42 | P42-A | current | 2026-11-11 | Record P42-A task/phase PR integration and rerun the six gates on the integrated develop tree. | Done; task PR #142 and phase PR #143 are merged; all six ordered gates pass on integrated `develop` `8988121`. | Test-first commit `9d1d526`; implementation commit `59527b1c05699c6602e3fb6aa4981fc116d517d2`. | Old: P42-A recorded test/gate results from its task branch but not its PR merge SHAs or integrated-develop rerun. New: records both PR merges, exact integration commits and the ordered gate rerun. Reason: make the final remote state auditable. | current request |
+| P42-A | P42 | — | current | 2026-11-11 | Reconcile owner-approved future plans, accepted follow-ups, and pending-item records. | Done; task PR #142 merged into phase at `8f38e9f1fa2e0f888e1a006feac81f2dcb2d473a`; phase PR #143 merged into `develop` at `898812110a07176434533b9f638b71fa6aef80d0`. | Test-first commit `217179e`; implementation commit `15c517573ab892f8c26e2e9722669e389f8dd98f`. | Old: P40-B was Planned but owner approval remained open; CR-3, dependency-audit, backup, Node 24 and P29-J follow-ups were listed as unresolved. New: future plans are approved and current accepted behaviors are recorded separately from incomplete audit/implementation work. Reason: reflect the owner's 2026-11-11 direction without implying unperformed work. | current request |
+| CR-109 | P42 | — | current | 2026-11-11 | Update the planned/pending list from the owner's decisions and explain the deleted `codex-changes` work. | Done; P42-A task PR #142 and phase PR #143 are merged into `develop` at `8988121`; detailed plans, accepted follow-ups, and branch contents are in [open-items.md](memory/open-items.md); no app changes. | Test-first commit `217179e`; implementation commit `15c517573ab892f8c26e2e9722669e389f8dd98f`. | Old: several accepted behaviors and owner decisions appeared unresolved. New: each is classified as Planned, accepted/resolved, or still dependent on a later task. Reason: provide an accurate actionable list. | current request |
 | CM-1 | Repository rules | — | current | 2026-11-08 | Enforce descriptive Conventional Commit subjects. | Old: non-descriptive placeholder subjects were unenforced. New: a POSIX commit-msg hook requires supported Conventional Commit types and rejects placeholders. Reason: make each commit's scope clear and keep unrelated work separate. Gates 1-4: `npm test -- --coverage` 0; `npx tsc --noEmit` 0; `npx expo lint` 0; `npx expo-doctor` 0. Exports skipped by the no-build constraint. | First task commit: `54abb4bcee262287facda1f600022d6189bedc39` (`docs: enforce descriptive commit subjects`). | Initial focused reproduction failed because the hook was absent; after implementation, all 9 focused tests pass. Full Gate 1: 93 suites, 1,205 passed, 1 skipped. | current request |
 | P28-D | P28 | — | current | 2026-11-08 | Adopt branching, shared task rules, and contributor documentation. | Done; `develop` starts at main baseline `a258579c4b580d6f3a157b8d13de53334aa8d34d`; docs, templates and source-derived tests added. Legacy unreleased content in the adoption baseline is an explicit exception; rules apply prospectively. Six gates pass. | `b314113` (`docs: add branching strategy and contributor guide`). | Old: no shared branch workflow or contributor/security templates. New: documented branches, merge rules, six gates, conventional commits and contribution path. Reason: make future work reproducible and protect the stable/release flow. | current request |
 | P28-C-R4 | P28 | P28-C | current | 2026-11-08 | Restructure README and align release documents with the no-public-digest policy. | Done; README follows the user/developer/documentation order. README and latest published Download blocks match; public README and published notes contain no 40/64-character hex identifiers; release docs require private digest verification and expected-size link checks. The final integrated six-gate run passed: 98 suites, 1,242 passed, 1 skipped; coverage 95.96/92.01/98.01/97.62% overall, data 91.03/87.39/94.46/94.17%, domain 96.95/92.85/98.80/98.32%, lib 100%; Gates 2-6 all exit 0, Doctor 21/21, Android and iOS exports succeeded. | Task `89739755081f9c5ed32a6067f4b85bdfcbe39edc` (`P28-C-R4: Restructure README and align release documents with the no-public-digest policy`); phase integration `fd0360ab4affd805fda6fa778e5f06d20b6acc8d`. | Old: release hashes/commit identifiers were presented publicly and README sections were ordered around download/development details. New: ordered user-first docs and internal-only APK digest verification, with a precise parity regression. Reason: improve discovery and avoid exposing internal build identifiers/checksums. GitHub release body intentionally unchanged. | current request |
@@ -3608,7 +3610,7 @@ verification.
 | P28-F-R6-R2 | P28 | P28-F-R6 | complete | 2026-11-11 | Correct stale final release-branch integration evidence and reconcile the latest published-release status. | Done. The final ledger correction and release docs are integrated through task PR #130 → phase `202dabe`, phase PR #131 → `develop` `6f4f4df`, develop-to-main PR #132 → `main` `b678493`, and back-merge PR #133 → `develop` `eedff48`. Task PR #134 merged the strengthened ledger/test correction into phase as `2d3a0f6`. `main` and `develop` trees match at the prior release sync. Focused ledger/download tests pass 2 suites / 24 tests. | Test-first commit `b446fb5`; task PR #134 → phase `2d3a0f6`; release-sync PRs #130–#133. | Old: release status reported PR #129 / `c554c0b` as the final synchronization and P28 as 37/37; the dashboard test only required the parent to contain `Done`. New: requires PR #133 / `eedff48` as the final back-merge, P28 38/38, and the parent status to name both revisions. Reason: the later final ledger/test correction was synchronized after the prior status record. No assertion was weakened. | current request |
 | P28-F-R6-R3 | P28 | P28-F-R6 | complete | 2026-11-11 | Record the owner's report that all physical-device checks from the prior pending-check summary passed. | O54-O60 are added to the device checklist as owner-reported Pass dated 2026-11-11; O45-O53 were already recorded Pass. Open-item device claims are reconciled. This does not constitute independent observation; device identity details remain blank. | Test-first commits `71250b2` and `b7c5891`; final documentation and ledger test. | Old assertion: release/task ledgers and physical-device follow-ups said some device checks were outstanding/unverified. New assertion: the owner reports all listed checks Pass, explicitly distinguished from automated or independently observed verification. Reason: record the owner's latest device-testing report accurately. | current request |
 
-| CR-109 | Record owner-approved future plans, close accepted follow-ups, explain the deleted `codex-changes` commit, and reconcile the pending list. | Done | The owner decisions and accepted current-state follow-ups are reconciled in the dashboard, decision record, and memory pages. No app/runtime behavior, backup, dependency, tag, or release changed. |
+| CR-109 | Record owner-approved future plans, close accepted follow-ups, explain the deleted `codex-changes` commit, and reconcile the pending list. | Done | P42-A task PR #142 merged to phase at `8f38e9f1fa2e0f888e1a006feac81f2dcb2d473a`; phase PR #143 merged to `develop` at `898812110a07176434533b9f638b71fa6aef80d0`. P42-A-R1 records the integration and six-gate rerun. No app/runtime behavior, backup, dependency, tag, or release changed. |
 
 ## 8. Known issues and risks
 
@@ -10024,6 +10026,11 @@ Gradle build, version bump, or release preparation was performed.
 | 5 | `npx expo export --platform android` | 0 | Passed; exported to `dist`. |
 | 6 | `npx expo export --platform ios` | 0 | Passed; exported to `dist`. |
 
+- P42-A task PR #142 merged into `phase/42-owner-decision-reconciliation` at
+  `8f38e9f1fa2e0f888e1a006feac81f2dcb2d473a`; phase PR #143 merged into
+  `develop` at `898812110a07176434533b9f638b71fa6aef80d0`. All six gates were
+  rerun in order on that integrated `develop` commit and again exited 0 with
+  the same counts and coverage.
 - No application/runtime behavior, dependency, backup, tag, release or native
   build changed. No physical-device check is applicable to these ledger/docs
   changes.
@@ -10036,6 +10043,23 @@ Gradle build, version bump, or release preparation was performed.
     break, causing the string assertion to fail. New: keep that phrase
     contiguous while preserving the exact owner-approved wording. Reason:
     ensure prose reflow does not create a false regression.
+
+### P42-A-R1 verification (2026-11-11)
+
+- Test-first commit `9d1d526` failed before the documentation revision because
+  the dashboard did not mark P42-A as revised, P42-A-R1 and its integration
+  references were missing, and P42's subtask count remained one.
+- The focused ledger suite passes: 1 suite / 18 tests. The full Gate 1 rerun
+  passes: 101 suites, 1,319 passed, 1 skipped, 1,320 total; coverage remains
+  95.96/92.15/98.02/97.62% overall, `src/data` 91.06/87.47/94.48/94.19%,
+  `src/domain` 96.94/93.00/98.80/98.31%, and `src/lib` 100% in all measures.
+- All six gates were rerun in order on the P42-A-R1 task tree. Each exited 0;
+  the exact commands and matching results are in the preceding P42-A table.
+- Replaced assertions (old / new / reason):
+  - Old: P42-A was marked Done without its task/phase PR merge evidence, and
+    P42 listed one subtask. New: P42-A says Revised by P42-A-R1, the revision
+    records PR #142/#143 and their merge SHAs, and P42 is 2/2. Reason: make
+    the integrated remote state and final verification auditable.
 
 ## 11. Session and release log
 
@@ -10056,6 +10080,9 @@ Gradle build, version bump, or release preparation was performed.
   recorded dependency-advisory snapshot, the existing local backup snapshot
   and the Node 26 pin. No calculation, UI, dependency, backup or Node 24 fix
   is requested. P39-E remains Planned as a separate report-first audit.
+- Integration: task PR #142 merged to the phase at `8f38e9f`; phase PR #143
+  merged to `develop` at `8988121`. All six ordered gates passed again on the
+  integrated `develop` tree; P42-A-R1 records this evidence.
 - `codex-changes` was deleted at the owner's direction and is not to be
   revived or ported. Its commit `d033d6a` targeted an obsolete schema-v2
   loan/liability model, edited protected Home code, included generated
@@ -11313,7 +11340,7 @@ are guarded by `progressLedger.test.ts`.
 | P29 | `phase/29-income-recurrence` | `phase-29-complete` | `9637d222c4feb4a001384a4d9094e472eff23728` | 42 |
 | P30 | `phase/30-release-2-stabilization` | `phase-30-complete` | `a258579c4b580d6f3a157b8d13de53334aa8d34d` | 3 |
 | P41 | `phase/41-types-frequency-completion` | — | — | 5 |
-| P42 | `phase/42-owner-decision-reconciliation` | — | `15c517573ab892f8c26e2e9722669e389f8dd98f` | 1 |
+| P42 | `phase/42-owner-decision-reconciliation` | — | `15c517573ab892f8c26e2e9722669e389f8dd98f` | 2 |
 
 ### P29-O1-R2 / P29-W-R2 month-count layout (2026-11-08)
 
