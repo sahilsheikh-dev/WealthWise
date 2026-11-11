@@ -73,7 +73,7 @@ parts count in the numerator and denominator. P1–P14 count as one part
 each.
 
 ```text
-Overall progress ████████░░ 84% (180/214)
+Overall progress ████████░░ 84% (181/215)
 P1          ██████████ 100% (1/1)
 P2          ██████████ 100% (1/1)
 P3          ██████████ 100% (1/1)
@@ -115,6 +115,7 @@ P38         ░░░░░░░░░░ 0% (0/3)
 P39         ░░░░░░░░░░ 0% (0/8)
 P40         ░░░░░░░░░░ 0% (0/2)
 P41         ██████████ 100% (5/5)
+P42         ██████████ 100% (1/1)
 ```
 
 | ID | Legacy ID | Status | Evidence | Last updated |
@@ -309,8 +310,8 @@ P41         ██████████ 100% (5/5)
 | P31-A | — | Planned | CODE_OF_CONDUCT.md; root-document changes require explicit owner authorization when executed. Dependencies: none. | 2026-11-09 |
 | P31-B | — | Planned | YAML bug, feature and question issue forms plus config.yml; warn contributors not to include financial data. Dependencies: none. | 2026-11-09 |
 | P31-C | — | Planned | Write an accessibility statement and audit checklist; owner confirmed documentation plus audit, not new app features. Dependencies: none. | 2026-11-09 |
-| P31-D | — | Planned | Privacy statement derived only from verified source facts: local-only storage, no network calls or analytics, local notifications, permissions, encrypted-backup scope, and the unencrypted-at-rest limit. Root document; explicit owner authorization required when executed. Dependencies: P39-C. | 2026-11-10 |
-| P31-E | — | Planned | GitHub Actions workflow for pull requests to develop and main; run gates 1-4 on the Node version in .nvmrc, pin action versions, use no secrets and minimal permissions, and verify with a real PR run. Owner then sets branch protection to require it. Dependencies: none. | 2026-11-10 |
+| P31-D | — | Planned | Owner-approved privacy statement derived only from verified source facts: local-only storage, no network calls or analytics, local notifications, permissions, encrypted-backup scope, and the unencrypted-at-rest limit. Root document. Dependencies: P39-C. | 2026-11-11 |
+| P31-E | — | Planned | GitHub Actions workflow for pull requests to develop and main; run gates 1-4 on the Node version in .nvmrc, pin action versions, use no secrets and minimal permissions, and verify with a real PR run. Owner-approved follow-up: configure branch protection to require the workflow after a successful real PR run. Dependencies: none. | 2026-11-11 |
 | P32-A | — | Cancelled by owner | Screenshot capture was cancelled because the owner already supplied the screenshots. Dependencies: none. | 2026-11-10 |
 | P32-B | — | Cancelled by owner | Screenshot capture was cancelled because the owner already supplied the screenshots. Dependencies: P32-A. | 2026-11-10 |
 | P32-C | — | Cancelled by owner | Screenshot capture was cancelled because the owner already supplied the screenshots; repository-backed image organization is handled by P28-F-R5. Dependencies: P32-B. | 2026-11-10 |
@@ -342,12 +343,13 @@ P41         ██████████ 100% (5/5)
 | P39-G | — | Planned | Report-first clean-install walkthrough of onboarding, lock, reminders prompt, first transaction, and interrupted/denied paths; findings feed P37-A. Dependencies: P39-A. | 2026-11-10 |
 | P39-H | — | Planned | Remediation plan grouping findings into the smallest independent batches, with containment before cleanup, required owner approvals and rollback. Detailed reports stay in chat or /tmp; only the findings summary table enters the ledger. Dependencies: P39-B, P39-C, P39-D, P39-E, P39-F and P39-G. | 2026-11-10 |
 | P40-A | — | Planned | Report-only measurement of docs/PROGRESS.md, docs/memory/* and AGENTS.md sizes, parsing tests and per-prompt read cost. Dependencies: none. | 2026-11-10 |
-| P40-B | — | Held pending owner approval | After P40-A, move completed-phase narrative out of PROGRESS.md into archive files, keep the dashboard, standing rules and open items in the main file, and update ledger tests to read the archives without weakening assertions. Dependencies: P40-A and owner approval. | 2026-11-10 |
+| P40-B | — | Planned | Owner-approved. After P40-A, move completed-phase narrative out of PROGRESS.md into archive files, keep the dashboard, standing rules and open items in the main file, and update ledger tests to read the archives without weakening assertions. Dependencies: P40-A. | 2026-11-11 |
 | P41-A | — | Done; Revised by P41-A-R1 | Add finite Real estate and Custom financial types, validated optional custom names, consistent forms, display/search/backup behavior, and balanced demo data. Real estate maps to the Real estate invest category; Custom maps to Other investments; both use Savings and Investments. Task PR #97 and phase PR #98 merged to `develop` as `9aa6540`; P41-A-R1 task PR #99 and phase PR #100 merged to `develop` as `a67f54f`. | 2026-11-10 |
 | P41-B | — | Done; Revised by P41-B-R1 | Add Once only recurrence to Budget items, income and insurance premiums with exact-once due, reminder, cash-flow, snapshot and schema-v23 migration behavior. Do not add it to investment plans or liabilities. Nine focused suites / 233 tests, TypeScript and Expo lint pass. Task PR #101 and phase PR #102 merged to `develop` as `b4275d3`. | 2026-11-10 |
 | P41-B-R1 | — | Done | Correct the stale once-only demo reminder expectation and cover schema/schedule branches exposed by Gate 1 without changing production behavior. Task PR #108 merged into `phase/41-types-frequency-completion` as `e1db78e`; phase PR #109 merged into `develop` as `5cb4957`; all six ordered gates pass. | 2026-11-11 |
 | P41-C | — | Done | Separate completed liabilities and achieved goals into labelled collapsed sections while retaining filters, sorting, search and the pinned Emergency fund goal. Task PR #104 merged into `phase/41-types-frequency-completion` as `c255ada`; phase PR #105 merged to `develop` as `37a3429`. Dependencies: P41-A. | 2026-11-10 |
 | P41-D | — | Done | Add the offline About route, app-menu access, confirmed browser update link, route tests and offline regression evidence. Test-first commit `bd980ad`; task PR #106 merged into `phase/41-types-frequency-completion` as `7ddfef5`; phase PR #107 merged to `develop` as `8e4a2d1`. Dependencies: none. | 2026-11-10 |
+| P42-A | — | Done | Reconcile owner-approved future plans and close accepted follow-ups; record the deleted codex branch contents and preserve historical evidence. No application behavior changes. | 2026-11-11 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
 DEC-P29AA-EF-LINK-INTEGRITY: Assumed valid Emergency Fund links are holding IDs
@@ -389,7 +391,7 @@ valid EF saves.
 | CH-4 | Done | `1321e29`; removed Transactions movement sheet/route, preserving liability-origin logic. | 2026-10-14 |
 | CR-1 | Done; superseded by P24-A (2026-11-08) | Resolved by local reminders, lock-gated confirmation, privacy controls and the 60-item scheduler. Original open-state note is historical and was superseded on 2026-11-08. | 2026-11-08 |
 | CR-2 | Done | Session/checkpoint backfill and prompt archive removal; source limitations remain in Section 8. | 2026-10-14 |
-| CR-3 | Open | Save narrows with validation summaries in `profile-form.tsx` and `transaction-form.tsx`. | 2026-10-14 |
+| CR-3 | Done (owner accepted current behavior) | Owner confirmed the existing Save behavior in `profile-form.tsx` and `transaction-form.tsx` is satisfactory; no implementation change requested. | 2026-11-11 |
 | CR-4 | Done | Tab label is Transactions, never the superseded short label; verified by tab tests and the source guard. | 2026-10-15 |
 | CR-5 | Done | Five-group categories, suggestions, compact inputs, subtotals and recurring-items summary; P19-A gates pass. | P19-A |
 | CR-6 | Done | Applied budgets and recurring assets/liabilities, past and future, appear under Transactions' Due payments with Pay and Clear due. | P20-A |
@@ -3200,6 +3202,8 @@ evidence present in exports/checkpoints.
 
 | ID | Phase | Legacy ID | Session | Date | Purpose | Outcome | Commits (Git only) | Agent mistakes / review findings | Text |
 |---|---|---|---:|---|---|---|---|---|---|
+| P42-A | P42 | — | current | 2026-11-11 | Reconcile owner-approved future plans, accepted follow-ups, and pending-item records. | Done; decisions are recorded without changing app behavior, dependencies, backups, tags or releases. Focused ledger verification and all six ordered gates are recorded in the CR-109 verification entry. | Test-first commit `217179e`; implementation commit to be recorded after commit. | Old: P40-B was Planned but owner approval remained open; CR-3, dependency-audit, backup, Node 24 and P29-J follow-ups were listed as unresolved. New: future plans are approved and current accepted behaviors are recorded separately from incomplete audit/implementation work. Reason: reflect the owner's 2026-11-11 direction without implying unperformed work. | current request |
+| CR-109 | P42 | — | current | 2026-11-11 | Update the planned/pending list from the owner's decisions and explain the deleted `codex-changes` work. | Done; detailed future work and resolved items are in [open-items.md](memory/open-items.md); no app changes. | Test-first commit `217179e`; implementation commit to be recorded after commit. | Old: several accepted behaviors and owner decisions appeared unresolved. New: each is classified as Planned, accepted/resolved, or still dependent on a later task. Reason: provide an accurate actionable list. | current request |
 | CM-1 | Repository rules | — | current | 2026-11-08 | Enforce descriptive Conventional Commit subjects. | Old: non-descriptive placeholder subjects were unenforced. New: a POSIX commit-msg hook requires supported Conventional Commit types and rejects placeholders. Reason: make each commit's scope clear and keep unrelated work separate. Gates 1-4: `npm test -- --coverage` 0; `npx tsc --noEmit` 0; `npx expo lint` 0; `npx expo-doctor` 0. Exports skipped by the no-build constraint. | First task commit: `54abb4bcee262287facda1f600022d6189bedc39` (`docs: enforce descriptive commit subjects`). | Initial focused reproduction failed because the hook was absent; after implementation, all 9 focused tests pass. Full Gate 1: 93 suites, 1,205 passed, 1 skipped. | current request |
 | P28-D | P28 | — | current | 2026-11-08 | Adopt branching, shared task rules, and contributor documentation. | Done; `develop` starts at main baseline `a258579c4b580d6f3a157b8d13de53334aa8d34d`; docs, templates and source-derived tests added. Legacy unreleased content in the adoption baseline is an explicit exception; rules apply prospectively. Six gates pass. | `b314113` (`docs: add branching strategy and contributor guide`). | Old: no shared branch workflow or contributor/security templates. New: documented branches, merge rules, six gates, conventional commits and contribution path. Reason: make future work reproducible and protect the stable/release flow. | current request |
 | P28-C-R4 | P28 | P28-C | current | 2026-11-08 | Restructure README and align release documents with the no-public-digest policy. | Done; README follows the user/developer/documentation order. README and latest published Download blocks match; public README and published notes contain no 40/64-character hex identifiers; release docs require private digest verification and expected-size link checks. The final integrated six-gate run passed: 98 suites, 1,242 passed, 1 skipped; coverage 95.96/92.01/98.01/97.62% overall, data 91.03/87.39/94.46/94.17%, domain 96.95/92.85/98.80/98.32%, lib 100%; Gates 2-6 all exit 0, Doctor 21/21, Android and iOS exports succeeded. | Task `89739755081f9c5ed32a6067f4b85bdfcbe39edc` (`P28-C-R4: Restructure README and align release documents with the no-public-digest policy`); phase integration `fd0360ab4affd805fda6fa778e5f06d20b6acc8d`. | Old: release hashes/commit identifiers were presented publicly and README sections were ordered around download/development details. New: ordered user-first docs and internal-only APK digest verification, with a precise parity regression. Reason: improve discovery and avoid exposing internal build identifiers/checksums. GitHub release body intentionally unchanged. | current request |
@@ -3501,7 +3505,7 @@ verification.
 |---|---|---|---|
 | CR-1 | 'Notification for all assets, liabilities, SIPs, EMIs, one time loan, or anything which are being scheduled or saved for future date before a day and on the same day and also it should ask for the confirmation if it is paid or not' | Done; superseded by P24-A (2026-11-08) | Resolved by local reminders, lock-gated confirmation, privacy controls and the 60-item scheduler. Original open-state note is historical and was superseded on 2026-11-08. |
 | CR-2 | LEDGER-BACKFILL: merge session exports and checkpoint evidence into the permanent project record, reconcile against Git, and remove prompt archives from the repository. | Done | This commit completes the checkpoint-informed merge and CR-3 form audit. The earlier P15-LEDGER commits removed the prompt archive; recovery is `5aeefb9`. |
-| CR-3 | Form labels and full-width Save follow-up from 2026-10-10. | Open | Every current `app/*-form.tsx` field has a visible label. Save is not full width while an error summary is visible in `profile-form.tsx` and `transaction-form.tsx`; no code changed. |
+| CR-3 | Form labels and full-width Save follow-up from 2026-10-10. | Done (owner accepted current behavior) | The owner confirms the existing Save behavior in `profile-form.tsx` and `transaction-form.tsx` is satisfactory; no implementation change requested. |
 | CR-4 | Tab label must read Transactions, never Txns. | Done | `0304acd`; single-line fit behavior, 44pt target and source guard tested. |
 | CR-5 | Budget divided into five groups: Survival (Needs); Savings and Investments; Wants (non-essential or lifestyle spending: eating out, online shopping, entertainment, fashion); Festival, Donations, Culture; Unexpected Extras (surprises and emergencies: medical bills, home or vehicle repairs, sudden gifts); compact Set up your budget inputs; replace the Line type label. | Done | P19-A; focused and full gates pass. |
 | CR-6 | Applied budget and all recurring items (assets and liabilities, past and future) show in Transactions as due payments, with Pay and Clear due. | Done | P20-A (formerly P19-B). |
@@ -3603,6 +3607,8 @@ verification.
 
 | P28-F-R6-R2 | P28 | P28-F-R6 | complete | 2026-11-11 | Correct stale final release-branch integration evidence and reconcile the latest published-release status. | Done. The final ledger correction and release docs are integrated through task PR #130 → phase `202dabe`, phase PR #131 → `develop` `6f4f4df`, develop-to-main PR #132 → `main` `b678493`, and back-merge PR #133 → `develop` `eedff48`. Task PR #134 merged the strengthened ledger/test correction into phase as `2d3a0f6`. `main` and `develop` trees match at the prior release sync. Focused ledger/download tests pass 2 suites / 24 tests. | Test-first commit `b446fb5`; task PR #134 → phase `2d3a0f6`; release-sync PRs #130–#133. | Old: release status reported PR #129 / `c554c0b` as the final synchronization and P28 as 37/37; the dashboard test only required the parent to contain `Done`. New: requires PR #133 / `eedff48` as the final back-merge, P28 38/38, and the parent status to name both revisions. Reason: the later final ledger/test correction was synchronized after the prior status record. No assertion was weakened. | current request |
 | P28-F-R6-R3 | P28 | P28-F-R6 | complete | 2026-11-11 | Record the owner's report that all physical-device checks from the prior pending-check summary passed. | O54-O60 are added to the device checklist as owner-reported Pass dated 2026-11-11; O45-O53 were already recorded Pass. Open-item device claims are reconciled. This does not constitute independent observation; device identity details remain blank. | Test-first commits `71250b2` and `b7c5891`; final documentation and ledger test. | Old assertion: release/task ledgers and physical-device follow-ups said some device checks were outstanding/unverified. New assertion: the owner reports all listed checks Pass, explicitly distinguished from automated or independently observed verification. Reason: record the owner's latest device-testing report accurately. | current request |
+
+| CR-109 | Record owner-approved future plans, close accepted follow-ups, explain the deleted `codex-changes` commit, and reconcile the pending list. | Done | The owner decisions and accepted current-state follow-ups are reconciled in the dashboard, decision record, and memory pages. No app/runtime behavior, backup, dependency, tag, or release changed. |
 
 ## 8. Known issues and risks
 
@@ -3869,16 +3875,19 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
     - P31-C — Write an accessibility statement and audit checklist. The owner
       confirmed documentation plus an audit, not new app features.
       Dependencies: none.
-    - P31-D — Draft a privacy statement from verified source facts only:
+    - P31-D — Draft an owner-approved privacy statement from verified source facts only:
       local-only storage, no network calls or analytics, local notifications,
       permissions, encrypted-backup scope, and the unencrypted-at-rest limit.
-      This is a root document and requires explicit owner authorization when
-      executed. Dependencies: P39-C.
+      The owner approved this root document on 2026-11-11. Dependencies:
+      P39-C.
     - P31-E — Add a GitHub Actions workflow for pull requests to `develop` and
       `main`, running gates 1–4 with the Node version in `.nvmrc`, pinned action
       versions, no secrets and minimal permissions. Verify with a real PR run;
-      the owner then configures branch protection to require it. Dependencies:
-      none.
+      the owner-approved follow-up is to configure branch protection to
+      require it. Dependencies: none.
+    - The owner confirms public adoption as a future project goal; community
+      launch activities remain separately planned and are not authorized by
+      this status update.
 14. **P32 — Screenshots** (Cancelled by owner):
     - P32-A — Cancelled because the owner already supplied the screenshots.
       Dependencies: none.
@@ -3980,11 +3989,18 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
     - P40-A — Report-only measurement of `docs/PROGRESS.md`,
       `docs/memory/*` and `AGENTS.md` sizes, their parsing tests and
       per-prompt read cost. Dependencies: none.
-    - P40-B — After P40-A and owner approval, move completed-phase narrative
+    - P40-B — After P40-A, move completed-phase narrative
       from `PROGRESS.md` into archive files, keep the dashboard,
       standing rules and open items in the main file, and update ledger tests
-      to read archives without weakening assertions. Dependencies: P40-A and
-      owner approval.
+      to read archives without weakening assertions. Owner approval was
+      recorded on 2026-11-11. Dependencies: P40-A.
+
+Owner-approved future scope beyond the numbered roadmap (2026-11-11):
+
+- Plan a true in-app update check; until implemented, About continues to open
+  the latest-release page in the browser after confirmation.
+- Plan whether and how to add Once-only frequencies to investment plans and
+  liabilities; current forms and schema v23 remain unchanged.
 
 **Superseded (2026-11-08):** the earlier roadmap ended at P28 and marked
 P24, P26, P27 and P28 as in progress or planned. Those entries have been
@@ -9987,7 +10003,85 @@ Gradle build, version bump, or release preparation was performed.
   replace native-device or screen-reader verification. No EAS or Gradle build
   was run.
 
+### P42-A / CR-109 verification (2026-11-11)
+
+- Test-first commit `217179e` added assertions for the owner decisions,
+  resolved follow-ups, CR-109 records and P42 branch index. Its initial
+  red run exposed the stale P40-B owner-approval status and missing CR-109
+  records. The focused run passes: 1 suite / 18 tests.
+- Gate 1's full run passes: 101 suites, 1,319 passed, 1 skipped, 1,320 total.
+  Coverage (statements/branches/functions/lines): overall
+  95.96/92.15/98.02/97.62%; `src/data` 91.06/87.47/94.48/94.19%;
+  `src/domain` 96.94/93.00/98.80/98.31%; `src/lib` 100% in all measures.
+- All six required gates ran in order on the task branch; each exited 0:
+
+| Gate | Exact command | Exit | Result |
+|---|---|---:|---|
+| 1 | `npm test -- --coverage` | 0 | 101 suites; 1,319 passed, 1 skipped, 1,320 total. |
+| 2 | `npx tsc --noEmit` | 0 | Passed. |
+| 3 | `npx expo lint` | 0 | Passed. |
+| 4 | `npx expo-doctor` | 0 | 21/21 checks passed. |
+| 5 | `npx expo export --platform android` | 0 | Passed; exported to `dist`. |
+| 6 | `npx expo export --platform ios` | 0 | Passed; exported to `dist`. |
+
+- No application/runtime behavior, dependency, backup, tag, release or native
+  build changed. No physical-device check is applicable to these ledger/docs
+  changes.
+- Replaced test assertions (old / new / reason):
+  - Old: phase-index test expected 31 rows and did not validate P42. New: it
+    expects 32 rows and checks P42's branch, no-tag state, task commit and
+    one-subtask count. Reason: index the newly added phase without weakening
+    any existing phase checks.
+  - Old: the exact Once-only approval phrase was split by a Markdown line
+    break, causing the string assertion to fail. New: keep that phrase
+    contiguous while preserving the exact owner-approved wording. Reason:
+    ensure prose reflow does not create a false regression.
+
 ## 11. Session and release log
+
+### DEC-CR109-OWNER-PLANNING-AND-CLOSEOUT (2026-11-11)
+
+- Future planning is approved for a true in-app update check, Once-only
+  frequency on investment plans/liabilities, and public adoption. None is
+  implemented by this record. The current About action remains a confirmed
+  browser link; schema v23 still excludes Once-only from investment plans and
+  liabilities; public-launch activities remain unscoped.
+- P31-D's privacy statement and P40-B's archive split are approved as Planned
+  work with their existing dependencies intact. Configure branch protection
+  only after P31-E passes a real PR run. Keep `phase-28-complete` and
+  `phase-29-complete` unchanged. The owner confirms Sahil Aspak Sheikh as the
+  MIT copyright holder; the existing `LICENSE` already matches.
+- The owner accepts the current P29-J calculation without a statement
+  comparison or calculation change, the existing CR-3 Save behavior, the
+  recorded dependency-advisory snapshot, the existing local backup snapshot
+  and the Node 26 pin. No calculation, UI, dependency, backup or Node 24 fix
+  is requested. P39-E remains Planned as a separate report-first audit.
+- `codex-changes` was deleted at the owner's direction and is not to be
+  revived or ported. Its commit `d033d6a` targeted an obsolete schema-v2
+  loan/liability model, edited protected Home code, included generated
+  coverage output and contained unsafe migration behavior. It was never
+  merged. Its migration accepted only a v1 source, defaulted missing arrays
+  and cleared manual holding logs while converting to v2; this is incompatible
+  with the current schema-v23 migration and backup requirements.
+- Replaced assertions (old / new / reason):
+  - Old: owner approval for P40-B was still an open decision. New: P40-B is
+    Planned with approval recorded and P40-A as its dependency. Reason: the
+    owner approved the archive split while preserving sequencing.
+  - Old: the About update-check, investment/liability Once-only, public
+    adoption, privacy statement, MIT holder, and post-P31-E branch-protection
+    decisions were unresolved. New: future items are approved as Planned and
+    current limitations remain explicit. Reason: capture owner direction
+    without presenting future work as implemented.
+  - Old: P29-J evidence, CR-3 Save layout, dependency advisories, the local
+    backup mismatch, Node 24 and the prior focused-only test run were framed
+    as owner-pending follow-ups. New: the owner accepts the current state or
+    explicitly declines additional work; the previous test scope remains
+    accurately described. Reason: remove items that no longer need owner
+    action without claiming unrun validation.
+  - Old: the deleted `codex-changes` branch was described as awaiting review
+    or a safe port. New: it was deleted at the owner's direction and no work
+    is to be ported. Reason: reflect the explicit decision and preserve the
+    evidence explaining the risk.
 
 ### DEC-CR108-MENU-STRESS-DIALOG (2026-11-10)
 
@@ -11219,6 +11313,7 @@ are guarded by `progressLedger.test.ts`.
 | P29 | `phase/29-income-recurrence` | `phase-29-complete` | `9637d222c4feb4a001384a4d9094e472eff23728` | 42 |
 | P30 | `phase/30-release-2-stabilization` | `phase-30-complete` | `a258579c4b580d6f3a157b8d13de53334aa8d34d` | 3 |
 | P41 | `phase/41-types-frequency-completion` | — | — | 5 |
+| P42 | `phase/42-owner-decision-reconciliation` | — | `217179e93a7e6766aee5b5d8ee1ab1722e2d2990` | 1 |
 
 ### P29-O1-R2 / P29-W-R2 month-count layout (2026-11-08)
 

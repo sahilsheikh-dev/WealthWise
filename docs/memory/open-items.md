@@ -30,30 +30,32 @@
 - O45-O60 are owner-reported Pass (2026-11-11); device model, OS version and
   tester were not supplied.
 
-## CR-108 owner decisions and remaining scope
+## CR-108 completion and future scope
 
-- Decide whether an in-app GitHub update check should ever be added. CR-108
-  keeps update discovery browser-based after confirmation; the app itself
-  makes no update request. A true in-app check remains an owner decision.
-- Confirm whether "Once only" is desired for investment plans or liabilities
-  in a future request; CR-108 deliberately excludes both.
 - CR-108 is complete: P41-B-R1 task PR #108 merged into the retained phase as
   `e1db78e`, and phase PR #109 merged to `develop` as `5cb4957`. All six
   ordered gates pass; detailed commands, coverage and PR evidence are in
   [PROGRESS.md](../PROGRESS.md). The owner reports O45-O60 physical-device
   checks passed on 2026-11-11; device/tester details were not supplied.
 
-## CR-106 owner decisions and scope
+## Owner-approved planned direction (2026-11-11)
 
-- Decide whether public adoption is a goal. If it is not, drop public-launch
-  checklist items that depend on adoption as a goal.
-- Approve or decline P31-D's privacy statement as a root document before that
-  part is executed; its content must use verified source facts only.
-- After P40-A, choose whether P40 remains report-only or proceeds with
-  the P40-B narrative/archive split.
-- Confirm the holder of the MIT license.
-- After P31-E has a successful real PR run, set branch protection to require
-  the workflow.
+- A true in-app update check is approved for future planning. The current
+  About action remains browser-based after confirmation and makes no
+  app-side request; no in-app checker is implemented.
+- Once-only frequency for investment plans or liabilities is approved for future planning;
+  schema v23 and current forms remain unchanged until separately scoped.
+- Public adoption is an approved future project goal; no launch campaign or
+  community-response commitment is authorized by this decision.
+- P31-D privacy statement is approved. It remains Planned, depends on P39-C,
+  and must use verified source facts.
+- The owner confirms Sahil Aspak Sheikh as the MIT copyright holder; the
+  existing `LICENSE` notice already uses that name.
+- P40-B is approved and Planned after P40-A. P40-A remains Planned.
+- Configure branch protection after P31-E passes a real PR run; this
+  follow-up is owner-approved and Planned.
+- Retain the existing stale phase tags `phase-28-complete` and
+  `phase-29-complete`; no tag mutation is requested.
 
 Not adopted in CR-106:
 
@@ -64,12 +66,35 @@ Not adopted in CR-106:
 - GDPR consent/processor items: no server or analytics is described in the
   verified app architecture; do not add server-processing controls without a
   verified processing surface.
-- Show HN, GitHub Discussions and issue-response items: not adopted while the
-  public-adoption goal and ongoing community-response capacity remain
-  undecided.
+- Show HN, GitHub Discussions and issue-response items: not adopted by this
+  decision; evaluate them separately against community-response capacity.
 
 ## Recently resolved
 
+- **P29-J is resolved for now (2026-11-11):** the owner confirms the current
+  actual-days/365 behavior is satisfactory; no statement comparison or
+  calculation change is requested. Reopen only if new bank evidence is later
+  supplied and a comparison is requested.
+- **CR-3 is resolved by owner acceptance (2026-11-11):** the existing Save
+  behavior in `profile-form.tsx` and `transaction-form.tsx` is satisfactory;
+  no UI change is requested.
+- **Dependency audit accepted (2026-11-11):** the owner accepts the last
+  recorded advisory snapshot for now; no dependency changes are requested.
+  P39-E remains Planned for the broader report-first dependency audit.
+- **No fresh backup is requested (2026-11-11):** the owner accepts the
+  existing snapshot; no backup data was altered or regenerated.
+- **Node 26 is accepted; no Node 24 repair is requested (2026-11-11):** the
+  project remains pinned to Node 26.13.0.
+- **The owner accepts the previous documentation-only verification scope
+  (2026-11-11):** that prior update ran the focused ledger test, not the full
+  suite or six gates; this records the actual scope without retroactively
+  claiming a full run.
+- **`codex-changes` was deleted at the owner's direction; no work is to be ported
+  (2026-11-11):** its obsolete schema-v2 loan/liability changes,
+  attempted Home edit, generated coverage output and migration defect are
+  detailed below and in [PROGRESS.md](../PROGRESS.md).
+- **Retain the existing stale phase tags (2026-11-11):** the owner directs
+  keeping `phase-28-complete` and `phase-29-complete` as-is. No tag was moved.
 - **Owner roadmap decisions (2026-11-09):** accessibility is the planned
   statement and audit checklist, not new app features. The owner supplied all
   23 versioned screenshots, so P32-A/B/C capture work is cancelled; no new
@@ -167,9 +192,10 @@ Not adopted in CR-106:
   41/41. The owner reports the P29-O1 physical-device checks below passed on
   2026-11-11.
 - **Local `codex-changes` branch:** deleted on 2026-11-08 at the owner's
-  direction. Its sole commit (`d033d6a`) was an October schema-v2 alternative
-  with checked-in coverage output and an unsafe migration; current schema-v22
-  loan/liability behavior supersedes its source changes. Nothing was ported.
+  direction. Commit `d033d6a` attempted an obsolete schema-v2 loan/liability
+  model, included generated coverage output, changed the protected Home screen,
+  and contained a data-loss migration defect. It was never merged; no work is
+  to be ported.
 - **P29-O1-R2 / P29-W-R2 Entries layout:** completed/pending month counts now
   use paired summary cells on Assets and Liabilities; pending schedule rows
   are sorted together with dated entries. Focused route tests pass at font
@@ -257,18 +283,17 @@ Not adopted in CR-106:
   only because merged task branches are deleted by policy. P28-E's final
   verification commit `72fb325` is preserved and its stale status text is
   reconciled on the P28-E-R2 task branch for chronological PR integration.
-  `codex-changes` is not safe to publish as-is: it is based on schema v2
-  rather than current v22, includes generated coverage files, and review
-  found a persisted-data migration bug, a failing migration assertion, and
-  merge conflicts with current `main`. It remains local pending a decision
-  to port any still-needed changes.
+  The obsolete `codex-changes` commit `d033d6a` targeted schema v2 rather than
+  current v23, included generated coverage files, attempted a protected Home
+  edit, and had unsafe migration behavior and a failing migration assertion.
+  It conflicts with current `main` and was deleted at the owner's direction;
+  no port is needed or authorized.
 - **v1.1.0 release integrity:** the owner explicitly approved the `preview`
   profile and reused versionCode 1 for this release. For future releases,
   restore the configured `android-apk` profile and increment versionCode.
-- **Stale phase tags (owner decision):** `phase-28-complete` and
-  `phase-29-complete` target commits behind their current phase branch tips.
-  No tag was moved. Decide whether to retain or update them in a separately
-  authorized change.
+- **Stale phase tags (owner decision, resolved 2026-11-11):**
+  `phase-28-complete` and `phase-29-complete` remain on their historical
+  targets by owner direction. No tag was moved.
 - **P29-O1-R2 / P29-W-R2 integration:** task and phase merges are included in
   the v1.1.0 release on GitHub main and develop through the merged PR chain.
 - **P29-O1-R2 / P29-W-R2 physical-device check:** the owner reports paired
@@ -388,11 +413,10 @@ Not adopted in CR-106:
   v16-to-v17 migration are recorded in [PROGRESS.md](../PROGRESS.md). The
   former P29-G cover-goal feature is removed; Home remains unchanged. The owner
   reports its physical-device checks passed on 2026-11-11.
-- **P29-J bank-balance comparison:** no calculation bug was proven. The owner
-  did not provide the bank outstanding/as-of date, principal, contractual
-  tenure, or app payment date/amount records. The actual statement-method
-  comparison and any monthly-amortization change remain pending those inputs
-  and owner approval; current behavior remains actual-days/365.
+- **P29-J bank-balance comparison:** resolved for now. The owner confirms the
+  current actual-days/365 method is satisfactory; no statement comparison or
+  calculation change is requested. Reopen only if the owner later supplies
+  bank evidence and asks for a comparison.
 - **P29-F2 headroom targets withdrawn:** the 92% `src/domain/budget.ts` and 88%
   `src/data/createAppStore.ts` targets were advisory and are no longer requirements.
   Configured per-file thresholds are authoritative and green.
@@ -414,34 +438,28 @@ Not adopted in CR-106:
   detail have no dedicated schema fields. The local backup is a supported
   snapshot, not a complete workbook migration. Do not retain the user's
   financial values in repository memory.
-- **Local app/backup mismatch:** the note-edited backup has a valid recalculated
-  checksum and imports, but it does not contain the separate transaction
-  deletion/addition described for current app data. Historical custom budget
-  snapshots were added through October 2026 using the transactions in this
-  backup, including distinct planned/actual historical income rows for
-  non-earned inflows; those snapshots do not resolve the missing app
-  transaction edit. Export a fresh backup from the app if that edit should be
-  included.
-- **CR-3:** the full-width Save behavior with a visible validation summary is
-  still open for `profile-form.tsx` and `transaction-form.tsx`.
-- Latest audit: `npm audit --omit=dev` reports 27 advisories (6 high,
-  20 moderate, 1 low) across the production dependency tree. `npm audit`
-  reports 55 (6 high, 44 moderate, 5 low); the 28 additional advisories are
-  dev-only build/test tooling. Exact affected package lists are in the P25-D
-  entry in `docs/PROGRESS.md`. Owner direction is required; do not use
-  `npm audit fix --force` or approve install scripts.
-- Confirm the MIT copyright holder, currently written as
-  `Sahil Aspak Sheikh` from the local account name.
-- **Node 24 Jest issue:** on Node 24.22.2, after clearing Jest cache, 13 suites
+- **Local app/backup mismatch:** the owner accepts the current snapshot and
+  does not request a fresh export. The historical mismatch remains documented;
+  no backup data was altered or regenerated.
+- **CR-3:** resolved by owner acceptance of the existing Save behavior in
+  `profile-form.tsx` and `transaction-form.tsx`; no UI change is requested.
+- The last recorded audit snapshot reports 27 production advisories (6 high,
+  20 moderate, 1 low) and 55 total (6 high, 44 moderate, 5 low); the extra 28
+  are dev-only tooling. The owner accepts this snapshot for now; no dependency
+  changes are requested. P39-E remains Planned for a broader, current
+  dependency-risk report. Never use `npm audit fix --force` or approve
+  install scripts without separate authorization.
+- The MIT copyright holder is confirmed by the owner as Sahil Aspak Sheikh;
+  the existing `LICENSE` notice already matches.
+- **Node 24 Jest issue (accepted, not a pending fix):** on Node 24.22.2, after clearing Jest cache, 13 suites
   fail because `expo-modules-core` reads `ReactNativePlatform.select` while
   `react-native` is mocked without a `Platform` export in affected test files.
   The full suite passes on Node 26.13.0. React Native 0.86.3's declared engine
   supports Node `^20.19.4 || ^22.13.0 || ^24.3.0 || >=25.0.0`; therefore the
   test difference does not prove that the SDK itself rejects Node 24.
   Project Node is pinned to 26.13.0 and the allowed engine is `>=26.0.0 <27`
-  based on the observed test results. Node 24/Jest mock behavior remains
-  unresolved and can be revisited if test mocks are corrected in a future
-  authorized task.
+  based on the observed test results. The owner accepts the Node 26.13.0
+  project pin; no Node 24-specific mock repair is requested.
 - The owner reports v0.1.0 is a GitHub pre-release (`v0.1.0`), with EAS build
   and screenshots complete. The slug was confirmed by the owner and was not
   changed.

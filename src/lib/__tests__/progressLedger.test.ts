@@ -437,7 +437,7 @@ describe('permanent progress ledger', () => {
     }
 
     const rows = index.split('\n').filter((line) => /^\| P\d+ \|/.test(line));
-    expect(rows).toHaveLength(31);
+    expect(rows).toHaveLength(32);
     for (const line of rows) {
       const [, phase, branch, tag, commit, count] = line.split('|').map((cell) => cell.trim().replaceAll('`', ''));
       const number = Number(phase?.match(/^P(\d+)$/)?.[1]);
@@ -446,6 +446,13 @@ describe('permanent progress ledger', () => {
         expect(tag).toBe('—');
         expect(commit).toBe('—');
         expect(Number(count)).toBe(5);
+        continue;
+      }
+      if (number === 42) {
+        expect(branch).toBe('phase/42-owner-decision-reconciliation');
+        expect(tag).toBe('—');
+        expect(commit).toBe('217179e93a7e6766aee5b5d8ee1ab1722e2d2990');
+        expect(Number(count)).toBe(1);
         continue;
       }
       const paddedPhase = String(number).padStart(2, '0');
