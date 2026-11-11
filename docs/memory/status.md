@@ -28,10 +28,10 @@
   layouts. No device model, OS version or tester details were supplied; these
   are owner-reported, not independently observed.
 - P28-F-R6-R3 changes documentation and ledger tests only; the focused
-  progress-ledger test passes 16/16. The full suite and six application gates
-  were not rerun for this update. Task PR #138 merged the task branch into
-  `phase/28-qa-and-release` at `6f5b1cb`; the phase-to-develop PR remains
-  pending.
+  progress-ledger test passes 17/17. The full suite and six application gates
+  were not rerun for this update. Task PR #138 merged into the retained phase
+  at `6f5b1cb`; phase PR #139 merged to `develop` at `fd7ba55`. P28-F-R6-R3
+  is integrated into `develop` at `fd7ba55`.
 - All 104 screenshot image/link URLs returned HTTP 200; raw image sizes match
   all 52 repository files. The latest and four versioned APK URLs returned
   HTTP 200 with their expected artifact sizes. Historical release screenshot
