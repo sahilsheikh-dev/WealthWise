@@ -72,13 +72,24 @@ describe('permanent progress ledger', () => {
     const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
     const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
     const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
 
     expect(dashboard.split('\n').find((line) => line.startsWith('| P40-B |')))
       .toContain('| Planned |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P42-A |')))
+      .toContain('| Done; Revised by P42-A-R1 |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P42-A-R1 |')))
       .toContain('| Done |');
     expect(register.split('\n').filter((line) => line.startsWith('| CR-109 |'))).toHaveLength(1);
+    expect(register.split('\n').find((line) => line.startsWith('| CR-109 |')))
+      .toContain('Task PR #142');
+    expect(register.split('\n').find((line) => line.startsWith('| CR-109 |')))
+      .toContain('phase PR #143');
+    expect(register.split('\n').find((line) => line.startsWith('| CR-109 |')))
+      .toContain('898812110a07176434533b9f638b71fa6aef80d0');
     expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-109 |'))).toHaveLength(1);
+    expect(openItems).toContain('P42-A is integrated into `develop`');
+    expect(status).toContain('P42-A-R1 records task PR #142 and phase PR #143');
     expect(openItems).toContain('A true in-app update check is approved for future planning');
     expect(openItems).toContain('Once-only frequency for investment plans or liabilities is approved for future planning');
     expect(openItems).toContain('Public adoption is an approved future project goal');
@@ -170,7 +181,7 @@ describe('permanent progress ledger', () => {
     const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
     const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
     const newPartIds = [
-      'P41-B-R1', 'P42-A',
+      'P41-B-R1', 'P42-A', 'P42-A-R1',
       'P16-A', 'P16-B', 'P16-C', 'P17-A', 'P17-B', 'P17-C',
       'P18-R0', 'P18-R1', 'P18-R2', 'P18-R3', 'P18-R4', 'P18-R5',
       'P18-R6', 'P18-LEDGER', 'P18-R7',
@@ -179,7 +190,7 @@ describe('permanent progress ledger', () => {
       'P23-C', 'P23-D', 'P25-F',
       'P28-A', 'P28-A-R1', 'P28-B', 'P28-C', 'P28-C-R1', 'P28-C-R2', 'P28-C-R3', 'P28-C-R4', 'P28-D', 'P28-E', 'P28-E-R1', 'P28-E-R2', 'P28-E-R3', 'P28-E-R4', 'P28-E-R5', 'P28-E-R5-R1', 'P28-F', 'P28-F-R1', 'P28-F-R2', 'P28-F-R2-R1', 'P28-F-R3', 'P28-F-R3-R1', 'P28-F-R3-R2', 'P28-F-R3-R3', 'P28-F-R3-R3-R1', 'P28-F-R4', 'P28-F-R4-R1', 'P28-F-R4-R1-R1', 'P28-F-R4-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1-R1-R1', 'P28-F-R6-R2', 'P28-F-R6-R3', 'P28-F-R6-R3-R1',
       'P29-A', 'P29-B', 'P29-C', 'P29-D', 'P29-E', 'P29-F', 'P29-F2', 'P29-F3', 'P29-F4', 'P29-G', 'P29-H', 'P29-I', 'P29-J', 'P29-K', 'P29-L', 'P29-M', 'P29-N', 'P29-M2', 'P29-O', 'P29-O-R1', 'P29-O1-R1', 'P29-O1-R2', 'P29-O2', 'P29-Q', 'P29-R', 'P29-S', 'P29-T', 'P29-U', 'P29-V', 'P29-W', 'P29-W-R1', 'P29-W-R2', 'P29-X', 'P29-Y', 'P29-Z',
-      'P29-AA', 'P29-AB', 'P29-AB-R1', 'P29-AB-R2', 'P29-AB-R2-R1', 'P30-A', 'P30-B', 'P30-C', 'P41-A', 'P42-A',
+      'P29-AA', 'P29-AB', 'P29-AB-R1', 'P29-AB-R2', 'P29-AB-R2-R1', 'P30-A', 'P30-B', 'P30-C', 'P41-A', 'P42-A', 'P42-A-R1',
     ];
 
     for (const id of newPartIds) {
@@ -452,7 +463,7 @@ describe('permanent progress ledger', () => {
         expect(branch).toBe('phase/42-owner-decision-reconciliation');
         expect(tag).toBe('—');
         expect(commit).toBe('15c517573ab892f8c26e2e9722669e389f8dd98f');
-        expect(Number(count)).toBe(1);
+        expect(Number(count)).toBe(2);
         continue;
       }
       const paddedPhase = String(number).padStart(2, '0');
