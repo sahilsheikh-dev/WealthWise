@@ -56,9 +56,11 @@ runtime synchronization.
 - Other source groups: `src/hooks/`, `src/theme/`, `src/constants/`, `assets/`
   and `scripts/`.
 - Test counts: 101 suites, 1320 tests (1319 passed; one skipped) on
-  2026-11-11 for P42-A's full run. P28-F-R6-R3's earlier focused-only check
-  was later followed by this full run. All six ordered gates exit 0; the
-  owner reports all listed physical-device checks passed. See
+  2026-11-11 for P42-A's full run, repeated on integrated `develop` at
+  `8988121`; P42-A-R1 repeated the same six gates on its documentation-only
+  revision tree. P28-F-R6-R3's earlier focused-only check was later followed
+  by this full run. All six ordered gates exit 0; the owner reports all
+  listed physical-device checks passed. See
   [status.md](status.md) and the [progress ledger](../PROGRESS.md) for exact
   gate results and coverage.
 

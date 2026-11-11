@@ -38,6 +38,13 @@
   [PROGRESS.md](../PROGRESS.md). The owner reports O45-O60 physical-device
   checks passed on 2026-11-11; device/tester details were not supplied.
 
+## CR-109 integration
+
+- P42-A is integrated into `develop`: task PR #142 merged into the phase at
+  `8f38e9f`, and phase PR #143 merged into `develop` at `8988121`. The six
+  ordered gates passed again on integrated `develop` and were repeated on the
+  P42-A-R1 task tree; no app behavior changed.
+
 ## Owner-approved planned direction (2026-11-11)
 
 - A true in-app update check is approved for future planning. The current

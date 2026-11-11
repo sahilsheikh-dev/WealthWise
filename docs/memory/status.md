@@ -40,10 +40,12 @@
   were not rerun for this update. Task PR #138 merged into the retained phase
   at `6f5b1cb`; phase PR #139 merged to `develop` at `fd7ba55`. P28-F-R6-R3
   is integrated into `develop` at `fd7ba55`.
-- CR-109 adds owner-approved future planning and records resolved/accepted
-  follow-ups; it does not change application behavior. Its focused ledger
-  test and all six ordered gates passed on the task branch before PR
-  integration; the exact results are in the CR-109 verification entry.
+- CR-109 is integrated without application behavior changes. P42-A task PR
+  #142 merged into the phase at `8f38e9f`; phase PR #143 merged into
+  `develop` at `8988121`. P42-A-R1 records task PR #142 and phase PR #143;
+  all six gates were rerun on integrated `develop` and passed. P42-A-R1 also
+  reran all six gates on its task branch with the same results. Exact results
+  are in the CR-109 verification entry.
 - All 104 screenshot image/link URLs returned HTTP 200; raw image sizes match
   all 52 repository files. The latest and four versioned APK URLs returned
   HTTP 200 with their expected artifact sizes. Historical release screenshot
@@ -496,8 +498,8 @@
   2026-11-11; all six CR-108 gates exited 0.
 - Test counts: 101 suites, 1320 tests (1319 passed, 1 skipped) on 2026-11-11.
 - Latest validated run: 101 suites, 1320 tests (1319 passed, 1 skipped) on
-  2026-11-11; all six P42-A gates exit 0. Coverage and exact commands are
-  recorded in [PROGRESS.md](../PROGRESS.md).
+  2026-11-11 on integrated `develop` `8988121`; all six P42-A gates exit 0.
+  Coverage and exact commands are recorded in [PROGRESS.md](../PROGRESS.md).
 - All six P29-L gates exit 0: Jest coverage, TypeScript, Expo lint with zero
   warnings, Expo Doctor 21/21, Android export and iOS export. Exact commands
   and exit codes are in [PROGRESS.md](../PROGRESS.md).
