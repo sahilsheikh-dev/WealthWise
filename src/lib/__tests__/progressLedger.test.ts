@@ -39,6 +39,16 @@ describe('permanent progress ledger', () => {
     expect(dashboard).toContain('| P41-B-R1 | — | Done |');
   });
 
+  it('records P28-F-R6-R3 task and phase PR integration', () => {
+    const changeRegister = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const revisionRow = changeRegister.split('\n').find((line) => line.startsWith('| P28-F-R6-R3 |'));
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(revisionRow).toContain('task PR #138');
+    expect(revisionRow).toContain('phase PR #139 merged to `develop` as `fd7ba55`');
+    expect(status).toContain('P28-F-R6-R3 is integrated into `develop` at `fd7ba55`');
+  });
+
   it('records owner-reported physical-device validation as Pass', () => {
     const checklist = readFileSync(
       join(process.cwd(), 'docs/releases/device-test-checklist.md'),
