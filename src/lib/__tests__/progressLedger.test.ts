@@ -82,7 +82,7 @@ describe('permanent progress ledger', () => {
       .toContain('| Done |');
     expect(register.split('\n').filter((line) => line.startsWith('| CR-109 |'))).toHaveLength(1);
     expect(register.split('\n').find((line) => line.startsWith('| CR-109 |')))
-      .toContain('Task PR #142');
+      .toContain('P42-A task PR #142');
     expect(register.split('\n').find((line) => line.startsWith('| CR-109 |')))
       .toContain('phase PR #143');
     expect(register.split('\n').find((line) => line.startsWith('| CR-109 |')))
