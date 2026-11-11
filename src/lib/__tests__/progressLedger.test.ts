@@ -67,6 +67,34 @@ describe('permanent progress ledger', () => {
     }
   });
 
+  it('records owner-approved plans and resolves accepted follow-ups', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P40-B |')))
+      .toContain('| Planned |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P42-A |')))
+      .toContain('| Done |');
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-109 |'))).toHaveLength(1);
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-109 |'))).toHaveLength(1);
+    expect(openItems).toContain('A true in-app update check is approved for future planning');
+    expect(openItems).toContain('Once-only frequency for investment plans or liabilities is approved for future planning');
+    expect(openItems).toContain('Public adoption is an approved future project goal');
+    expect(openItems).toContain('P31-D privacy statement is approved');
+    expect(openItems).toContain('The owner confirms Sahil Aspak Sheikh as the MIT copyright holder');
+    expect(openItems).toContain('P40-B is approved and Planned after P40-A');
+    expect(openItems).toContain('Configure branch protection after P31-E passes a real PR run');
+    expect(openItems).toContain('Retain the existing stale phase tags');
+    expect(openItems).toContain('P29-J is resolved for now');
+    expect(openItems).toContain('CR-3 is resolved by owner acceptance');
+    expect(openItems).toContain('No fresh backup is requested');
+    expect(openItems).toContain('Node 26 is accepted; no Node 24 repair is requested');
+    expect(openItems).toContain('The owner accepts the previous documentation-only verification scope');
+    expect(openItems).toContain("`codex-changes` was deleted at the owner's direction; no work is to be ported");
+  });
+
   it('lists every fix and CR in the dashboard or register', () => {
     const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
     const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
@@ -88,7 +116,7 @@ describe('permanent progress ledger', () => {
       'CR-58', 'CR-59', 'CR-60', 'CR-61', 'CR-62', 'CR-63', 'CR-64', 'CR-65',
       'CR-66', 'CR-67', 'CR-68', 'CR-69', 'CR-70', 'CR-71', 'CR-72', 'CR-73', 'CR-74', 'CR-75',
       'CR-76', 'CR-77', 'CR-78', 'CR-79', 'CR-80', 'CR-81', 'CR-82', 'CR-83', 'CR-84', 'CR-85', 'CR-86', 'CR-87',
-      'CR-88', 'CR-89', 'CR-90', 'CR-91', 'CR-92', 'CR-93', 'CR-94', 'CR-95', 'CR-96', 'CR-97', 'CR-98', 'CR-99', 'CR-100', 'CR-101', 'CR-102', 'CR-103', 'CR-106', 'CR-107',
+      'CR-88', 'CR-89', 'CR-90', 'CR-91', 'CR-92', 'CR-93', 'CR-94', 'CR-95', 'CR-96', 'CR-97', 'CR-98', 'CR-99', 'CR-100', 'CR-101', 'CR-102', 'CR-103', 'CR-106', 'CR-107', 'CR-109',
     ]) {
       expect(statusRecords).toContain(id);
     }
@@ -124,7 +152,7 @@ describe('permanent progress ledger', () => {
       'P28-A', 'P28-A-R1', 'P28-B', 'P28-C', 'P28-C-R1', 'P28-C-R2', 'P28-C-R3', 'P28-C-R4', 'P28-D', 'P28-E', 'P28-E-R1', 'P28-E-R2', 'P28-E-R3', 'P28-E-R4', 'P28-E-R5', 'P28-E-R5-R1', 'P28-F', 'P28-F-R1', 'P28-F-R2', 'P28-F-R2-R1', 'P28-F-R3', 'P28-F-R3-R1', 'P28-F-R3-R2', 'P28-F-R3-R3', 'P28-F-R3-R3-R1', 'P28-F-R4', 'P28-F-R4-R1', 'P28-F-R4-R1-R1', 'P28-F-R4-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1-R1-R1', 'P28-F-R6-R2', 'P28-F-R6-R3', 'P28-F-R6-R3-R1',
       'P29-A', 'P29-B', 'P29-C', 'P29-D', 'P29-E', 'P29-F', 'P29-F2', 'P29-F3', 'P29-F4', 'P29-G', 'P29-H', 'P29-I', 'P29-J', 'P29-K', 'P29-L', 'P29-M', 'P29-N', 'P29-M2', 'P29-O', 'P29-O-R1', 'P29-O1-R1', 'P29-O1-R2', 'P29-O2', 'P29-Q', 'P29-R', 'P29-S', 'P29-T', 'P29-U', 'P29-V', 'P29-W', 'P29-W-R1', 'P29-W-R2', 'P29-X', 'P29-Y', 'P29-Z',
       'P29-AA', 'P29-AB', 'P29-AB-R1', 'P29-AB-R2', 'P29-AB-R2-R1', 'P30-A', 'P30-B', 'P30-C', 'P41-A',
-      'CR-92', 'CR-93', 'CR-94', 'CR-95', 'CR-96', 'CR-106', 'CR-107',
+      'CR-92', 'CR-93', 'CR-94', 'CR-95', 'CR-96', 'CR-106', 'CR-107', 'CR-109',
     ];
 
     const loggedIds = promptLog.split('\n')
@@ -142,7 +170,7 @@ describe('permanent progress ledger', () => {
     const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
     const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
     const newPartIds = [
-      'P41-B-R1',
+      'P41-B-R1', 'P42-A',
       'P16-A', 'P16-B', 'P16-C', 'P17-A', 'P17-B', 'P17-C',
       'P18-R0', 'P18-R1', 'P18-R2', 'P18-R3', 'P18-R4', 'P18-R5',
       'P18-R6', 'P18-LEDGER', 'P18-R7',
@@ -151,7 +179,7 @@ describe('permanent progress ledger', () => {
       'P23-C', 'P23-D', 'P25-F',
       'P28-A', 'P28-A-R1', 'P28-B', 'P28-C', 'P28-C-R1', 'P28-C-R2', 'P28-C-R3', 'P28-C-R4', 'P28-D', 'P28-E', 'P28-E-R1', 'P28-E-R2', 'P28-E-R3', 'P28-E-R4', 'P28-E-R5', 'P28-E-R5-R1', 'P28-F', 'P28-F-R1', 'P28-F-R2', 'P28-F-R2-R1', 'P28-F-R3', 'P28-F-R3-R1', 'P28-F-R3-R2', 'P28-F-R3-R3', 'P28-F-R3-R3-R1', 'P28-F-R4', 'P28-F-R4-R1', 'P28-F-R4-R1-R1', 'P28-F-R4-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1-R1-R1', 'P28-F-R6-R2', 'P28-F-R6-R3', 'P28-F-R6-R3-R1',
       'P29-A', 'P29-B', 'P29-C', 'P29-D', 'P29-E', 'P29-F', 'P29-F2', 'P29-F3', 'P29-F4', 'P29-G', 'P29-H', 'P29-I', 'P29-J', 'P29-K', 'P29-L', 'P29-M', 'P29-N', 'P29-M2', 'P29-O', 'P29-O-R1', 'P29-O1-R1', 'P29-O1-R2', 'P29-O2', 'P29-Q', 'P29-R', 'P29-S', 'P29-T', 'P29-U', 'P29-V', 'P29-W', 'P29-W-R1', 'P29-W-R2', 'P29-X', 'P29-Y', 'P29-Z',
-      'P29-AA', 'P29-AB', 'P29-AB-R1', 'P29-AB-R2', 'P29-AB-R2-R1', 'P30-A', 'P30-B', 'P30-C', 'P41-A',
+      'P29-AA', 'P29-AB', 'P29-AB-R1', 'P29-AB-R2', 'P29-AB-R2-R1', 'P30-A', 'P30-B', 'P30-C', 'P41-A', 'P42-A',
     ];
 
     for (const id of newPartIds) {
@@ -183,9 +211,7 @@ describe('permanent progress ledger', () => {
     for (const id of plannedPartIds) {
       const dashboardRows = dashboard.split('\n').filter((line) => line.startsWith(`| ${id} |`));
       expect(dashboardRows).toHaveLength(1);
-      const expectedStatus = id === 'P40-B'
-        ? '| Held pending owner approval |'
-        : cancelledPartIds.has(id) ? '| Cancelled by owner |' : '| Planned |';
+      const expectedStatus = cancelledPartIds.has(id) ? '| Cancelled by owner |' : '| Planned |';
       expect(dashboardRows[0]).toContain(expectedStatus);
       expect(roadmap.split('\n').filter((line) => line.includes(`${id} —`))).toHaveLength(1);
       expect(promptLog.split('\n').find((line) => line.startsWith(`| ${id} |`))).toBeUndefined();
@@ -220,7 +246,7 @@ describe('permanent progress ledger', () => {
     expect(roadmapLabels).toContain('P31');
     expect(branchLabels).toEqual([
       ...Array.from({ length: 30 }, (_, index) => `P${index + 1}`),
-      'P41',
+      'P41', 'P42',
     ]);
 
     let inSubjectMap = false;
