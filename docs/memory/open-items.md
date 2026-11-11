@@ -24,8 +24,8 @@
   synchronized through PRs #130–#133; `main` and `develop` trees match.
 - The final ledger/test correction task PR #134 merged into the retained
   `phase/28-qa-and-release` at `2d3a0f6`; see the P28-F-R6-R2 ledger entry.
-- O45-O53 are owner-reported Pass (2026-11-11); device model, Android version
-  and tester were not supplied.
+- O45-O60 are owner-reported Pass (2026-11-11); device model, OS version and
+  tester were not supplied.
 
 ## CR-108 owner decisions and remaining scope
 
@@ -37,7 +37,7 @@
 - CR-108 is complete: P41-B-R1 task PR #108 merged into the retained phase as
   `e1db78e`, and phase PR #109 merged to `develop` as `5cb4957`. All six
   ordered gates pass; detailed commands, coverage and PR evidence are in
-  [PROGRESS.md](../PROGRESS.md). The owner reports O45-O53 physical-device
+  [PROGRESS.md](../PROGRESS.md). The owner reports O45-O60 physical-device
   checks passed on 2026-11-11; device/tester details were not supplied.
 
 ## CR-106 owner decisions and scope
@@ -161,7 +161,8 @@ Not adopted in CR-106:
 - **P29-O-R1 scope close-out:** P29-O is superseded by the accepted P29-O1
   holding workflow and the explicit P29-S cancellation of the separate
   ledger-only migration. No app implementation remains in scope; P29 is
-  41/41. The P29-O1 physical-device checks below remain open.
+  41/41. The owner reports the P29-O1 physical-device checks below passed on
+  2026-11-11.
 - **Local `codex-changes` branch:** deleted on 2026-11-08 at the owner's
   direction. Its sole commit (`d033d6a`) was an October schema-v2 alternative
   with checked-in coverage output and an unsafe migration; current schema-v22
@@ -216,14 +217,22 @@ Not adopted in CR-106:
 
 ## Unresolved
 
-- **P20-S-R1 device check:** physical-device rendering remains unverified.
+- **Physical-device validation report (2026-11-11):** the owner reports that
+  all device checks listed in the previous assistant summary passed. The
+  categories and owner-reported Pass results are recorded as O54-O60 in the
+  [device checklist](../releases/device-test-checklist.md). This supersedes
+  older pending/unverified wording for the covered device checks below and in
+  the physical-device section. Device model, OS version and tester details
+  were not provided; these remain owner-reported, not independently observed.
+- **P20-S-R1 device check:** owner reports the physical-device rendering check
+  passed on 2026-11-11.
   Owner approved commit/merge; SegmentedControl labels removed by the owner
   remain absent. Final gate results and PR integration are in
   [`PROGRESS.md`](../PROGRESS.md). Implementation commit `d36103e` is in
   task-to-phase PR #42; phase-to-develop PR #43.
 - **CR-107 demo display:** route tests verify the Rs 1 crore Assets total at
-  simulated font scales 1.3 and 2.0. Physical-device rendering at both scales
-  remains unverified.
+  simulated font scales 1.3 and 2.0. The owner reports physical-device
+  rendering at both scales passed on 2026-11-11.
 - **v1.1.1 release:** the owner-approved patch release was published on
   2026-11-09 after PR #69 merged it to `main` and PR #70 back-merged it to
   `develop`. Tag `v1.1.1` points to the main merge commit. The owner-run EAS
@@ -259,78 +268,81 @@ Not adopted in CR-106:
   authorized change.
 - **P29-O1-R2 / P29-W-R2 integration:** task and phase merges are included in
   the v1.1.0 release on GitHub main and develop through the merged PR chain.
-- **P29-O1-R2 / P29-W-R2 physical-device check:** verify paired count-cell
-  layout and date ordering on Assets and Liabilities at font scales 1.3 and
-  2.0 on devices. TestRenderer checks are simulated. The six ordered
-  repository gates pass locally; integration is complete on `develop`.
+- **P29-O1-R2 / P29-W-R2 physical-device check:** the owner reports paired
+  count-cell layout and date ordering on Assets and Liabilities at font scales
+  1.3 and 2.0 passed on 2026-11-11.
+  TestRenderer checks are simulated. The six ordered repository gates pass
+  locally; integration is complete on `develop`.
 - **Pre-build synthetic v13 equality:** automated coverage now imports a
   deterministic, checksummed v13 backup through `parseBackup` and compares
   source-derived net worth, every goal's saved amount and Emergency Fund
-  available amount. Physical-device backup/restore checks remain part of the
-  pre-build checklist in [`build-config.md`](../releases/build-config.md).
-- **P26-A physical-device checks:** verify touch targets, scalable labels and
+  available amount. The owner reports physical-device backup/restore checks
+  passed on 2026-11-11; they remain listed in
+  [`build-config.md`](../releases/build-config.md) as the procedure.
+- **P26-A physical-device checks:** owner reports the touch-target, scalable-label,
   text at 1.3x/2.0x, focus order, announced form errors, color-only status,
-  screen-reader navigation, cold hydration, first render and action writes on
-  iOS and Android. Jest/TestRenderer and Node benchmarks are not device
-  evidence. `app/(tabs)/index.tsx` and `app/(tabs)/budget.tsx` remain
+  screen-reader navigation, cold hydration, first render and action-write
+  checks passed on 2026-11-11. Jest/TestRenderer and Node benchmarks are not
+  device evidence. `app/(tabs)/index.tsx` and `app/(tabs)/budget.tsx` remain
   user-owned/report-only surfaces under the P26-A scope.
 - **P29-AA Emergency Fund links resolved (2026-11-06):** repeated failing
   reproduction and store coverage confirmed valid links for Cash, Savings,
   Fixed deposits and recurring plans. Plan deletion now clears EF bucket and
   goal links in the same write; hydration repairs dangling links once and
   preserves valid links, net worth and goal values. No schema change.
-- **Emergency Fund form font-scale and device check:** verify the resolved
-  link picker and EF allocation form at 1.3x and 2.0x on physical devices.
+- **Emergency Fund form font-scale and device check:** owner reports the
+  resolved link picker and EF allocation form passed at 1.3x and 2.0x on
+  physical devices on 2026-11-11.
 - **P29-Z documentation verification (historical, superseded 2026-11-08):**
   source wins over docs; current schema v22 and the migration/archive chain
   through `.premigration.v21`, Foreclosure labels, Home-only menu rule and real
   Gate 1 counts are recorded. P29-Z made no behavior, schema or UI source
   change.
-- **Home-only global menu physical-device check (2026-11-05):** verify the
-  three-dot options menu remains present on Index/Home and absent on Assets,
-  Liabilities and detail screens, including backup, reminders, security,
-  profile and theme routes, at font scales 1.3 and 2.0.
-- **Recurring asset stop/resume label physical-device check:** verify active
-  recurring cards show Stop investment and stopped plans show Resume
-  investment while the action remains within the shared instrument-card row.
-- **Holding and liability layout physical-device check (2026-11-05):** verify
-  the two-column investment Summary, same-row liability actions, conditional
-  Entries button and liability Summary/details layout at font scales 1.3 and
-  2.0 on iOS and Android. Automated route, ownership and focused font-scale
+- **Home-only global menu physical-device check (2026-11-05):** the owner
+  reports the three-dot options menu remained present on Index/Home and absent
+  on Assets, Liabilities and detail screens, including backup, reminders,
+  security, profile and theme routes at font scales 1.3 and 2.0. Pass reported
+  2026-11-11.
+- **Recurring asset stop/resume label physical-device check:** owner reports
+  active recurring cards showed Stop investment and stopped plans showed Resume
+  investment in the shared instrument-card row; Pass reported 2026-11-11.
+- **Holding and liability layout physical-device check (2026-11-05):** the
+  owner reports the two-column investment Summary, same-row liability actions,
+  conditional Entries button and liability Summary/details layout at font
+  scales 1.3 and 2.0 passed on 2026-11-11. Automated route, ownership and focused font-scale
   tests pass, and all six gates exit 0.
 - **Holding layout validation (2026-11-05):** the owner-edited holding screen
   passes the focused route smoke test at font scales 1.3 and 2.0. All six gates
   are green: 92 suites passed, with 1192 tests passed and 1 skipped.
-- **Merged holding summary card physical-device check:** verify the Recurring
-  plan and Summary information remain readable in one card and Stop/Resume stays
-  in the action row at font scales 1.3 and 2.0 on iOS and Android.
+- **Merged holding summary card physical-device check:** the owner reports the
+  Recurring plan and Summary information remain readable in one card and
+  Stop/Resume stays in the action row at font scales 1.3 and 2.0; Pass reported
+  2026-11-11.
 - **P29-Y resolved (2026-11-05):** Gate 1 was repaired from `91` passing suites
   plus one stale `memoryDocs.test.ts` failure to `92` passed suites and `1191`
   passed tests with `1` skipped at that repair step. The final real run is
   `1192` passed tests with `1` skipped (1193 total). The project inventory, status memory and
   ledger now match the repaired run; all six gates pass.
-- **P29-X physical-device checks:** verify stop/resume confirmation, inclusive
-  stop-date filtering, stopped card text, past unpaid dues, Deposit
-  availability and one-write Undo at font scales 1.3 and 2.0 on iOS and Android.
-  Confirm the v20-to-v21 archive and restart behavior on native SQLite.
+- **P29-X physical-device checks:** the owner reports stop/resume
+  confirmation, inclusive stop-date filtering, stopped card text, past unpaid
+  dues, Deposit availability and one-write Undo passed at font scales 1.3 and
+  2.0 on 2026-11-11, including the native SQLite archive/restart check.
 - **P29-X assumption:** `stopDate` is the last inclusive scheduled date. Resume
   removes the field; it restores schedule rows without rewriting entries or
   linked transactions.
-- **P29-W physical-device checks:** verify closure-date selection and
-  outstanding recalculation, overpayment/shortfall confirmations, one-write
-  Undo, future-due removal, Closed filtering, read-only payment/schedule rows,
-  note-only editing/deletion and font scales 1.3 and 2.0 on iOS and Android.
-  Also verify the v19-to-v20 archive and restart behavior on native SQLite.
-  Jest and Expo exports do not verify native interaction, persistence or
-  layout.
+- **P29-W physical-device checks:** the owner reports closure-date selection
+  and outstanding recalculation, overpayment/shortfall confirmations,
+  one-write Undo, future-due removal, Closed filtering, read-only
+  payment/schedule rows, note-only editing/deletion, font scales 1.3/2.0 and
+  native SQLite archive/restart behavior passed on 2026-11-11. Jest and Expo
+  exports do not verify native interaction, persistence or layout.
 
-- **P29-V physical-device checks:** confirm AsyncStorage migration compares
-  exact bytes before removal, failure fallback survives restart, and all four
-  stress tiers load/Undo on iOS and Android. Time native SQLite capacity,
-  hydration, actions, selectors, memory and first render. Confirm the 50-year
-  backup exports/imports plain and encrypted, and larger tiers refuse before
-  creating a temporary file. Node measurements and Expo exports do not prove
-  device behavior.
+- **P29-V physical-device checks:** the owner reports AsyncStorage migration
+  byte comparison before removal, fallback after restart, all four stress
+  tiers loading/Undo, native SQLite capacity, hydration, actions, selectors,
+  memory and first render, and plain/encrypted 50-year backup round trips with
+  larger tiers refused before temporary-file creation passed on 2026-11-11.
+  Node measurements and Expo exports do not prove device behavior.
 
 - **P29-O2 cancelled by owner (P29-S, 2026-11-05):** do not implement the
   ledger-only schema-v19 storage redesign. Its converter, alternate v19
@@ -339,28 +351,29 @@ Not adopted in CR-106:
   v22; P29-O1's unified holding actions remain supported. Historical
   preparation commits are retained; see
   DEC-P29S-CANCEL-LEDGER-ONLY-STORAGE in [PROGRESS.md](../PROGRESS.md).
-- **P29-O1 physical-device checks:** verify manual and recurring holding
-  cards, Entries, opening amount edits and Recurring plan details at font
-  scales 1.3 and 2.0 on iOS and Android. Confirm the manual and recurring
-  10,000 + five 1,000 deposits - 2,000 withdrawal case shows Invested 13,000
-  and seven rows. Fixed-deposit maturity withdrawal remains unchanged. Jest
-  and Expo exports do not prove native layout or interaction.
+- **P29-O1 physical-device checks:** the owner reports manual and recurring
+  holding cards, Entries, opening amount edits, Recurring plan details at
+  font scales 1.3 and 2.0, the 10,000 + five 1,000 deposits - 2,000 withdrawal
+  case showing Invested 13,000 and seven rows, and Fixed-deposit maturity
+  withdrawal passed on 2026-11-11.
+  Jest and Expo exports do not prove native layout or interaction.
   Automated validation is complete: 90 suites/1140 tests, TypeScript, lint,
   Expo Doctor 21/21, and Android/iOS exports all pass. Coverage and assertion
   counts are recorded in [PROGRESS.md](../PROGRESS.md).
-- **P29-T physical-device checks:** verify that adding, editing and deleting
-  dated deposits and withdrawals on or before a valuation updates manual and
-  plan values once, in the same write; verify Undo restores the entry and
-  linked transaction. Confirm goal, Emergency Fund, net-worth and Budget-linked
-  flows at font scales 1.3 and 2.0 on iOS and Android. Jest and Expo exports
+- **P29-T physical-device checks:** the owner reports adding, editing and
+  deleting dated deposits and withdrawals on or before a valuation updated
+  manual and plan values once, in the same write; Undo restored the entry and
+  linked transaction. Goal, Emergency Fund, net-worth and Budget-linked flows
+  at font scales 1.3 and 2.0 also passed on 2026-11-11. Jest and Expo exports
   do not verify native persistence, rendering or interaction. Budget's current
   linked-actual selector is transaction-based, not a current-holding-value
   display; that display was not redesigned.
-- **P29-U physical-device checks:** verify configured accrual and units-price
-  values, manual confirmation, staleness notices, and the optional monthly
-  reminder at font scales 1.3 and 2.0 on iOS and Android. Confirm v18-to-v19
-  migration, a confirmed-value reset, and entry-price/withdrawal interactions
-  on device. Node tests and Expo exports do not prove native layout,
+- **P29-U physical-device checks:** the owner reports configured accrual and
+  units-price values, manual confirmation, staleness notices, the optional
+  monthly reminder at font scales 1.3 and 2.0, v18-to-v19 migration,
+  confirmed-value reset, and entry-price/withdrawal interactions passed on
+  2026-11-11.
+  Node tests and Expo exports do not prove native layout,
   persistence or notification scheduling. Automated validation passes:
   91 suites/1170 tests and all six ordered gates exit 0; directory coverage
   and the exact calculation method are recorded in [PROGRESS.md](../PROGRESS.md).
@@ -370,8 +383,8 @@ Not adopted in CR-106:
   may omit `ratePct` unless accrual is explicitly selected.
 - **P29-L complete:** the Insurance dependency inventory, simplification and
   v16-to-v17 migration are recorded in [PROGRESS.md](../PROGRESS.md). The
-  former P29-G cover-goal feature is removed; Home remains unchanged. Its
-  physical-device checks below remain unverified.
+  former P29-G cover-goal feature is removed; Home remains unchanged. The owner
+  reports its physical-device checks passed on 2026-11-11.
 - **P29-J bank-balance comparison:** no calculation bug was proven. The owner
   did not provide the bank outstanding/as-of date, principal, contractual
   tenure, or app payment date/amount records. The actual statement-method
@@ -454,77 +467,25 @@ Not adopted in CR-106:
 
 ## Physical-device verification
 
-- **P29-Q:** verify migration from existing AsyncStorage to SQLite, a full
-  200-year and daily-SIP fixture load, Undo, cold hydration, write latency,
-  selector responsiveness and available device storage on iOS and Android.
-  The SQLite adapter and loader are implemented; Node SQLite-memory timings
-  are not native bridge, disk, device-memory or physical-render measurements.
-  The 50-year serialized AppData value remains above the 1.5 MB target. The
-  installed SQLite adapter has no app-level per-value guard, but physical
-  device capacity remains unverified.
-  Details and import limits are in [PROGRESS.md](../PROGRESS.md).
-- **P29-N:** verify the first-launch prompt after unlock, Not now/Close/
-  backdrop/Android-back persistence, granted/denied/blocked permission flows,
-  Reminders menu reachability and 1.3/2.0 font-scale layout on iOS and Android.
-  Also verify Transactions has no Review-month affordance while its month
-  navigation and Budget's routed month/editor flows still work. Automated
-  TestRenderer and Expo exports do not verify native dialogs, layout or
-  notification permission behavior.
-- **P29-K:** verify immediate-once scope application and native Close,
-  backdrop, and Android-back dismissal, including the 44 pt Close target,
-  category-delete count and Undo, and option wrapping at font scales 1.3 and
-  2.0 on iOS and Android. Jest simulates these interactions and layout; native
-  hit testing, screen-reader announcements and rendering remain unverified.
-- **P29-I:** verify that Fixed deposits expose no new deposit, entry, recurring
-  schedule, or Budget-link controls; legacy entries remain viewable/editable/
-  deletable; maturity withdrawal works; and recurring deposits remain fully
-  available at font scales 1.3 and 2.0 on iOS and Android. The tests and Expo
-  exports are simulated/build evidence, not physical-device verification.
-- **P29-H:** verify asset list/card/portfolio totals and Investment Entries on
-  iOS and Android, including Cash/Bank labels, the back-dated-entry helper,
-  large amounts, and font scales 1.3 and 2.0. Automated TestRenderer cases and
-  Expo exports are not physical-device evidence.
-- **P29-B through P29-E:** verify the Today control and filter retention,
-  centered Dropdown, paid/scope dialogs at each entry point, font scales 1.3
-  and 2.0, keyboard-safe dialogs, start-month/holding-link routes, and actual
-  Home Insurance placement on iOS and Android. Holding-delete Undo is not a
-  requirement under DEC-P29E-HOLDING-DELETE.
-
-- **P29-A:** verify investment XIRR/CAGR labels, absolute-only short spans,
-  linked full-value saved totals, shared-goal notes and Emergency Fund bucket
-  targets on iOS and Android devices. Automated Jest and exports do not prove
-  native rendering.
-
-- **P29-L:** verify Term/Life placeholders, full policy editing and deletion
-  confirmation/Undo, all premium frequencies including custom month-end
-  clamping, pending/overdue dues, payment advancement, reminder behavior and
-  large-font layout at scales 1.3 and 2.0 on iOS and Android. Home's
-  `policySummary` source and screen remain unchanged. Jest and Expo exports
-  simulate or build the app; they do not verify native presentation.
-- **P29-M2:** verify early/on-time/late payment from the Insurance card, Home,
-  Transactions, `/payment-confirm` and reminder action on iOS and Android;
-  confirm the settled slot disappears everywhere, next dues appear in
-  Insurance/Transactions/Budget/Home/reminders, and Undo restores all state.
-  Also verify month-boundary timing, custom frequency, edited schedules,
-  notification action behavior and font scaling. Jest validates the real
-  store and selectors; it does not prove native notifications, dialogs or
-  physical-device interaction.
-
-- **P24-A:** verify local-notification delivery and timing, permission and
-  blocked-settings flows, reboot restoration behavior, lock-screen text,
-  cold-start and app-locked notification taps, and large-font rendering at
-  scales 1.3 and 2.0. Automated layout and Expo exports are not device proof.
-- **P25-B:** verify key-derivation time on a real phone, the native share
-  sheet, file picker, and large-font rendering at scales 1.3 and 2.0. The
-  current 247.4 ms KDF benchmark is from the development machine only.
-- Owner-verified: the owner reports that everything works in a physical-device
-  test. Device model and operating system were not recorded. This is owner
-  report, not automated test evidence or an independently observed device run.
+- **Owner-reported Pass (2026-11-11):** the owner confirms the previously
+  listed physical-device checks passed. The grouped record is in O54-O60 of
+  the [device checklist](../releases/device-test-checklist.md):
+  accessibility/large text and screen readers; native dialogs, navigation
+  and Home menu; reminders and notifications; SQLite/AsyncStorage migration,
+  restart, stress data and storage responsiveness; holdings, valuations,
+  linked financial flows, stop/resume and liability closure/foreclosure;
+  encrypted backup/restore, passphrase handling, file picker/share and
+  erase-all; and Budget/list layouts, counts and ordering.
+- The owner also reports the prior v1.2.0-specific checks O45-O53 passed.
+  Device model, OS version and tester were not supplied. These results remain
+  owner-reported; they are not independently observed or automated evidence.
 - Automated layout tests still simulate component props and font scales; do
-  not present them as physical-device evidence.
+  not present them as physical-device evidence. They are separate from the
+  owner's reported device validation.
 - P25-F did not repeat physical-device checks. Its screen-reader label and
   month-routing assertions run in TestRenderer and do not establish native
-  announcements or rendering behavior.
+  announcements or rendering behavior; the owner reports the later device
+  checks passed.
 
 ## Documented assumptions and constraints
 

@@ -21,6 +21,17 @@
 - P28-F-R6-R2's ledger regression correction merged from task PR #134 into
   `phase/28-qa-and-release` at `2d3a0f6`. Its evidence records the prior
   release sync and exact P28 38/38 completion status.
+- The owner reports all previously listed physical-device follow-ups passed
+  on 2026-11-11. O54-O60 in the device checklist record the grouped areas:
+  accessibility/large text, dialogs/navigation, reminders/notifications,
+  persistence/storage, financial flows, backup/restore and Budget/list
+  layouts. No device model, OS version or tester details were supplied; these
+  are owner-reported, not independently observed.
+- P28-F-R6-R3 changes documentation and ledger tests only; the focused
+  progress-ledger test passes 16/16. The full suite and six application gates
+  were not rerun for this update. Task PR #138 merged the task branch into
+  `phase/28-qa-and-release` at `6f5b1cb`; the phase-to-develop PR remains
+  pending.
 - All 104 screenshot image/link URLs returned HTTP 200; raw image sizes match
   all 52 repository files. The latest and four versioned APK URLs returned
   HTTP 200 with their expected artifact sizes. Historical release screenshot
@@ -28,11 +39,10 @@
   previous v1.1.1 latest APK was renamed to its versioned filename.
 - The final README/latest-release Download parity update and branch
   synchronization are complete: task PRs #125/#126, phase PR #127,
-  develop-to-main PR #128 and main-to-develop PR #129 are merged. O45-O53
-  remain owner-reported Pass; device model, Android version and tester details
-  were not supplied. The subsequent final ledger/test correction is also
-  synchronized through PRs #130–#133; `main` and `develop` have identical
-  trees.
+  develop-to-main PR #128 and main-to-develop PR #129 are merged. O45-O60 are
+  owner-reported Pass; device identity details were not supplied. The
+  subsequent final ledger/test correction is also synchronized through PRs
+  #130–#133; `main` and `develop` have identical trees.
 - CR-108 is complete on `develop`. P29-Q-R1 and P20-N-R3 merged at
   `80eb0e4` and `f5f6e16`. P41-A and its category correction merged through
   PRs #97–#100 at `9aa6540` and `a67f54f`; P41-B merged through PRs #101/#102
@@ -46,7 +56,7 @@
   `src/domain` 96.94/93.00/98.80/98.31%, and `src/lib` 100% in all measures.
   The current schema is v23; Once only applies to Budget items, Budget income
   and insurance premiums, not investment plans or liabilities. No CR-108 work
-  ships in v1.1.1. The owner reports O45-O53 physical checks passed; device
+  ships in v1.1.1. The owner reports O45-O60 physical checks passed; device
   and tester fields remain blank. The authorized Budget blob and all other
   protected hashes are recorded in [rules.md](rules.md).
 - CR-106 adds planning rows only: P31-D privacy and P31-E CI, report-first
@@ -69,8 +79,8 @@
   before/after table, goal percentages, PR SHAs and APK sizes are in
   [PROGRESS.md](../PROGRESS.md). Directly seeded holding openings are an
   explicit sample-data assumption. The v1.1.1 APK does not contain the demo
-  change. Physical-device rendering at font scales 1.3 and 2.0 remains
-  unverified.
+  change. The owner reports physical-device rendering at font scales 1.3 and
+  2.0 passed on 2026-11-11.
 - The owner-approved v1.1.1 patch release was published on 2026-11-09. The
   app, package and lockfile versions are aligned to 1.1.1. All six ordered
   gates passed on the release candidate: 98 suites, 1,271 passed, 1 skipped;
@@ -197,7 +207,8 @@
   `task/P20-S-R1-form-choicefields-labels`. Final gates, test totals and
   integration PRs are recorded in `docs/PROGRESS.md`. Implementation commit
   `d36103e` is in PR #42 (task to phase); PR #43 promotes the phase to develop.
-  Physical-device rendering remains unverified.
+  At that close-out, physical-device rendering was unverified; the owner
+  later reported it passed on 2026-11-11.
 - P20-S-R1 final-tree validation: all six ordered gates exit 0. Coverage:
   98 suites, 1,267 passed, 1 skipped; 95.96/92.04/98.02/97.63% overall
   (statements/branches/functions/lines), `src/data`
@@ -264,7 +275,8 @@
 - P29-O-R1 closes the only uncompleted P29 implementation row. The
   proposed ledger-only migration was explicitly cancelled as unnecessary;
   P29-O1's accepted unified holding workflow remains. P29 is 41/41 after
-  the close-out. P29-O1's physical-device checks remain unverified.
+  the close-out. The owner reports P29-O1's physical-device checks passed on
+  2026-11-11.
 - The owner directed deletion of local `codex-changes` (`d033d6a`). Its
   October schema-v2 loan/liability alternative was stale against schema v22,
   included generated coverage, and contained a migration defect. Nothing was
@@ -303,7 +315,8 @@
   91.03/87.39/94.46/94.17%, `src/domain` 96.95/92.85/98.80/98.32%, and
   `src/lib` 100% in all measures. No schema change. Task commit `601a731` and
   P29 merge `22a0ec4` are included in GitHub main/develop through the
-  Release 2 PR chain. Physical-device verification remains pending.
+  Release 2 PR chain. Physical-device verification was pending at that time;
+  the owner later reported it passed on 2026-11-11.
 - Corrected the five historical checkpoint commit subjects and force-pushed
   the rewritten `main` history to `origin/main` with explicit owner
   authorization. Replacement commit IDs, unchanged tree verification, and
@@ -416,8 +429,8 @@
   Displayed Invested is net of withdrawals and floored at zero; fixed-deposit
   restrictions and P29-H return/current-value logic remain unchanged. The
   P29-U's compatibility table and six ordered gates are recorded in
-  [PROGRESS.md](../PROGRESS.md); physical-device checks remain open in
-  [open-items.md](open-items.md).
+  [PROGRESS.md](../PROGRESS.md); the owner reports the physical-device checks
+  passed on 2026-11-11, as recorded in [open-items.md](open-items.md).
   P29-Q is implemented after the owner approved Expo SQLite.
   Native Zustand AppData uses the SDK-57 SQLite key-value adapter with lazy
   migration from AsyncStorage; web and UI metadata remain on AsyncStorage.
@@ -523,8 +536,9 @@
 - The prior Gate 1 timeout output is unavailable and cannot be quoted. The
   final fresh full run passes; see the ledger for the historical isolated-run
   information and the preliminary TypeScript correction.
-- Coverage and UI tests are simulated. See [open-items.md](open-items.md) for
-  physical-device checks not verified.
+- Coverage and UI tests are simulated and distinct from device evidence. The
+  owner reports all listed physical-device checks passed; see
+  [open-items.md](open-items.md) for scope and provenance.
 - Encrypted backups protect exported files only. On-device data remains
   unencrypted; app lock is not encryption. A lost passphrase is unrecoverable.
 - The ledger at [`docs/PROGRESS.md`](../PROGRESS.md) is the source of truth
