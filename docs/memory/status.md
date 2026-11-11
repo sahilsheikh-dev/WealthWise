@@ -1,6 +1,14 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-11 | Updates: owner and AI agents -->
 
 # Status
+- **Owner-decision reconciliation (CR-109, 2026-11-11):** future in-app
+  update discovery, Once-only investment/liability frequencies, public
+  adoption, the P31-D privacy statement, P40-B and post-P31-E branch
+  protection are approved as Planned; this record implements none of them.
+  The MIT holder is confirmed as Sahil Aspak Sheikh. The owner accepts current
+  P29-J calculation behavior, CR-3 Save behavior, the recorded dependency
+  audit, existing backup snapshot and Node 26 pin. Stale phase tags are to be
+  retained. See [open-items.md](open-items.md) and [PROGRESS.md](../PROGRESS.md).
 - v1.2.0 (minor) is published. `app.json`, package metadata and the
   About-screen test identify v1.2.0. The approved note has fourteen
   screenshots, with five new settings/backup screens added to every release
@@ -32,6 +40,10 @@
   were not rerun for this update. Task PR #138 merged into the retained phase
   at `6f5b1cb`; phase PR #139 merged to `develop` at `fd7ba55`. P28-F-R6-R3
   is integrated into `develop` at `fd7ba55`.
+- CR-109 adds owner-approved future planning and records resolved/accepted
+  follow-ups; it does not change application behavior. Its focused ledger
+  test and all six ordered gates passed on the task branch before PR
+  integration; the exact results are in the CR-109 verification entry.
 - All 104 screenshot image/link URLs returned HTTP 200; raw image sizes match
   all 52 repository files. The latest and four versioned APK URLs returned
   HTTP 200 with their expected artifact sizes. Historical release screenshot
@@ -186,8 +198,10 @@
   Publication PRs #11-#15 are merged in order; their task branch was deleted
   and `phase/28-qa-and-release` was retained.
   `phase/25-release-and-backups` remains outside this Release 2 PR chain.
-  P28-E's final-verification commit was reconciled in P28-E-R2; the separate
-  `codex-changes` branch remains under review.
+  P28-E's final-verification commit was reconciled in P28-E-R2; at that time
+  the separate `codex-changes` branch was under review. The later owner
+  decision recorded below supersedes that status: the branch was deleted and
+  no work is to be ported.
 - The v1.1.0 release-tree gates passed before publication. The clean
   2026-11-09 develop preflight at `c939458` passed all six ordered gates;
   Gate 1 had 98 suites, 1,268 passed and 1 skipped, with 95.96/92.04/98.02/
@@ -278,16 +292,17 @@
   the close-out. The owner reports P29-O1's physical-device checks passed on
   2026-11-11.
 - The owner directed deletion of local `codex-changes` (`d033d6a`). Its
-  October schema-v2 loan/liability alternative was stale against schema v22,
-  included generated coverage, and contained a migration defect. Nothing was
-  ported or pushed.
+  October schema-v2 loan/liability alternative is stale against schema v23,
+  modifies the protected Home screen, includes generated coverage and has
+  unsafe migration behavior. It was never merged; nothing is to be ported or
+  pushed.
 - Protected hashes reverified with `git hash-object`: Budget
   `b60f77af4f76d47f2cee07393fe9d8f3fa6bd04c` and Home
   `d3d1e465fe9f5d238d338afeb033e2a54889ddc6`. Current values and
   device/release follow-ups are recorded in [open-items.md](open-items.md).
-- Phase tag targets `phase-28-complete` and `phase-29-complete` are behind the
-  latest commits on their respective phase branches. Tags were not moved;
-  whether to update them remains an owner decision.
+- Phase tag targets `phase-28-complete` and `phase-29-complete` remain behind
+  the latest commits on their phase branches. The owner directs retaining
+  these historical tags; they were not moved.
 - Branch audit (2026-11-08): the chronological PR path carries the task
   correction through P28, develop, the release branch and main, then
   back-merges main into develop. The relevant branch refs are verified in the
@@ -295,10 +310,10 @@
   GitHub release is published. `phase/25-release-and-backups` remains outside
   the Release 2 chain; `history/by-phase` is a read-only archive. P28-E's
   final-verification commit `72fb325` is preserved by P28-E-R2, with its
-  stale status edits reconciled instead of merged verbatim. `codex-changes`
-  remains local pending a safe port: it targets schema v2 rather than v22,
-  includes generated coverage, and review found a persisted-data migration
-  bug and a failing migration assertion. No unsafe branch content was pushed.
+  stale status edits reconciled instead of merged verbatim. The earlier note
+  that `codex-changes` awaited a safe port is superseded by the owner's
+  2026-11-11 decision: the branch was deleted, no work is to be ported, and no
+  unsafe branch content was pushed.
 - P28-F-R2 contributor-credit correction and owner-reported device results
   are integrated through PRs #1-#3. P28-F-R2-R1 audit records use PRs #4-#7
   to follow task -> P28 -> develop -> release -> main -> develop.
@@ -477,9 +492,11 @@
   tests (1194 passed; one opt-in stress benchmark skipped). P29-M2's
   1120-test run, P29-N's 1104-test run and P29-M's blocked reproduction remain
   historical records in [PROGRESS.md](../PROGRESS.md).
-- Test counts: 101 suites, 1317 tests (1316 passed, 1 skipped) on 2026-11-11.
-- Latest validated run: 101 suites, 1317 tests (1316 passed, 1 skipped) on
-  2026-11-11; all six CR-108 gates exit 0. Coverage and exact commands are
+- CR-108 baseline: 101 suites, 1317 tests (1316 passed, 1 skipped) on
+  2026-11-11; all six CR-108 gates exited 0.
+- Test counts: 101 suites, 1320 tests (1319 passed, 1 skipped) on 2026-11-11.
+- Latest validated run: 101 suites, 1320 tests (1319 passed, 1 skipped) on
+  2026-11-11; all six P42-A gates exit 0. Coverage and exact commands are
   recorded in [PROGRESS.md](../PROGRESS.md).
 - All six P29-L gates exit 0: Jest coverage, TypeScript, Expo lint with zero
   warnings, Expo Doctor 21/21, Android export and iOS export. Exact commands

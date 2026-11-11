@@ -27,6 +27,10 @@ runtime synchronization.
   app metadata, schema version, MIT license and verified repository links.
   Update discovery asks first, then opens the GitHub latest-release page in
   the browser; it does not make an app-side network request.
+- Future planning is owner-approved for an in-app update check and Once-only
+  frequency on investment plans/liabilities; neither is implemented. Public
+  adoption is a future project goal. The owner confirms Sahil Aspak Sheikh as
+  the MIT copyright holder; the existing `LICENSE` notice matches.
 - Budget scope choices apply on selection; Close, backdrop and Android back
   dismiss the popup without applying a change.
 - Manual and recurring holdings share Deposit, Withdraw and Entries actions
@@ -51,12 +55,12 @@ runtime synchronization.
   pure utilities and platform helpers in `src/lib/`; demo data in `src/mock/`.
 - Other source groups: `src/hooks/`, `src/theme/`, `src/constants/`, `assets/`
   and `scripts/`.
-- Test counts: 101 suites, 1317 tests (1316 passed; one skipped) on
-  2026-11-11 for CR-108's integrated develop tree. P28-F-R6-R3 later added a
-  ledger regression; its focused run passed 17 tests, and the full suite was
-  not rerun. All six CR-108 gates exited 0; the owner reports all listed
-  physical-device checks passed. See [status.md](status.md) and the
-  [progress ledger](../PROGRESS.md) for exact gate results and coverage.
+- Test counts: 101 suites, 1320 tests (1319 passed; one skipped) on
+  2026-11-11 for P42-A's full run. P28-F-R6-R3's earlier focused-only check
+  was later followed by this full run. All six ordered gates exit 0; the
+  owner reports all listed physical-device checks passed. See
+  [status.md](status.md) and the [progress ledger](../PROGRESS.md) for exact
+  gate results and coverage.
 
 See the canonical [progress ledger](../PROGRESS.md) for full project history,
 schema migration evidence, feature decisions and test history.
