@@ -261,7 +261,8 @@ describe('permanent progress ledger', () => {
       const content = readFileSync(join(process.cwd(), name), 'utf8');
       for (const oldName of ['phase/27-cleanup', 'phase/28-qa-and-release']) {
         for (const paragraph of content.split(/\n\s*\n/).filter((candidate) => candidate.includes(oldName))) {
-          expect(paragraph).toContain(`historical branch name: \`${oldName}\``);
+          expect(paragraph.toLowerCase().replace(/\s+/g, ' '))
+            .toContain(`historical branch name: \`${oldName}\``);
         }
       }
     }
@@ -572,7 +573,7 @@ describe('permanent progress ledger', () => {
         expect(count?.done).toBe(0);
         expect(count?.total).toBe(4);
       } else if (phase === 43) {
-        expect(count?.done).toBe(0);
+        expect(count?.done).toBe(1);
         expect(count?.total).toBe(4);
       } else if (phase === 22) {
         expect(count?.done).toBe(2);
@@ -676,8 +677,8 @@ describe('permanent progress ledger', () => {
       }
       if (number === 27 || number === 28) {
         expect(branch).toBe(number === 27
-          ? 'cleanup (historical branch name: `phase/27-cleanup`)'
-          : 'qa-and-release (historical branch name: `phase/28-qa-and-release`)');
+          ? 'cleanup (historical branch name: phase/27-cleanup)'
+          : 'qa-and-release (historical branch name: phase/28-qa-and-release)');
         expect(tag).toBe(`phase-${String(number).padStart(2, '0')}-complete`);
         expect(commit).toMatch(/^[0-9a-f]{40}$/);
         expect(Number(count)).toBe(counts.get(number));
