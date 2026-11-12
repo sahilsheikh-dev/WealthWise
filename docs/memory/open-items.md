@@ -1,6 +1,23 @@
-<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-12 | Updates: owner and AI agents -->
+<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-13 | Updates: owner and AI agents -->
 
 # Open items
+
+## Budget item/schedule edit and delete bug (P20-U-R1, Planned)
+
+- **P20-U-R1 (Planned; not started):** owner-reported defect in Budget route form
+  updating and deletion. Owner report (verbatim):
+  > "In budget while updating any item/value/amount/start-month/frequency/due-day/etc it is not updating also while trying to delete it is not even deleting, not for single month and this and following months."
+  Owner instruction: "Don't start working on this."
+  Affected fields: item, value, amount, start-month, frequency, due-day, etc.
+  Delete cases: single month and this and following months.
+  Open questions (as questions, not assumptions):
+  - Which Budget screens and sections (spend, invest, income schedules, one-time vs recurring)?
+  - Whether the bug is UI, store, or persistence?
+  - App/schema version and whether it began after a specific release or CR?
+  - Exact reproduction steps and expected behavior?
+  - Whether data on device persists after restart?
+  Dependencies: report-first investigation with a red regression test before any fix (R1), then a fix with all six ordered gates; physical-device check likely required (planned process, not authorized work).
+  Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and touched files; related P20-U; reason: defect in completed budget route form item/schedule updating and deletion.
 
 ## CR-114 independent entities, empty slots and R7 (2026-11-12)
 
