@@ -1,10 +1,12 @@
 import { upcomingDue, liabilitySchedule, planNextRows, planSchedule } from '../schedule';
+import { policySchedule } from '../policySchedule';
 import { behindBy, scheduledDate } from '../sip';
 import type {
   AppData,
   ManualHolding,
   OneTimeLiability,
   PlanHolding,
+  Policy,
   RecurringLiability,
 } from '../types';
 
@@ -68,6 +70,67 @@ const appData = (holdings: AppData['holdings'], liabilities: (RecurringLiability
 });
 
 describe('plan schedules', () => {
+  it('creates exactly one policy premium slot for a once-only frequency', () => {
+    const policy: Policy = {
+      id: 'one-time-policy',
+      name: 'One-time premium',
+      insurer: 'Insurer',
+      kind: 'health',
+      premium: 500,
+      frequency: 'monthly',
+      startDate: '2026-01-01',
+      status: 'active',
+      premiumYears: 1,
+      trackFrom: '2026-02-15',
+      endDate: '2026-12-31',
+      currentValue: null,
+      valueAsOf: null,
+      payments: [],
+    };
+    Object.assign(policy, { frequency: 'once' });
+
+    expect(policySchedule(policy, '2026-12-31').rows.map((row) => [row.dueDate, row.amount]))
+      .toEqual([['2026-02-15', 500]]);
+    expect(policySchedule({ ...policy, trackFrom: '2027-01-01' }, '2027-01-01').rows).toEqual([]);
+  });
+
+  it('defaults a custom policy interval to one month and excludes legacy payments before tracking', () => {
+    const policy: Policy = {
+      id: 'custom-policy',
+      name: 'Custom premium',
+      insurer: 'Insurer',
+      kind: 'health',
+      premium: 500,
+      frequency: 'custom',
+      startDate: '2026-01-01',
+      status: 'active',
+      premiumYears: 1,
+      trackFrom: '2026-02-15',
+      endDate: '2026-04-15',
+      currentValue: null,
+      valueAsOf: null,
+      payments: [],
+    };
+
+    expect(policySchedule(policy, '2026-04-15').rows.map((row) => row.dueDate))
+      .toEqual(['2026-02-15', '2026-03-15', '2026-04-15']);
+
+    const legacyPaymentPolicy: Policy = {
+      ...policy,
+      frequency: 'monthly',
+      endDate: '2026-03-15',
+      payments: [{ id: 'before-track-from', date: '2026-01-01', amount: 500, note: '' }],
+    };
+    expect(policySchedule(legacyPaymentPolicy, '2026-03-31').rows.map(({ dueDate, status, entryId }) => ({
+      dueDate,
+      status,
+      entryId,
+    }))).toEqual([
+      { dueDate: '2026-02-15', status: 'overdue', entryId: undefined },
+      { dueDate: '2026-03-15', status: 'ongoing', entryId: undefined },
+    ]);
+  });
+
   it('does not project recurring schedule rows for a fixed deposit plan', () => {
     const fixedDeposit = plan({ type: 'Fixed deposit' });
 

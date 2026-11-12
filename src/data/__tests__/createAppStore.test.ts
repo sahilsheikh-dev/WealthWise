@@ -102,6 +102,28 @@ it('hydrates v12 item recurrence defaults and archives the original bytes once',
   expect(storage.values.has(archiveKey)).toBe(false);
 });
 
+it('hydrates v22 data through v23, archives the original bytes once and erases the archive', async () => {
+  const storage = new MemoryStorage();
+  const originalBytes = JSON.stringify({ state: { data: mockAppData }, version: 22 });
+  storage.values.set('wealthwise.app.v1', originalBytes);
+
+  const first = makeStore(storage, { isDev: false });
+  await waitForHydration(first);
+  expect(JSON.parse(storage.values.get('wealthwise.app.v1') ?? '{}').version).toBe(23);
+  expect(first.getState().data).toEqual(mockAppData);
+  const archiveKey = 'wealthwise.app.v1.premigration.v22';
+  expect(storage.values.get(archiveKey)).toBe(originalBytes);
+  const archiveWrites = storage.calls.filter((call) => call === `set:${archiveKey}`).length;
+  expect(archiveWrites).toBe(1);
+
+  const second = makeStore(storage, { isDev: false });
+  await waitForHydration(second);
+  expect(storage.values.get(archiveKey)).toBe(originalBytes);
+  expect(storage.calls.filter((call) => call === `set:${archiveKey}`)).toHaveLength(archiveWrites);
+  expect((await second.getState().actions.eraseAllData()).ok).toBe(true);
+  expect(storage.values.has(archiveKey)).toBe(false);
+});
+
 it('hydrates v14 insurance data, archives exact original bytes once and erases the archive', async () => {
   const storage = new MemoryStorage();
   const data = {

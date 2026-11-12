@@ -21,6 +21,7 @@ import { useSort } from '../src/data/useSort';
 import { valueStaleness } from '../src/domain/holdingActions';
 import { holdingCapabilities } from '../src/domain/holdingCapabilities';
 import { holdingFinancialSummary, isCashOrBankHoldingType } from '../src/domain/portfolio';
+import { financialTypeLabel } from '../src/domain/typeLabels';
 import { planSchedule, type ScheduleRow } from '../src/domain/schedule';
 import type { InvestmentEntry } from '../src/domain/types';
 import { suggestedValuationMethod } from '../src/domain/valuation';
@@ -176,6 +177,11 @@ export default function InvestmentEntriesScreen() {
           },
         ]}
       />
+      {holding.type === 'Custom' ? (
+        <AppText testID="investment-type-label" style={{ marginHorizontal: 20 }}>
+          {financialTypeLabel(holding.type, holding.customTypeName)}
+        </AppText>
+      ) : null}
       <View style={styles.actions}>
         {capabilities?.entries ? (
           <Button

@@ -34,10 +34,74 @@ const validInput = {
 };
 
 describe('appDataSchema', () => {
-  it('accepts the typed mock app data and exports schema version twenty-two', () => {
+  it('accepts the typed mock app data and exports schema version twenty-three', () => {
     expect(appDataSchema.parse(mockAppData)).toEqual(mockAppData);
-    expect(SCHEMA_VERSION).toBe(22);
+    expect(SCHEMA_VERSION).toBe(23);
     expect(new Set(TRANSACTION_CATEGORIES.expense).size).toBe(TRANSACTION_CATEGORIES.expense.length);
+  });
+
+  it('accepts once-only Budget and policy schedules only with a first due date', () => {
+    const plan = budgetPlanFromLines([{
+      category: 'One-time expense',
+      mode: 'amount',
+      value: 250,
+      frequency: 'monthly',
+      firstDueMonth: '2026-03',
+    }], {
+      incomes: [{
+        id: 'one-time-income',
+        name: 'One-time income',
+        category: 'Freelance',
+        amount: 1_000,
+        frequency: 'monthly',
+        firstDueMonth: '2026-03',
+      }],
+      repeatMonthly: true,
+      repeatFrom: '2026-03',
+    });
+    const item = plan.items[0];
+    const income = plan.incomes[0];
+    const policyFixture = mockAppData.policies[0];
+    const planHolding = mockAppData.holdings.find((holding) => holding.kind === 'plan');
+    const liability = mockAppData.liabilities[0];
+    if (!item || !income || !policyFixture || !planHolding || !liability) {
+      throw new Error('Once-only fixtures are incomplete.');
+    }
+    const onceItem = Object.assign(item, { frequency: 'once' });
+    const onceIncome = Object.assign(income, { frequency: 'once' });
+    const policy = Object.assign({ ...policyFixture }, { frequency: 'once' });
+    const data = {
+      ...mockAppData,
+      budgetPlan: { ...plan, items: [onceItem], incomes: [onceIncome] },
+      policies: [policy],
+    };
+
+    expect(appDataSchema.safeParse(data).success).toBe(true);
+    expect(validateImportData(data).ok).toBe(true);
+    expect(appDataSchema.safeParse({
+      ...data,
+      budgetPlan: {
+        ...data.budgetPlan,
+        items: data.budgetPlan.items.map((item) => ({ ...item, firstDueMonth: undefined })),
+      },
+    }).success).toBe(false);
+    expect(appDataSchema.safeParse({
+      ...data,
+      budgetPlan: {
+        ...data.budgetPlan,
+        items: data.budgetPlan.items.map((item) => ({ ...item, mode: 'percent' })),
+      },
+    }).success).toBe(false);
+    const unsupportedPlanFrequency = Object.assign({ ...planHolding }, { frequency: 'once' });
+    expect(appDataSchema.safeParse({
+      ...mockAppData,
+      holdings: mockAppData.holdings.map((holding) =>
+        holding.id === planHolding.id ? unsupportedPlanFrequency : holding),
+    }).success).toBe(false);
+    expect(validateImportData({
+      ...mockAppData,
+      liabilities: [{ ...liability, frequency: 'once' }],
+    }).ok).toBe(false);
   });
 
   it('continues loading legacy goal links with explicit shares', () => {
@@ -683,6 +747,33 @@ describe('makeTransactionFormSchema', () => {
       expect(schema.safeParse({ ...planValues, startDate: '2026-02-30' }).success).toBe(false);
     });
 
+    it('accepts named Custom and Real estate plans but keeps Fixed deposit one-time only', () => {
+      const schema = makePlanFormSchema('2026-10-10', { otherNames: [], earliestLogDate: null });
+      const custom = schema.safeParse({
+        ...planValues,
+        type: 'Custom',
+        customTypeName: '  Private credit  ',
+      });
+      expect(custom.success).toBe(true);
+      if (custom.success) {
+        expect(custom.data).toMatchObject({ type: 'Custom', customTypeName: 'Private credit' });
+      }
+      expect(schema.safeParse({ ...planValues, type: 'Real estate' }).success).toBe(true);
+
+      const fixedDeposit = schema.safeParse({ ...planValues, type: 'Fixed deposit' });
+      expect(fixedDeposit.success).toBe(false);
+      if (!fixedDeposit.success) {
+        expect(fixedDeposit.error.issues.find((issue) => issue.path[0] === 'type')?.message)
+          .toBe('Fixed deposit does not support a recurring deposit schedule.');
+      }
+      const missingCustomName = schema.safeParse({ ...planValues, type: 'Custom', customTypeName: '   ' });
+      expect(missingCustomName.success).toBe(false);
+      const longCustomName = schema.safeParse({
+        ...planValues, type: 'Custom', customTypeName: 'x'.repeat(31),
+      });
+      expect(longCustomName.success).toBe(false);
+    });
+
     it('validates investment entries including date, kind and withdrawal bounds', () => {
       const schema = makeInvestmentEntryFormSchema('2026-10-10', { startDate: '2026-09-01', currentValue: 100 });
       const valid = { kind: 'Deposit', date: '2026-10-10', amount: '100000000', note: '  Monthly  ' };
@@ -733,6 +824,59 @@ describe('makeTransactionFormSchema', () => {
       expect(schema.safeParse({ ...valid, emi: '1000' }).success).toBe(true);
       expect(schema.safeParse({ ...valid, emi: '1001' }).success).toBe(true);
       expect(schema.safeParse({ ...valid, emi: '1000.123' }).success).toBe(false);
+    });
+
+    it('validates optional custom names for recurring and one-time liabilities', () => {
+      const schema = makeLiabilityFormSchema('2026-10-10', {
+        otherNames: [],
+        earliestPaymentDate: null,
+      });
+      const recurring = schema.safeParse({
+        kind: 'recurring',
+        name: 'Private debt',
+        type: 'Custom',
+        customTypeName: '  Family loan  ',
+        principal: '100000',
+        ratePct: '12',
+        tenureMonths: '12',
+        startDate: '2026-10-01',
+        emi: '',
+      });
+      expect(recurring.success).toBe(true);
+      if (recurring.success) {
+        expect(recurring.data).toMatchObject({ type: 'Custom', customTypeName: 'Family loan' });
+      }
+      const oneTime = schema.safeParse({
+        kind: 'one-time',
+        name: 'Artwork debt',
+        type: 'Custom',
+        customTypeName: 'Art loan',
+        principal: '100000',
+        ratePct: '0',
+        startDate: '2026-10-01',
+        dueDate: '',
+      });
+      expect(oneTime.success).toBe(true);
+      expect(schema.safeParse({
+        kind: 'one-time',
+        name: 'Unnamed debt',
+        type: 'Custom',
+        customTypeName: '   ',
+        principal: '100000',
+        ratePct: '0',
+        startDate: '2026-10-01',
+        dueDate: '',
+      }).success).toBe(false);
+      expect(schema.safeParse({
+        kind: 'one-time',
+        name: 'Long name debt',
+        type: 'Custom',
+        customTypeName: 'x'.repeat(31),
+        principal: '100000',
+        ratePct: '0',
+        startDate: '2026-10-01',
+        dueDate: '',
+      }).success).toBe(false);
     });
 
     it('requires two solver values and fills each omitted recurring value', () => {
@@ -878,6 +1022,18 @@ describe('makeTransactionFormSchema', () => {
         ...holding, valuationMethod: 'accrual', ratePct: '',
       }).success).toBe(false);
       expect(holdingSchema.safeParse({ ...holding, maturityDate: '2026-02-30' }).success).toBe(false);
+      const customHolding = holdingSchema.parse({
+        ...holding, type: 'Custom', customTypeName: '  Fine art  ',
+      });
+      expect(customHolding).toMatchObject({ type: 'Custom', customTypeName: 'Fine art' });
+      const missingCustomName = holdingSchema.safeParse({ ...holding, type: 'Custom' });
+      expect(missingCustomName.success).toBe(false);
+      if (!missingCustomName.success) {
+        expect(missingCustomName.error.issues.some((issue) =>
+          issue.path[0] === 'customTypeName' &&
+          issue.message === 'Enter a custom type name up to 30 characters',
+        )).toBe(true);
+      }
       const holdingWithEntriesSchema = makeHoldingFormSchema({ otherNames: [], entriesExist: true });
       const blockedTypeChange = holdingWithEntriesSchema.safeParse({ ...holding, type: 'Fixed deposit' });
       expect(blockedTypeChange.success).toBe(false);

@@ -129,17 +129,36 @@ The shared project rules are in [AGENTS.md](../../AGENTS.md),
 
 ## Current release
 
-- Latest published version: v1.1.0
-- Release date: 2026-11-08
+- Latest published version: v1.2.0
+- Release date: 2026-11-11
 - GitHub release:
-  [WealthWise v1.1.0](https://github.com/sahilsheikh-dev/WealthWise/releases/tag/v1.1.0)
-- APK artifact verification: both URLs returned HTTP 200 with a content
-  length of 112,147,677 bytes. The digest was verified privately and is not
-  published.
-- v1.1.1 is the approved release candidate and remains a GitHub draft. Its
-  owner-supplied APK was verified against its finished EAS build and uploaded
-  to the draft; publication and public latest-route rollover are still
-  pending separate approval.
+  [WealthWise v1.2.0](https://github.com/sahilsheikh-dev/WealthWise/releases/tag/v1.2.0)
+- APK artifact verification: latest and versioned URLs returned HTTP 200 with
+  a content length of 112,163,081 bytes; the artifact was byte-verified
+  against EAS privately.
+- v1.2.0 was published after release PR #124 merged
+  `release/v1.2.0` into `main` at `2e419f8`; tag `v1.2.0` points to the exact
+  built candidate `199ebed307ce7755bc92c1f15544999d852db54f`. Release-sync PR
+  #123 merged the final build record into the release branch at `0c8b380`.
+  The final six gates passed on integrated `develop` commit `3bd5be6`; the
+  documentation-only follow-up is integrated at `cd1fa78`. EAS build
+  `6fccf7d1-0580-46a6-9e09-ff7467fb0a30` completed with profile `android-apk`
+  and Android `versionCode` 3. All 104 rendered screenshot links returned
+  HTTP 200, with all 52 raw image sizes matching repository files. The latest
+  and four versioned APK URLs returned HTTP 200 at their expected sizes.
+- Historical release screenshot sections were updated without changing other
+  release-body content. The former v1.1.1 latest-named APK was renamed to
+  `WealthWise-android-v1.1.1.apk`; its GitHub Download block now uses
+  `Version`. Post-publication task PRs #125/#126 merged into
+  `phase/28-qa-and-release` at `87c8e8f`/`9db08be`; phase PR #127 merged into
+  `develop` at `d65ce75`; develop-to-main PR #128 merged at `48a64c0`; and
+  main-to-develop PR #129 merged at `c554c0b`. Final ledger/test evidence was
+  then synchronized by task PR #130 (`202dabe`), phase PR #131 (`6f4f4df`),
+  develop-to-main PR #132 (`b678493`) and main-to-develop PR #133 (`eedff48`).
+  The `main` and `develop` trees match, and the v1.2.0 tag remains at its
+  verified build candidate.
+- O45-O53 are owner-reported Pass; device model, Android version and tester
+  details were not supplied.
 - Production AAB: not verified.
 
 See [release-history.md](release-history.md) for the published release and

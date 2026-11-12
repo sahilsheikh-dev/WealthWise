@@ -22,6 +22,7 @@ export type Instrument = {
   kind: 'holding';
   name: string;
   type: HoldingType;
+  customTypeName?: string;
   valueNow: number;
   canWithdraw: boolean;
 };
@@ -80,6 +81,7 @@ function instrument(data: AppData, id: string, asOf: ISODate): Instrument {
     kind: 'holding',
     name: holding.name,
     type: holding.type,
+    ...(holding.customTypeName ? { customTypeName: holding.customTypeName } : {}),
     valueNow,
     canWithdraw: valueNow > 0,
   };

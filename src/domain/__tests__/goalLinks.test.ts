@@ -68,6 +68,18 @@ function baseData() {
 }
 
 describe('goal asset links', () => {
+  it('exposes custom holding type labels for goal-link pickers', () => {
+    const custom: ManualHolding = {
+      ...manual,
+      id: 'custom-linked-holding',
+      type: 'Custom',
+      customTypeName: 'Fine art',
+    };
+    const data = { ...baseData(), holdings: [custom, plan] };
+    expect(linkableInstruments(data, '2026-10-12').find((item) => item.id === custom.id))
+      .toMatchObject({ typeLabel: 'Fine art' });
+  });
+
   it('lists all holdings and savings policies but never the automatic emergency fund', () => {
     const data = {
       ...baseData(),

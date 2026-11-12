@@ -72,6 +72,7 @@ export const LIABILITY_TYPES = [
   'Credit card',
   'Borrowed money',
   'Other',
+  'Custom',
 ] as const;
 
 export type LiabilityType = (typeof LIABILITY_TYPES)[number];
@@ -79,6 +80,7 @@ export type LiabilityType = (typeof LIABILITY_TYPES)[number];
 export const HOLDING_TYPES = [
   'Mutual fund / SIP',
   'Stocks / ETF',
+  'Real estate',
   'Fixed deposit',
   'Recurring deposit',
   'EPFO / PF',
@@ -87,6 +89,7 @@ export const HOLDING_TYPES = [
   'Gold',
   'Silver',
   'Other',
+  'Custom',
 ] as const;
 
 export type HoldingType = (typeof HOLDING_TYPES)[number];
@@ -108,6 +111,7 @@ export type ManualHolding = {
   kind: 'manual';
   name: string;
   type: HoldingType;
+  customTypeName?: string;
   invested: number;
   value: number;
   valueAsOf?: ISODate;
@@ -119,6 +123,7 @@ export type PlanHolding = {
   kind: 'plan';
   name: string;
   type: HoldingType;
+  customTypeName?: string;
   frequency: Frequency;
   amount: number;
   ratePct: number;
@@ -139,6 +144,7 @@ type LiabilityBase = {
   id: string;
   name: string;
   type: LiabilityType;
+  customTypeName?: string;
   principal: number;
   ratePct: number;
   startDate: ISODate;
@@ -181,7 +187,7 @@ export type PolicyKind =
   | 'home'
   | 'other';
 
-export type PolicyFrequency = 'monthly' | 'quarterly' | 'half-yearly' | 'yearly' | 'custom';
+export type PolicyFrequency = 'monthly' | 'quarterly' | 'half-yearly' | 'yearly' | 'once' | 'custom';
 export type PolicyStatus = 'active' | 'lapsed' | 'matured' | 'cancelled';
 
 export type PolicyPayment = {
@@ -250,7 +256,7 @@ export type BudgetSection = {
   system?: 'income' | 'debt' | 'insurance';
 };
 
-export type BudgetItemFrequency = 'monthly' | 'quarterly' | 'half-yearly' | 'yearly';
+export type BudgetItemFrequency = 'monthly' | 'quarterly' | 'half-yearly' | 'yearly' | 'once';
 
 export type BudgetItem = {
   id: string;

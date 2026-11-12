@@ -1,4 +1,4 @@
-<!-- Purpose: Compact decision index into the canonical progress ledger. | Last updated: 2026-11-05 | Updates: owner and AI agents -->
+<!-- Purpose: Compact decision index into the canonical progress ledger. | Last updated: 2026-11-11 | Updates: owner and AI agents -->
 
 # Decisions
 
@@ -7,6 +7,11 @@ Each entry links to the architecture/decision section in the complete
 authoritative rationale and history.
 
 - [DEC-CR108-MENU-STRESS-DIALOG](../PROGRESS.md#dec-cr108-menu-stress-dialog-2026-11-10)
+- [DEC-CR108-FINANCIAL-TYPES](../PROGRESS.md#dec-cr108-financial-types-2026-11-10)
+- [DEC-CR108-ONCE-ONLY](../PROGRESS.md#dec-cr108-once-only-2026-11-10)
+- [DEC-CR108-COMPLETED-SECTIONS](../PROGRESS.md#dec-cr108-completed-sections-2026-11-10)
+- [DEC-CR108-UPDATE-CHECK](../PROGRESS.md#dec-cr108-update-check-2026-11-10)
+- [DEC-CR109-OWNER-PLANNING-AND-CLOSEOUT](../PROGRESS.md#dec-cr109-owner-planning-and-closeout-2026-11-11)
 - [DEC-BACKUP-RECONCILIATION](../PROGRESS.md#dec-backup-reconciliation-2026-11-01)
 - [DEC-P25B](../PROGRESS.md#dec-p25b-2026-11-01)
 - [DEC-P29F3](../PROGRESS.md#dec-p29f3-assertion-and-coverage-correction)

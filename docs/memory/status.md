@@ -1,18 +1,98 @@
-<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-10 | Updates: owner and AI agents -->
+<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-12 | Updates: owner and AI agents -->
 
 # Status
-- CR-108 is in progress. P29-Q-R1 reproduces the four-choice `choiceAsync`
-  RangeError before production changes, replaces the stress picker with a
-  centered scalable selection dialog, and keeps the helper's two-choice limit.
-  Five focused suites / 30 tests and TypeScript pass; task PR #93 and phase PR
-  #94 are merged to `develop` at `80eb0e4`. P20-N-R3's failing tests were
-  committed first as `bba05be`; the Budget overview implementation now removes
-  the visible Pace/Over by/Left lines while retaining chart/table accessible
-  descriptions, and focused tests, TypeScript and targeted lint pass. Task PR
-  #95 merged to `phase/20-budget` as `77bdef5`; the phase-to-`develop` PR is
-  pending. Parts 3–6, schema v23, demo updates and the six final ordered gates
-  remain pending. The new Budget blob is recorded in
-  [rules.md](rules.md); physical-device checks remain unverified.
+- **CR-110-R1 (2026-11-12) is Planned only:** CR-110 is marked Revised by
+  CR-110-R1. Five P43 items record lifecycle tracking separation, tag cleanup and
+  a report-only branch/PR/merge audit, Emergency Fund target editing,
+  transaction-form changes, and a GitHub issue strategy. Every item has
+  dependencies and `Evidence: not started`. No application implementation,
+  remote branch rename, tag operation, issue creation or history rewrite is
+  authorized. Historical P27/P28 evidence and Git chronology remain intact.
+  The test-first commit is `e5114e01f363d6de5a12acb61886039469d4a86f`;
+  authorized local P43 phase/task branches were created for the planned PR
+  flow. Task PR #146 merged into P43 at
+  `e4d950adf0344dbe12e2e0d085e83d60538ede68`; phase PR #147 merged into
+  `develop` at `a93feaecfbd591c1b6f27bac15b5839c68d10709`. The task branch
+  was deleted and the phase branch is retained. See
+  [open-items.md](open-items.md) and [PROGRESS.md](../PROGRESS.md).
+- Remote rename of `phase/27-cleanup` and `phase/28-qa-and-release` needs an
+  owner decision because it requires a push and deletion of old remote refs.
+  Any deletion of non-release tags is blocked on an owner-approved exact tag
+  list; retain all `vX.Y.Z` releases and stale phase tags already directed.
+  GitHub issue creation is a separate owner-approved task; GitHub controls
+  actual issue/comment/closure timestamps.
+- **Owner-decision reconciliation (CR-109, 2026-11-11):** future in-app
+  update discovery, Once-only investment/liability frequencies, public
+  adoption, the P31-D privacy statement, P40-B and post-P31-E branch
+  protection are approved as Planned; this record implements none of them.
+  The MIT holder is confirmed as Sahil Aspak Sheikh. The owner accepts current
+  P29-J calculation behavior, CR-3 Save behavior, the recorded dependency
+  audit, existing backup snapshot and Node 26 pin. Stale phase tags are to be
+  retained. See [open-items.md](open-items.md) and [PROGRESS.md](../PROGRESS.md).
+- v1.2.0 (minor) is published. `app.json`, package metadata and the
+  About-screen test identify v1.2.0. The approved note has fourteen
+  screenshots, with five new settings/backup screens added to every release
+  and About only to v1.2.0. Release PR #124 merged `release/v1.2.0` into
+  `main` as `2e419f8c7d482adc7523b380fe5b71d3bf15dce3`; tag `v1.2.0` points to
+  the APK's exact source candidate
+  `199ebed307ce7755bc92c1f15544999d852db54f`. EAS build
+  `6fccf7d1-0580-46a6-9e09-ff7467fb0a30` succeeded with profile `android-apk`
+  and Android `versionCode` 3; the 112,163,081-byte APK was privately
+  byte-verified against EAS and published.
+- All six gates were rerun on `develop` at `3bd5be6`: 101 suites, 1,316
+  passed, 1 skipped; coverage is 95.96/92.15/98.02/97.62% overall,
+  `src/data` 91.06/87.47/94.48/94.19%, `src/domain` 96.94/93.00/98.80/98.31%,
+  and `src/lib` 100% in all measures. The final docs/test correction merged
+  through task PR #130 (`202dabe`), phase PR #131 (`6f4f4df`), develop-to-main
+  PR #132 (`b678493`) and main-to-develop PR #133 (`eedff48`); `main` and
+  `develop` trees match.
+- P28-F-R6-R2's ledger regression correction merged from task PR #134 into
+  `phase/28-qa-and-release` at `2d3a0f6`. Its evidence records the prior
+  release sync and exact P28 38/38 completion status.
+- The owner reports all previously listed physical-device follow-ups passed
+  on 2026-11-11. O54-O60 in the device checklist record the grouped areas:
+  accessibility/large text, dialogs/navigation, reminders/notifications,
+  persistence/storage, financial flows, backup/restore and Budget/list
+  layouts. No device model, OS version or tester details were supplied; these
+  are owner-reported, not independently observed.
+- P28-F-R6-R3 changes documentation and ledger tests only; the focused
+  progress-ledger test passes 17/17. The full suite and six application gates
+  were not rerun for this update. Task PR #138 merged into the retained phase
+  at `6f5b1cb`; phase PR #139 merged to `develop` at `fd7ba55`. P28-F-R6-R3
+  is integrated into `develop` at `fd7ba55`.
+- CR-109 is integrated without application behavior changes. P42-A task PR
+  #142 merged into the phase at `8f38e9f`; phase PR #143 merged into
+  `develop` at `8988121`. P42-A-R1 records task PR #142 and phase PR #143;
+  all six gates were rerun on integrated `develop` and passed. P42-A-R1 also
+  reran all six gates on its task branch with the same results. Exact results
+  are in the CR-109 verification entry.
+- All 104 screenshot image/link URLs returned HTTP 200; raw image sizes match
+  all 52 repository files. The latest and four versioned APK URLs returned
+  HTTP 200 with their expected artifact sizes. Historical release screenshot
+  sections were updated without changing other release-body content, and the
+  previous v1.1.1 latest APK was renamed to its versioned filename.
+- The final README/latest-release Download parity update and branch
+  synchronization are complete: task PRs #125/#126, phase PR #127,
+  develop-to-main PR #128 and main-to-develop PR #129 are merged. O45-O60 are
+  owner-reported Pass; device identity details were not supplied. The
+  subsequent final ledger/test correction is also synchronized through PRs
+  #130–#133; `main` and `develop` have identical trees.
+- CR-108 is complete on `develop`. P29-Q-R1 and P20-N-R3 merged at
+  `80eb0e4` and `f5f6e16`. P41-A and its category correction merged through
+  PRs #97–#100 at `9aa6540` and `a67f54f`; P41-B merged through PRs #101/#102
+  at `b4275d3`, with evidence follow-up PR #103 at `c1e810b`; P41-C merged
+  through #104/#105 at `37a3429`; P41-D merged through #106/#107 at
+  `8e4a2d1`. P41-B-R1 corrected the stale once-only reminder count (909 to
+  893), added schedule/schema branch coverage, and merged through task PR #108
+  and phase PR #109 to `develop` at `5cb4957`. All six ordered gates pass:
+  Gate 1 has 101 suites, 1,316 passed, 1 skipped; coverage is
+  95.96/92.15/98.02/97.62% overall, `src/data` 91.06/87.47/94.48/94.19%,
+  `src/domain` 96.94/93.00/98.80/98.31%, and `src/lib` 100% in all measures.
+  The current schema is v23; Once only applies to Budget items, Budget income
+  and insurance premiums, not investment plans or liabilities. No CR-108 work
+  ships in v1.1.1. The owner reports O45-O60 physical checks passed; device
+  and tester fields remain blank. The authorized Budget blob and all other
+  protected hashes are recorded in [rules.md](rules.md).
 - CR-106 adds planning rows only: P31-D privacy and P31-E CI, report-first
   P39 release audit/hardening, and P40 agent-context hygiene.
   No audit part, app-source change, phase implementation, or release work has
@@ -33,8 +113,8 @@
   before/after table, goal percentages, PR SHAs and APK sizes are in
   [PROGRESS.md](../PROGRESS.md). Directly seeded holding openings are an
   explicit sample-data assumption. The v1.1.1 APK does not contain the demo
-  change. Physical-device rendering at font scales 1.3 and 2.0 remains
-  unverified.
+  change. The owner reports physical-device rendering at font scales 1.3 and
+  2.0 passed on 2026-11-11.
 - The owner-approved v1.1.1 patch release was published on 2026-11-09. The
   app, package and lockfile versions are aligned to 1.1.1. All six ordered
   gates passed on the release candidate: 98 suites, 1,271 passed, 1 skipped;
@@ -140,8 +220,10 @@
   Publication PRs #11-#15 are merged in order; their task branch was deleted
   and `phase/28-qa-and-release` was retained.
   `phase/25-release-and-backups` remains outside this Release 2 PR chain.
-  P28-E's final-verification commit was reconciled in P28-E-R2; the separate
-  `codex-changes` branch remains under review.
+  P28-E's final-verification commit was reconciled in P28-E-R2; at that time
+  the separate `codex-changes` branch was under review. The later owner
+  decision recorded below supersedes that status: the branch was deleted and
+  no work is to be ported.
 - The v1.1.0 release-tree gates passed before publication. The clean
   2026-11-09 develop preflight at `c939458` passed all six ordered gates;
   Gate 1 had 98 suites, 1,268 passed and 1 skipped, with 95.96/92.04/98.02/
@@ -161,7 +243,8 @@
   `task/P20-S-R1-form-choicefields-labels`. Final gates, test totals and
   integration PRs are recorded in `docs/PROGRESS.md`. Implementation commit
   `d36103e` is in PR #42 (task to phase); PR #43 promotes the phase to develop.
-  Physical-device rendering remains unverified.
+  At that close-out, physical-device rendering was unverified; the owner
+  later reported it passed on 2026-11-11.
 - P20-S-R1 final-tree validation: all six ordered gates exit 0. Coverage:
   98 suites, 1,267 passed, 1 skipped; 95.96/92.04/98.02/97.63% overall
   (statements/branches/functions/lines), `src/data`
@@ -228,18 +311,20 @@
 - P29-O-R1 closes the only uncompleted P29 implementation row. The
   proposed ledger-only migration was explicitly cancelled as unnecessary;
   P29-O1's accepted unified holding workflow remains. P29 is 41/41 after
-  the close-out. P29-O1's physical-device checks remain unverified.
+  the close-out. The owner reports P29-O1's physical-device checks passed on
+  2026-11-11.
 - The owner directed deletion of local `codex-changes` (`d033d6a`). Its
-  October schema-v2 loan/liability alternative was stale against schema v22,
-  included generated coverage, and contained a migration defect. Nothing was
-  ported or pushed.
+  October schema-v2 loan/liability alternative is stale against schema v23,
+  modifies the protected Home screen, includes generated coverage and has
+  unsafe migration behavior. It was never merged; nothing is to be ported or
+  pushed.
 - Protected hashes reverified with `git hash-object`: Budget
   `b60f77af4f76d47f2cee07393fe9d8f3fa6bd04c` and Home
   `d3d1e465fe9f5d238d338afeb033e2a54889ddc6`. Current values and
   device/release follow-ups are recorded in [open-items.md](open-items.md).
-- Phase tag targets `phase-28-complete` and `phase-29-complete` are behind the
-  latest commits on their respective phase branches. Tags were not moved;
-  whether to update them remains an owner decision.
+- Phase tag targets `phase-28-complete` and `phase-29-complete` remain behind
+  the latest commits on their phase branches. The owner directs retaining
+  these historical tags; they were not moved.
 - Branch audit (2026-11-08): the chronological PR path carries the task
   correction through P28, develop, the release branch and main, then
   back-merges main into develop. The relevant branch refs are verified in the
@@ -247,10 +332,10 @@
   GitHub release is published. `phase/25-release-and-backups` remains outside
   the Release 2 chain; `history/by-phase` is a read-only archive. P28-E's
   final-verification commit `72fb325` is preserved by P28-E-R2, with its
-  stale status edits reconciled instead of merged verbatim. `codex-changes`
-  remains local pending a safe port: it targets schema v2 rather than v22,
-  includes generated coverage, and review found a persisted-data migration
-  bug and a failing migration assertion. No unsafe branch content was pushed.
+  stale status edits reconciled instead of merged verbatim. The earlier note
+  that `codex-changes` awaited a safe port is superseded by the owner's
+  2026-11-11 decision: the branch was deleted, no work is to be ported, and no
+  unsafe branch content was pushed.
 - P28-F-R2 contributor-credit correction and owner-reported device results
   are integrated through PRs #1-#3. P28-F-R2-R1 audit records use PRs #4-#7
   to follow task -> P28 -> develop -> release -> main -> develop.
@@ -267,7 +352,8 @@
   91.03/87.39/94.46/94.17%, `src/domain` 96.95/92.85/98.80/98.32%, and
   `src/lib` 100% in all measures. No schema change. Task commit `601a731` and
   P29 merge `22a0ec4` are included in GitHub main/develop through the
-  Release 2 PR chain. Physical-device verification remains pending.
+  Release 2 PR chain. Physical-device verification was pending at that time;
+  the owner later reported it passed on 2026-11-11.
 - Corrected the five historical checkpoint commit subjects and force-pushed
   the rewritten `main` history to `origin/main` with explicit owner
   authorization. Replacement commit IDs, unchanged tree verification, and
@@ -291,7 +377,7 @@
   remote tag alignment are verified in P28-C-R3. The GitHub release body's
   stored `targetCommitish` still shows the original target because no release
   edit was made.
-- Schema version: v22 (`SCHEMA_VERSION` in `src/domain/schemas.ts`).
+- Schema version: v23 (`SCHEMA_VERSION` in `src/domain/schemas.ts`).
 - P29-AB is complete. Budget income recurrence supports monthly, quarterly,
   half-yearly and yearly frequencies, with a required first-due month for
   non-monthly items. Migration v21-to-v22 defaults existing income monthly
@@ -380,8 +466,8 @@
   Displayed Invested is net of withdrawals and floored at zero; fixed-deposit
   restrictions and P29-H return/current-value logic remain unchanged. The
   P29-U's compatibility table and six ordered gates are recorded in
-  [PROGRESS.md](../PROGRESS.md); physical-device checks remain open in
-  [open-items.md](open-items.md).
+  [PROGRESS.md](../PROGRESS.md); the owner reports the physical-device checks
+  passed on 2026-11-11, as recorded in [open-items.md](open-items.md).
   P29-Q is implemented after the owner approved Expo SQLite.
   Native Zustand AppData uses the SDK-57 SQLite key-value adapter with lazy
   migration from AsyncStorage; web and UI metadata remain on AsyncStorage.
@@ -428,10 +514,12 @@
   tests (1194 passed; one opt-in stress benchmark skipped). P29-M2's
   1120-test run, P29-N's 1104-test run and P29-M's blocked reproduction remain
   historical records in [PROGRESS.md](../PROGRESS.md).
-- Test counts: 98 suites, 1279 tests (1278 passed, 1 skipped) on 2026-11-10.
-- Latest validated run: 98 suites, 1279 tests (1278 passed, 1 skipped) on
-  2026-11-10; all six gates exit 0. Coverage and exact commands are recorded
-  in [PROGRESS.md](../PROGRESS.md).
+- CR-108 baseline: 101 suites, 1317 tests (1316 passed, 1 skipped) on
+  2026-11-11; all six CR-108 gates exited 0.
+- Test counts: 101 suites, 1320 tests (1319 passed, 1 skipped) on 2026-11-11.
+- Latest validated run: 101 suites, 1320 tests (1319 passed, 1 skipped) on
+  2026-11-11 on integrated `develop` `8988121`; all six P42-A gates exit 0.
+  Coverage and exact commands are recorded in [PROGRESS.md](../PROGRESS.md).
 - All six P29-L gates exit 0: Jest coverage, TypeScript, Expo lint with zero
   warnings, Expo Doctor 21/21, Android export and iOS export. Exact commands
   and exit codes are in [PROGRESS.md](../PROGRESS.md).
@@ -487,8 +575,9 @@
 - The prior Gate 1 timeout output is unavailable and cannot be quoted. The
   final fresh full run passes; see the ledger for the historical isolated-run
   information and the preliminary TypeScript correction.
-- Coverage and UI tests are simulated. See [open-items.md](open-items.md) for
-  physical-device checks not verified.
+- Coverage and UI tests are simulated and distinct from device evidence. The
+  owner reports all listed physical-device checks passed; see
+  [open-items.md](open-items.md) for scope and provenance.
 - Encrypted backups protect exported files only. On-device data remains
   unencrypted; app lock is not encryption. A lost passphrase is unrecoverable.
 - The ledger at [`docs/PROGRESS.md`](../PROGRESS.md) is the source of truth

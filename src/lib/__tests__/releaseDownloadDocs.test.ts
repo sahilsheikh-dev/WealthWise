@@ -102,7 +102,9 @@ describe('published release download documentation', () => {
       const assetName = version === latestVersion
         ? `WealthWise-android-latest-${version}.apk`
         : `WealthWise-android-${version}.apk`;
-      const assetUrl = `${releasesBaseUrl}/download/${version}/${assetName}`;
+      const assetUrl = version === latestVersion
+        ? `${releasesBaseUrl}/latest/download/${assetName}`
+        : `${releasesBaseUrl}/download/${version}/${assetName}`;
       expect(releaseHistory).toContain(assetUrl);
     }
   });
@@ -124,6 +126,11 @@ describe('published release download documentation', () => {
         type: 'Patch',
         date: '2026-11-09',
         previous: 'v1.1.0',
+      },
+      'v1.2.0': {
+        type: 'Minor',
+        date: '2026-11-11',
+        previous: 'v1.1.1',
       },
     } as const;
 
@@ -181,6 +188,7 @@ describe('published release download documentation', () => {
       join(publishedDirectory, 'v1.0.0.md'),
       join(publishedDirectory, 'v1.1.0.md'),
       join(publishedDirectory, 'v1.1.1.md'),
+      join(publishedDirectory, 'v1.2.0.md'),
       join(root, 'docs', 'releases', 'TEMPLATE.md'),
     ];
 
@@ -206,14 +214,29 @@ describe('published release download documentation', () => {
     const readmeVersion = readLatestVersion(readDownloadBlock(readme, readmePath));
     const readmeScreenshotTables = [...readme.matchAll(/<table>([\s\S]*?)<\/table>/g)];
     const screenshotSets = {
-      'v1.0.0': ['home', 'assets', 'liabilities', 'emergency-fund', 'goals', 'insurance', 'transactions'],
-      'v1.1.0': ['home', 'assets', 'liabilities', 'emergency-fund', 'goals', 'insurance', 'budget', 'transactions'],
-      'v1.1.1': ['home', 'assets', 'liabilities', 'emergency-fund', 'goals', 'insurance', 'budget', 'transactions'],
+      'v1.0.0': [
+        'home', 'assets', 'liabilities', 'emergency-fund', 'goals', 'insurance', 'transactions',
+        'backup-and-restore', 'reminders', 'security', 'profile', 'theme',
+      ],
+      'v1.1.0': [
+        'home', 'assets', 'liabilities', 'emergency-fund', 'goals', 'insurance', 'budget',
+        'transactions', 'backup-and-restore', 'reminders', 'security', 'profile', 'theme',
+      ],
+      'v1.1.1': [
+        'home', 'assets', 'liabilities', 'emergency-fund', 'goals', 'insurance', 'budget',
+        'transactions', 'backup-and-restore', 'reminders', 'security', 'profile', 'theme',
+      ],
+      'v1.2.0': [
+        'home', 'assets', 'liabilities', 'emergency-fund', 'goals', 'insurance', 'budget',
+        'transactions', 'backup-and-restore', 'reminders', 'security', 'profile', 'theme',
+        'about',
+      ],
     } as const;
     const markdownByVersion = {
       'v1.0.0': 'docs/releases/published/v1.0.0.md',
       'v1.1.0': 'docs/releases/published/v1.1.0.md',
       'v1.1.1': 'docs/releases/published/v1.1.1.md',
+      'v1.2.0': 'docs/releases/published/v1.2.0.md',
     } as const;
 
     expect(template).toContain('## Screenshots');
@@ -258,30 +281,43 @@ describe('published release download documentation', () => {
     expect(readme).toContain('### Screenshots');
     expect(readme).not.toMatch(/^#### v\d+\.\d+\.\d+/m);
     expect(readmeScreenshotTables).toHaveLength(1);
+    const readmeCategories = screenshotSets[readmeVersion as keyof typeof screenshotSets];
     for (const [, table = ''] of readmeScreenshotTables) {
-      expect(readScreenshotRowCounts(table)).toEqual([4, 4]);
-      expect(readScreenshotCategories(table)).toEqual(
-        screenshotSets[readmeVersion as keyof typeof screenshotSets],
+      expect(readScreenshotRowCounts(table)).toEqual(
+        Array.from(
+          { length: Math.ceil(readmeCategories.length / 4) },
+          (_, row) => Math.min(4, readmeCategories.length - row * 4),
+        ),
       );
+      expect(readScreenshotCategories(table)).toEqual(readmeCategories);
       expect([...table.matchAll(/<img\b[^>]*>/g)].every((match) =>
         (match[0] ?? '').includes('width="150"'),
       )).toBe(true);
       expect([...table.matchAll(/<td><a href="([^"]+)"><img src="([^"]+)"[^>]*><\/a><\/td>/g)])
-        .toHaveLength(8);
+        .toHaveLength(readmeCategories.length);
       for (const [, href = '', src = ''] of table.matchAll(/<td><a href="([^"]+)"><img src="([^"]+)"[^>]*><\/a><\/td>/g)) {
-        expect(href).toContain('docs/releases/screenshots/v1.1.1/');
-        expect(src).toContain('docs/releases/screenshots/v1.1.1/');
+        expect(href).toContain(`docs/releases/screenshots/${readmeVersion}/`);
+        expect(src).toContain(`docs/releases/screenshots/${readmeVersion}/`);
       }
     }
 
     for (const [version, categories] of Object.entries(screenshotSets)) {
       const releasePath = markdownByVersion[version as keyof typeof markdownByVersion];
       const releaseContents = readFileSync(join(root, releasePath), 'utf8');
+      const screenshotDirectory = join(root, 'docs', 'releases', 'screenshots', version);
+      const expectedFiles = categories
+        .map((category) => `WealthWise-${version}-screenshot-${category}.png`)
+        .sort();
+      expect(readdirSync(screenshotDirectory).filter((file) => file.endsWith('.png')).sort())
+        .toEqual(expectedFiles);
       expect(releaseContents).toContain('## Screenshots');
       const releaseScreenshotTable = releaseContents.match(/<table>([\s\S]*?)<\/table>/)?.[1] ?? '';
       expect(readScreenshotCategories(releaseScreenshotTable)).toEqual(categories);
       expect(readScreenshotRowCounts(releaseScreenshotTable)).toEqual(
-        categories.length === 7 ? [4, 3] : [4, 4],
+        Array.from(
+          { length: Math.ceil(categories.length / 4) },
+          (_, row) => Math.min(4, categories.length - row * 4),
+        ),
       );
       expect([...releaseScreenshotTable.matchAll(/<img\b[^>]*>/g)].every((match) =>
         (match[0] ?? '').includes('width="150"'),
@@ -293,7 +329,7 @@ describe('published release download documentation', () => {
 
       for (const category of categories) {
         const imageName = `WealthWise-${version}-screenshot-${category}.png`;
-        const screenshotPath = join(root, 'docs', 'releases', 'screenshots', version, imageName);
+        const screenshotPath = join(screenshotDirectory, imageName);
         const relativePath = `docs/releases/screenshots/${version}/${imageName}`;
         const blobUrl = `${repositoryBaseUrl}/blob/main/${relativePath}`;
         const rawUrl = `https://raw.githubusercontent.com/sahilsheikh-dev/WealthWise/main/${relativePath}`;
@@ -306,16 +342,16 @@ describe('published release download documentation', () => {
         }
       }
     }
-    expect(readme).toContain('docs/releases/screenshots/v1.1.1/');
-    expect(readme).not.toContain('docs/releases/screenshots/v1.1.0/');
+    expect(readme).toContain(`docs/releases/screenshots/${readmeVersion}/`);
+    expect(readme).not.toContain('docs/releases/screenshots/v1.1.1/');
 
     const releaseNote = readFileSync(
-      join(root, 'docs', 'releases', 'published', 'v1.1.1.md'),
+      join(publishedDirectory, `${readmeVersion}.md`),
       'utf8',
     );
     for (const heading of [
       '## Download',
-      '## What\'s new in v1.1.1',
+      `## What's new in ${readmeVersion}`,
       '## Screenshots',
       '## What\'s Included',
       '### New Features',
@@ -328,7 +364,9 @@ describe('published release download documentation', () => {
     ]) {
       expect(releaseNote).toContain(heading);
     }
-    expect(releaseNote).toContain('releases/latest/download/WealthWise-android-latest-v1.1.1.apk');
+    expect(releaseNote).toContain(
+      `releases/latest/download/WealthWise-android-latest-${readmeVersion}.apk`,
+    );
     expect(releaseNote).not.toContain('Not available. The owner will upload the APK');
     expect(releaseNote).not.toContain('**Status:**');
   });
@@ -344,12 +382,12 @@ describe('published release download documentation', () => {
       readFileSync(join(root, 'package-lock.json'), 'utf8'),
     );
     const releaseNote = readFileSync(
-      join(root, 'docs', 'releases', 'published', 'v1.1.1.md'),
+      join(root, 'docs', 'releases', 'published', 'v1.2.0.md'),
       'utf8',
     );
     const releaseVersion = releaseNote.match(/^# WealthWise v(\d+\.\d+\.\d+)$/m)?.[1];
 
-    expect(releaseVersion).toBeDefined();
+    expect(releaseVersion).toBe('1.2.0');
     expect(appConfig.expo.version).toBe(releaseVersion);
     expect(packageManifest.version).toBe(releaseVersion);
     expect(lockfile.version).toBe(releaseVersion);
