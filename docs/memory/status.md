@@ -1,18 +1,28 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-12 | Updates: owner and AI agents -->
 
 # Status
-- **CR-111 (2026-11-12) is Planned only:** P20-A-R3 revises completed
-  P20-A-R2; new P44-A–P44-D plan a spending heat map; CM-2 is a separate
-  proposed repository rule, not a phase part. Every item has dependencies
-  and `Evidence: not started`. P20-A-R3 remains unimplemented and its
+- **CR-111 (2026-11-12) has Planned product work:** P20-A-R3 revises completed
+  P20-A-R2; new P44-A–P44-D plan a spending heat map. CM-2 is Active and
+  enforced as a repository rule, not a phase part. Planned product items keep
+  their dependencies and `Evidence: not started`. P20-A-R3 remains unimplemented and its
   owner-reported behavior is not yet reproduced. P20 task PR #149 merged into
   `phase/20-budget` at `7a5fed6c4a98d8394652e0dbb499b9aa810bae29`; phase PR
   #150 merged into `develop` at
   `4170545cbaa8a4f37d4583b5c29c909c0c99a015`. No app/schema/demo changes,
   issue creation, tag operations or history rewrites. All six ordered gates
   passed on the CR-111 task tree; Gate 1 had 101 suites, 1322 passed and
-  1 skipped. CM-2 is not enforced; activation default is No. See
-  [open-items.md](open-items.md) and [PROGRESS.md](../PROGRESS.md).
+  1 skipped. See [open-items.md](open-items.md) and [PROGRESS.md](../PROGRESS.md).
+- **CR-112 (2026-11-12) is in progress:** R6 and the placement guide, local
+  ledger relocations, tests and CM-2 documentation are complete on
+  `task/P43-F-work-placement-rules`. Test-first commit `e2f0263` is local.
+  Ordered gates: 1=0 (101 suites, 1,324 passed, 1 skipped; watchman disabled
+  after sandbox denial), 2=0, 3=0, 4=1 (`ENOTFOUND registry.npmjs.org`; local
+  `expo-doctor` unavailable), 5=0, 6=0. No physical-device verification was
+  performed. The automatic
+  approval review rejected the explicitly authorized GitHub push as
+  repository-content egress. No remote rename, PR or merge has occurred;
+  P43-A remains in progress. P43-F remains in progress pending gates and PR
+  integration. No application/schema/demo, release, tag, issue or history work.
 - **CR-110-R1 (2026-11-12) is Planned only:** CR-110 is marked Revised by
   CR-110-R1. Five P43 items record lifecycle tracking separation, tag cleanup and
   a report-only branch/PR/merge audit, Emergency Fund target editing,
@@ -27,8 +37,8 @@
   `develop` at `a93feaecfbd591c1b6f27bac15b5839c68d10709`. The task branch
   was deleted and the phase branch is retained. See
   [open-items.md](open-items.md) and [PROGRESS.md](../PROGRESS.md).
-- Remote rename of `phase/27-cleanup` and `phase/28-qa-and-release` needs an
-  owner decision because it requires a push and deletion of old remote refs.
+- Remote rename of `phase/27-cleanup (now cleanup)` and `phase/28-qa-and-release (now qa-and-release)` is owner
+  authorized, but remote refs remain unchanged pending approval review.
   Any deletion of non-release tags is blocked on an owner-approved exact tag
   list; retain all `vX.Y.Z` releases and stale phase tags already directed.
   GitHub issue creation is a separate owner-approved task; GitHub controls
@@ -59,7 +69,7 @@
   PR #132 (`b678493`) and main-to-develop PR #133 (`eedff48`); `main` and
   `develop` trees match.
 - P28-F-R6-R2's ledger regression correction merged from task PR #134 into
-  `phase/28-qa-and-release` at `2d3a0f6`. Its evidence records the prior
+  `phase/28-qa-and-release (now qa-and-release)` at `2d3a0f6`. Its evidence records the prior
   release sync and exact P28 38/38 completion status.
 - The owner reports all previously listed physical-device follow-ups passed
   on 2026-11-11. O54-O60 in the device checklist record the grouped areas:
@@ -193,7 +203,7 @@
   recorded in [PROGRESS.md](../PROGRESS.md).
 - P28-E-R3 records the selected P25-F, v1.1.0 merge and P1 commits as
   ancestry through `task/P28-E-R3-record-selected-ancestry` and
-  `phase/28-qa-and-release`. The ancestry merges preserve the captured
+  `phase/28-qa-and-release (now qa-and-release)`. The ancestry merges preserve the captured
   `develop` tree; the task adds only ledger/memory documentation and a ledger
   test. PR #47 merged to P28 and PR #48 merged to `develop`; no
   application source or `main` changes were included.
@@ -230,7 +240,7 @@
   read-only `history/by-phase` archive, all 30 phase branches, and release
   branches `release/v1.0.0` and `release/v1.1.0`.
   Publication PRs #11-#15 are merged in order; their task branch was deleted
-  and `phase/28-qa-and-release` was retained.
+  and `phase/28-qa-and-release (now qa-and-release)` was retained.
   `phase/25-release-and-backups` remains outside this Release 2 PR chain.
   P28-E's final-verification commit was reconciled in P28-E-R2; at that time
   the separate `codex-changes` branch was under review. The later owner
