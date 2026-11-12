@@ -9,6 +9,9 @@ CR-110-R1**. Five P43 rows are Planned, each with dependencies and
 `Evidence: not started`.
 The authorized local phase `phase/43-lifecycle-and-transaction-planning` and
 task `task/P43-A-plan-cr110` were created from `develop` for the PR flow.
+Task PR #146 merged into the phase at
+`e4d950adf0344dbe12e2e0d085e83d60538ede68`; the task branch was deleted and
+the phase branch is retained for its PR into `develop`.
 
 - **P43-A — Lifecycle tracking separation:** list `cleanup` and
   `qa-and-release` outside numbered development phases, alongside `develop`

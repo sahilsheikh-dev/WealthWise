@@ -10,7 +10,10 @@
   authorized. Historical P27/P28 evidence and Git chronology remain intact.
   The test-first commit is `e5114e01f363d6de5a12acb61886039469d4a86f`;
   authorized local P43 phase/task branches were created for the planned PR
-  flow. See [open-items.md](open-items.md) and [PROGRESS.md](../PROGRESS.md).
+  flow. Task PR #146 merged into P43 at
+  `e4d950adf0344dbe12e2e0d085e83d60538ede68`; the task branch was deleted
+  and the phase branch is retained for its PR into `develop`. See
+  [open-items.md](open-items.md) and [PROGRESS.md](../PROGRESS.md).
 - Remote rename of `phase/27-cleanup` and `phase/28-qa-and-release` needs an
   owner decision because it requires a push and deletion of old remote refs.
   Any deletion of non-release tags is blocked on an owner-approved exact tag
