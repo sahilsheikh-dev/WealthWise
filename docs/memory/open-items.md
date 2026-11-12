@@ -34,6 +34,10 @@ implementation, tag deletion or GitHub issue creation.
 - **P40-A–B:** approved to remain in P40; P40-B still depends on P40-A.
 
 Full row-level details and verification are in [PROGRESS.md](../PROGRESS.md).
+P43-G task PR #157 merged into P43 at
+`01e5559f00a3b7008292db07ed7900af0ea8f828`; phase PR #158 merged into
+`develop` at `14f539b4c70da1a00e24642fd3e6068091f3ed9c`. CM-2 synchronization
+completed after both merges.
 
 ## CR-110-R1 planned work
 
