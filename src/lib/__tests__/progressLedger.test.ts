@@ -122,11 +122,11 @@ describe('permanent progress ledger', () => {
       expect(row).toContain('Dependencies:');
       expect(row).toContain('Evidence: not started');
     }
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P43-A |'))).toContain('| In progress |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P43-A |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P43-F |'))).toContain('| In progress |');
     expect(dashboard).toContain('Standalone lifecycle activities (not counted as development phases)');
-    expect(dashboard).toContain('| `cleanup` | `cleanup` | `cleanup` | Active (local; remote rename pending approval review) |');
-    expect(dashboard).toContain('| `qa-and-release` | `qa-and-release` | `qa-and-release` | Active (local; remote rename pending approval review) |');
+    expect(dashboard).toContain('| `cleanup` | `cleanup` | `cleanup` | Active (remote ref verified; old name deleted) |');
+    expect(dashboard).toContain('| `qa-and-release` | `qa-and-release` | `qa-and-release` | Active (remote ref verified; old name deleted) |');
     expect(register.split('\n').filter((line) => line.startsWith('| CR-110-R1 |'))).toHaveLength(1);
     expect(register.split('\n').find((line) => line.startsWith('| CR-110 |'))).toContain('Revised by CR-110-R1');
     expect(register.split('\n').find((line) => line.startsWith('| CR-110-R1 |'))).toContain('| Planned |');
@@ -146,9 +146,9 @@ describe('permanent progress ledger', () => {
     expect(roadmap).toContain('one issue per ledger part or CR');
     expect(roadmap).toContain('API rate and noise concerns');
     expect(branchIndex).toContain('| P43 | `phase/43-lifecycle-and-transaction-planning` | — | — | 4 |');
-    expect(branchIndex).toContain('Standalone lifecycle branch index (active; remote rename pending)');
-    expect(branchIndex).toContain('| `cleanup` | `cleanup` (local; remote ref pending approval review) | `cleanup` | Active |');
-    expect(branchIndex).toContain('| `qa-and-release` | `qa-and-release` (local; remote ref pending approval review) | `qa-and-release` | Active |');
+    expect(branchIndex).toContain('Standalone lifecycle branch index (renamed refs verified)');
+    expect(branchIndex).toContain('| `cleanup` | `cleanup` | `cleanup` | Active |');
+    expect(branchIndex).toContain('| `qa-and-release` | `qa-and-release` | `qa-and-release` | Active |');
     expect(branchIndex).toContain('| P43 | `phase/43-lifecycle-and-transaction-planning` | — | — | 4 |');
     expect(roadmap).not.toMatch(/^\d+\. \*\*P(?:27|28) —/m);
     expect(roadmap).toContain('P27/P28 remain completed historical milestones');
@@ -237,7 +237,7 @@ describe('permanent progress ledger', () => {
     const rules = ledger.split('## 3. Standing rules')[1]?.split('## 4. Architecture and decisions')[0] ?? '';
     const placementMoves = ledger.split('### Placement moves')[1]?.split('\n### ')[0] ?? '';
     const exactCm2 = 'After any merge that lands on a target branch (task->phase, phase->develop, release->main, main->develop): git fetch --all --prune; git switch <target>; git pull --ff-only. Refuse and report if the worktree is dirty, the fast-forward fails or the target has no upstream. This rule never authorizes pushing; R3 is unchanged.';
-    const scopedDocs = ['AGENTS.md', 'CONTRIBUTING.md', 'docs/PROGRESS.md', 'docs/memory/rules.md', 'docs/memory/open-items.md', 'docs/releases/README.md'];
+    const scopedDocs = ['AGENTS.md', 'CONTRIBUTING.md', 'docs/PROGRESS.md', 'docs/memory/rules.md', 'docs/memory/status.md', 'docs/memory/open-items.md', 'docs/releases/README.md'];
 
     expect(rules).toContain('R6 — Work placement');
     expect(register).toContain(exactCm2);
@@ -258,7 +258,7 @@ describe('permanent progress ledger', () => {
       const content = readFileSync(join(process.cwd(), name), 'utf8');
       for (const oldName of ['phase/27-cleanup', 'phase/28-qa-and-release']) {
         for (const line of content.split('\n').filter((candidate) => candidate.includes(oldName))) {
-          expect(line).toContain(oldName === 'phase/27-cleanup' ? '(now cleanup)' : '(now qa-and-release)');
+          expect(line).toContain(`historical branch name: \`${oldName}\``);
         }
       }
     }
@@ -662,8 +662,8 @@ describe('permanent progress ledger', () => {
       }
       if (number === 27 || number === 28) {
         expect(branch).toBe(number === 27
-          ? 'phase/27-cleanup (now cleanup)'
-          : 'phase/28-qa-and-release (now qa-and-release)');
+          ? 'cleanup (historical branch name: `phase/27-cleanup`)'
+          : 'qa-and-release (historical branch name: `phase/28-qa-and-release`)');
         expect(tag).toBe(`phase-${String(number).padStart(2, '0')}-complete`);
         expect(commit).toMatch(/^[0-9a-f]{40}$/);
         expect(Number(count)).toBe(counts.get(number));
