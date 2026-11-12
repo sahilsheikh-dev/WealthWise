@@ -124,6 +124,9 @@ describe('permanent progress ledger', () => {
     }
     expect(dashboard.split('\n').find((line) => line.startsWith('| P43-A |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P43-F |'))).toContain('| In progress |');
+    const lifecycleRename = dashboard.split('\n').find((line) => line.startsWith('| P43-A |')) ?? '';
+    expect(lifecycleRename).toContain('a2fa24f930da15c49f779577eb749b33f11a7059');
+    expect(lifecycleRename).toContain('9d914638e50462cbadef84df3294ed07cbf42732');
     expect(dashboard).toContain('Standalone lifecycle activities (not counted as development phases)');
     expect(dashboard).toContain('| `cleanup` | `cleanup` | `cleanup` | Active (remote ref verified; old name deleted) |');
     expect(dashboard).toContain('| `qa-and-release` | `qa-and-release` | `qa-and-release` | Active (remote ref verified; old name deleted) |');
@@ -237,7 +240,7 @@ describe('permanent progress ledger', () => {
     const rules = ledger.split('## 3. Standing rules')[1]?.split('## 4. Architecture and decisions')[0] ?? '';
     const placementMoves = ledger.split('### Placement moves')[1]?.split('\n### ')[0] ?? '';
     const exactCm2 = 'After any merge that lands on a target branch (task->phase, phase->develop, release->main, main->develop): git fetch --all --prune; git switch <target>; git pull --ff-only. Refuse and report if the worktree is dirty, the fast-forward fails or the target has no upstream. This rule never authorizes pushing; R3 is unchanged.';
-    const scopedDocs = ['AGENTS.md', 'CONTRIBUTING.md', 'docs/PROGRESS.md', 'docs/memory/rules.md', 'docs/memory/status.md', 'docs/memory/open-items.md', 'docs/releases/README.md'];
+    const scopedDocs = ['AGENTS.md', 'CONTRIBUTING.md', 'docs/PROGRESS.md', 'docs/memory/rules.md', 'docs/memory/status.md', 'docs/memory/open-items.md', 'docs/memory/project.md', 'docs/releases/README.md'];
 
     expect(rules).toContain('R6 — Work placement');
     expect(register).toContain(exactCm2);
@@ -257,8 +260,8 @@ describe('permanent progress ledger', () => {
     for (const name of scopedDocs) {
       const content = readFileSync(join(process.cwd(), name), 'utf8');
       for (const oldName of ['phase/27-cleanup', 'phase/28-qa-and-release']) {
-        for (const line of content.split('\n').filter((candidate) => candidate.includes(oldName))) {
-          expect(line).toContain(`historical branch name: \`${oldName}\``);
+        for (const paragraph of content.split(/\n\s*\n/).filter((candidate) => candidate.includes(oldName))) {
+          expect(paragraph).toContain(`historical branch name: \`${oldName}\``);
         }
       }
     }
@@ -270,6 +273,17 @@ describe('permanent progress ledger', () => {
     const standaloneCi = dashboard.split('\n').filter((line) => line.includes('Previously: P31-E'));
     expect(standaloneCi).toHaveLength(1);
     expect(standaloneCi[0]).toMatch(/Placement: rule 1; searched .+; related .+; reason:?.+/);
+  });
+
+  it('records the CR-112 Doctor retry and complete ordered gate rerun', () => {
+    const verification = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+
+    expect(verification).toContain('The first `npx expo-doctor` attempt exited 1');
+    expect(verification).toContain('A network retry exited 0 with 21/21 checks');
+    expect(verification).toContain('npm test -- --coverage --watchman=false');
+    expect(verification).toContain('1,324 passed, 1 skipped (1,325 total)');
+    expect(verification).toContain('| 4 | `npx expo-doctor` | 0; 21/21 checks passed |');
+    expect(verification).toContain('| 6 | `npx expo export --platform ios` | 0 |');
   });
 
   it('lists every fix and CR in the dashboard or register', () => {
