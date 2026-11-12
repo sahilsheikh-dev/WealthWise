@@ -21,6 +21,16 @@ git config core.hooksPath .githooks
 
 ## Branching
 
+Before adding work, search the dashboard, register, phase history, roadmap,
+memory and touched files. Apply the first matching rule: ongoing lifecycle,
+CI and repository-process work goes in standalone lifecycle tracking; fixes to
+completed parts use the next revision number in the original phase; scope
+changes to open parts amend them in place; related new feature work uses the
+next part in its phase; genuinely new feature areas get a new phase. Add a
+Placement line to each new or moved ledger row. See
+[work-placement.md](docs/memory/work-placement.md) for the search checklist,
+worked examples and branch workflow.
+
 - `main` contains stable released code. Changes arrive through release or
   hotfix merges and receive a `vX.Y.Z` tag. The initial branching adoption
   baseline may contain legacy unreleased history; this rule applies
@@ -44,6 +54,8 @@ task branches are deleted; phase branches are retained. Agents do not push
 unless the owner explicitly asks, do not force-push, and do not commit
 directly to `main` or `develop` except an authorized bootstrap. They report
 merge commands in chat.
+
+**CM-2 — Active:** After any merge that lands on a target branch (task->phase, phase->develop, release->main, main->develop): git fetch --all --prune; git switch <target>; git pull --ff-only. Refuse and report if the worktree is dirty, the fast-forward fails or the target has no upstream. This rule never authorizes pushing; R3 is unchanged.
 
 ## Commit subjects
 
