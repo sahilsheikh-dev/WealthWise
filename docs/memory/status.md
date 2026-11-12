@@ -1,6 +1,12 @@
-<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-12 | Updates: owner and AI agents -->
+<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-13 | Updates: owner and AI agents -->
 
 # Status
+- **CR-115 (2026-11-13) — Budget edit and delete bug recorded as Planned (P20-U-R1).**
+  Owner reported: "In budget while updating any item/value/amount/start-month/frequency/due-day/etc
+  it is not updating also while trying to delete it is not even deleting, not for
+  single month and this and following months." Owner instruction: "Don't start working on this."
+  The defect is placed in P20 as Planned revision P20-U-R1 (rule 2, completed work revision of P20-U).
+  No investigation, reproduction, app code, schema, demo data or dependency changes were made; work on the bug is unstarted.
 - **CR-114 (2026-11-12) — independent entities, empty slots and R7 merged into develop.**
   Work tracking restructured: `cleanup`, `qa-and-release`, `schema-migration`
   and `documentation` operate as independent lifecycle entities with dedicated
