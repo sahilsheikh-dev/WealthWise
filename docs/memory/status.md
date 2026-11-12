@@ -15,8 +15,9 @@
 - **CR-112 (2026-11-12) is in progress:** R6 and the placement guide, local
   ledger relocations, tests and CM-2 documentation are complete on
   `task/P43-F-work-placement-rules`. Test-first commit `e2f0263` is local.
-  Ordered gates: 1=0 (101 suites, 1,324 passed, 1 skipped; watchman disabled
-  after sandbox denial), 2=0, 3=0, 4=1 (`ENOTFOUND registry.npmjs.org`; local
+  Ordered gates: 1=0 (101 suites, 1,324 passed, 1 skipped; statements 95.97%,
+  functions 98.03%, branches 92.16%; watchman disabled after sandbox denial),
+  2=0, 3=0, 4=1 (`ENOTFOUND registry.npmjs.org`; local
   `expo-doctor` unavailable), 5=0, 6=0. No physical-device verification was
   performed. The automatic
   approval review rejected the explicitly authorized GitHub push as

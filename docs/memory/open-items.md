@@ -144,6 +144,7 @@ and phase PR #150 (`4170545cbaa8a4f37d4583b5c29c909c0c99a015`).
   `e2f0263`; ledger-test correction `d24acd9`; rules/guide `7dab04b`.
   Gates 1, 2, 3, 5 and 6 passed. Gate 4 (`npx expo-doctor`)
   exited 1 because npm registry DNS failed (`ENOTFOUND registry.npmjs.org`);
+  Gate 1 coverage was statements 95.97%, functions 98.03%, branches 92.16%.
   `expo-doctor` is not installed locally. No physical-device check was run.
   Placement-audit documentation commit and remote PR integration remain pending.
 - P31-E CI work moved to `qa-and-release` lifecycle tracking under rule 1.
