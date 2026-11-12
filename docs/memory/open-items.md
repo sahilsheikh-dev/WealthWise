@@ -4,7 +4,7 @@
 
 ## CR-114 independent entities, empty slots and R7 (2026-11-12)
 
-Restructuring of work tracking completed under CR-114:
+Restructuring of work tracking completed under CR-114 and merged into `develop` via PR #161 (`9058386`):
 - Independent lifecycle entities established: `cleanup`, `qa-and-release`,
   `schema-migration` and `documentation`. They operate on dedicated branches and
   are tracked in Section 13 outside the phase denominator.
@@ -15,6 +15,17 @@ Restructuring of work tracking completed under CR-114:
 - Branches: `origin/schema-migration` and `origin/documentation` pushed and
   verified; old `origin/phase/07-schema-migration` deleted.
 - Git history map committed at `docs/history/entity-history-map.md`.
+- PR #161 merged into `develop` with merge commit `9058386`.
+
+## Cleanup lifecycle planned work
+
+- **SDK 57 patch alignment (Planned):** align Expo SDK 57 patch dependencies
+  (`expo ~57.0.33`, `expo-constants ~57.0.24`, `expo-linking ~57.0.14`,
+  `expo-router ~57.0.31`, `expo-sharing ~57.0.26`, `expo-sqlite ~57.0.5`),
+  then re-run all six gates. Placement: rule 1; searched dashboard, register,
+  memory; related cleanup lifecycle; reason: dependency maintenance is ongoing
+  repository lifecycle work. Gate 4 exit 1 was recorded as an owner-approved
+  exception on PR #161 pending this alignment.
 
 ## CR-113 owner-approved planning (2026-11-12)
 
