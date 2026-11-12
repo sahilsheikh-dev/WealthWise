@@ -73,7 +73,7 @@ parts count in the numerator and denominator. P1–P14 count as one part
 each.
 
 ```text
-Overall progress ████████░░ 82% (182/221)
+Overall progress ████████░░ 82% (182/222)
 P1          ██████████ 100% (1/1)
 P2          ██████████ 100% (1/1)
 P3          ██████████ 100% (1/1)
@@ -93,7 +93,7 @@ P16         ██████████ 100% (3/3)
 P17         ██████████ 100% (3/3)
 P18         ██████████ 100% (9/9)
 P19         ██████████ 100% (3/3)
-P20         ██████████ 100% (30/30)
+P20         ██████████ 97% (30/31)
 P21         ██████████ 100% (6/6)
 P22         ██████████ 100% (2/2)
 P23         ██████████ 100% (4/4)
@@ -159,7 +159,8 @@ P43         ░░░░░░░░░░ 0% (0/5)
 | P19-C | — | Done (automated gates pass; device checks outstanding) | Restore/freeze user-owned inputs; Budget header icons; compact expandable Transactions balance card. See the P19-C gate record. | 2026-10-15 |
 | P20-A | — | Done; Revised by P20-A-R1; Revised by P20-A-R2 | Derived pending rows for unpaid plan/liability dues and remaining budget lines; Pay/Clear due actions, FIFO and Undo; mock data covers overdue, upcoming and applied-budget rows. | 2026-10-15 |
 | P20-A-R1 | — | Done | Linked recurring-plan Budget rows and liability EMI confirmations now use shared clearDue/Undo, preserving linked ledgers and one-write behavior across entry points. | 2026-11-08 |
-| P20-A-R2 | — | Done; Revised by P20-A-R2-R1 | Linked one-time manual savings now create one Deposit entry and linked invest transaction through clearDue; one-write Undo, frozen snapshot link resolution, category duplicate suppression and exact/lower/higher payments are covered. | 2026-11-09 |
+| P20-A-R2 | — | Done; Revised by P20-A-R2-R1 and P20-A-R3 | Linked one-time manual savings now create one Deposit entry and linked invest transaction through clearDue; one-write Undo, frozen snapshot link resolution, category duplicate suppression and exact/lower/higher payments are covered. | 2026-11-09 |
+| P20-A-R3 | — | Planned | Reproduction-first plan for Transactions-origin linked one-time savings Paid. Owner-reported possible causes are hypotheses, not conclusions: missing holding/month context, generated-category mismatch, or recurring-plan handling for a one-time holding. Require a real `createAppStore` regression plus Transactions, Budget, Home, `/payment-confirm` and reminder component tests. Expected: one Deposit entry, one linked invest transaction, the same Budget item actual equals the payment, no new Budget row or unbudgeted row, one persisted write and one-step Undo. Cover exact/lower/higher payments; Cash, Savings and Other holdings; Fixed deposit excluded. No schema change is Assumed and must be verified during implementation. Dependencies: none. Evidence: not started. | 2026-11-12 |
 | P20-A-R2-R1 | — | Done | Owner-reported physical-device check N44 passed: Paid creates a linked holding entry and one-step Undo removes it. Device identity fields remain blank. | 2026-11-09 |
 | P20-B | — | Done | Home due action sheet and collapsed category spending with conditional Apply budget (CR-7, CR-10; formerly P19-C). | 2026-10-16 |
 | P20-C | — | Done | Restrict bottom tabs to Home, Transactions, Goals and Budget; remove detail-screen tab bars (CR-11). | 2026-10-16 |
@@ -3218,6 +3219,7 @@ evidence present in exports/checkpoints.
 |---|---|---|---:|---|---|---|---|---|---|
 | CR-110 | — | — | current | 2026-11-12 | Plan standalone cleanup/QA lifecycle tracking and deferred Emergency Fund and transaction improvements. | Planned; Revised by CR-110-R1. Original planned-only scope retained; CR-110-R1 adds detailed dependencies, approval gates, issue strategy and validation plan. | No implementation commit; revised in CR-110-R1. | Original: execution was deferred and no implementation or remote actions were authorized. New: details are tracked as separate Planned items; no implementation or remote action is authorized by the plan. Reason: preserve the original request record while making future work actionable. | current request |
 | CR-110-R1 | P43 | CR-110 | current | 2026-11-12 | Refine CR-110 into a dependency-aware plan for lifecycle tracking, tags, Emergency Fund editing, transaction forms and GitHub issue strategy. | Planned only; P43-A–P43-E all remain Planned with `Evidence: not started`. No app behavior, tag cleanup, issue creation or history rewrite is included. | Test-first commit `e5114e01f363d6de5a12acb61886039469d4a86f`; docs commit `183b18e0af473195ee62fcb4622a3b7e834d2d13`; task PR #146 merged into P43 as `e4d950adf0344dbe12e2e0d085e83d60538ede68`; phase PR #147 merged into `develop` as `a93feaecfbd591c1b6f27bac15b5839c68d10709`. | Old: CR-110 grouped the requests but omitted specific dependencies, schema/backup constraints, exact approval gates, issue batching risks and dashboard/branch-index requirements. New: five independently trackable Planned items preserve owner gates and evidence status. Reason: make future work actionable without beginning implementation. | current request |
+| CR-111 | P20, P44, repository rules | — | current | 2026-11-12 | Plan the P20 linked-savings Paid revision, P44 spending heat map and CM-2 Git sync procedure. | Planned only; P20-A-R3, P44-A–P44-D and CM-2 are separate items. No application or schema changes, issue creation, tag operations, or history rewrites. | No implementation commit; planning and ledger test only. | Original: work requested across a completed P20 behavior, a new product feature and repository workflow. New: track the completed-work fix as P20-A-R3, open P44 for the feature, and register CM-2 outside the phase dashboard. Reason: preserve R2 phase alignment and separate repository policy from product work. | current request |
 | P42-A-R1 | P42 | P42-A | current | 2026-11-11 | Record P42-A task/phase PR integration and rerun the six gates on the integrated develop tree. | Done; task PR #142 and phase PR #143 are merged; all six ordered gates pass on integrated `develop` `8988121`. | Test-first commit `9d1d526`; implementation commit `59527b1c05699c6602e3fb6aa4981fc116d517d2`. | Old: P42-A recorded test/gate results from its task branch but not its PR merge SHAs or integrated-develop rerun. New: records both PR merges, exact integration commits and the ordered gate rerun. Reason: make the final remote state auditable. | current request |
 | P42-A | P42 | — | current | 2026-11-11 | Reconcile owner-approved future plans, accepted follow-ups, and pending-item records. | Done; task PR #142 merged into phase at `8f38e9f1fa2e0f888e1a006feac81f2dcb2d473a`; phase PR #143 merged into `develop` at `898812110a07176434533b9f638b71fa6aef80d0`. | Test-first commit `217179e`; implementation commit `15c517573ab892f8c26e2e9722669e389f8dd98f`. | Old: P40-B was Planned but owner approval remained open; CR-3, dependency-audit, backup, Node 24 and P29-J follow-ups were listed as unresolved. New: future plans are approved and current accepted behaviors are recorded separately from incomplete audit/implementation work. Reason: reflect the owner's 2026-11-11 direction without implying unperformed work. | current request |
 | CR-109 | P42 | — | current | 2026-11-11 | Update the planned/pending list from the owner's decisions and explain the deleted `codex-changes` work. | Done; P42-A task PR #142 and phase PR #143 are merged into `develop` at `8988121`; detailed plans, accepted follow-ups, and branch contents are in [open-items.md](memory/open-items.md); no app changes. | Test-first commit `217179e`; implementation commit `15c517573ab892f8c26e2e9722669e389f8dd98f`. | Old: several accepted behaviors and owner decisions appeared unresolved. New: each is classified as Planned, accepted/resolved, or still dependent on a later task. Reason: provide an accurate actionable list. | current request |
@@ -3283,7 +3285,8 @@ evidence present in exports/checkpoints.
 | P19-C | P19 | — | — | 2026-10-15 | Restore and freeze user-owned input components; Budget header icons (CR-17); compact Transactions balance card (CR-18); user-owned components (CR-19). | Done; focused and full gates pass; physical-device layout remains unverified. | `d3477f2` | Assumed commits without a Copilot co-author trailer are user-authored; current field files already matched `bf4adf3`, so no restore-only commit was needed. | current request |
 | P20-A | P20 | — | — | 2026-10-15 | Derived pending rows, FIFO Pay/Clear due and Undo, Transactions section and balance caption; applied budgets and recurring schedule slots (CR-6). | Done; Revised by P20-A-R1; Revised by P20-A-R2. Original focused/full gates are historical. | `8545909` | Linked-plan and linked-manual plain-transaction behaviors are superseded by P20-A-R1/R2. | current request |
 | P20-A-R1 | P20 | P20-A | current | 2026-11-08 | Route paid linked recurring-plan and liability EMI actions through the shared clearDue path. | Reproduced before implementation: a linked planned investment row created only a plain transaction. Real-store tests cover Transactions, Home, Budget and reminder entry points, one write and Undo; the fixed route regressions pass. | `0778b8b740a2980fa5d08a3e60ba66cad80f63aa` (`fix(P20-A-R1): sync linked planned payments`) | Old: linked plan payment skipped the holding entry/payment ledger. New: shared clearDue/undoClearDue preserves linked ledgers. Reason: keep the payment ledger and transaction atomic. | current request |
-| P20-A-R2 | P20 | P20-A | current | 2026-11-09 | Fix one-time manual savings paid from a linked Budget row through clearDue and exact one-step Undo. | Done; red snapshot-only component reproduction committed before production edits. Real-store baseline: one generic transaction, zero holding entries, one write; $10,000 Invested/value unchanged while the $5,000 Budget actual consumed the plan. Focused tests: 6 suites/267 tests; all six final gates pass. Revised by P20-A-R2-R1 after owner-reported N44 Pass. | Red regression `4cfa20c`; store baseline `4107494`; implementation `d2acde3`. | Old: lookup only current-month snapshot/base plan and generic addTransaction fallback; category actuals hid missing entries; linked manual rows could be duplicate-suppressed. New: pending source carries month/holding ID and clearDue/undoClearDue writes both linked ledger records once. Budget assertion now requires month; reason: preserve viewed frozen-snapshot context. Home has no Budget-kind due row and its user-owned screen was not edited. | current request |
+| P20-A-R2 | P20 | P20-A | current | 2026-11-09 | Fix one-time manual savings paid from a linked Budget row through clearDue and exact one-step Undo. | Done; red snapshot-only component reproduction committed before production edits. Real-store baseline: one generic transaction, zero holding entries, one write; $10,000 Invested/value unchanged while the $5,000 Budget actual consumed the plan. Focused tests: 6 suites/267 tests; all six final gates pass. Revised by P20-A-R2-R1 and P20-A-R3. | Red regression `4cfa20c`; store baseline `4107494`; implementation `d2acde3`. | Old: lookup only current-month snapshot/base plan and generic addTransaction fallback; category actuals hid missing entries; linked manual rows could be duplicate-suppressed. New: pending source carries month/holding ID and clearDue/undoClearDue writes both linked ledger records once. Budget assertion now requires month; reason: preserve viewed frozen-snapshot context. Home has no Budget-kind due row and its user-owned screen was not edited. | current request |
+| P20-A-R3 | P20 | P20-A-R2 | current | 2026-11-12 | Plan a reproduction-first fix for linked one-time savings Paid when initiated from Transactions. | Planned; Evidence: not started | No implementation commit; planning and ledger test only. Owner-reported behavior is not yet reproduced. | Hypotheses, not conclusions: the Transactions pending row may lack the Budget holding ID/viewed month and fall through to generic `addTransaction`; generated `Other investments` may not match the Budget item, creating an unbudgeted actual; a recurring item linked to a one-time holding may create a plan-style due not linked to the manual holding. Dependencies: none. Require a real `createAppStore` regression and component tests for Transactions, Budget, Home, `/payment-confirm` and reminders. Expected: one Deposit on the holding, one linked invest transaction, the same Budget item actual equals the paid amount, no new Budget or unbudgeted row, one persisted write and one-step Undo. Cover exact/lower/higher amounts; Cash, Savings and Other holdings; exclude Fixed deposit. No schema change is Assumed and must be verified during implementation. Reserve the next free N checklist number for a physical-device check; do not claim device verification now. | current request |
 | P20-A-R2-R1 | P20 | P20-A-R2 | current | 2026-11-09 | Record the owner-reported physical-device result for N44. | Done; owner reported Pass for a linked one-time savings item marked Paid from Transactions creating a holding entry, and Undo removing it. Device identity fields remain blank. | No implementation commit; checklist evidence only. | Old checklist result: Not run. New: Pass based on the owner's report; reason: owner confirmed the physical-device test was completed. | current request |
 | P28-F-R4 | P28 | P28-F | current | 2026-11-09 | Prepare a proposed next-release note and add version-specific screenshot sections for current and previous releases. | Done as a review draft only. Proposed v1.1.1 notes describe the verified manual-savings Paid/Undo flow and shared form titles. Revised by P28-F-R4-R1 to embed supplied screenshots and record the owner-led build/upload sequence. No v1.1.1 version bump, build, tag, publication or merge. | No commit; working-tree draft only. | Old: no next-release draft or per-version screenshot sections; template contained a broken example image URL. New: candidate records pending version approval; screenshot is embedded as owner-designated, and GitHub release creation remains gated on approval and merge. | current request |
 | P28-F-R4-R1 | P28 | P28-F-R4 | current | 2026-11-09 | Add supplied release screenshots and codify the owner-led build/upload/release sequence. | Done; Revised by P28-F-R4-R1-R1. Three supplied PNGs were identical and the owner confirmed intentional reuse. Versioned screenshots are present in README and release Markdown; v1.0.0/v1.1.0 assets and release bodies are updated. Both screenshot URLs return HTTP 200 with Content-Length 244,108. Release rules require owner draft approval, PR integration, GitHub draft creation after merge, owner APK build/upload and confirmation, verification, then separate publication approval. | No commit; current working tree. GitHub image asset edits are complete. | Old: release notes referenced missing screenshots and build guidance did not define the owner handoff. New: release assets render from versioned URLs and roles/gates are explicit; reason: prevent builds from unmerged code and publishing before owner confirmation. | current request |
@@ -3628,6 +3631,7 @@ verification.
 | CR-109 | Record owner-approved future plans, close accepted follow-ups, explain the deleted `codex-changes` commit, and reconcile the pending list. | Done | P42-A task PR #142 merged to phase at `8f38e9f1fa2e0f888e1a006feac81f2dcb2d473a`; phase PR #143 merged to `develop` at `898812110a07176434533b9f638b71fa6aef80d0`. P42-A-R1 records the integration and six-gate rerun. No app/runtime behavior, backup, dependency, tag, or release changed. |
 | CR-110 | Separate `cleanup` and `qa-and-release` from numbered development phases; plan Emergency Fund target editing, transaction category/type fixes, truthful retrospective issue tracking, and the required documentation/branch/tag migration. | Planned; Revised by CR-110-R1 | CR-110-R1 details five Planned P43 parts, their dependencies, owner gates and evidence state. No app implementation, branch rename, tag operation, issue creation or Git-history rewrite is authorized. |
 | CR-110-R1 | Refine CR-110 into a complete, dependency-aware plan for standalone lifecycle tracking, controlled tag cleanup, Emergency Fund target editing, transaction-form behavior and a truthful GitHub issue strategy. | Planned | P43-A–P43-E are Planned; each has named dependencies and `Evidence: not started`. Remote branch renames need an owner decision; tag deletion is blocked on approval of an exact tag list; historical P27/P28 and Git chronology are preserved; no app changes, tag operations or issues are included. Test-first commit `e5114e0`; task PR #146 merged into P43 as `e4d950a`; phase PR #147 merged to `develop` as `a93feae`. |
+| CR-111 | Plan the P20 linked-savings Paid correction, a new spending heat map, and CM-2 Git synchronization guidance. | Planned | P20-A-R3, P44-A–P44-D and CM-2 remain Planned; no behavior, schema, demo-data, repository-rule, issue, tag or history changes are part of planning. P20-A-R3 is recorded as a revision to completed P20-A-R2. |
 
 ## 8. Known issues and risks
 
@@ -3822,7 +3826,8 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
    P19-B investment/income reconciliation and Budget actions (CR-9, CR-16), and
    P19-C header icons, user-owned inputs and balance card (CR-17–CR-19).
 2. **P20 — Pending items, Home, navigation and Budget management**
-   (P20-A through P20-V Done; P20-A-R1/R2 and P20-S-R1-R1 revisions Done):
+   (P20-A through P20-V Done; P20-A-R1/R2 and P20-S-R1-R1 revisions Done;
+   P20-A-R3 Planned):
    P20-A pending
    Transactions with Pay/Clear due (CR-6), P20-B Home due actions and collapsed
    spending plan (CR-7, CR-10), P20-C main-screen-only tabs (CR-11), P20-E
@@ -3833,7 +3838,19 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
    sections/items, shared form shell, and P20-U route-form replacement of the
    Budget management sheet (CR-86/CR-87). P20-A-R1 routes linked payments
    through clearDue/Undo; P20-N-R2 restores the aggregate Pace graph and
-   supersedes P20-N-R1's section-specific chart.
+   supersedes P20-N-R1's section-specific chart. P20-A-R3 — Linked one-time savings Paid from Transactions (Planned): reproduction-first correction for Transactions-origin Paid on a linked
+   one-time savings Budget item. The owner-reported behavior is not yet
+   reproduced. The possible missing holding/month context, generated-category
+   mismatch, and recurring-plan/one-time-holding mismatch are hypotheses, not
+   conclusions. Require a real `createAppStore` test and component tests for
+   Transactions, Budget, Home, `/payment-confirm` and reminders. Expected
+   result: one Deposit entry on the holding, one linked invest transaction,
+   the same Budget item actual equals the paid amount, no new Budget or
+   unbudgeted row, one persisted write and one-step Undo. Cover exact/lower/
+   higher amounts; Cash, Savings and Other holdings; exclude Fixed deposit.
+   Dependencies: none; Evidence: not started. No schema change is Assumed and
+   must be verified during implementation. Reserve the next free N checklist
+   number for a future device check; none is claimed now.
 3. **P21 — Emergency fund as a goal-linked model** (Done): P21-A links,
    entries and net-worth/schema v7 changes (CR-8, CR-13); P21-B cover and
    allocation table (CR-14, CR-15); P21-C normal-mode presentation and
@@ -10209,6 +10226,19 @@ Gradle build, version bump, or release preparation was performed.
   rewrite occurred. Open owner decisions: remote branch renames, and any
   future exact tag-deletion list.
 
+### CR-111 — Linked savings, spending heat map and Git sync planning (2026-11-12)
+
+- CR-111 is Planned only. It groups P20-A-R3 (a revision to completed
+  P20-A-R2), new P44-A–P44-D, and CM-2 as a repository rule outside the
+  phase dashboard. All items require `Evidence: not started`; no app or
+  schema implementation, demo-data changes, or rule activation is included.
+- P20-A-R3 is reproduction-first and its owner-reported behavior is not yet
+  reproduced. The required store/component coverage, hypotheses, expected
+  linked ledger result, payment/holding matrix, schema assumption and future
+  device-check slot are recorded in the ledger.
+- P44 and CM-2 detailed requirements, owner decisions and approval gates
+  remain to be added with the P44 task plan before CR-111 is complete.
+
 ### DEC-CR109-OWNER-PLANNING-AND-CLOSEOUT (2026-11-11)
 
 - Future planning is approved for a true in-app update check, Once-only
@@ -11474,7 +11504,7 @@ are guarded by `progressLedger.test.ts`.
 | P17 | `phase/17-cash-flow-budgets-sorting` | `phase-17-complete` | `1e206ad754e95cd53f7cc06e9cba4d2d9b151a68` | 3 |
 | P18 | `phase/18-ui-fix-rounds` | `phase-18-complete` | `3e28f763502fa09b32c00fce1bae95c71285f556` | 9 |
 | P19 | `phase/19-budget-model-and-sync` | `phase-19-complete` | `d3477f2e1266e686b611aa819be90dba113a7a5f` | 3 |
-| P20 | `phase/20-budget` | `phase-20-complete` | `eed40750f68bebc9168907f79f74a67c1f301b83` | 30 |
+| P20 | `phase/20-budget` | `phase-20-complete` | `eed40750f68bebc9168907f79f74a67c1f301b83` | 31 |
 | P21 | `phase/21-emergency-fund` | `phase-21-complete` | `96b85d72e401215a0f17864b9f8099e5452e3a66` | 6 |
 | P22 | `phase/22-demo-data` | `phase-22-complete` | `6cb4fa0a42be2c60ee3d4bf162bb41d6a2f0ea58` | 2 |
 | P23 | `phase/23-insurance` | `phase-23-complete` | `04988e8366949c0cde04912ca1f472c4b31c227f` | 4 |
