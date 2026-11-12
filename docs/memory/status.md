@@ -1,6 +1,14 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-12 | Updates: owner and AI agents -->
 
 # Status
+- **CR-113 (2026-11-12) — owner approvals recorded; all feature work remains
+  Planned.** P21-F Home-source editing is authorized if needed; P33/P34/P35
+  research and stated follow-on scopes are approved; P35 has a Go after
+  research; P43-B/E planning direction is approved; P44-A placement/counting
+  is decided; P39/P40 stay in their existing areas. No research, app
+  implementation, tag deletion or issue creation started. The exact proposed
+  non-release tag list still needs approval, and P43-E needs verified inventory.
+  See [open-items.md](open-items.md) and [PROGRESS.md](../PROGRESS.md).
 - **CR-111 (2026-11-12) has Planned product work:** P20-A-R3 revises completed
   P20-A-R2; new P44-A–P44-D plan a spending heat map. CM-2 is Active and
   enforced as a repository rule, not a phase part. Planned product items keep
@@ -12,7 +20,7 @@
   issue creation, tag operations or history rewrites. All six ordered gates
   passed on the CR-111 task tree; Gate 1 had 101 suites, 1322 passed and
   1 skipped. See [open-items.md](open-items.md) and [PROGRESS.md](../PROGRESS.md).
-- **CR-112 (2026-11-12) is in progress:** R6, the indexed placement guide,
+- **CR-112 (2026-11-12) is complete:** R6, the indexed placement guide,
   ledger relocations, tests and CM-2 are complete on
   `task/P43-F-work-placement-rules`. Test-first commits include `e2f0263`,
   `d24acd9`, `e7c134a`, `770393d` and `bdbe159`; the placement audit is
@@ -21,7 +29,8 @@
   the authorized network retry passed 21/21, then the full ordered rerun
   passed all six gates. Gate 1: 101 suites, 1,324 passed, 1 skipped;
   coverage 95.96/92.15/98.02/97.62% statements/branches/functions/lines.
-  No physical-device verification was performed.
+  No physical-device verification was performed. Task PR #153 and phase PR
+  #154 are merged as recorded in the CR-112 closeout.
 - **P43-A is Done:** `origin/cleanup` is at the old
   `origin/phase/27-cleanup` tip `a2fa24f930da15c49f779577eb749b33f11a7059`;
   `origin/qa-and-release` is at the old
