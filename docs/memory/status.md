@@ -1,6 +1,17 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-12 | Updates: owner and AI agents -->
 
 # Status
+- **CR-111 (2026-11-12) is Planned only:** P20-A-R3 revises completed
+  P20-A-R2; new P44-A–P44-D plan a spending heat map; CM-2 is a separate
+  proposed repository rule, not a phase part. Every item has dependencies
+  and `Evidence: not started`. P20-A-R3 remains unimplemented and its
+  owner-reported behavior is not yet reproduced. P20 task PR #149 merged into
+  `phase/20-budget` at `7a5fed6c4a98d8394652e0dbb499b9aa810bae29`; phase PR
+  #150 merged into `develop` at
+  `4170545cbaa8a4f37d4583b5c29c909c0c99a015`. No app/schema/demo changes,
+  issue creation, tag operations or history rewrites. CM-2 is not enforced;
+  activation default is No. See [open-items.md](open-items.md) and
+  [PROGRESS.md](../PROGRESS.md).
 - **CR-110-R1 (2026-11-12) is Planned only:** CR-110 is marked Revised by
   CR-110-R1. Five P43 items record lifecycle tracking separation, tag cleanup and
   a report-only branch/PR/merge audit, Emergency Fund target editing,

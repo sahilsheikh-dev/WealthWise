@@ -73,7 +73,7 @@ parts count in the numerator and denominator. P1–P14 count as one part
 each.
 
 ```text
-Overall progress ████████░░ 82% (182/222)
+Overall progress ████████░░ 81% (182/226)
 P1          ██████████ 100% (1/1)
 P2          ██████████ 100% (1/1)
 P3          ██████████ 100% (1/1)
@@ -117,6 +117,7 @@ P40         ░░░░░░░░░░ 0% (0/2)
 P41         ██████████ 100% (5/5)
 P42         ██████████ 100% (2/2)
 P43         ░░░░░░░░░░ 0% (0/5)
+P44         ░░░░░░░░░░ 0% (0/4)
 ```
 
 | ID | Legacy ID | Status | Evidence | Last updated |
@@ -358,6 +359,10 @@ P43         ░░░░░░░░░░ 0% (0/5)
 | P43-C | — | Planned | Plan Emergency Fund target editing and reflection on Emergency Fund, Home, Goals, allocation/bucket targets and the three-month minimum floor; one domain action, one Zustand set, one persisted write and Undo; validation, 1.3/2.0 font-scale tests and DEC-DEMO data. `app/(tabs)/index.tsx` is user-owned; editing it requires explicit owner authorization. Dependencies: design/validation decisions; explicit Home-source authorization if a Home edit is necessary. Evidence: not started. | 2026-11-12 |
 | P43-D | — | Planned | Plan transaction-form D1 investment category derivation through `investCategoryFor` only after a holding is selected; D2 user-created/Budget-defined expense categories plus Custom, with category/item hierarchy and persistence decided in design; D3 custom Income type. Schema v23 is current and P36 already claims v24. Schema impact to be determined in design; any bump needs a separate plan, identity-preserving migration, premigration archive and backup-import support. Plan test-first regressions, demo data and backup compatibility checks. Dependencies: category/item and persistence design; schema-impact decision. Evidence: not started. | 2026-11-12 |
 | P43-E | — | Planned | Plan GitHub issues only after a separate owner-approved execution task: one issue per ledger part or CR; phase/type/status labels; release milestones; pending issues open; completed work retrospective and closed; verified commits, PRs, merge SHAs and original dates in each issue; one retrospective comment per issue. GitHub controls actual create/comment/close timestamps; historical dates are issue-body text only. Estimate about 216 existing ledger parts before deduplication; assess API rate limits, batching and issue noise. Dependencies: verified ledger inventory, owner approval of scope/batching and a separate issue-creation authorization. Evidence: not started. | 2026-11-12 |
+| P44-A | — | Planned | Design the spending heat map: placement, metrics/scales, accessibility, performance and schema impact. Owner decision required on placement; recommended stack route opened from a Transactions header action. Dependencies: none. Evidence: not started. | 2026-11-12 |
+| P44-B | — | Planned | Implement a pure, injected-date domain selector for daily totals by transaction type for one month; include unit and seeded-oracle tests plus 50-year and 126-year stress fixtures. Dependencies: P44-A. Evidence: not started. | 2026-11-12 |
+| P44-C | — | Planned | Add the screen/stack route, bounded month navigation, type toggle and day detail; test font scales 1.0, 1.3 and 2.0. Dependencies: P44-B. Evidence: not started. | 2026-11-12 |
+| P44-D | — | Planned | Add DEC-DEMO data, simulated-layout and accessibility checks, and device-checklist rows. Dependencies: P44-C. Evidence: not started. | 2026-11-12 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
 
 ### Standalone lifecycle activities (not counted as development phases)
@@ -583,6 +588,21 @@ apply only that exception and preserve all other rules.
   `main` or `develop`, except the explicitly authorized bootstrap. Delete
   merged task branches and keep phase branches. Do not push unless asked;
   report merge commands in chat.
+
+#### CM-2 proposal (Planned; not enforced)
+
+After any commit/PR merge that lands on a target branch (task -> phase,
+phase -> `develop`, release -> `main`, main -> `develop`), the proposed
+procedure is `git fetch --all --prune`, `git switch <target branch>`, then
+`git pull --ff-only`. Refuse and report if the worktree is dirty, the target
+branch has no upstream, or fast-forward fails. Never push, force-push or
+rewrite history. Delete a merged task branch after switching, then report
+the resulting branch and HEAD in chat. “Pull all branches” means fetch all
+remotes and fast-forward only the selected branch because `git pull` affects
+only the current branch. **Activate now? Default: No (Planned).** This
+proposal does not change the enforceable rules above. Implementing it in
+`AGENTS.md`, `docs/memory/rules.md` or `CONTRIBUTING.md` (if it lists agent
+workflow) needs a separate owner-authorized task.
 
 ### Gates
 
@@ -3219,11 +3239,12 @@ evidence present in exports/checkpoints.
 |---|---|---|---:|---|---|---|---|---|---|
 | CR-110 | — | — | current | 2026-11-12 | Plan standalone cleanup/QA lifecycle tracking and deferred Emergency Fund and transaction improvements. | Planned; Revised by CR-110-R1. Original planned-only scope retained; CR-110-R1 adds detailed dependencies, approval gates, issue strategy and validation plan. | No implementation commit; revised in CR-110-R1. | Original: execution was deferred and no implementation or remote actions were authorized. New: details are tracked as separate Planned items; no implementation or remote action is authorized by the plan. Reason: preserve the original request record while making future work actionable. | current request |
 | CR-110-R1 | P43 | CR-110 | current | 2026-11-12 | Refine CR-110 into a dependency-aware plan for lifecycle tracking, tags, Emergency Fund editing, transaction forms and GitHub issue strategy. | Planned only; P43-A–P43-E all remain Planned with `Evidence: not started`. No app behavior, tag cleanup, issue creation or history rewrite is included. | Test-first commit `e5114e01f363d6de5a12acb61886039469d4a86f`; docs commit `183b18e0af473195ee62fcb4622a3b7e834d2d13`; task PR #146 merged into P43 as `e4d950adf0344dbe12e2e0d085e83d60538ede68`; phase PR #147 merged into `develop` as `a93feaecfbd591c1b6f27bac15b5839c68d10709`. | Old: CR-110 grouped the requests but omitted specific dependencies, schema/backup constraints, exact approval gates, issue batching risks and dashboard/branch-index requirements. New: five independently trackable Planned items preserve owner gates and evidence status. Reason: make future work actionable without beginning implementation. | current request |
-| CR-111 | P20, P44, repository rules | — | current | 2026-11-12 | Plan the P20 linked-savings Paid revision, P44 spending heat map and CM-2 Git sync procedure. | Planned only; P20-A-R3, P44-A–P44-D and CM-2 are separate items. No application or schema changes, issue creation, tag operations, or history rewrites. | No implementation commit; planning and ledger test only. | Original: work requested across a completed P20 behavior, a new product feature and repository workflow. New: track the completed-work fix as P20-A-R3, open P44 for the feature, and register CM-2 outside the phase dashboard. Reason: preserve R2 phase alignment and separate repository policy from product work. | current request |
+| CR-111 | P20, P44, repository rules | — | current | 2026-11-12 | Plan the P20 linked-savings Paid revision, P44 spending heat map and CM-2 Git sync procedure. | Planned only; P20-A-R3, P44-A–P44-D and CM-2 remain separate Planned records, each with dependencies and `Evidence: not started`. No application, schema, demo-data or CM-2 implementation, issue creation, tag operations, or history rewrites. P20-A-R3 task PR #149 merged into P20 at `7a5fed6c4a98d8394652e0dbb499b9aa810bae29`; phase PR #150 merged to `develop` at `4170545cbaa8a4f37d4583b5c29c909c0c99a015`. | Test-first commits `b15783c` (P20) and `01c707c` (CR-111); P20 plan docs `a943b94`; P44 plan docs and PR integration pending. | Original: work requested across a completed P20 behavior, a new product feature and repository workflow. New: track the completed-work fix as P20-A-R3, open P44 for the feature, and register CM-2 outside the phase dashboard. Reason: preserve R2 phase alignment and separate repository policy from product work. | current request |
 | P42-A-R1 | P42 | P42-A | current | 2026-11-11 | Record P42-A task/phase PR integration and rerun the six gates on the integrated develop tree. | Done; task PR #142 and phase PR #143 are merged; all six ordered gates pass on integrated `develop` `8988121`. | Test-first commit `9d1d526`; implementation commit `59527b1c05699c6602e3fb6aa4981fc116d517d2`. | Old: P42-A recorded test/gate results from its task branch but not its PR merge SHAs or integrated-develop rerun. New: records both PR merges, exact integration commits and the ordered gate rerun. Reason: make the final remote state auditable. | current request |
 | P42-A | P42 | — | current | 2026-11-11 | Reconcile owner-approved future plans, accepted follow-ups, and pending-item records. | Done; task PR #142 merged into phase at `8f38e9f1fa2e0f888e1a006feac81f2dcb2d473a`; phase PR #143 merged into `develop` at `898812110a07176434533b9f638b71fa6aef80d0`. | Test-first commit `217179e`; implementation commit `15c517573ab892f8c26e2e9722669e389f8dd98f`. | Old: P40-B was Planned but owner approval remained open; CR-3, dependency-audit, backup, Node 24 and P29-J follow-ups were listed as unresolved. New: future plans are approved and current accepted behaviors are recorded separately from incomplete audit/implementation work. Reason: reflect the owner's 2026-11-11 direction without implying unperformed work. | current request |
 | CR-109 | P42 | — | current | 2026-11-11 | Update the planned/pending list from the owner's decisions and explain the deleted `codex-changes` work. | Done; P42-A task PR #142 and phase PR #143 are merged into `develop` at `8988121`; detailed plans, accepted follow-ups, and branch contents are in [open-items.md](memory/open-items.md); no app changes. | Test-first commit `217179e`; implementation commit `15c517573ab892f8c26e2e9722669e389f8dd98f`. | Old: several accepted behaviors and owner decisions appeared unresolved. New: each is classified as Planned, accepted/resolved, or still dependent on a later task. Reason: provide an accurate actionable list. | current request |
 | CM-1 | Repository rules | — | current | 2026-11-08 | Enforce descriptive Conventional Commit subjects. | Old: non-descriptive placeholder subjects were unenforced. New: a POSIX commit-msg hook requires supported Conventional Commit types and rejects placeholders. Reason: make each commit's scope clear and keep unrelated work separate. Gates 1-4: `npm test -- --coverage` 0; `npx tsc --noEmit` 0; `npx expo lint` 0; `npx expo-doctor` 0. Exports skipped by the no-build constraint. | First task commit: `54abb4bcee262287facda1f600022d6189bedc39` (`docs: enforce descriptive commit subjects`). | Initial focused reproduction failed because the hook was absent; after implementation, all 9 focused tests pass. Full Gate 1: 93 suites, 1,205 passed, 1 skipped. | current request |
+| CM-2 | Repository rules | — | current | 2026-11-12 | Plan post-merge target-branch synchronization with fetch-all and fast-forward-only pull. | Planned; not enforced. Activation decision: No by default. | Test-first commit `01c707c`; proposal recorded in this planning task, no enforcement. | This is a proposed rule only; do not change AGENTS.md, docs/memory/rules.md or CONTRIBUTING.md in this planning task. No push, force-push or history rewrite is allowed by the proposal. | current request |
 | P28-D | P28 | — | current | 2026-11-08 | Adopt branching, shared task rules, and contributor documentation. | Done; `develop` starts at main baseline `a258579c4b580d6f3a157b8d13de53334aa8d34d`; docs, templates and source-derived tests added. Legacy unreleased content in the adoption baseline is an explicit exception; rules apply prospectively. Six gates pass. | `b314113` (`docs: add branching strategy and contributor guide`). | Old: no shared branch workflow or contributor/security templates. New: documented branches, merge rules, six gates, conventional commits and contribution path. Reason: make future work reproducible and protect the stable/release flow. | current request |
 | P28-C-R4 | P28 | P28-C | current | 2026-11-08 | Restructure README and align release documents with the no-public-digest policy. | Done; README follows the user/developer/documentation order. README and latest published Download blocks match; public README and published notes contain no 40/64-character hex identifiers; release docs require private digest verification and expected-size link checks. The final integrated six-gate run passed: 98 suites, 1,242 passed, 1 skipped; coverage 95.96/92.01/98.01/97.62% overall, data 91.03/87.39/94.46/94.17%, domain 96.95/92.85/98.80/98.32%, lib 100%; Gates 2-6 all exit 0, Doctor 21/21, Android and iOS exports succeeded. | Task `89739755081f9c5ed32a6067f4b85bdfcbe39edc` (`P28-C-R4: Restructure README and align release documents with the no-public-digest policy`); phase integration `fd0360ab4affd805fda6fa778e5f06d20b6acc8d`. | Old: release hashes/commit identifiers were presented publicly and README sections were ordered around download/development details. New: ordered user-first docs and internal-only APK digest verification, with a precise parity regression. Reason: improve discovery and avoid exposing internal build identifiers/checksums. GitHub release body intentionally unchanged. | current request |
 | P28-E | P28 | — | current | 2026-11-08 | Map repository history to phase/subtask IDs and create historical phase branches, completion tags and an archival `history/by-phase` branch. | Done; Revised by P28-E-R1, P28-E-R2, P28-E-R3, P28-E-R4, P28-E-R5 and P28-E-R5-R1. 30 phase branches/tags and the 131-commit archive are verified. The snapshot contains 512 original commits: 337 directly mapped and 175 date-fallback mapped, with zero unmapped. Each original hash appears once. Its tree matched `main` at the original verification point; it is a historical snapshot, not the current main tree. | Task `73d07f22237fb8db9d039618ffb1709a9d75ca45` (`docs: map phase history and record Release 2 revisions`); P28 integration `c841cf412ea84abf35429a9a23e033f0546abda6`; develop integration `e629ae76cb572a933148664ec6c3cb67e6434a21`. | The baseline hash in P28-D evidence is not treated as P28-D's implementation commit. P7, P9 and P10 use nearest preceding evidenced anchors because no dedicated original commit was found. | current request |
@@ -3286,7 +3307,11 @@ evidence present in exports/checkpoints.
 | P20-A | P20 | — | — | 2026-10-15 | Derived pending rows, FIFO Pay/Clear due and Undo, Transactions section and balance caption; applied budgets and recurring schedule slots (CR-6). | Done; Revised by P20-A-R1; Revised by P20-A-R2. Original focused/full gates are historical. | `8545909` | Linked-plan and linked-manual plain-transaction behaviors are superseded by P20-A-R1/R2. | current request |
 | P20-A-R1 | P20 | P20-A | current | 2026-11-08 | Route paid linked recurring-plan and liability EMI actions through the shared clearDue path. | Reproduced before implementation: a linked planned investment row created only a plain transaction. Real-store tests cover Transactions, Home, Budget and reminder entry points, one write and Undo; the fixed route regressions pass. | `0778b8b740a2980fa5d08a3e60ba66cad80f63aa` (`fix(P20-A-R1): sync linked planned payments`) | Old: linked plan payment skipped the holding entry/payment ledger. New: shared clearDue/undoClearDue preserves linked ledgers. Reason: keep the payment ledger and transaction atomic. | current request |
 | P20-A-R2 | P20 | P20-A | current | 2026-11-09 | Fix one-time manual savings paid from a linked Budget row through clearDue and exact one-step Undo. | Done; red snapshot-only component reproduction committed before production edits. Real-store baseline: one generic transaction, zero holding entries, one write; $10,000 Invested/value unchanged while the $5,000 Budget actual consumed the plan. Focused tests: 6 suites/267 tests; all six final gates pass. Revised by P20-A-R2-R1 and P20-A-R3. | Red regression `4cfa20c`; store baseline `4107494`; implementation `d2acde3`. | Old: lookup only current-month snapshot/base plan and generic addTransaction fallback; category actuals hid missing entries; linked manual rows could be duplicate-suppressed. New: pending source carries month/holding ID and clearDue/undoClearDue writes both linked ledger records once. Budget assertion now requires month; reason: preserve viewed frozen-snapshot context. Home has no Budget-kind due row and its user-owned screen was not edited. | current request |
-| P20-A-R3 | P20 | P20-A-R2 | current | 2026-11-12 | Plan a reproduction-first fix for linked one-time savings Paid when initiated from Transactions. | Planned; Evidence: not started | No implementation commit; planning and ledger test only. Owner-reported behavior is not yet reproduced. | Hypotheses, not conclusions: the Transactions pending row may lack the Budget holding ID/viewed month and fall through to generic `addTransaction`; generated `Other investments` may not match the Budget item, creating an unbudgeted actual; a recurring item linked to a one-time holding may create a plan-style due not linked to the manual holding. Dependencies: none. Require a real `createAppStore` regression and component tests for Transactions, Budget, Home, `/payment-confirm` and reminders. Expected: one Deposit on the holding, one linked invest transaction, the same Budget item actual equals the paid amount, no new Budget or unbudgeted row, one persisted write and one-step Undo. Cover exact/lower/higher amounts; Cash, Savings and Other holdings; exclude Fixed deposit. No schema change is Assumed and must be verified during implementation. Reserve the next free N checklist number for a physical-device check; do not claim device verification now. | current request |
+| P20-A-R3 | P20 | P20-A-R2 | current | 2026-11-12 | Plan a reproduction-first fix for linked one-time savings Paid when initiated from Transactions. | Planned; Evidence: not started | Test-first commit `b15783c`; planning docs commit `a943b94`; task PR #149 merged into `phase/20-budget` at `7a5fed6c4a98d8394652e0dbb499b9aa810bae29`; phase PR #150 merged into `develop` at `4170545cbaa8a4f37d4583b5c29c909c0c99a015`. No implementation commit. | Owner-reported behavior is not yet reproduced. Hypotheses, not conclusions: the Transactions pending row may lack the Budget holding ID/viewed month and fall through to generic `addTransaction`; generated `Other investments` may not match the Budget item, creating an unbudgeted actual; a recurring item linked to a one-time holding may create a plan-style due not linked to the manual holding. Dependencies: none. Require a real `createAppStore` regression and component tests for Transactions, Budget, Home, `/payment-confirm` and reminders. Expected: one Deposit on the holding, one linked invest transaction, the same Budget item actual equals the paid amount, no new Budget or unbudgeted row, one persisted write and one-step Undo. Cover exact/lower/higher amounts; Cash, Savings and Other holdings; exclude Fixed deposit. No schema change is Assumed and must be verified during implementation. Reserve the next free N checklist number for a physical-device check; do not claim device verification now. | current request |
+| P44-A | P44 | — | current | 2026-11-12 | Design a derived, accessible daily spending heat map and choose its placement, scales and performance approach. | Planned; Dependencies: none. Evidence: not started. Owner decision remains open for placement. | Test-first commit `01c707c`; planned in this record, no implementation. | Recommended placement is a stack route opened from a Transactions header action; Home and Budget are protected and tabs remain Home/Transactions/Goals/Budget. Decide whether Income includes non-earned inflows and whether linked investment transactions count only as Investment. Schema impact is Assumed none; any setting belongs in the meta store, not AppData. | current request |
+| P44-B | P44 | — | current | 2026-11-12 | Plan a pure monthly daily-totals selector with injected dates and deterministic stress/oracle tests. | Planned; Dependencies: P44-A. Evidence: not started. | Test-first commit `01c707c`; planned in this record, no implementation. | Pure `src/domain/` selector; no React/Expo imports, clock reads or randomness. Cover a seeded oracle and 50-year/126-year stress fixtures. | current request |
+| P44-C | P44 | — | current | 2026-11-12 | Plan the heat map screen, route, month navigation, type toggle and day detail. | Planned; Dependencies: P44-B. Evidence: not started. | Test-first commit `01c707c`; planned in this record, no implementation. | Require font-scale tests at 1.0, 1.3 and 2.0; accessibility labels, legend, tap targets and all themes are in scope. | current request |
+| P44-D | P44 | — | current | 2026-11-12 | Plan deterministic demo fixtures, simulated layout/accessibility tests and device checklist rows. | Planned; Dependencies: P44-C. Evidence: not started. | Test-first commit `01c707c`; planned in this record, no implementation. | Demo data follows DEC-DEMO. Physical-device checks remain unrun; add checklist rows only when implementation executes. | current request |
 | P20-A-R2-R1 | P20 | P20-A-R2 | current | 2026-11-09 | Record the owner-reported physical-device result for N44. | Done; owner reported Pass for a linked one-time savings item marked Paid from Transactions creating a holding entry, and Undo removing it. Device identity fields remain blank. | No implementation commit; checklist evidence only. | Old checklist result: Not run. New: Pass based on the owner's report; reason: owner confirmed the physical-device test was completed. | current request |
 | P28-F-R4 | P28 | P28-F | current | 2026-11-09 | Prepare a proposed next-release note and add version-specific screenshot sections for current and previous releases. | Done as a review draft only. Proposed v1.1.1 notes describe the verified manual-savings Paid/Undo flow and shared form titles. Revised by P28-F-R4-R1 to embed supplied screenshots and record the owner-led build/upload sequence. No v1.1.1 version bump, build, tag, publication or merge. | No commit; working-tree draft only. | Old: no next-release draft or per-version screenshot sections; template contained a broken example image URL. New: candidate records pending version approval; screenshot is embedded as owner-designated, and GitHub release creation remains gated on approval and merge. | current request |
 | P28-F-R4-R1 | P28 | P28-F-R4 | current | 2026-11-09 | Add supplied release screenshots and codify the owner-led build/upload/release sequence. | Done; Revised by P28-F-R4-R1-R1. Three supplied PNGs were identical and the owner confirmed intentional reuse. Versioned screenshots are present in README and release Markdown; v1.0.0/v1.1.0 assets and release bodies are updated. Both screenshot URLs return HTTP 200 with Content-Length 244,108. Release rules require owner draft approval, PR integration, GitHub draft creation after merge, owner APK build/upload and confirmation, verification, then separate publication approval. | No commit; current working tree. GitHub image asset edits are complete. | Old: release notes referenced missing screenshots and build guidance did not define the owner handoff. New: release assets render from versioned URLs and roles/gates are explicit; reason: prevent builds from unmerged code and publishing before owner confirmation. | current request |
@@ -3631,7 +3656,8 @@ verification.
 | CR-109 | Record owner-approved future plans, close accepted follow-ups, explain the deleted `codex-changes` commit, and reconcile the pending list. | Done | P42-A task PR #142 merged to phase at `8f38e9f1fa2e0f888e1a006feac81f2dcb2d473a`; phase PR #143 merged to `develop` at `898812110a07176434533b9f638b71fa6aef80d0`. P42-A-R1 records the integration and six-gate rerun. No app/runtime behavior, backup, dependency, tag, or release changed. |
 | CR-110 | Separate `cleanup` and `qa-and-release` from numbered development phases; plan Emergency Fund target editing, transaction category/type fixes, truthful retrospective issue tracking, and the required documentation/branch/tag migration. | Planned; Revised by CR-110-R1 | CR-110-R1 details five Planned P43 parts, their dependencies, owner gates and evidence state. No app implementation, branch rename, tag operation, issue creation or Git-history rewrite is authorized. |
 | CR-110-R1 | Refine CR-110 into a complete, dependency-aware plan for standalone lifecycle tracking, controlled tag cleanup, Emergency Fund target editing, transaction-form behavior and a truthful GitHub issue strategy. | Planned | P43-A–P43-E are Planned; each has named dependencies and `Evidence: not started`. Remote branch renames need an owner decision; tag deletion is blocked on approval of an exact tag list; historical P27/P28 and Git chronology are preserved; no app changes, tag operations or issues are included. Test-first commit `e5114e0`; task PR #146 merged into P43 as `e4d950a`; phase PR #147 merged to `develop` as `a93feae`. |
-| CR-111 | Plan the P20 linked-savings Paid correction, a new spending heat map, and CM-2 Git synchronization guidance. | Planned | P20-A-R3, P44-A–P44-D and CM-2 remain Planned; no behavior, schema, demo-data, repository-rule, issue, tag or history changes are part of planning. P20-A-R3 is recorded as a revision to completed P20-A-R2. |
+| CR-111 | Plan the P20 linked-savings Paid correction, a new spending heat map, and CM-2 Git synchronization guidance. | Planned | P20-A-R3, P44-A–P44-D and CM-2 remain Planned with dependencies and `Evidence: not started`; CM-2 is not enforced. P20-A-R3 is a revision to completed P20-A-R2 and is integrated through PRs #149/#150. No implementation, GitHub issues, tags or history changes. |
+| CM-2 | After each authorized PR merge, fetch all remotes, switch to the target branch and fast-forward only that branch; report any dirty-tree, upstream or fast-forward blocker. | Planned | Not enforced; activation decision is No by default. `git pull` affects the current branch; “pull all branches” means `git fetch --all --prune` followed by `git pull --ff-only` on the selected target. Never push, force-push or rewrite history. Change AGENTS.md, docs/memory/rules.md and CONTRIBUTING.md only in a separately authorized implementation. |
 
 ## 8. Known issues and risks
 
@@ -4066,6 +4092,68 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
       is a separate owner-approved task. Create no issues as part of this
       plan. Dependencies: verified ledger inventory and separate owner
       approval for issue scope, batching and creation. Evidence: not started.
+
+22. **P44 — Spending heat map** (Planned; implementation has not started):
+    - **P44-A — Design:** decide placement, metrics/scales, accessibility,
+      performance and schema impact. **OWNER DECISION — placement:** recommend
+      a stack route (for example `/spending-heatmap`) opened from a header
+      action on Transactions because the data is transaction-derived, Home is
+      user-owned, the tabs remain Home/Transactions/Goals/Budget, and
+      `app/(tabs)/budget.tsx` is protected. A Budget section is an alternative,
+      not the default; do not edit Home or Budget without explicit
+      authorization.       “Infinite” means unbounded month navigation, with previous/next
+      navigation clamped to the available data range plus the current month,
+      not an unbounded rendered list. Compute each month on demand in one pass
+      over transactions grouped by date; meet existing stress-tier budgets.
+      Show one metric at a time with a segmented control (Expense default,
+      Income, Investment). Use five intensity buckets relative to the visible
+      month's maximum, with an option for a trailing-12-month percentile so
+      one outlier does not flatten other days. Color cannot be the only
+      signal: each cell needs date and exact-amount accessibility text,
+      numeric day labels and a bucket-range legend; targets are at least
+      44pt; support dark/light/all themes and use `AmountText` or
+      `formatAmount` with an explicit display tier.
+      **OWNER DECISION — semantics:** decide whether loan proceeds/withdrawals/Borrowed count as Income, and whether linked investment transactions count only as Investment. Recommend all inflows in Income
+      with a toggle to exclude non-earned inflows, and linked investment
+      transactions only in Investment. Schema impact: no persisted schema change is Assumed; any user setting belongs in the meta store, not
+      AppData. Use a plain seven-column React Native View, with no new dependency or charting
+      library. Dependencies: none. Evidence: not started.
+    - **P44-B — Pure daily totals selector:** add a deterministic
+      `src/domain/` selector for daily totals by type for one month, with
+      injected dates and no React/Expo imports, clock reads or randomness.
+      Add unit tests, a seeded oracle and 50-year and 126-year stress fixtures.
+      Dependencies: P44-A. Evidence: not started.
+    - **P44-C — Spending heat map screen and route:** add the stack route, bounded month
+      navigation, metric toggle and day detail; test font scales 1.0, 1.3 and
+      2.0. Dependencies: P44-B. Evidence: not started.
+    - **P44-D — Demo data, layout, accessibility and device checklist:** add DEC-DEMO-compliant
+      deterministic fixtures, simulated-layout tests, accessibility checks
+      and device-checklist rows. No physical-device check is claimed until
+      executed. Candidate add-ons, each separately approvable and not
+      committed to scope: average spend by weekday; no-spend-day count and
+      longest streak; top spending days with day-transaction tap-through;
+      month-over-month delta; payday effect (seven days after main income
+      versus the rest); biggest category on day tap; and a Budget overlay for
+      category plan overruns. More than three add-ons would bloat v1; the
+      recommendation is the heat grid, day detail, weekday summary and
+      no-spend streak. Dependencies: P44-C. Evidence: not started.
+
+### CM-2 Git sync rule (Planned; not enforced)
+
+- Proposed rule for a separately authorized implementation: after any
+  commit/PR merge landing on a target branch (task→phase, phase→develop,
+  release→main, main→develop), run `git fetch --all --prune`, then
+  `git switch <target branch>`, then `git pull --ff-only`. Refuse and report
+  if the worktree is dirty, the target has no upstream or fast-forward fails.
+  Never push, force-push or rewrite history. Delete a merged task branch per
+  the existing rule after switching, then report the resulting branch and
+  HEAD in chat.
+- “Pull all branches” means fetching all remotes and fast-forwarding only the
+  selected current target because `git pull` updates only the current branch.
+  **Activate now? Default: No (Planned).** The proposed edits to `AGENTS.md`,
+  `docs/memory/rules.md`, `PROGRESS.md` section 3 and `CONTRIBUTING.md` (if it
+  lists agent workflow) are explicitly out of scope now; the rule is not
+  enforced.
 
 ### Standalone lifecycle activities (Planned; outside numbered development phases)
 
@@ -10232,12 +10320,37 @@ Gradle build, version bump, or release preparation was performed.
   P20-A-R2), new P44-A–P44-D, and CM-2 as a repository rule outside the
   phase dashboard. All items require `Evidence: not started`; no app or
   schema implementation, demo-data changes, or rule activation is included.
-- P20-A-R3 is reproduction-first and its owner-reported behavior is not yet
-  reproduced. The required store/component coverage, hypotheses, expected
-  linked ledger result, payment/holding matrix, schema assumption and future
-  device-check slot are recorded in the ledger.
-- P44 and CM-2 detailed requirements, owner decisions and approval gates
-  remain to be added with the P44 task plan before CR-111 is complete.
+- P20-A-R3 is a revision to P20-A-R2, remains unimplemented, and records the
+  owner-reported behavior as unverified. The three causes are hypotheses,
+  not conclusions. Required store/component coverage, expected atomic result,
+  payment/holding matrix, schema assumption and future device-check slot are
+  recorded. Task PR #149 merged into the retained `phase/20-budget` branch at
+  `7a5fed6c4a98d8394652e0dbb499b9aa810bae29`; phase PR #150 merged into
+  `develop` at `4170545cbaa8a4f37d4583b5c29c909c0c99a015`.
+- P44-A–P44-D plan a daily transaction-derived monthly heat map. Placement
+  and income semantics remain owner decisions; the recommended entry is a
+  Transactions header action to a stack route. The calendar uses bounded
+  month navigation, not an infinite rendered list. Derived selector/schema
+  assumptions and all performance, accessibility, stress, demo-data and
+  device-check requirements are in Section 9. P44 and its task branch are
+  local only until the authorized PR chain is opened.
+- CM-2 proposes fetch-all/fast-forward-only target synchronization and
+  remains Planned, not enforced. Activation defaults to No. Do not edit
+  AGENTS.md, `docs/memory/rules.md` or CONTRIBUTING.md in this planning task.
+- Assertion replacements: old P20-A-R2 revision text mentioned only
+  P20-A-R2-R1; new text also says `Revised by P20-A-R3`. Reason: the planned
+  work corrects an entry point in the completed behavior. Old P20 count was
+  30/30; new is 30/31. Old overall count was 182/221 before the P20 revision;
+  after P20-A-R3 and four P44 parts it is 182/226; P44 is 0/4. Reason: count
+  every new Planned development-phase part and derive bars from dashboard
+  statuses. Old phase branch index/assertion had 33 rows ending at P43; new
+  index and test expect 34 rows including P44. Reason: P44 is a genuinely new
+  development phase. `memoryDocs.test.ts` adds CR-111 planned-record checks;
+  no existing assertion was weakened.
+- Test-first commits: P20 `b15783c`; P44/CR-111 `01c707c`. P20 docs commit
+  `a943b94`. P44 documentation, final PR integration and six-gate evidence
+  will be recorded when completed. No GitHub issues, tags, or history changes
+  are authorized or performed.
 
 ### DEC-CR109-OWNER-PLANNING-AND-CLOSEOUT (2026-11-11)
 
@@ -11518,6 +11631,7 @@ are guarded by `progressLedger.test.ts`.
 | P41 | `phase/41-types-frequency-completion` | — | — | 5 |
 | P42 | `phase/42-owner-decision-reconciliation` | — | `15c517573ab892f8c26e2e9722669e389f8dd98f` | 2 |
 | P43 | `phase/43-lifecycle-and-transaction-planning` | — | — | 5 |
+| P44 | `phase/44-spending-heatmap` | — | — | 4 |
 
 ### Standalone lifecycle branch index (planned)
 
