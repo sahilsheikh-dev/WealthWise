@@ -579,8 +579,8 @@ describe('permanent progress ledger', () => {
         expect(count?.done).toBe(0);
         expect(count?.total).toBe(4);
       } else if (phase === 43) {
-        expect(count?.done).toBe(1);
-        expect(count?.total).toBe(4);
+        expect(count?.done).toBe(3);
+        expect(count?.total).toBe(5);
       } else if (phase === 22) {
         expect(count?.done).toBe(2);
         expect(count?.total).toBe(2);
@@ -678,7 +678,7 @@ describe('permanent progress ledger', () => {
         expect(branch).toBe('phase/43-lifecycle-and-transaction-planning');
         expect(tag).toBe('—');
         expect(commit).toBe('—');
-        expect(Number(count)).toBe(4);
+        expect(Number(count)).toBe(5);
         continue;
       }
       if (number === 27 || number === 28) {
