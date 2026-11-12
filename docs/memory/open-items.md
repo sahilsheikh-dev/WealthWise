@@ -58,8 +58,10 @@ the phase branch is retained. Phase PR #147 merged into `develop` at
 - **P43-F — Work placement and CM-2:** add R6, an indexed guide, ledger tests,
   a placement audit and CM-2 activation. Test-first commits and the complete
   six-gate run are recorded in [PROGRESS.md](../PROGRESS.md); all gates passed
-  after retrying the network-dependent Expo Doctor gate. Task/phase PR
-  integration remains pending. No feature implementation is included.
+  after retrying the network-dependent Expo Doctor gate. Task PR #153 merged
+  into P43 at `6e8632f61226fabbfdeca1040f6dee097a808607`; phase PR #154
+  merged into `develop` at `faa126ba75ee58ee703b8e43b375aece91c8f4d1`.
+  P43-F-R1 records these merge SHAs. No feature implementation is included.
 - No app implementation, tag operation, issue creation or history rewrite is
   included. The branch/PR/merge-balance report is not a Git deliverable. The
   test-first commit is `e5114e01f363d6de5a12acb61886039469d4a86f`.
@@ -136,7 +138,7 @@ and phase PR #150 (`4170545cbaa8a4f37d4583b5c29c909c0c99a015`).
 
 ## CR-112 work in progress
 
-- P43-A is Done. Remote `cleanup` and `qa-and-release` were each pushed at
+- P43-A and P43-F are Done. Remote `cleanup` and `qa-and-release` were each pushed at
   their original tips, compared against the old refs before deletion, and
   verified afterward with only the new remote names present. Tag targets and
   all six protected blob IDs remain unchanged. See the rename evidence in
@@ -146,8 +148,10 @@ and phase PR #150 (`4170545cbaa8a4f37d4583b5c29c909c0c99a015`).
   `7dab04b`; placement-audit commit `5841373`. The initial Expo Doctor attempt
   exited 1 on `ENOTFOUND registry.npmjs.org`; the network retry passed 21/21,
   then all six ordered gates exited 0. Gate 1: 101 suites, 1,324 passed,
-  1 skipped; coverage 95.96/92.15/98.02/97.62%. No physical-device check
-  was run. Task/phase PR integration remains pending.
+  1 skipped; coverage 95.96/92.15/98.02/97.62%. Task PR #153 merged into
+  P43 at `6e8632f61226fabbfdeca1040f6dee097a808607`; phase PR #154 merged
+  into `develop` at `faa126ba75ee58ee703b8e43b375aece91c8f4d1`. No
+  physical-device check was run.
 - P31-E CI work moved to `qa-and-release` lifecycle tracking under rule 1.
   It is still Planned and needs a real PR run before branch protection.
 - P39-A–H stay in P39 by default. The owner must decide whether the broad
