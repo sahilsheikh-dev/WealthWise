@@ -154,11 +154,11 @@ describe('permanent progress ledger', () => {
       .toContain('resolve schema/backup impact before any implementation');
     expect(roadmap).toContain('one issue per ledger part or CR');
     expect(roadmap).toContain('API rate and noise concerns');
-    expect(branchIndex).toContain('| P43 | `phase/43-lifecycle-and-transaction-planning` | — | — | 6 |');
+    expect(branchIndex).toContain('| P43 | `phase/43-lifecycle-and-transaction-planning` | — | — | 7 |');
     expect(branchIndex).toContain('Standalone lifecycle branch index (renamed refs verified)');
     expect(branchIndex).toContain('| `cleanup` | `cleanup` | `cleanup` | Active |');
     expect(branchIndex).toContain('| `qa-and-release` | `qa-and-release` | `qa-and-release` | Active |');
-    expect(branchIndex).toContain('| P43 | `phase/43-lifecycle-and-transaction-planning` | — | — | 6 |');
+    expect(branchIndex).toContain('| P43 | `phase/43-lifecycle-and-transaction-planning` | — | — | 7 |');
     expect(roadmap).not.toMatch(/^\d+\. \*\*P(?:27|28) —/m);
     expect(roadmap).toContain('P27/P28 remain completed historical milestones');
     expect(roadmap).toContain('P21-F — Emergency Fund target editing');
@@ -361,7 +361,7 @@ describe('permanent progress ledger', () => {
   it('logs every prompt ID exactly once', () => {
     const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
     const promptIds = [
-      'P41-B-R1', 'CR-110-R1', 'CR-111', 'CR-113', 'P43-G', 'CM-2',
+      'P41-B-R1', 'CR-110-R1', 'CR-111', 'CR-113', 'P43-G', 'P43-G-R1', 'CM-2',
       'P01', 'P02', 'P03', 'P04', 'P05', 'P06', 'P06-FIX-R1',
       'P07', 'P08', 'P09', 'P10', 'P11', 'P12', 'P13', 'P14',
       'P15-A', 'P15-A2', 'P15-B', 'P15-C',
@@ -401,7 +401,7 @@ describe('permanent progress ledger', () => {
       'P23-C', 'P23-D', 'P25-F',
       'P28-A', 'P28-A-R1', 'P28-B', 'P28-C', 'P28-C-R1', 'P28-C-R2', 'P28-C-R3', 'P28-C-R4', 'P28-D', 'P28-E', 'P28-E-R1', 'P28-E-R2', 'P28-E-R3', 'P28-E-R4', 'P28-E-R5', 'P28-E-R5-R1', 'P28-F', 'P28-F-R1', 'P28-F-R2', 'P28-F-R2-R1', 'P28-F-R3', 'P28-F-R3-R1', 'P28-F-R3-R2', 'P28-F-R3-R3', 'P28-F-R3-R3-R1', 'P28-F-R4', 'P28-F-R4-R1', 'P28-F-R4-R1-R1', 'P28-F-R4-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1-R1-R1', 'P28-F-R6-R2', 'P28-F-R6-R3', 'P28-F-R6-R3-R1',
       'P29-A', 'P29-B', 'P29-C', 'P29-D', 'P29-E', 'P29-F', 'P29-F2', 'P29-F3', 'P29-F4', 'P29-G', 'P29-H', 'P29-I', 'P29-J', 'P29-K', 'P29-L', 'P29-M', 'P29-N', 'P29-M2', 'P29-O', 'P29-O-R1', 'P29-O1-R1', 'P29-O1-R2', 'P29-O2', 'P29-Q', 'P29-R', 'P29-S', 'P29-T', 'P29-U', 'P29-V', 'P29-W', 'P29-W-R1', 'P29-W-R2', 'P29-X', 'P29-Y', 'P29-Z',
-      'P29-AA', 'P29-AB', 'P29-AB-R1', 'P29-AB-R2', 'P29-AB-R2-R1', 'P30-A', 'P30-B', 'P30-C', 'P41-A', 'P42-A', 'P42-A-R1', 'P43-F', 'P43-F-R1', 'P43-G', 'P44-A', 'P44-B', 'P44-C', 'P44-D',
+      'P29-AA', 'P29-AB', 'P29-AB-R1', 'P29-AB-R2', 'P29-AB-R2-R1', 'P30-A', 'P30-B', 'P30-C', 'P41-A', 'P42-A', 'P42-A-R1', 'P43-F', 'P43-F-R1', 'P43-G', 'P43-G-R1', 'P44-A', 'P44-B', 'P44-C', 'P44-D',
     ];
 
     for (const id of newPartIds) {
@@ -603,8 +603,8 @@ describe('permanent progress ledger', () => {
         expect(count?.done).toBe(0);
         expect(count?.total).toBe(4);
       } else if (phase === 43) {
-        expect(count?.done).toBe(4);
-        expect(count?.total).toBe(6);
+        expect(count?.done).toBe(5);
+        expect(count?.total).toBe(7);
       } else if (phase === 22) {
         expect(count?.done).toBe(2);
         expect(count?.total).toBe(2);
@@ -702,7 +702,7 @@ describe('permanent progress ledger', () => {
         expect(branch).toBe('phase/43-lifecycle-and-transaction-planning');
         expect(tag).toBe('—');
         expect(commit).toBe('—');
-        expect(Number(count)).toBe(6);
+        expect(Number(count)).toBe(7);
         continue;
       }
       if (number === 27 || number === 28) {

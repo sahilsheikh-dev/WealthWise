@@ -8,6 +8,8 @@
   is decided; P39/P40 stay in their existing areas. No research, app
   implementation, tag deletion or issue creation started. The exact proposed
   non-release tag list still needs approval, and P43-E needs verified inventory.
+  P43-G task PR #157 and phase PR #158 are merged; their exact merge commits
+  are recorded in [PROGRESS.md](../PROGRESS.md).
   See [open-items.md](open-items.md) and [PROGRESS.md](../PROGRESS.md).
 - **CR-111 (2026-11-12) has Planned product work:** P20-A-R3 revises completed
   P20-A-R2; new P44-A–P44-D plan a spending heat map. CM-2 is Active and
