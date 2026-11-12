@@ -28,27 +28,48 @@
   output belong in chat or `/tmp`; release content must remain in Git.
 - **R6 — Work placement:** classify every new ledger row, task and branch by
   searching the dashboard, register, phase history, roadmap, memory and
-  touched source/features. Apply the first match: (1) ongoing lifecycle,
-  branch/tag hygiene, CI and repository-process work belongs in standalone
-  lifecycle tracking; P43 is the task-designated temporary setup-phase
-  exception; (2) revise completed work as the next sequential revision of the
-  original part and phase; (3) amend open work in place when widening scope;
-  (4) use the next part in a related feature phase; (5) create a new phase for
-  a new feature area. New/moved rows require a `Placement: rule <1-5>; searched
-  <what>; related <IDs or none>; reason <one sentence>` line. See
-  [work-placement.md](work-placement.md) for the complete procedure and
-  lifecycle exception.
+  touched source/features. Apply the first match: (1) ongoing standalone
+  lifecycle work (`cleanup`, `qa-and-release`, `schema-migration`,
+  `documentation`), branch/tag hygiene, CI and repository-process work belongs
+  in standalone lifecycle tracking outside numbered development phases; P43 is
+  the task-designated temporary setup-phase exception; (2) revise completed work
+  as the next sequential revision of the original part and phase; (3) amend
+  open work in place when widening scope; (4) use the next part in a related
+  feature phase; (5) create a new phase for a new feature area. New/moved rows
+  require a `Placement: rule <1-5>; searched <what>; related <IDs or none>;
+  reason <one sentence>` line. See [work-placement.md](work-placement.md) for
+  the complete procedure and lifecycle exception.
+- **R7 — Slot-filling and empty phase reservations:** empty phase numbers freed
+  by independent entity separation or cancellation (P7, P27, P28, P32) stay
+  reserved as empty slots so no existing phase is renumbered and no
+  historical branch, tag, commit or ID is rewritten. A new feature may take an
+  empty slot only if it is related to the phase immediately before or after it:
+  P7 for backup & security (P6) or investments (P8) work; P27 for
+  accessibility & performance (P26) or adjacent work; P28 for income
+  recurrence / Budget income work; P32 for project health/community (P31) or
+  widgets (P33) work. For multiple consecutive empty slots, apply the same
+  adjacency pattern per slot. Unrelated work never takes an empty slot; it
+  opens a new phase at the end under R6 rule 5. Precedence: R6 rules 1–3 first
+  (standalone lifecycle, completed-part revisions, and open-part scope), then
+  R7 for new-feature placement into an eligible adjacent empty slot before
+  opening a new phase.
 - Branching: `main` is stable released code; `develop` is integration and
   must pass all six gates; phase branches use `phase/NN-slug`, task branches
   use `task/ID-slug`, release branches use `release/vX.Y.Z`, hotfix branches
-  use `hotfix/vX.Y.Z`, and external contributors use `contrib/ISSUE-slug`
-  with PRs into `develop`. The branching adoption baseline can contain legacy
-  unreleased history; the stable-main rule applies prospectively. Merge tasks
-  into phases and phases into `develop` with `--no-ff`; release/hotfix to
-  `main` also uses `--no-ff`; contributor PRs are squash-merged with a
-  Conventional Commit title. Agents do not push unless asked, do not commit
-  directly to `main`/`develop` except an authorized bootstrap, delete merged
-  task branches, and keep phase branches.
+  use `hotfix/vX.Y.Z`, standalone lifecycle branches use `cleanup` (historical
+  branch name: `phase/27-cleanup`), `qa-and-release` (historical branch name:
+  `phase/28-qa-and-release`), `schema-migration` (historical branch name:
+  `phase/07-schema-migration`), and `documentation`, and external contributors
+  use `contrib/ISSUE-slug` with PRs into `develop`. Standalone documentation
+  tasks branch from `documentation` as `task/docs-<slug>` and merge back
+  `--no-ff`, then merge `documentation` into `develop` via PR; code tasks
+  continue updating their own ledger rows in the same commit. The branching
+  adoption baseline can contain legacy unreleased history; the stable-main
+  rule applies prospectively. Merge tasks into phases and phases into `develop`
+  with `--no-ff`; release/hotfix to `main` also uses `--no-ff`; contributor PRs
+  are squash-merged with a Conventional Commit title. Agents do not push unless
+  asked, do not commit directly to `main`/`develop` except an authorized
+  bootstrap, delete merged task branches, and keep phase branches.
 - **CM-2 — Active:** After any merge that lands on a target branch (task->phase, phase->develop, release->main, main->develop): git fetch --all --prune; git switch <target>; git pull --ff-only. Refuse and report if the worktree is dirty, the fast-forward fails or the target has no upstream. This rule never authorizes pushing; R3 is unchanged.
 - The ordered six gates are `npm test -- --coverage`, `npx tsc --noEmit`,
   `npx expo lint`, `npx expo-doctor`, `npx expo export --platform android`,
