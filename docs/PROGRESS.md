@@ -73,7 +73,7 @@ parts count in the numerator and denominator. P1–P14 count as one part
 each.
 
 ```text
-Overall progress ████████░░ 81% (183/226)
+Overall progress ████████░░ 81% (185/227)
 P1          ██████████ 100% (1/1)
 P2          ██████████ 100% (1/1)
 P3          ██████████ 100% (1/1)
@@ -116,7 +116,7 @@ P39         ░░░░░░░░░░ 0% (0/8)
 P40         ░░░░░░░░░░ 0% (0/2)
 P41         ██████████ 100% (5/5)
 P42         ██████████ 100% (2/2)
-P43         ███░░░░░░░ 25% (1/4)
+P43         ██████░░░░ 60% (3/5)
 P44         ░░░░░░░░░░ 0% (0/4)
 ```
 
@@ -225,7 +225,7 @@ P44         ░░░░░░░░░░ 0% (0/4)
 | CR-105 | — | Done | Confirmed the release workflow already mandates the agent's EAS `android-apk` build and draft upload; explicitly prohibit waiting for or asking the owner/developer for an APK or local APK path in shared rules and release guides, with regression coverage. | 2026-11-09 |
 | CR-106 | — | Done | Plan report-first external-guidance work for P31 privacy/CI rows, new P39 release audit and hardening, and P40 agent-context hygiene; record owner decisions and keep reports out of Git except for the findings summary table. | 2026-11-10 |
 | CR-108 | — | Done (owner-reported device checks Pass) | All six owner-authorized parts and the Gate 1 correction are integrated into `develop`; all six ordered gates pass. The owner reports all physical-device checks O45-O60 passed on 2026-11-11; device details were not supplied. No v1.1.1, release branch, tag or artifact was changed. | 2026-11-11 |
-| CR-112 | P43 | In progress | Add work-placement rules and guide, execute lifecycle tracking separation, move only unambiguous Planned rows, and activate CM-2. P43-A rename and six-gate evidence are complete; P43-F PR integration remains pending. | 2026-11-12 |
+| CR-112 | P43 | In progress | Add work-placement rules and guide, execute lifecycle tracking separation, move only unambiguous Planned rows, and activate CM-2. P43-A and P43-F execution are complete; P43-B/E and the product rows remain planned. | 2026-11-12 |
 | P26-A | P15-M | Done (device checks outstanding) | Accessibility/performance fixes, 91-suite verification and all six ordered gates passed; native font-scale, touch and accessibility checks remain open. | 2026-11-06 |
 | P27-A | — | Done | Dead-code/dependency cleanup, bundle audit and bounded schedule benchmark; 91 suites and all six ordered gates passed. | 2026-11-07 |
 | P28-A | `fbdcbac`, `41c4617`, `d0ddff8` | Done | Report-first release readiness, initial `0.2.0` metadata alignment, audit/data-safety/migration inventory, README and changelog corrections. Revised by P28-B for stable-version metadata; Revised by P28-A-R1 for the v13 backup equality regression. Protected routes remain unchanged. | 2026-11-07 |
@@ -359,7 +359,8 @@ P44         ░░░░░░░░░░ 0% (0/4)
 | P43-A | — | Done | Lifecycle tracking is separate from numbered phases. Remote `cleanup` and `qa-and-release` refs were pushed at their original tips, verified against the old refs, and the old refs deleted: `a2fa24f930da15c49f779577eb749b33f11a7059` and `9d914638e50462cbadef84df3294ed07cbf42732`. P27/P28 completion evidence and all three stale phase tag targets are preserved. No Git chronology or tags changed. | 2026-11-12 |
 | P43-B | — | Planned | Plan non-release phase/task-tag cleanup and a report-only branch/PR/merge-balance audit. Deletion is blocked on owner approval of an exact tag list; preserve all vX.Y.Z release tags and previously owner-retained stale phase tags. The audit report stays in chat or `/tmp`. Dependencies: owner approval of exact deletion list; no tag operation before approval. Evidence: not started. | 2026-11-12 |
 | P43-E | — | Planned | Plan GitHub issues only after a separate owner-approved execution task: one issue per ledger part or CR; phase/type/status labels; release milestones; pending issues open; completed work retrospective and closed; verified commits, PRs, merge SHAs and original dates in each issue; one retrospective comment per issue. GitHub controls actual create/comment/close timestamps; historical dates are issue-body text only. Estimate about 216 existing ledger parts before deduplication; assess API rate limits, batching and issue noise. Dependencies: verified ledger inventory, owner approval of scope/batching and a separate issue-creation authorization. Evidence: not started. | 2026-11-12 |
-| P43-F | — | In progress | Add and enforce R6 work-placement rules, activate CM-2, audit and relocate Planned work, and add the shared work-placement guide. Local test-first commit `e2f0263`; Gate 4 retry and the complete ordered six-gate rerun passed. Task/phase PR integration is pending. Placement: rule 1; searched dashboard, register, phase history, roadmap, memory, tests and branch instructions; related P43-A–E and CM-2; reason: this is shared repository-process policy and lifecycle setup. | 2026-11-12 |
+| P43-F | — | Done; Revised by P43-F-R1 | Add and enforce R6 work-placement rules, activate CM-2, audit and relocate Planned work, and add the shared work-placement guide. task PR #153 merged into P43 at `6e8632f61226fabbfdeca1040f6dee097a808607`; phase PR #154 merged into `develop` at `faa126ba75ee58ee703b8e43b375aece91c8f4d1`. All six ordered gates passed after the successful Expo Doctor retry. Placement: rule 1; searched dashboard, register, phase history, roadmap, memory, tests and branch instructions; related P43-A–E and CM-2; reason: this is shared repository-process policy and lifecycle setup. | 2026-11-12 |
+| P43-F-R1 | — | Done | Record P43-F task/phase PR integration and exact merge commits; task PR #153 merged into P43 at `6e8632f61226fabbfdeca1040f6dee097a808607`, phase PR #154 merged into `develop` at `faa126ba75ee58ee703b8e43b375aece91c8f4d1`. No app behavior changed; focused ledger and memory tests pass. Placement: rule 1; searched dashboard, register, phase history, roadmap, memory, tests and branch instructions; related P43-F and CM-2; reason: complete the lifecycle/process setup record with verified remote integration evidence. | 2026-11-12 |
 | P44-A | — | Planned | Design the spending heat map: placement, metrics/scales, accessibility, performance and schema impact. Owner decision required on placement; recommended stack route opened from a Transactions header action. Dependencies: none. Evidence: not started. | 2026-11-12 |
 | P44-B | — | Planned | Implement a pure, injected-date domain selector for daily totals by transaction type for one month; include unit and seeded-oracle tests plus 50-year and 126-year stress fixtures. Dependencies: P44-A. Evidence: not started. | 2026-11-12 |
 | P44-C | — | Planned | Add the screen/stack route, bounded month navigation, type toggle and day detail; test font scales 1.0, 1.3 and 2.0. Dependencies: P44-B. Evidence: not started. | 2026-11-12 |
@@ -3264,7 +3265,8 @@ evidence present in exports/checkpoints.
 | CR-112 | P43 | — | current | 2026-11-12 | Classify Planned work, separate lifecycle tracking, add R6 and activate CM-2. | In progress. Local commits: tests `e2f0263`, `d24acd9`, `e7c134a`, `770393d`, `bdbe159`; rules/guide `7dab04b`; placement audit `5841373`; gate correction and rename evidence are being recorded. Initial Gate 4 attempt exited 1 (`ENOTFOUND registry.npmjs.org`); network retry passed 21/21, then all six ordered gates exited 0 (Gate 1: 101 suites, 1,324 passed, 1 skipped; coverage 95.96/92.15/98.02/97.62%). Remote P43 PR integration remains pending. | `cleanup` and `qa-and-release` are verified at their original tips; old refs are deleted; tags and all six protected blobs are unchanged. Test-first ledger commits and all ordered gate results are recorded. | Old: P43-A and remote lifecycle renames were pending; Gate 4 had only a failed DNS attempt recorded. New: P43-A is Done after ref verification, and the Doctor retry plus complete rerun passed. Reason: complete the authorized branch rename and record real gate evidence without changing application behavior. | current request |
 | P20-W | P20 | P43-D | current | 2026-11-12 | Re-home transaction form category/type planning to the P20 Budget form area. | Planned; no implementation. Placement: rule 4; searched dashboard, register, P20-O/P, P3 history, roadmap, memory and transaction form modules; related P20-O/P; reason: this work extends the existing Budget/category form area. | Part of test-first commit `e2f0263`; PR/gate integration pending. | Previously: P43-D. New home is P20 because its existing Budget management/category forms own the feature. Reason: rule 4. | current request |
 | P21-F | P21 | P43-C | current | 2026-11-12 | Re-home Emergency Fund target editing to the P21 feature area. | Planned; no implementation. Placement: rule 4; searched dashboard, register, P21-A–E evidence, roadmap, memory and Emergency Fund modules; related P21-A–E; reason: this work extends the existing Emergency Fund feature area. | Part of test-first commit `e2f0263`; PR/gate integration pending. | Previously: P43-C. New home is P21 because its existing model and screens own Emergency Fund targets. Reason: rule 4. | current request |
-| P43-F | P43 | — | current | 2026-11-12 | Add work-placement rules, memory guide, ledger checks and CM-2 activation. | In progress; rules, tests and placement audit are locally complete. Gate 4 retry and complete ordered gate rerun passed. Task/phase PR integration remains pending. Placement: rule 1; searched dashboard, register, phase history, roadmap, memory, tests and branch instructions; related P43-A–E and CM-2; reason: shared repository-process policy and lifecycle setup under the designated P43 exception. | Test-first commits `e2f0263`, `d24acd9`, `e7c134a`, `770393d`, `bdbe159`; docs/gate/PR evidence pending. | New part: repository-process and lifecycle setup. Reason: use the designated P43 setup-phase exception while ongoing lifecycle operations stay outside product phases. | current request |
+| P43-F | P43 | — | current | 2026-11-12 | Add work-placement rules, memory guide, ledger checks and CM-2 activation. | Done; task PR #153 merged into P43 at `6e8632f61226fabbfdeca1040f6dee097a808607`; phase PR #154 merged into `develop` at `faa126ba75ee58ee703b8e43b375aece91c8f4d1`. All six ordered gates passed after the successful Expo Doctor retry. Revised by P43-F-R1. Placement: rule 1; searched dashboard, register, phase history, roadmap, memory, tests and branch instructions; related P43-A–E and CM-2; reason: shared repository-process policy and lifecycle setup under the designated P43 exception. | Test-first commits `e2f0263`, `d24acd9`, `e7c134a`, `770393d`, `bdbe159`; rules/guide `7dab04b`; placement audit `5841373`; gate and rename record `6ed0e39`. | Old: P43-F was In progress with task/phase PR integration pending. New: both PRs are merged, exact merge SHAs are verified, and the six-gate run passed. Reason: complete P43-F only after remote integration and record auditable evidence. | current request |
+| P43-F-R1 | P43 | P43-F | current | 2026-11-12 | Record P43-F task/phase PR integration and exact merge commits. | Done; task PR #153 merged into P43 at `6e8632f61226fabbfdeca1040f6dee097a808607`; phase PR #154 merged into `develop` at `faa126ba75ee58ee703b8e43b375aece91c8f4d1`. Both merge commits are verified. | Test-first commit `b8b90b1`; PR evidence is recorded by this revision. | Old: P43-F remained In progress without the task/phase PR numbers or merge SHAs. New: the two merged PRs and exact commits are recorded, and P43-F is Done. Reason: R2 requires the merge-evidence correction to be tracked as P43-F-R1. | current request |
 | P42-A-R1 | P42 | P42-A | current | 2026-11-11 | Record P42-A task/phase PR integration and rerun the six gates on the integrated develop tree. | Done; task PR #142 and phase PR #143 are merged; all six ordered gates pass on integrated `develop` `8988121`. | Test-first commit `9d1d526`; implementation commit `59527b1c05699c6602e3fb6aa4981fc116d517d2`. | Old: P42-A recorded test/gate results from its task branch but not its PR merge SHAs or integrated-develop rerun. New: records both PR merges, exact integration commits and the ordered gate rerun. Reason: make the final remote state auditable. | current request |
 | P42-A | P42 | — | current | 2026-11-11 | Reconcile owner-approved future plans, accepted follow-ups, and pending-item records. | Done; task PR #142 merged into phase at `8f38e9f1fa2e0f888e1a006feac81f2dcb2d473a`; phase PR #143 merged into `develop` at `898812110a07176434533b9f638b71fa6aef80d0`. | Test-first commit `217179e`; implementation commit `15c517573ab892f8c26e2e9722669e389f8dd98f`. | Old: P40-B was Planned but owner approval remained open; CR-3, dependency-audit, backup, Node 24 and P29-J follow-ups were listed as unresolved. New: future plans are approved and current accepted behaviors are recorded separately from incomplete audit/implementation work. Reason: reflect the owner's 2026-11-11 direction without implying unperformed work. | current request |
 | CR-109 | P42 | — | current | 2026-11-11 | Update the planned/pending list from the owner's decisions and explain the deleted `codex-changes` work. | Done; P42-A task PR #142 and phase PR #143 are merged into `develop` at `8988121`; detailed plans, accepted follow-ups, and branch contents are in [open-items.md](memory/open-items.md); no app changes. | Test-first commit `217179e`; implementation commit `15c517573ab892f8c26e2e9722669e389f8dd98f`. | Old: several accepted behaviors and owner decisions appeared unresolved. New: each is classified as Planned, accepted/resolved, or still dependent on a later task. Reason: provide an accurate actionable list. | current request |
@@ -3683,7 +3685,7 @@ verification.
 | CR-110-R1 | Refine CR-110 into a complete, dependency-aware plan for standalone lifecycle tracking, controlled tag cleanup, Emergency Fund target editing, transaction-form behavior and a truthful GitHub issue strategy. | Planned | P43-A–P43-E are Planned; each has named dependencies and `Evidence: not started`. Remote branch renames need an owner decision; tag deletion is blocked on approval of an exact tag list; historical P27/P28 and Git chronology are preserved; no app changes, tag operations or issues are included. Test-first commit `e5114e0`; task PR #146 merged into P43 as `e4d950a`; phase PR #147 merged to `develop` as `a93feae`. |
 | CR-111 | Plan the P20 linked-savings Paid correction, a new spending heat map, and CM-2 Git synchronization guidance. | Planned product work | P20-A-R3 and P44-A–P44-D remain Planned with dependencies and `Evidence: not started`; CM-2 was activated under CR-112. P20-A-R3 is a revision to completed P20-A-R2 and is integrated through PRs #149/#150. No app implementation, GitHub issues, tags or history changes. |
 | CM-2 | After each target merge, fetch all remotes and fast-forward only the selected target branch. | Active | After any merge that lands on a target branch (task->phase, phase->develop, release->main, main->develop): git fetch --all --prune; git switch <target>; git pull --ff-only. Refuse and report if the worktree is dirty, the fast-forward fails or the target has no upstream. This rule never authorizes pushing; R3 is unchanged. |
-| CR-112 | Classify Planned work, separate ongoing lifecycle tracking, add R6 and activate CM-2. | In progress | Local commits: tests `e2f0263`, `d24acd9`, `e7c134a`, `770393d`, `bdbe159`; rules/guide `7dab04b`; placement audit `5841373`. Gate 4's initial `npx expo-doctor` attempt exited 1 (`ENOTFOUND registry.npmjs.org`); network retry exited 0 (21/21), then the complete ordered rerun passed: 1 `npm test -- --coverage --watchman=false` exit 0 (101 suites, 1,324 passed, 1 skipped; coverage 95.96/92.15/98.02/97.62% statements/branches/functions/lines); 2 `npx tsc --noEmit` exit 0; 3 `npx expo lint` exit 0; 4 `npx expo-doctor` exit 0 (21/21); 5 `npx expo export --platform android` exit 0; 6 `npx expo export --platform ios` exit 0. Watchman was disabled for Gate 1 after its normal startup was denied by the sandbox. No physical-device verification was performed. P43-A lifecycle ref rename is complete and verified; P43-F task/phase PR integration remains pending. |
+| CR-112 | Classify Planned work, separate ongoing lifecycle tracking, add R6 and activate CM-2. | In progress | Local commits: tests `e2f0263`, `d24acd9`, `e7c134a`, `770393d`, `bdbe159`, `b8b90b1`; rules/guide `7dab04b`; placement audit `5841373`; gate/rename evidence `6ed0e39`. Gate 4's initial `npx expo-doctor` attempt exited 1 (`ENOTFOUND registry.npmjs.org`); network retry exited 0 (21/21), then the complete ordered rerun passed: 1 `npm test -- --coverage --watchman=false` exit 0 (101 suites, 1,324 passed, 1 skipped; coverage 95.96/92.15/98.02/97.62% statements/branches/functions/lines); 2 `npx tsc --noEmit` exit 0; 3 `npx expo lint` exit 0; 4 `npx expo-doctor` exit 0 (21/21); 5 `npx expo export --platform android` exit 0; 6 `npx expo export --platform ios` exit 0. Watchman was disabled for Gate 1 after its normal startup was denied by the sandbox. No physical-device verification was performed. P43-A lifecycle ref rename is complete and verified; P43-F PR #153/#154 integration is complete with merge commits recorded. P43-B/E and planned product work remain open. |
 
 ## 8. Known issues and risks
 
@@ -4069,8 +4071,8 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
       to read archives without weakening assertions. Owner approval was
       recorded on 2026-11-11. Dependencies: P40-A.
 
-21. **P43 — Repository process and lifecycle** (In progress; P43-A Done,
-    P43-F PR integration pending):
+21. **P43 — Repository process and lifecycle** (In progress; P43-A and P43-F
+    Done, P43-B/E remain Planned):
     - **P43-A — Lifecycle tracking separation:** track `cleanup` and
       `qa-and-release` as independent, ongoing lifecycle activities alongside
       `develop` and `release/vX.Y.Z`, not as sequential development milestones.
@@ -4110,8 +4112,9 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
     - **P43-F — Work placement and CM-2:** add R6, the indexed guide, tests,
       the Planned-row placement audit and CM-2 activation. Test-first commits
       `e2f0263`, `d24acd9`, `e7c134a`, `770393d` and `bdbe159`; ordered gates
-      passed after the successful Expo Doctor retry. Remote task/phase PR
-      integration remains pending.
+      passed after the successful Expo Doctor retry. Task PR #153 merged into
+      P43 at `6e8632f61226fabbfdeca1040f6dee097a808607`; phase PR #154 merged
+      into `develop` at `faa126ba75ee58ee703b8e43b375aece91c8f4d1`.
       Placement: rule 1; searched dashboard, register, phase history, roadmap,
       memory, tests and branch instructions; related P43-A–E and CM-2; reason:
       shared repository-process policy and lifecycle setup. Evidence pending.
@@ -10426,9 +10429,19 @@ Gradle build, version bump, or release preparation was performed.
   `phase-27-complete`, `phase-28-complete` and `phase-29-complete` tag objects
   and peeled targets are unchanged. The six protected file blob IDs match
   `docs/memory/rules.md`.
-- P43-A is Done. P43-F remains In progress until its task-to-phase and
-  phase-to-`develop` PRs are merged. No application, schema, migration,
-  demo-data, issue, release, tag or Git-history work was performed.
+- P43-A and P43-F are Done. P43-F task PR #153 merged into the phase at
+  `6e8632f61226fabbfdeca1040f6dee097a808607`; phase PR #154 merged into
+  `develop` at `faa126ba75ee58ee703b8e43b375aece91c8f4d1`. P43-F-R1 records
+  the verified merge evidence. No application, schema, migration, demo-data,
+  issue, release, tag or Git-history work was performed.
+- Assertion replacements: old `P43-F` status was `In progress` and its
+  placement register said task/phase PR integration was pending; new status
+  is `Done; Revised by P43-F-R1` with PR #153/#154 and both verified merge
+  SHAs. Reason: mark the process work complete only after both authorized PRs
+  merged. The P43 count changes from 1/4 to 3/5 and the overall dashboard
+  changes from 183/226 to 185/227 because P43-F is now Done and the
+  completion-evidence revision is a separately tracked part. No assertion
+  was weakened.
 
 ### DEC-CR109-OWNER-PLANNING-AND-CLOSEOUT (2026-11-11)
 
@@ -11708,7 +11721,7 @@ are guarded by `progressLedger.test.ts`.
 | P30 | `phase/30-release-2-stabilization` | `phase-30-complete` | `a258579c4b580d6f3a157b8d13de53334aa8d34d` | 3 |
 | P41 | `phase/41-types-frequency-completion` | — | — | 5 |
 | P42 | `phase/42-owner-decision-reconciliation` | — | `15c517573ab892f8c26e2e9722669e389f8dd98f` | 2 |
-| P43 | `phase/43-lifecycle-and-transaction-planning` | — | — | 4 |
+| P43 | `phase/43-lifecycle-and-transaction-planning` | — | — | 5 |
 | P44 | `phase/44-spending-heatmap` | — | — | 4 |
 
 ### Standalone lifecycle branch index (renamed refs verified)
