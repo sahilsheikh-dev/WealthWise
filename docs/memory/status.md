@@ -1,6 +1,18 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-12 | Updates: owner and AI agents -->
 
 # Status
+- **CR-114 (2026-11-12) — independent entities, empty slots and R7 implemented.**
+  Work tracking restructured: `cleanup`, `qa-and-release`, `schema-migration`
+  and `documentation` operate as independent lifecycle entities with dedicated
+  branches and Section 13 tracking, excluded from phase progress bars (142/184, 77%).
+  Freed phase slots P7, P27, P28 and P32 remain reserved as Empty (reserved)
+  slots so no phase is renumbered and no historical ref is rewritten. R7
+  slot-filling rule enforced across instructions and placement guide. Remote
+  branches `schema-migration` and `documentation` pushed and verified;
+  `phase/07-schema-migration` deleted on origin. Historical tags
+  `phase-07-complete`, `phase-27-complete`, `phase-28-complete` retained. All
+  historical commits/PRs preserved with complete history map in
+  `docs/history/entity-history-map.md`.
 - **CR-113 (2026-11-12) — owner approvals recorded; all feature work remains
   Planned.** P21-F Home-source editing is authorized if needed; P33/P34/P35
   research and stated follow-on scopes are approved; P35 has a Go after

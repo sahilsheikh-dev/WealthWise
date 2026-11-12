@@ -21,12 +21,13 @@ request register, phase history, roadmap, phase branch index, memory pages,
 and the source/tests for every screen or feature touched. Apply the rules in
 order and stop at the first match.
 
-1. **Ongoing standalone lifecycle.** Cleanup, QA/release, release/hotfix,
-   branch/tag hygiene, CI and repository-process operations belong in the
-   standalone lifecycle table, outside product phases. P43 is the explicitly
-   designated, temporary repository-process phase for work that establishes
-   this tracking model; its existing P43-A/B/E and this task's P43-F remain
-   there as the one-time planning exception.
+1. **Ongoing standalone lifecycle.** Cleanup (`cleanup`), QA/release
+   (`qa-and-release`), schema migration (`schema-migration`), documentation
+   (`documentation`), release/hotfix, branch/tag hygiene, CI and
+   repository-process operations belong in standalone lifecycle tracking, outside
+   product phases. P43 is the explicitly designated, temporary repository-process
+   phase for work that establishes this tracking model; its existing P43-A/B/E
+   and P43-F/G remain there as the one-time planning exception.
 2. **Completed work.** A defect or adjustment to a completed part is the next
    sequential revision of that original ID, in its phase and reopened phase
    branch: `P20-A-R3`, not `P20-A-R2-R1-R1`. Mark the original row
@@ -38,6 +39,29 @@ order and stop at the first match.
    retained phase branch from `develop`.
 5. **New feature area.** Start a new phase with parts A, B, C, and so on, on
    `phase/NN-slug` from `develop`.
+
+### R7 — Slot-filling rule and empty phase reservations
+
+Empty phase numbers freed by independent entity separation or cancellation
+(P7, P27, P28, P32) stay reserved as empty slots so no existing phase is
+renumbered and no historical branch, tag, commit or ID is rewritten. A new
+feature may take an empty slot only if it is related to the phase immediately
+before or after it: P7 for backup & security (P6) or investments (P8) work;
+P27 for accessibility & performance (P26) work; P28 for income
+recurrence / Budget income (P29) work; P32 for project health/community (P31) or
+widgets (P33) work.
+
+- **P7**: backup & security (P6) or investments (P8) work
+- **P27**: accessibility & performance (P26) work
+- **P28**: income recurrence / Budget income (P29) work
+- **P32**: project health/community (P31) or widgets (P33) work
+
+For multiple consecutive empty slots, apply the same adjacency pattern per
+slot. Unrelated work never takes an empty slot; it opens a new phase at the
+end under Rule 5. Precedence: R6 rules 1–3 first (standalone lifecycle,
+completed-part revisions, and open-part scope), then R7 for new-feature
+placement into an eligible adjacent empty slot before opening a new phase at the
+end.
 
 Split requests with different work types and classify each separately; use one
 `CR-<n>` register row to group the request. A revision is a fix/adjustment of
@@ -63,7 +87,12 @@ no work was done there; record that exception.
 | Fix completed P20-A-R2 behavior | Rule 2: P20-A-R3 | Reopen `phase/20-budget`; create `task/P20-A-R3-slug` |
 | New spending heat map | Rule 5: P44-A–D | `phase/44-spending-heatmap` from `develop` |
 | CM-2 repository sync rule | Rule 1: standalone repository rule; no dashboard part | No product phase branch |
-| Separate cleanup and QA/release tracking | Rule 1 lifecycle tracking; P43 records the one-time setup work | `cleanup` and `qa-and-release` are ongoing branches |
+| Separate cleanup and QA/release tracking | Rule 1 lifecycle tracking; P43 records the one-time setup work | `cleanup` (historical branch name: `phase/27-cleanup`) and `qa-and-release` (historical branch name: `phase/28-qa-and-release`) are ongoing branches |
+| Migration-only work | Rule 1: standalone lifecycle entity | `schema-migration` (historical branch name: `phase/07-schema-migration`) |
+| Docs/ledger/memory/rules work | Rule 1: standalone lifecycle entity | `documentation` |
+| Cleanup work | Rule 1: standalone lifecycle entity | `cleanup` (historical branch name: `phase/27-cleanup`) |
+| QA and release engineering | Rule 1: standalone lifecycle entity | `qa-and-release` (historical branch name: `phase/28-qa-and-release`) |
+| New feature adjacent to empty slot (P7, P27, P28, P32) | R7 slot-filling rule | Reserve empty slot; branch `phase/NN-slug` |
 
 ## Branch and verification workflow
 
@@ -72,6 +101,10 @@ no work was done there; record that exception.
 | Completed-part revision | Reopen retained phase branch from `develop` | `task/<ID>-slug` |
 | New part in an existing feature area | Reopen retained phase branch from `develop` | `task/<ID>-slug` |
 | New feature area | `phase/NN-slug` from `develop` | `task/<ID>-slug` |
+| Standalone documentation task | `documentation` lifecycle branch | `task/docs-<slug>` |
+| Standalone migration task | `schema-migration` lifecycle branch | `task/migration-<slug>` |
+| Standalone cleanup task | `cleanup` lifecycle branch | `task/cleanup-<slug>` |
+| Standalone QA/release task | `qa-and-release` lifecycle branch | `task/qa-<slug>` or `task/release-<slug>` |
 | Standalone lifecycle/repository operation | Existing lifecycle branch or no product branch for a rule-only change | One task branch only when an implementation deliverable needs review |
 
 Do not implement unrelated planned features while performing placement work.
@@ -92,4 +125,9 @@ physical-device checks as unverified unless they were actually observed.
   (CR-113); this finite documentation work does not move to lifecycle tracking.
 - P43-A/B/E, P43-F and P43-G remain in the designated P43 repository-process phase
   as the task-specific setup exception above. P44 remains a new feature phase.
+- CR-114 audit: P7 moves to `schema-migration` under rule 1; P27-A moves to
+  `cleanup` under rule 1; P28 release/QA parts move to `qa-and-release` and docs
+  parts move to `documentation` under rule 1; P32-A/B/C move to Cancelled /
+  unassigned under Section 13. P7, P27, P28 and P32 remain Empty (reserved)
+  slots subject to R7 slot-filling adjacency.
 

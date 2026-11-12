@@ -2,6 +2,20 @@
 
 # Open items
 
+## CR-114 independent entities, empty slots and R7 (2026-11-12)
+
+Restructuring of work tracking completed under CR-114:
+- Independent lifecycle entities established: `cleanup`, `qa-and-release`,
+  `schema-migration` and `documentation`. They operate on dedicated branches and
+  are tracked in Section 13 outside the phase denominator.
+- Empty reserved slots established: P7, P27, P28 and P32. Reserved for adjacent
+  feature work under R7; no renumbering or ref rewrite.
+- R7 slot-filling rule added to AGENTS.md, rules.md, work-placement.md and
+  PROGRESS.md.
+- Branches: `origin/schema-migration` and `origin/documentation` pushed and
+  verified; old `origin/phase/07-schema-migration` deleted.
+- Git history map committed at `docs/history/entity-history-map.md`.
+
 ## CR-113 owner-approved planning (2026-11-12)
 
 The owner approved planning/research and the decisions below. All affected

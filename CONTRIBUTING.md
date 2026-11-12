@@ -22,14 +22,15 @@ git config core.hooksPath .githooks
 ## Branching
 
 Before adding work, search the dashboard, register, phase history, roadmap,
-memory and touched files. Apply the first matching rule: ongoing lifecycle,
+memory and touched files. Apply the first matching rule: ongoing standalone
+lifecycle work (`cleanup`, `qa-and-release`, `schema-migration`, `documentation`),
 CI and repository-process work goes in standalone lifecycle tracking; fixes to
 completed parts use the next revision number in the original phase; scope
 changes to open parts amend them in place; related new feature work uses the
-next part in its phase; genuinely new feature areas get a new phase. Add a
-Placement line to each new or moved ledger row. See
-[work-placement.md](docs/memory/work-placement.md) for the search checklist,
-worked examples and branch workflow.
+next part in its phase; genuinely new feature areas take an adjacent empty
+reserved slot per R7 or get a new phase. Add a Placement line to each new or
+moved ledger row. See [work-placement.md](docs/memory/work-placement.md) for the
+search checklist, worked examples and branch workflow.
 
 - `main` contains stable released code. Changes arrive through release or
   hotfix merges and receive a `vX.Y.Z` tag. The initial branching adoption
