@@ -87,8 +87,9 @@ physical-device checks as unverified unless they were actually observed.
   and transaction-category integration. P3 is generic persistence and is not
   the feature owner.
 - P31-E moves to standalone QA/release lifecycle CI tracking under rule 1.
-- P39-A–H stay in P39 under rule 5. Whether to transfer their broad audit and
-  hardening scope into QA/release remains an owner decision, default no move.
-- P43-A/B/E and P43-F remain in the designated P43 repository-process phase
+- P39-A–H stay in P39 under rule 5 by owner decision (CR-113); no lifecycle
+  move. P40-A/B also remain under Agent-context hygiene by owner decision
+  (CR-113); this finite documentation work does not move to lifecycle tracking.
+- P43-A/B/E, P43-F and P43-G remain in the designated P43 repository-process phase
   as the task-specific setup exception above. P44 remains a new feature phase.
 

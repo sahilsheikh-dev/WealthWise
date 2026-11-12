@@ -115,7 +115,7 @@ describe('permanent progress ledger', () => {
     const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
     const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
 
-    expect(dashboard.split('\n').filter((line) => /^\| P43-(?:A|B|E|F) \|/.test(line))).toHaveLength(4);
+    expect(dashboard.split('\n').filter((line) => /^\| P43-(?:A|B|E|F|G) \|/.test(line))).toHaveLength(5);
     for (const id of ['P43-B', 'P43-E']) {
       const row = dashboard.split('\n').find((line) => line.startsWith(`| ${id} |`));
       expect(row).toContain('| Planned |');
@@ -146,7 +146,7 @@ describe('permanent progress ledger', () => {
     expect(roadmap).toContain('**`cleanup`**');
     expect(roadmap).toContain('**`qa-and-release`**');
     expect(roadmap).toMatch(/Documentation\s+reordering only; Git chronology remains unchanged/);
-    expect(roadmap).toContain('blocked on owner approval of an exact tag list');
+    expect(roadmap).toContain('list has not yet been supplied or approved');
     const emergencyFund = dashboard.split('\n').find((line) => line.startsWith('| P21-F |')) ?? '';
     expect(emergencyFund).toContain('three-month minimum floor');
     expect(emergencyFund).toContain('font-scale tests at 1.3/2.0');
@@ -154,17 +154,18 @@ describe('permanent progress ledger', () => {
       .toContain('resolve schema/backup impact before any implementation');
     expect(roadmap).toContain('one issue per ledger part or CR');
     expect(roadmap).toContain('API rate and noise concerns');
-    expect(branchIndex).toContain('| P43 | `phase/43-lifecycle-and-transaction-planning` | — | — | 5 |');
+    expect(branchIndex).toContain('| P43 | `phase/43-lifecycle-and-transaction-planning` | — | — | 6 |');
     expect(branchIndex).toContain('Standalone lifecycle branch index (renamed refs verified)');
     expect(branchIndex).toContain('| `cleanup` | `cleanup` | `cleanup` | Active |');
     expect(branchIndex).toContain('| `qa-and-release` | `qa-and-release` | `qa-and-release` | Active |');
-    expect(branchIndex).toContain('| P43 | `phase/43-lifecycle-and-transaction-planning` | — | — | 5 |');
+    expect(branchIndex).toContain('| P43 | `phase/43-lifecycle-and-transaction-planning` | — | — | 6 |');
     expect(roadmap).not.toMatch(/^\d+\. \*\*P(?:27|28) —/m);
     expect(roadmap).toContain('P27/P28 remain completed historical milestones');
     expect(roadmap).toContain('P21-F — Emergency Fund target editing');
     expect(roadmap).toContain('P20-W (Previously: P43-D)');
     expect(roadmap).toContain('P43-E — GitHub issue strategy');
     expect(roadmap).toContain('P43-F — Work placement and CM-2');
+    expect(roadmap).toContain('P43-G — Owner-approval planning reconciliation');
     expect(openItems).toContain('## CR-110-R1 planned work');
     expect(openItems).toContain('phase/43-lifecycle-and-transaction-planning');
     expect(status).toContain('**CR-110-R1 (2026-11-12) is Planned only:**');
@@ -190,6 +191,29 @@ describe('permanent progress ledger', () => {
     expect(promptLog.split('\n').find((line) => line.startsWith('| P20-A-R3 |')))
       .toContain('| Planned; Evidence: not started |');
     expect(roadmap).toContain('P20-A-R3 — Linked one-time savings Paid from Transactions');
+  });
+
+  it('records CR-113 owner approvals while keeping implementation Planned', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+
+    expect(register.split('\n').find((line) => line.startsWith('| CR-113 |'))).toContain('| Done |');
+    for (const [id, decision] of [
+      ['P21-F', 'Owner explicitly authorized editing'],
+      ['P33-B', 'Android widget implementation is approved'],
+      ['P34-A', 'scope and platform research approved'],
+      ['P35-B', 'Owner has given a Go'],
+      ['P43-B', 'Owner approved the non-release tag-cleanup scope'],
+      ['P43-E', 'Owner approved the GitHub issue strategy'],
+      ['P44-A', 'owner approved a Transactions stack route'],
+      ['P39-A', 'Owner approved keeping P39-A–H in P39'],
+      ['P40-A', 'Owner approved keeping P40-A/B in P40'],
+    ]) {
+      expect(dashboard.split('\n').find((line) => line.startsWith(`| ${id} |`))).toContain(decision);
+    }
+    expect(openItems).toContain('this update starts no research');
+    expect(openItems).toContain('The exact proposed deletion list has not been supplied');
   });
 
   it('records P44 and CM-2 as separate planned work under CR-111', () => {
@@ -224,11 +248,11 @@ describe('permanent progress ledger', () => {
     expect(roadmap).toContain('P44-B — Pure daily totals selector');
     expect(roadmap).toContain('P44-C — Spending heat map screen and route');
     expect(roadmap).toContain('P44-D — Demo data, layout, accessibility and device checklist');
-    expect(roadmap).toContain('OWNER DECISION');
-    expect(roadmap).toContain('unbounded month navigation');
+    expect(roadmap).toContain('owner approved a Transactions stack route');
+    expect(roadmap).toContain('unbounded\n      month navigation');
     expect(roadmap).toContain('50-year and 126-year stress fixtures');
-    expect(roadmap).toContain('loan proceeds/withdrawals/Borrowed');
-    expect(roadmap).toContain('no persisted schema change is Assumed');
+    expect(roadmap).toContain('all inflows\n      in Income');
+    expect(roadmap).toContain('no\n      persisted schema change is Assumed');
     expect(roadmap).toContain('plain seven-column React Native View');
     expect(roadmap).toContain('CM-2 Git sync rule (Active; enforced)');
     expect(roadmap).toContain('git fetch --all --prune');
@@ -337,7 +361,7 @@ describe('permanent progress ledger', () => {
   it('logs every prompt ID exactly once', () => {
     const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
     const promptIds = [
-      'P41-B-R1', 'CR-110-R1', 'CR-111', 'CM-2',
+      'P41-B-R1', 'CR-110-R1', 'CR-111', 'CR-113', 'P43-G', 'CM-2',
       'P01', 'P02', 'P03', 'P04', 'P05', 'P06', 'P06-FIX-R1',
       'P07', 'P08', 'P09', 'P10', 'P11', 'P12', 'P13', 'P14',
       'P15-A', 'P15-A2', 'P15-B', 'P15-C',
@@ -377,7 +401,7 @@ describe('permanent progress ledger', () => {
       'P23-C', 'P23-D', 'P25-F',
       'P28-A', 'P28-A-R1', 'P28-B', 'P28-C', 'P28-C-R1', 'P28-C-R2', 'P28-C-R3', 'P28-C-R4', 'P28-D', 'P28-E', 'P28-E-R1', 'P28-E-R2', 'P28-E-R3', 'P28-E-R4', 'P28-E-R5', 'P28-E-R5-R1', 'P28-F', 'P28-F-R1', 'P28-F-R2', 'P28-F-R2-R1', 'P28-F-R3', 'P28-F-R3-R1', 'P28-F-R3-R2', 'P28-F-R3-R3', 'P28-F-R3-R3-R1', 'P28-F-R4', 'P28-F-R4-R1', 'P28-F-R4-R1-R1', 'P28-F-R4-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1-R1-R1', 'P28-F-R6-R2', 'P28-F-R6-R3', 'P28-F-R6-R3-R1',
       'P29-A', 'P29-B', 'P29-C', 'P29-D', 'P29-E', 'P29-F', 'P29-F2', 'P29-F3', 'P29-F4', 'P29-G', 'P29-H', 'P29-I', 'P29-J', 'P29-K', 'P29-L', 'P29-M', 'P29-N', 'P29-M2', 'P29-O', 'P29-O-R1', 'P29-O1-R1', 'P29-O1-R2', 'P29-O2', 'P29-Q', 'P29-R', 'P29-S', 'P29-T', 'P29-U', 'P29-V', 'P29-W', 'P29-W-R1', 'P29-W-R2', 'P29-X', 'P29-Y', 'P29-Z',
-      'P29-AA', 'P29-AB', 'P29-AB-R1', 'P29-AB-R2', 'P29-AB-R2-R1', 'P30-A', 'P30-B', 'P30-C', 'P41-A', 'P42-A', 'P42-A-R1', 'P43-F', 'P43-F-R1', 'P44-A', 'P44-B', 'P44-C', 'P44-D',
+      'P29-AA', 'P29-AB', 'P29-AB-R1', 'P29-AB-R2', 'P29-AB-R2-R1', 'P30-A', 'P30-B', 'P30-C', 'P41-A', 'P42-A', 'P42-A-R1', 'P43-F', 'P43-F-R1', 'P43-G', 'P44-A', 'P44-B', 'P44-C', 'P44-D',
     ];
 
     for (const id of newPartIds) {
@@ -417,7 +441,7 @@ describe('permanent progress ledger', () => {
     expect(dashboard.split('\n').find((line) => line.startsWith('| P33-C |')))
       .toContain('iOS distribution');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P35-C |')))
-      .toContain('P35-B owner go/no-go approval');
+      .toContain('P35-B Go');
     for (const phase of [31, 32, 33, 34, 35, 36, 37, 38, 39, 40]) {
       expect(roadmap).toContain(`**P${phase} —`);
     }
@@ -579,8 +603,8 @@ describe('permanent progress ledger', () => {
         expect(count?.done).toBe(0);
         expect(count?.total).toBe(4);
       } else if (phase === 43) {
-        expect(count?.done).toBe(3);
-        expect(count?.total).toBe(5);
+        expect(count?.done).toBe(4);
+        expect(count?.total).toBe(6);
       } else if (phase === 22) {
         expect(count?.done).toBe(2);
         expect(count?.total).toBe(2);
@@ -678,7 +702,7 @@ describe('permanent progress ledger', () => {
         expect(branch).toBe('phase/43-lifecycle-and-transaction-planning');
         expect(tag).toBe('—');
         expect(commit).toBe('—');
-        expect(Number(count)).toBe(5);
+        expect(Number(count)).toBe(6);
         continue;
       }
       if (number === 27 || number === 28) {
