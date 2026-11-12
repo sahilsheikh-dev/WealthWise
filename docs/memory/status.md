@@ -12,7 +12,7 @@
   `phase/07-schema-migration` deleted on origin. Historical tags
   `phase-07-complete`, `phase-27-complete`, `phase-28-complete` retained. All
   historical commits/PRs preserved with complete history map in
-  `/tmp/history_map.md`.
+  `docs/history/entity-history-map.md`.
 - **CR-113 (2026-11-12) — owner approvals recorded; all feature work remains
   Planned.** P21-F Home-source editing is authorized if needed; P33/P34/P35
   research and stated follow-on scopes are approved; P35 has a Go after

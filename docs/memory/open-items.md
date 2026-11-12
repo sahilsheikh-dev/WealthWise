@@ -14,7 +14,7 @@ Restructuring of work tracking completed under CR-114:
   PROGRESS.md.
 - Branches: `origin/schema-migration` and `origin/documentation` pushed and
   verified; old `origin/phase/07-schema-migration` deleted.
-- Git history map generated at `/tmp/history_map.md`.
+- Git history map committed at `docs/history/entity-history-map.md`.
 
 ## CR-113 owner-approved planning (2026-11-12)
 

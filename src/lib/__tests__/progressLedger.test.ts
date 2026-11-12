@@ -1080,13 +1080,108 @@ describe('permanent progress ledger', () => {
       expect(dashboard.split('\n').filter((line) => line.startsWith(`| ${id} |`) && !line.includes('Empty (reserved)'))).toHaveLength(0);
     }
 
-    // R7 in AGENTS.md, rules.md, PROGRESS.md, work-placement.md
+    // R7 in AGENTS.md, rules.md, PROGRESS.md, work-placement.md with exact adjacencies
     for (const doc of [agents, rules, standingRules, placement]) {
-      expect(doc).toMatch(/R7\s*[—–-]\s*Slot[- ]filling/i);
-      expect(doc).toContain('P7');
-      expect(doc).toContain('P27');
-      expect(doc).toContain('P28');
-      expect(doc).toContain('P32');
+      const norm = doc.replace(/\s+/g, ' ');
+      expect(norm).toMatch(/R7\s*[—–-]\s*Slot[- ]filling/i);
+      expect(norm).toContain('P7 for backup & security (P6) or investments (P8)');
+      expect(norm).toContain('P27 for accessibility & performance (P26) work');
+      expect(norm).toContain('P28 for income recurrence / Budget income (P29) work');
+      expect(norm).toContain('P32 for project health/community (P31) or widgets (P33) work');
     }
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P7 |'))).toContain('adjacent backup & security (P6) or investments (P8) work per R7');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P27 |'))).toContain('adjacent accessibility & performance (P26) work per R7');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P28 |'))).toContain('adjacent income recurrence / Budget income (P29) work per R7');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P32 |'))).toContain('adjacent project health/community (P31) or widgets (P33) work per R7');
+  });
+
+  it('enforces entity naming in register, verification matrix and prompt log, and maintains revision chain integrity', () => {
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const crRegister = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const verificationMatrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const independentEntities = ledger.split('## 13. Independent entities')[1] ?? '';
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+
+    // (a) Prompt log rows must not have P7/P07/P27/P28/P32 in Phase column
+    const promptLogRows = promptLog.split('\n').filter((l) => l.startsWith('|') && !l.startsWith('| ID') && !l.startsWith('|---'));
+    for (const row of promptLogRows) {
+      const phaseCol = row.split('|')[2]?.trim();
+      expect(phaseCol).not.toMatch(/^(?:P0?7|P27|P28|P32)$/);
+    }
+
+    // CR register rows must not have P28 in phase column or stray P28 rows
+    const crRows = crRegister.split('\n').filter((l) => l.startsWith('|') && !l.startsWith('| ID') && !l.startsWith('|---'));
+    for (const row of crRows) {
+      const parts = row.split('|').map((s) => s.trim());
+      if (parts.length > 3) {
+        expect(parts[2]).not.toMatch(/^(?:P0?7|P27|P28|P32)$/);
+      }
+    }
+
+    // CR-106 must not be in the Section 2 dashboard
+    expect(dashboard.split('\n').filter((l) => l.startsWith('| CR-106 |'))).toHaveLength(0);
+
+    // Section 10 verification matrix must not name legacy P28/P27 phases without entity attribution
+    expect(verificationMatrix).not.toContain('| P28-A QA and release |');
+    expect(verificationMatrix).not.toContain('| P28-B release metadata |');
+    expect(verificationMatrix).not.toContain('| P28-C release organization/build management |');
+    expect(verificationMatrix).not.toContain('| P27-A cleanup |');
+    expect(verificationMatrix).toContain('cleanup: P27-A (Previously: P27-A)');
+    expect(verificationMatrix).toContain('qa-and-release: P28-A (Previously: P28-A)');
+    expect(verificationMatrix).toContain('qa-and-release: P28-B (Previously: P28-B)');
+    expect(verificationMatrix).toContain('documentation: P28-C (Previously: P28-C)');
+
+    // (b) Revision chains must not straddle independent entities
+    const entitySubsections = independentEntities.split(/\n###\s+/).slice(1);
+    const entityMap = new Map<string, string>();
+    for (const sub of entitySubsections) {
+      const entityName = sub.split('\n')[0].trim();
+      const rows = sub.split('\n').filter((l) => l.startsWith('|') && !l.startsWith('| ID') && !l.startsWith('|---'));
+      for (const row of rows) {
+        const id = row.split('|')[1]?.trim();
+        if (id) {
+          entityMap.set(id, entityName);
+        }
+      }
+    }
+
+    // Every revision in P28-F* belongs in qa-and-release
+    const p28fParts = [
+      'P28-F', 'P28-F-R1', 'P28-F-R2', 'P28-F-R2-R1', 'P28-F-R3', 'P28-F-R3-R1', 'P28-F-R3-R2',
+      'P28-F-R3-R3', 'P28-F-R3-R3-R1', 'P28-F-R4', 'P28-F-R4-R1', 'P28-F-R4-R1-R1', 'P28-F-R4-R1-R1-R1',
+      'P28-F-R4-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1-R1',
+      'P28-F-R4-R1-R1-R1-R1-R1-R1-R1', 'P28-F-R5', 'P28-F-R6', 'P28-F-R6-R1', 'P28-F-R6-R2',
+      'P28-F-R6-R3', 'P28-F-R6-R3-R1',
+    ];
+    for (const part of p28fParts) {
+      expect(entityMap.get(part)).toBe('qa-and-release');
+    }
+
+    // P28-C* belongs in documentation
+    for (const part of ['P28-C', 'P28-C-R1', 'P28-C-R2', 'P28-C-R3', 'P28-C-R4']) {
+      expect(entityMap.get(part)).toBe('documentation');
+    }
+
+    // P28-E* belongs in documentation
+    for (const part of ['P28-E', 'P28-E-R1', 'P28-E-R2', 'P28-E-R3', 'P28-E-R4', 'P28-E-R5', 'P28-E-R5-R1']) {
+      expect(entityMap.get(part)).toBe('documentation');
+    }
+
+    // (c) Docs-only rows outside P28 moved to documentation entity
+    for (const crId of ['CR-106', 'CR-109', 'CR-113', 'CR-114']) {
+      expect(entityMap.get(crId)).toBe('documentation');
+    }
+
+    // (d) History map deliverable committed and /tmp citations replaced
+    const historyMapPath = join(process.cwd(), 'docs/history/entity-history-map.md');
+    expect(existsSync(historyMapPath)).toBe(true);
+    expect(readFileSync(historyMapPath, 'utf8').length).toBeGreaterThan(100);
+    expect(ledger).not.toContain('/tmp/history_map.md');
+    expect(status).not.toContain('/tmp/history_map.md');
+    expect(openItems).not.toContain('/tmp/history_map.md');
+    expect(independentEntities).toContain('docs/history/entity-history-map.md');
+
   });
 });
