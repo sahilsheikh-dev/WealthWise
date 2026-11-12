@@ -1082,11 +1082,12 @@ describe('permanent progress ledger', () => {
 
     // R7 in AGENTS.md, rules.md, PROGRESS.md, work-placement.md with exact adjacencies
     for (const doc of [agents, rules, standingRules, placement]) {
-      expect(doc).toMatch(/R7\s*[—–-]\s*Slot[- ]filling/i);
-      expect(doc).toContain('P7 for backup & security (P6) or investments (P8)');
-      expect(doc).toContain('P27 for accessibility & performance (P26) work');
-      expect(doc).toContain('P28 for income recurrence / Budget income (P29) work');
-      expect(doc).toContain('P32 for project health/community (P31) or widgets (P33) work');
+      const norm = doc.replace(/\s+/g, ' ');
+      expect(norm).toMatch(/R7\s*[—–-]\s*Slot[- ]filling/i);
+      expect(norm).toContain('P7 for backup & security (P6) or investments (P8)');
+      expect(norm).toContain('P27 for accessibility & performance (P26) work');
+      expect(norm).toContain('P28 for income recurrence / Budget income (P29) work');
+      expect(norm).toContain('P32 for project health/community (P31) or widgets (P33) work');
     }
     expect(dashboard.split('\n').find((line) => line.startsWith('| P7 |'))).toContain('adjacent backup & security (P6) or investments (P8) work per R7');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P27 |'))).toContain('adjacent accessibility & performance (P26) work per R7');
