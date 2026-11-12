@@ -74,7 +74,7 @@ parts count in the numerator and denominator. P1–P14 count as one part
 each.
 
 ```text
-Overall progress ████████░░ 77% (142/184)
+Overall progress ████████░░ 77% (142/185)
 P1          ██████████ 100% (1/1)
 P2          ██████████ 100% (1/1)
 P3          ██████████ 100% (1/1)
@@ -93,7 +93,7 @@ P16         ██████████ 100% (3/3)
 P17         ██████████ 100% (3/3)
 P18         ██████████ 100% (9/9)
 P19         ██████████ 100% (3/3)
-P20         █████████░ 94% (30/32)
+P20         █████████░ 91% (30/33)
 P21         █████████░ 86% (6/7)
 P22         ██████████ 100% (2/2)
 P23         ██████████ 100% (4/4)
@@ -184,7 +184,8 @@ P44         ░░░░░░░░░░ 0% (0/4)
 | P20-S-R1 | — | Done; Revised by P20-S-R1-R1 | Convert all non-filter app-form ChoiceField uses to Dropdown and add persistent single-line titles to eligible editable controls. SegmentedControl titles are intentionally absent per owner direction. All six final-tree gates pass; physical-device rendering remains unverified. Implementation commit `d36103e`; task-to-phase PR #42; phase-to-develop PR #43. | 2026-11-09 |
 | P20-S-R1-R1 | — | Done | Add the owner-requested rule to ask before reverting or overwriting owner edits made after agent changes. Documented in root `AGENTS.md` as R5; task-to-phase PR #44 merged, phase-to-develop PR #45. | 2026-11-09 |
 | P20-T | `e432034` | Done | CR-76–CR-77: one shared FormShell header/body/footer core for full-screen and sheet forms; all data-entry forms converted with route-param coverage. Six gates pass; native keyboard/font-scale behavior remains unverified. | 2026-10-19 |
-| P20-U | `02bfbb1` | Done | CR-86–CR-87: replace BudgetManagementSheet with section, item and income FormScreen routes; scoped save/delete Undo and route coverage. Focused suites pass; final gates and device limitations recorded below. | 2026-10-21 |
+| P20-U | `02bfbb1` | Done; Revised by P20-U-R1 | CR-86–CR-87: replace BudgetManagementSheet with section, item and income FormScreen routes; scoped save/delete Undo and route coverage. Focused suites pass; final gates and device limitations recorded below. | 2026-10-21 |
+| P20-U-R1 | P20-U | Planned | not started; owner said not to start. Owner report (verbatim): "In budget while updating any item/value/amount/start-month/frequency/due-day/etc it is not updating also while trying to delete it is not even deleting, not for single month and this and following months." Affected fields: item, value, amount, start-month, frequency, due-day, etc. Delete cases: single month and this and following months. Open questions: which Budget screens and sections (spend, invest, income schedules, one-time vs recurring); whether the bug is UI, store, or persistence; app/schema version and whether it began after a specific release or CR; exact reproduction steps and expected behavior; whether data on device persists after restart. Dependencies: report-first investigation with a red regression test before any fix (R1), then a fix with all six ordered gates; physical-device check likely required (planned process, not authorized work). Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and touched files; related P20-U; reason: defect in completed budget route form item/schedule updating and deletion. | not started |
 | P20-V | `6d3feab`, `82793e8`, `1afac16`, `139230d` | Done | CR-88/CR-89: schema v13 and migration, recurrence-aware Budget planning/dues, route form, row display, demo and tests. All six automated gates pass; native-device checks remain unverified. | 2026-10-21 |
 | P20-W | — | Planned | Previously: P43-D. Plan the Transactions form's investment-category derivation, user-created/Budget-defined expense categories and Custom option, category/item hierarchy, and custom Income type. P20-O/P own Budget item/category forms and transaction-category integration; P3 is generic persistence. Preserve schema v23 and resolve schema/backup impact before any implementation. Dependencies: category/item and persistence design; schema-impact decision. Evidence: not started. Placement: rule 4; searched dashboard, register, P20-O/P, P3 history, roadmap, memory and transaction form modules; related P20-O and P20-P; reason Budget category and transaction-form behavior belongs to the existing P20 feature area. | 2026-11-12 |
 | P21-A | — | Done | Schema-v7 linked emergency-fund model, backup/migration and integrity tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
@@ -3237,6 +3238,8 @@ evidence present in exports/checkpoints.
 
 | ID | Phase | Legacy ID | Session | Date | Purpose | Outcome | Commits (Git only) | Agent mistakes / review findings | Text |
 |---|---|---|---:|---|---|---|---|---|---|
+| CR-115 | documentation | — | current | 2026-11-13 | Record owner-reported Budget update and delete failure across single month and following months as Planned under P20-U-R1; owner instructed not to start work. | Done (documentation and ledger recording); product bug work Planned under P20-U-R1 | Documentation commit. | None. | current request |
+| P20-U-R1 | P20 | P20-U | current | 2026-11-13 | Record owner-reported Budget update and delete failure across single month and following months as Planned. Owner instruction: "Don't start working on this." | Planned; not started; owner said not to start. Owner report (verbatim): "In budget while updating any item/value/amount/start-month/frequency/due-day/etc it is not updating also while trying to delete it is not even deleting, not for single month and this and following months." Affected fields: item, value, amount, start-month, frequency, due-day, etc. Delete cases: single month and this and following months. Open questions: which Budget screens and sections (spend, invest, income schedules, one-time vs recurring); whether the bug is UI, store, or persistence; app/schema version and whether it began after a specific release or CR; exact reproduction steps and expected behavior; whether data on device persists after restart. Dependencies: report-first investigation with a red regression test before any fix (R1), then a fix with all six ordered gates; physical-device check likely required (planned process, not authorized work). Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and touched files; related P20-U; reason: defect in completed budget route form item/schedule updating and deletion. | No implementation commit; planned only. | None. | current request |
 | CR-114 | documentation | — | current | 2026-11-12 | Restructure work tracking using independent entities, empty slots and R7 slot-filling rules. | Done; PR #161 merged into `develop` as `9058386`. Preflight gates 1–3, 5, 6 passed; Gate 4 exit 1 owner-approved exception (upstream Expo SDK 57 patch advisory). | Test-first commits `f99fa67`, `83689f2`; PR #161 merge `9058386`. | None. | current request |
 | CR-110 | — | — | current | 2026-11-12 | Plan standalone cleanup/QA lifecycle tracking and deferred Emergency Fund and transaction improvements. | Planned; Revised by CR-110-R1. Original planned-only scope retained; CR-110-R1 adds detailed dependencies, approval gates, issue strategy and validation plan. | No implementation commit; revised in CR-110-R1. | Original: execution was deferred and no implementation or remote actions were authorized. New: details are tracked as separate Planned items; no implementation or remote action is authorized by the plan. Reason: preserve the original request record while making future work actionable. | current request |
 | CR-110-R1 | P43 | CR-110 | current | 2026-11-12 | Refine CR-110 into a dependency-aware plan for lifecycle tracking, tags, Emergency Fund editing, transaction forms and GitHub issue strategy. | Planned only; P43-A–P43-E all remain Planned with `Evidence: not started`. No app behavior, tag cleanup, issue creation or history rewrite is included. | Test-first commit `e5114e01f363d6de5a12acb61886039469d4a86f`; docs commit `183b18e0af473195ee62fcb4622a3b7e834d2d13`; task PR #146 merged into P43 as `e4d950adf0344dbe12e2e0d085e83d60538ede68`; phase PR #147 merged into `develop` as `a93feaecfbd591c1b6f27bac15b5839c68d10709`. | Old: CR-110 grouped the requests but omitted specific dependencies, schema/backup constraints, exact approval gates, issue batching risks and dashboard/branch-index requirements. New: five independently trackable Planned items preserve owner gates and evidence status. Reason: make future work actionable without beginning implementation. | current request |
@@ -3671,6 +3674,7 @@ verification.
 | CR-112 | Classify Planned work, separate ongoing lifecycle tracking, add R6 and activate CM-2. | Done | Local commits: tests `e2f0263`, `d24acd9`, `e7c134a`, `770393d`, `bdbe159`, `b8b90b1`; rules/guide `7dab04b`; placement audit `5841373`; gate/rename evidence `6ed0e39`. Gate 4's initial `npx expo-doctor` attempt exited 1 (`ENOTFOUND registry.npmjs.org`); network retry exited 0 (21/21), then the complete ordered rerun passed: 1 `npm test -- --coverage --watchman=false` exit 0 (101 suites, 1,324 passed, 1 skipped; coverage 95.96/92.15/98.02/97.62% statements/branches/functions/lines); 2 `npx tsc --noEmit` exit 0; 3 `npx expo lint` exit 0; 4 `npx expo-doctor` exit 0 (21/21); 5 `npx expo export --platform android` exit 0; 6 `npx expo export --platform ios` exit 0. Watchman was disabled for Gate 1 after its normal startup was denied by the sandbox. No physical-device verification was performed. P43-A lifecycle ref rename is complete and verified; P43-F PR #153/#154 integration is complete with merge commits recorded. P43-B/E and planned product work remain open. |
 | CR-113 | Record explicit owner approvals and placement decisions for Planned/Pending tasks without starting their work. | Done | All affected feature work remains Planned. Six ordered gates and task/phase PR evidence are recorded in Section 11. No research, implementation, tag deletion or issue creation was performed. Owner approvals cover P21-F, P33-B/C, P34-A–C, P35-B/C, P43-B/E, P44-A and P39/P40 placement; the exact proposed tag list and P43-E inventory remain prerequisites. |
 | CR-114 | Restructure how the project tracks work using independent entities (cleanup, qa-and-release, schema-migration, documentation), empty slots (P7, P27, P28, P32) and R7 slot-filling rule. | Done | PR #161 merged to develop as `9058386`; Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 owner-approved exception for upstream SDK 57 patch advisory; tests updated test-first; remote branches and local refs verified. |
+| CR-115 | Record owner-reported Budget item/schedule update and delete failure across single month and following months as Planned under P20-U-R1; owner instructed not to start work. | Done (recording); product work Planned | Documented in dashboard, register, prompt log, roadmap, and memory; no app/schema/dependency changes. |
 
 ## 8. Known issues and risks
 
@@ -3866,7 +3870,7 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
    P19-C header icons, user-owned inputs and balance card (CR-17–CR-19).
 2. **P20 — Pending items, Home, navigation and Budget management**
    (P20-A through P20-V Done; P20-A-R1/R2 and P20-S-R1-R1 revisions Done;
-   P20-A-R3 and P20-W Planned):
+   P20-A-R3, P20-W and P20-U-R1 Planned):
    P20-A pending
    Transactions with Pay/Clear due (CR-6), P20-B Home due actions and collapsed
    spending plan (CR-7, CR-10), P20-C main-screen-only tabs (CR-11), P20-E
@@ -3895,6 +3899,7 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
    Placement: rule 4; searched dashboard, register, P20-O/P, P3 history,
    roadmap, memory and transaction form modules; related P20-O and P20-P;
    reason: the work extends existing Budget/category forms.
+   P20-U-R1 — Budget item and schedule update and delete failure (Planned): owner-reported defect in Budget route form editing and deletion. Owner report (verbatim): "In budget while updating any item/value/amount/start-month/frequency/due-day/etc it is not updating also while trying to delete it is not even deleting, not for single month and this and following months." Owner instruction: "Don't start working on this." Affected fields: item, value, amount, start-month, frequency, due-day, etc. Delete cases: single month and this and following months. Open questions: which Budget screens and sections (spend, invest, income schedules, one-time vs recurring); whether the bug is UI, store, or persistence; app/schema version and whether it began after a specific release or CR; exact reproduction steps and expected behavior; whether data on device persists after restart. Dependencies: report-first investigation with a red regression test before any fix (R1), then a fix with all six ordered gates; physical-device check likely required (planned process, not authorized work). Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and touched files; related P20-U; reason: defect in completed budget route form item/schedule updating and deletion.
 3. **P21 — Emergency fund as a goal-linked model** (P21-A–E Done; P21-F Planned): P21-A links,
    entries and net-worth/schema v7 changes (CR-8, CR-13); P21-B cover and
        allocation table (CR-14, CR-15); P21-C normal-mode presentation and
@@ -4198,6 +4203,21 @@ work remain in their original phase and use `<ID>-R<n>` (for example,
 An item is `Done` only when its named source and test evidence are available.
 Paths below are repository-relative. Baseline results are not completion
 evidence for the fixes.
+
+### 2026-11-13 — CR-115 planned Budget edit and delete bug recording
+
+- Recorded owner-reported Budget update and delete failure across single month and following months as Planned under P20-U-R1. Owner instruction: "Don't start working on this."
+- Documentation and ledger recording only; no application code, schema, demo data or dependencies changed. No work on the bug was started.
+- Focused test suite passed (5 suites, 50 passed, exit 0): `progressLedger`, `memoryDocs`, `releaseDownloadDocs`, `branchingDocs`, `commitMessage`.
+- Replaced assertions (none weakened):
+
+  | Old assertion | New assertion | Reason |
+  |---|---|---|
+  | P20 count asserted 32 subtasks (`expect(count?.total).toBe(32)`). | P20 count asserts 33 subtasks (`expect(count?.total).toBe(33)`). | P20 now includes planned revision `P20-U-R1`. |
+  | `P20-U` status in dashboard asserted `\| Done \|`. | `P20-U` status asserts `Done; Revised by P20-U-R1`. | `P20-U` is revised by `P20-U-R1` per R2. |
+  | Phase branch index P20 subtask count was 32. | Phase branch index P20 subtask count is 33. | P20 tracks 33 total subtasks. |
+  | Dashboard overall progress bar was `77% (142/184)`. | Dashboard overall progress bar is `77% (142/185)`. | 142 completed out of 185 total subtasks across active product phases. |
+  | Dashboard P20 progress bar was `94% (30/32)`. | Dashboard P20 progress bar is `91% (30/33)`. | 30 completed out of 33 total subtasks in P20. |
 
 ### 2026-11-12 — CR-114 independent entities, empty slots and R7 verification
 
@@ -10347,6 +10367,14 @@ Gradle build, version bump, or release preparation was performed.
 
 ## 11. Session and release log
 
+### CR-115 — Record planned Budget edit and delete bug (2026-11-13)
+
+- Recorded owner-reported Budget update and delete failure across single month and following months as Planned under P20-U-R1.
+- Owner report (verbatim): "In budget while updating any item/value/amount/start-month/frequency/due-day/etc it is not updating also while trying to delete it is not even deleting, not for single month and this and following months."
+- Owner instruction: "Don't start working on this."
+- Documentation and ledger recording only; no investigation, reproduction, app/schema/dependency changes, or work on the bug was started.
+- Focused test suite passed: 5 suites / 50 passed.
+
 ### CR-114 — Restructure independent entities, empty slots and R7 (2026-11-12)
 
 - Restructured work tracking into independent lifecycle entities: `cleanup`,
@@ -11803,7 +11831,7 @@ are guarded by `progressLedger.test.ts`.
 | P17 | `phase/17-cash-flow-budgets-sorting` | `phase-17-complete` | `1e206ad754e95cd53f7cc06e9cba4d2d9b151a68` | 3 |
 | P18 | `phase/18-ui-fix-rounds` | `phase-18-complete` | `3e28f763502fa09b32c00fce1bae95c71285f556` | 9 |
 | P19 | `phase/19-budget-model-and-sync` | `phase-19-complete` | `d3477f2e1266e686b611aa819be90dba113a7a5f` | 3 |
-| P20 | `phase/20-budget` | `phase-20-complete` | `eed40750f68bebc9168907f79f74a67c1f301b83` | 32 |
+| P20 | `phase/20-budget` | `phase-20-complete` | `eed40750f68bebc9168907f79f74a67c1f301b83` | 33 |
 | P21 | `phase/21-emergency-fund` | `phase-21-complete` | `96b85d72e401215a0f17864b9f8099e5452e3a66` | 7 |
 | P22 | `phase/22-demo-data` | `phase-22-complete` | `6cb4fa0a42be2c60ee3d4bf162bb41d6a2f0ea58` | 2 |
 | P23 | `phase/23-insurance` | `phase-23-complete` | `04988e8366949c0cde04912ca1f472c4b31c227f` | 4 |
@@ -11958,6 +11986,7 @@ Ongoing repository documentation, README, release notes, screenshots, memory, ru
 | CR-106 | — | Done | Plan report-first external-guidance work for P31 privacy/CI rows, new P39 release audit and hardening, and P40 agent-context hygiene; record owner decisions and keep reports out of Git except for the findings summary table. Previously: CR-106. Placement: rule 1; searched dashboard, register, memory; related documentation lifecycle; reason: external guidance and repository planning are ongoing documentation work. | 2026-11-10 |
 | CR-109 | — | Done | Record owner-approved future plans, close accepted follow-ups, explain the deleted codex-changes commit, and reconcile the pending list. Previously: CR-109. Placement: rule 1; searched dashboard, register, memory; related documentation lifecycle; reason: roadmap and documentation reconciliation are ongoing documentation work. | 2026-11-11 |
 | CR-113 | — | Done | Record explicit owner approvals and placement decisions for Planned/Pending tasks without starting their work. Previously: CR-113. Placement: rule 1; searched dashboard, register, memory; related documentation lifecycle; reason: recording owner decisions is ongoing documentation work. | 2026-11-12 |
+| CR-115 | — | Done | Record owner-reported Budget update and delete failure across single month and following months as Planned under P20-U-R1; owner instructed not to start work. Previously: CR-115. Placement: rule 1; searched dashboard, register, memory; related documentation lifecycle; reason: recording owner requests and ledger maintenance are ongoing documentation work. | 2026-11-13 |
 
 ### Cancelled / unassigned
 
