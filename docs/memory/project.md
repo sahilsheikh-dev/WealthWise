@@ -55,8 +55,10 @@ runtime synchronization.
   pure utilities and platform helpers in `src/lib/`; demo data in `src/mock/`.
 - Other source groups: `src/hooks/`, `src/theme/`, `src/constants/`, `assets/`
   and `scripts/`.
-- Test counts: 101 suites, 1320 tests (1319 passed; one skipped) on
-  2026-11-11 for P42-A's full run, repeated on integrated `develop` at
+- Test counts: 101 suites, 1323 tests (1322 passed; one skipped) on
+  2026-11-12 for the CR-111 task-tree run. The prior P42-A full run had 101
+  suites and 1320 tests (1319 passed; one skipped) on 2026-11-11, repeated on
+  integrated `develop` at
   `8988121`; P42-A-R1 repeated the same six gates on its documentation-only
   revision tree. P28-F-R6-R3's earlier focused-only check was later followed
   by this full run. All six ordered gates exit 0; the owner reports all
