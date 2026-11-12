@@ -9,9 +9,10 @@
   `phase/20-budget` at `7a5fed6c4a98d8394652e0dbb499b9aa810bae29`; phase PR
   #150 merged into `develop` at
   `4170545cbaa8a4f37d4583b5c29c909c0c99a015`. No app/schema/demo changes,
-  issue creation, tag operations or history rewrites. CM-2 is not enforced;
-  activation default is No. See [open-items.md](open-items.md) and
-  [PROGRESS.md](../PROGRESS.md).
+  issue creation, tag operations or history rewrites. All six ordered gates
+  passed on the CR-111 task tree; Gate 1 had 101 suites, 1322 passed and
+  1 skipped. CM-2 is not enforced; activation default is No. See
+  [open-items.md](open-items.md) and [PROGRESS.md](../PROGRESS.md).
 - **CR-110-R1 (2026-11-12) is Planned only:** CR-110 is marked Revised by
   CR-110-R1. Five P43 items record lifecycle tracking separation, tag cleanup and
   a report-only branch/PR/merge audit, Emergency Fund target editing,
@@ -527,9 +528,9 @@
   historical records in [PROGRESS.md](../PROGRESS.md).
 - CR-108 baseline: 101 suites, 1317 tests (1316 passed, 1 skipped) on
   2026-11-11; all six CR-108 gates exited 0.
-- Test counts: 101 suites, 1320 tests (1319 passed, 1 skipped) on 2026-11-11.
-- Latest validated run: 101 suites, 1320 tests (1319 passed, 1 skipped) on
-  2026-11-11 on integrated `develop` `8988121`; all six P42-A gates exit 0.
+- Test counts: 101 suites, 1323 tests (1322 passed, 1 skipped) on 2026-11-12.
+- Latest validated run: 101 suites, 1323 tests (1322 passed, 1 skipped) on
+  2026-11-12 on the CR-111 task tree; all six ordered gates exited 0.
   Coverage and exact commands are recorded in [PROGRESS.md](../PROGRESS.md).
 - All six P29-L gates exit 0: Jest coverage, TypeScript, Expo lint with zero
   warnings, Expo Doctor 21/21, Android export and iOS export. Exact commands
