@@ -123,7 +123,13 @@ describe('permanent progress ledger', () => {
       expect(row).toContain('Evidence: not started');
     }
     expect(dashboard.split('\n').find((line) => line.startsWith('| P43-A |'))).toContain('| Done |');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P43-F |'))).toContain('| In progress |');
+    const workPlacement = dashboard.split('\n').find((line) => line.startsWith('| P43-F |')) ?? '';
+    expect(workPlacement).toContain('| Done; Revised by P43-F-R1 |');
+    expect(workPlacement).toContain('task PR #153');
+    expect(workPlacement).toContain('phase PR #154');
+    expect(workPlacement).toContain('6e8632f61226fabbfdeca1040f6dee097a808607');
+    expect(workPlacement).toContain('faa126ba75ee58ee703b8e43b375aece91c8f4d1');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P43-F-R1 |'))).toContain('| Done |');
     const lifecycleRename = dashboard.split('\n').find((line) => line.startsWith('| P43-A |')) ?? '';
     expect(lifecycleRename).toContain('a2fa24f930da15c49f779577eb749b33f11a7059');
     expect(lifecycleRename).toContain('9d914638e50462cbadef84df3294ed07cbf42732');
@@ -148,11 +154,11 @@ describe('permanent progress ledger', () => {
       .toContain('resolve schema/backup impact before any implementation');
     expect(roadmap).toContain('one issue per ledger part or CR');
     expect(roadmap).toContain('API rate and noise concerns');
-    expect(branchIndex).toContain('| P43 | `phase/43-lifecycle-and-transaction-planning` | — | — | 4 |');
+    expect(branchIndex).toContain('| P43 | `phase/43-lifecycle-and-transaction-planning` | — | — | 5 |');
     expect(branchIndex).toContain('Standalone lifecycle branch index (renamed refs verified)');
     expect(branchIndex).toContain('| `cleanup` | `cleanup` | `cleanup` | Active |');
     expect(branchIndex).toContain('| `qa-and-release` | `qa-and-release` | `qa-and-release` | Active |');
-    expect(branchIndex).toContain('| P43 | `phase/43-lifecycle-and-transaction-planning` | — | — | 4 |');
+    expect(branchIndex).toContain('| P43 | `phase/43-lifecycle-and-transaction-planning` | — | — | 5 |');
     expect(roadmap).not.toMatch(/^\d+\. \*\*P(?:27|28) —/m);
     expect(roadmap).toContain('P27/P28 remain completed historical milestones');
     expect(roadmap).toContain('P21-F — Emergency Fund target editing');
@@ -252,7 +258,7 @@ describe('permanent progress ledger', () => {
     expect(placementMoves).toContain('P31-E');
     // Placement cutoff: CR-112. Earlier part rows are grandfathered; each
     // new or moved row introduced by this task is checked below.
-    for (const id of ['P21-F', 'P20-W', 'P43-F']) {
+    for (const id of ['P21-F', 'P20-W', 'P43-F', 'P43-F-R1']) {
       const rows = dashboard.split('\n').filter((line) => line.startsWith(`| ${id} |`));
       expect(rows).toHaveLength(1);
       expect(rows[0]).toMatch(/Placement: rule [1-5]; searched .+; related .+; reason:?.+/);
@@ -371,7 +377,7 @@ describe('permanent progress ledger', () => {
       'P23-C', 'P23-D', 'P25-F',
       'P28-A', 'P28-A-R1', 'P28-B', 'P28-C', 'P28-C-R1', 'P28-C-R2', 'P28-C-R3', 'P28-C-R4', 'P28-D', 'P28-E', 'P28-E-R1', 'P28-E-R2', 'P28-E-R3', 'P28-E-R4', 'P28-E-R5', 'P28-E-R5-R1', 'P28-F', 'P28-F-R1', 'P28-F-R2', 'P28-F-R2-R1', 'P28-F-R3', 'P28-F-R3-R1', 'P28-F-R3-R2', 'P28-F-R3-R3', 'P28-F-R3-R3-R1', 'P28-F-R4', 'P28-F-R4-R1', 'P28-F-R4-R1-R1', 'P28-F-R4-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1-R1-R1', 'P28-F-R6-R2', 'P28-F-R6-R3', 'P28-F-R6-R3-R1',
       'P29-A', 'P29-B', 'P29-C', 'P29-D', 'P29-E', 'P29-F', 'P29-F2', 'P29-F3', 'P29-F4', 'P29-G', 'P29-H', 'P29-I', 'P29-J', 'P29-K', 'P29-L', 'P29-M', 'P29-N', 'P29-M2', 'P29-O', 'P29-O-R1', 'P29-O1-R1', 'P29-O1-R2', 'P29-O2', 'P29-Q', 'P29-R', 'P29-S', 'P29-T', 'P29-U', 'P29-V', 'P29-W', 'P29-W-R1', 'P29-W-R2', 'P29-X', 'P29-Y', 'P29-Z',
-      'P29-AA', 'P29-AB', 'P29-AB-R1', 'P29-AB-R2', 'P29-AB-R2-R1', 'P30-A', 'P30-B', 'P30-C', 'P41-A', 'P42-A', 'P42-A-R1', 'P43-F', 'P44-A', 'P44-B', 'P44-C', 'P44-D',
+      'P29-AA', 'P29-AB', 'P29-AB-R1', 'P29-AB-R2', 'P29-AB-R2-R1', 'P30-A', 'P30-B', 'P30-C', 'P41-A', 'P42-A', 'P42-A-R1', 'P43-F', 'P43-F-R1', 'P44-A', 'P44-B', 'P44-C', 'P44-D',
     ];
 
     for (const id of newPartIds) {
