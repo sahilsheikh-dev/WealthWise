@@ -5,8 +5,9 @@
 ## CR-110-R1 planned work
 
 CR-110's original planned-only row is retained and marked **Revised by
-CR-110-R1**. Five P43 rows are Planned, each with dependencies and
-`Evidence: not started`.
+CR-110-R1**. Its original five P43 rows are preserved as evidence; P43-C/D
+were relocated to P21-F/P20-W, and P43-A is Done. P43-B/E remain
+Planned with dependencies and `Evidence: not started`.
 The authorized local phase `phase/43-lifecycle-and-transaction-planning` and
 task `task/P43-A-plan-cr110` were created from `develop` for the PR flow.
 Task PR #146 merged into the phase at
@@ -16,27 +17,26 @@ the phase branch is retained. Phase PR #147 merged into `develop` at
 
 - **P43-A — Lifecycle tracking separation:** list `cleanup` and
   `qa-and-release` outside numbered development phases, alongside `develop`
-  and `release/vX.Y.Z`; document current branches
-  `phase/27-cleanup` and `phase/28-qa-and-release` with proposed ongoing
-  branch names `cleanup` and `qa-and-release`; preserve P27/P28 completion
-  evidence. Update
-  PROGRESS.md, section 12, memory, tests and Markdown references when the
-  plan is executed. Documentation reordering only; Git chronology unchanged
-  unless the owner gives explicit written authorization for a specific
-  rewrite. Open decision: remote branch renames, which require pushing new
-  names and deleting the old remote refs. Retain stale phase tags as
-  previously directed.
+  and `release/vX.Y.Z`; preserve P27/P28 completion evidence. Both remote
+  renames are complete and verified: `cleanup` retained the old tip
+  `a2fa24f930da15c49f779577eb749b33f11a7059`, and `qa-and-release` retained
+  `9d914638e50462cbadef84df3294ed07cbf42732`. The old remote refs are absent.
+  Historical branch name: `phase/27-cleanup`; historical branch name:
+  `phase/28-qa-and-release`. The stale phase tags remain unchanged.
 - **P43-B — Tag and integration audit:** preserve every `vX.Y.Z` release tag.
   Non-release phase/task-tag deletion is blocked on owner approval of an exact
   tag list. Produce a separate report-only audit of branch, PR and merge
   balance; report in chat or `/tmp`, not Git.
-- **P43-C — Emergency Fund target editing:** edit from the Emergency Fund
-  screen and reflect the value on that screen, Home, Goals, allocation and
-  bucket targets, and in the three-month minimum-floor logic. Require one
-  domain action, one Zustand `set`, one persisted write and Undo; validation,
-  tests at font scales 1.3 and 2.0, and DEC-DEMO data. `app/(tabs)/index.tsx`
-  is user-owned; editing it needs explicit owner authorization.
-- **P43-D — Transaction form:** derive investment category with
+- **P21-F (Previously: P43-C) — Emergency Fund target editing:** edit from
+  the Emergency Fund screen and reflect the value on that screen, Home, Goals,
+  allocation and bucket targets, and in the three-month minimum-floor logic.
+  Require one domain action, one Zustand `set`, one persisted write and Undo;
+  validation, tests at font scales 1.3 and 2.0, and DEC-DEMO data.
+  `app/(tabs)/index.tsx` is user-owned; editing it needs explicit task
+  authorization. Placement: rule 4; searched dashboard, register, P21-A–E,
+  roadmap, memory and Emergency Fund modules; related P21-A–E; reason: the
+  work extends the existing Emergency Fund feature area.
+- **P20-W (Previously: P43-D) — Transaction form:** derive investment category with
   `investCategoryFor` only after a holding is selected; show only
   user-created/Budget-defined expense categories plus Custom; design category
   (e.g. Wants/Expenses) versus item (e.g. party/others) hierarchy and
@@ -44,7 +44,10 @@ the phase branch is retained. Phase PR #147 merged into `develop` at
   claims v24. Schema impact remains undetermined; any bump needs a separate
   plan, identity-preserving migration, premigration archive and backup import
   support. Plan test-first regressions, demo-data updates and backup
-  compatibility checks.
+  compatibility checks. Placement: rule 4; searched dashboard, register,
+  P20-O/P, P3 history, roadmap, memory and transaction form modules; related
+  P20-O and P20-P; reason: the work extends the existing Budget/category form
+  area.
 - **P43-E — GitHub issue strategy (plan only):** one issue per ledger part
   or CR; phase/type/status labels; release milestones; pending issues open;
   completed issues retrospective and closed; verified commits, PRs, merge
@@ -52,6 +55,11 @@ the phase branch is retained. Phase PR #147 merged into `develop` at
   GitHub sets actual timestamps; original dates are text only. About 216
   ledger parts need deduplication; assess API rate, batching and noise. Issue
   creation is a separate owner-approved task; create no issues now.
+- **P43-F — Work placement and CM-2:** add R6, an indexed guide, ledger tests,
+  a placement audit and CM-2 activation. Test-first commits and the complete
+  six-gate run are recorded in [PROGRESS.md](../PROGRESS.md); all gates passed
+  after retrying the network-dependent Expo Doctor gate. Task/phase PR
+  integration remains pending. No feature implementation is included.
 - No app implementation, tag operation, issue creation or history rewrite is
   included. The branch/PR/merge-balance report is not a Git deliverable. The
   test-first commit is `e5114e01f363d6de5a12acb61886039469d4a86f`.
@@ -59,9 +67,10 @@ the phase branch is retained. Phase PR #147 merged into `develop` at
 
 ## CR-111 planned work
 
-CR-111 remains planning-only. P20-A-R3 is a revision to completed P20-A-R2;
-P44 is a new development phase; CM-2 is a repository rule outside the
-dashboard. All Planned rows require dependencies and `Evidence: not started`.
+CR-111's product work remains planning-only. P20-A-R3 is a revision to
+completed P20-A-R2; P44 is a new development phase; CM-2 is now Active and
+enforced outside the dashboard. Planned product rows retain dependencies and
+`Evidence: not started`.
 P20-A-R3 is integrated through task PR #149 (`7a5fed6c4a98d8394652e0dbb499b9aa810bae29`)
 and phase PR #150 (`4170545cbaa8a4f37d4583b5c29c909c0c99a015`).
 
@@ -120,21 +129,38 @@ and phase PR #150 (`4170545cbaa8a4f37d4583b5c29c909c0c99a015`).
   day tap; and a Budget over-plan overlay. More than three add-ons would
   bloat v1. Recommended v1 is the heat grid, day detail, weekday summary and
   no-spend streak.
-- **CM-2 — Git sync rule:** Planned, not enforced; “Activate now?” defaults
-  to No. Proposed procedure after a commit/PR merge to a target
-  (task→phase, phase→develop, release→main, main→develop):
-  `git fetch --all --prune`, `git switch <target branch>`, then
-  `git pull --ff-only`. Refuse and report if the worktree is dirty, the
-  target lacks an upstream, or fast-forward fails. Never push, force-push or
-  rewrite history. Delete a merged task branch after switching and report
-  the resulting branch and HEAD. “Pull all branches” means fetch every
-  remote, then fast-forward only the selected branch because `git pull`
-  updates only the current branch.
-- Editing `AGENTS.md`, `docs/memory/rules.md` or `CONTRIBUTING.md` (if it lists
-  agent workflow), and activating/enforcing CM-2, are out of scope until
-  separately authorized. PROGRESS section 3 records the proposal only. No
-  GitHub issues, schema, app behavior, demo data, device checks, tags or
-  history changes are part of this plan.
+- **CM-2 — Git sync rule:** Active and enforced in `AGENTS.md`, `rules.md`,
+  `CONTRIBUTING.md` and PROGRESS section 3 using the owner's exact sentence.
+  It does not authorize pushes. No app behavior, schema, demo data, device
+  checks, tags or history changes are part of the rule.
+
+## CR-112 work in progress
+
+- P43-A is Done. Remote `cleanup` and `qa-and-release` were each pushed at
+  their original tips, compared against the old refs before deletion, and
+  verified afterward with only the new remote names present. Tag targets and
+  all six protected blob IDs remain unchanged. See the rename evidence in
+  [PROGRESS.md](../PROGRESS.md).
+- P43-F adds R6 and the indexed work-placement guide. Test-first commits:
+  `e2f0263`, `d24acd9`, `e7c134a`, `770393d` and `bdbe159`; rules/guide commit
+  `7dab04b`; placement-audit commit `5841373`. The initial Expo Doctor attempt
+  exited 1 on `ENOTFOUND registry.npmjs.org`; the network retry passed 21/21,
+  then all six ordered gates exited 0. Gate 1: 101 suites, 1,324 passed,
+  1 skipped; coverage 95.96/92.15/98.02/97.62%. No physical-device check
+  was run. Task/phase PR integration remains pending.
+- P31-E CI work moved to `qa-and-release` lifecycle tracking under rule 1.
+  It is still Planned and needs a real PR run before branch protection.
+- P39-A–H stay in P39 by default. The owner must decide whether the broad
+  app/privacy/storage/security audit should move to QA/release lifecycle
+  tracking. Default: no move.
+- P40-A/B stay under Agent-context hygiene by default. Owner decision: treat
+  this bounded documentation measurement/archive work as a numbered feature
+  area, or move it into ongoing cleanup/repository-process tracking under
+  rule 1? Default: no move because the work is finite rather than an ongoing
+  lifecycle activity.
+- All placements, exact row mappings, count changes and assertion replacements
+  are in [PROGRESS.md](../PROGRESS.md). No Planned application feature was
+  implemented and no device verification is claimed.
 
 ## v1.2.0 release close-out
 
@@ -157,7 +183,8 @@ and phase PR #150 (`4170545cbaa8a4f37d4583b5c29c909c0c99a015`).
   through PRs #127, #128 and #129. Final ledger/test evidence was merged and
   synchronized through PRs #130–#133; `main` and `develop` trees match.
 - The final ledger/test correction task PR #134 merged into the retained
-  `phase/28-qa-and-release` at `2d3a0f6`; see the P28-F-R6-R2 ledger entry.
+  `qa-and-release` (historical branch name: `phase/28-qa-and-release`) at
+  `2d3a0f6`; see the P28-F-R6-R2 ledger entry.
 - P28-F-R6-R3 task PR #138 merged into the retained phase at `6f5b1cb`;
   phase PR #139 merged to `develop` at `fd7ba55`. O45-O60 are recorded as
   owner-reported Pass, with device identity details absent.

@@ -12,6 +12,7 @@ const memoryFiles = [
   'status.md',
   'open-items.md',
   'working-style.md',
+  'work-placement.md',
 ];
 const header = /^<!-- Purpose: .+ \| Last updated: \d{4}-\d{2}-\d{2} \| Updates: .+ -->/;
 
@@ -61,7 +62,19 @@ describe('shared AI memory documents', () => {
     expect(projectTests?.[2]).toBe(currentTests?.[2]);
     expect(currentTests?.[1]).toBe(latestRun?.[1]);
     expect(currentTests?.[2]).toBe(latestRun?.[2]);
-    expect(status).toContain('**CR-111 (2026-11-12) is Planned only:**');
+    expect(status).toContain('**CR-111 (2026-11-12) has Planned product work:**');
     expect(openItems).toContain('## CR-111 planned work');
+  });
+
+  it('requires the work-placement quick start and indexed page', () => {
+    const index = readMemoryFile('README.md');
+    const page = readMemoryFile('work-placement.md');
+    expect(index).toContain('work-placement.md');
+    expect(page).toMatch(header);
+    expect(page).toMatch(/^# Work placement/m);
+    expect(page).toContain('1. Search the dashboard');
+    expect(page).toContain('P20-A-R3');
+    expect(page).toContain('P44');
+    expect(page).toContain('CM-2');
   });
 });
