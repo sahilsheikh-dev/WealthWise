@@ -31,8 +31,11 @@
   Historical branch name: `phase/27-cleanup`; historical branch name:
   `phase/28-qa-and-release`. The retained `phase-27-complete`,
   `phase-28-complete` and `phase-29-complete` tag targets are unchanged.
-  P43-F remains In progress until its task/phase PRs merge. No
-  application/schema/demo, release, tag, issue or history work occurred.
+  P43-A and P43-F are Done. Task PR #153 merged into P43 at
+  `6e8632f61226fabbfdeca1040f6dee097a808607`; phase PR #154 merged into
+  `develop` at `faa126ba75ee58ee703b8e43b375aece91c8f4d1`. P43-F-R1 records
+  the verified merge evidence. No application/schema/demo, release, tag,
+  issue or history work occurred.
 - **CR-110-R1 (2026-11-12) is Planned only:** CR-110 is marked Revised by
   CR-110-R1. Five P43 items record lifecycle tracking separation, tag cleanup and
   a report-only branch/PR/merge audit, Emergency Fund target editing,
