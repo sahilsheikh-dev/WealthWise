@@ -106,6 +106,55 @@ describe('permanent progress ledger', () => {
     expect(openItems).toContain("`codex-changes` was deleted at the owner's direction; no work is to be ported");
   });
 
+  it('records CR-110-R1 planned scope and separates lifecycle activities from phases', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const roadmap = ledger.split('## 9. Upcoming roadmap')[1]?.split('## 10. Verification matrix')[0] ?? '';
+    const branchIndex = ledger.split('## 12. Phase branch index')[1] ?? '';
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(dashboard.split('\n').filter((line) => /^\| P43-[A-E] \|/.test(line))).toHaveLength(5);
+    for (const id of ['P43-A', 'P43-B', 'P43-C', 'P43-D', 'P43-E']) {
+      const row = dashboard.split('\n').find((line) => line.startsWith(`| ${id} |`));
+      expect(row).toContain('| Planned |');
+      expect(row).toContain('Dependencies:');
+      expect(row).toContain('Evidence: not started');
+    }
+    expect(dashboard).toContain('Standalone lifecycle activities (not counted as development phases)');
+    expect(dashboard).toContain('| `cleanup` | Planned |');
+    expect(dashboard).toContain('| `qa-and-release` | Planned |');
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-110-R1 |'))).toHaveLength(1);
+    expect(register.split('\n').find((line) => line.startsWith('| CR-110 |'))).toContain('Revised by CR-110-R1');
+    expect(register.split('\n').find((line) => line.startsWith('| CR-110-R1 |'))).toContain('| Planned |');
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-110-R1 |'))).toHaveLength(1);
+    expect(promptLog.split('\n').find((line) => line.startsWith('| CR-110 |'))).toContain('Revised by CR-110-R1');
+    expect(promptLog.split('\n').find((line) => line.startsWith('| CR-110-R1 |'))).toContain('not started');
+    expect(roadmap).toContain('Standalone lifecycle activities (Planned; outside numbered development phases)');
+    expect(roadmap).toContain('**`cleanup`**');
+    expect(roadmap).toContain('**`qa-and-release`**');
+    expect(roadmap).toContain('documentation reordering only; Git chronology unchanged unless the owner gives explicit written authorization for a specific rewrite');
+    expect(roadmap).toContain('blocked on owner approval of an exact tag list');
+    expect(roadmap).toContain('three-month minimum floor');
+    expect(roadmap).toContain('font-scale tests at 1.3 and 2.0');
+    expect(roadmap).toContain('schema impact to be determined in design');
+    expect(roadmap).toContain('one issue per ledger part or CR');
+    expect(roadmap).toContain('API rate and noise concerns');
+    expect(branchIndex).toContain('| P43 | `phase/43-lifecycle-and-transaction-planning` | — | — | 5 |');
+    expect(branchIndex).toContain('Standalone lifecycle branch index (planned)');
+    expect(branchIndex).toContain('`phase/27-cleanup`');
+    expect(branchIndex).toContain('`phase/28-qa-and-release`');
+    expect(roadmap).not.toMatch(/^\d+\. \*\*P(?:27|28) —/m);
+    expect(roadmap).toContain('P27/P28 remain completed historical milestones');
+    expect(roadmap).toContain('P43-C — Emergency Fund target editing');
+    expect(roadmap).toContain('P43-D — Transaction form');
+    expect(roadmap).toContain('P43-E — GitHub issue strategy');
+    expect(openItems).toContain('## CR-110-R1 planned work');
+    expect(openItems).toContain('phase/43-lifecycle-and-transaction-planning');
+    expect(status).toContain('**CR-110-R1 (2026-11-12) is Planned only:**');
+  });
+
   it('lists every fix and CR in the dashboard or register', () => {
     const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
     const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
@@ -127,7 +176,7 @@ describe('permanent progress ledger', () => {
       'CR-58', 'CR-59', 'CR-60', 'CR-61', 'CR-62', 'CR-63', 'CR-64', 'CR-65',
       'CR-66', 'CR-67', 'CR-68', 'CR-69', 'CR-70', 'CR-71', 'CR-72', 'CR-73', 'CR-74', 'CR-75',
       'CR-76', 'CR-77', 'CR-78', 'CR-79', 'CR-80', 'CR-81', 'CR-82', 'CR-83', 'CR-84', 'CR-85', 'CR-86', 'CR-87',
-      'CR-88', 'CR-89', 'CR-90', 'CR-91', 'CR-92', 'CR-93', 'CR-94', 'CR-95', 'CR-96', 'CR-97', 'CR-98', 'CR-99', 'CR-100', 'CR-101', 'CR-102', 'CR-103', 'CR-106', 'CR-107', 'CR-109',
+      'CR-88', 'CR-89', 'CR-90', 'CR-91', 'CR-92', 'CR-93', 'CR-94', 'CR-95', 'CR-96', 'CR-97', 'CR-98', 'CR-99', 'CR-100', 'CR-101', 'CR-102', 'CR-103', 'CR-106', 'CR-107', 'CR-109', 'CR-110',
     ]) {
       expect(statusRecords).toContain(id);
     }
@@ -150,7 +199,7 @@ describe('permanent progress ledger', () => {
   it('logs every prompt ID exactly once', () => {
     const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
     const promptIds = [
-      'P41-B-R1',
+      'P41-B-R1', 'CR-110-R1',
       'P01', 'P02', 'P03', 'P04', 'P05', 'P06', 'P06-FIX-R1',
       'P07', 'P08', 'P09', 'P10', 'P11', 'P12', 'P13', 'P14',
       'P15-A', 'P15-A2', 'P15-B', 'P15-C',
@@ -163,7 +212,7 @@ describe('permanent progress ledger', () => {
       'P28-A', 'P28-A-R1', 'P28-B', 'P28-C', 'P28-C-R1', 'P28-C-R2', 'P28-C-R3', 'P28-C-R4', 'P28-D', 'P28-E', 'P28-E-R1', 'P28-E-R2', 'P28-E-R3', 'P28-E-R4', 'P28-E-R5', 'P28-E-R5-R1', 'P28-F', 'P28-F-R1', 'P28-F-R2', 'P28-F-R2-R1', 'P28-F-R3', 'P28-F-R3-R1', 'P28-F-R3-R2', 'P28-F-R3-R3', 'P28-F-R3-R3-R1', 'P28-F-R4', 'P28-F-R4-R1', 'P28-F-R4-R1-R1', 'P28-F-R4-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1-R1-R1', 'P28-F-R6-R2', 'P28-F-R6-R3', 'P28-F-R6-R3-R1',
       'P29-A', 'P29-B', 'P29-C', 'P29-D', 'P29-E', 'P29-F', 'P29-F2', 'P29-F3', 'P29-F4', 'P29-G', 'P29-H', 'P29-I', 'P29-J', 'P29-K', 'P29-L', 'P29-M', 'P29-N', 'P29-M2', 'P29-O', 'P29-O-R1', 'P29-O1-R1', 'P29-O1-R2', 'P29-O2', 'P29-Q', 'P29-R', 'P29-S', 'P29-T', 'P29-U', 'P29-V', 'P29-W', 'P29-W-R1', 'P29-W-R2', 'P29-X', 'P29-Y', 'P29-Z',
       'P29-AA', 'P29-AB', 'P29-AB-R1', 'P29-AB-R2', 'P29-AB-R2-R1', 'P30-A', 'P30-B', 'P30-C', 'P41-A',
-      'CR-92', 'CR-93', 'CR-94', 'CR-95', 'CR-96', 'CR-106', 'CR-107', 'CR-109',
+      'CR-92', 'CR-93', 'CR-94', 'CR-95', 'CR-96', 'CR-106', 'CR-107', 'CR-109', 'CR-110',
     ];
 
     const loggedIds = promptLog.split('\n')
@@ -257,7 +306,7 @@ describe('permanent progress ledger', () => {
     expect(roadmapLabels).toContain('P31');
     expect(branchLabels).toEqual([
       ...Array.from({ length: 30 }, (_, index) => `P${index + 1}`),
-      'P41', 'P42',
+      'P41', 'P42', 'P43',
     ]);
 
     let inSubjectMap = false;
@@ -448,7 +497,7 @@ describe('permanent progress ledger', () => {
     }
 
     const rows = index.split('\n').filter((line) => /^\| P\d+ \|/.test(line));
-    expect(rows).toHaveLength(32);
+    expect(rows).toHaveLength(33);
     for (const line of rows) {
       const [, phase, branch, tag, commit, count] = line.split('|').map((cell) => cell.trim().replaceAll('`', ''));
       const number = Number(phase?.match(/^P(\d+)$/)?.[1]);
@@ -466,6 +515,13 @@ describe('permanent progress ledger', () => {
         expect(Number(count)).toBe(2);
         continue;
       }
+      if (number === 43) {
+        expect(branch).toBe('phase/43-lifecycle-and-transaction-planning');
+        expect(tag).toBe('—');
+        expect(commit).toBe('—');
+        expect(Number(count)).toBe(5);
+        continue;
+      }
       const paddedPhase = String(number).padStart(2, '0');
       expect(branch).toMatch(new RegExp(`^phase/${paddedPhase}-[a-z0-9-]+$`));
       expect(tag).toBe(`phase-${paddedPhase}-complete`);
@@ -474,7 +530,7 @@ describe('permanent progress ledger', () => {
     }
   });
 
-  it('records the unchanged FX/CH IDs, CR-4 through CR-108 and current phase work', () => {
+  it('records the unchanged FX/CH IDs, CR-4 through CR-110 and current phase work', () => {
     const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
     const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
     const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
@@ -494,7 +550,7 @@ describe('permanent progress ledger', () => {
       'CR-62', 'CR-63', 'CR-64', 'CR-65', 'CR-66', 'CR-67', 'CR-68', 'CR-69',
       'CR-70', 'CR-71', 'CR-72', 'CR-73', 'CR-74', 'CR-75', 'CR-76', 'CR-77',
       'CR-78', 'CR-79', 'CR-80', 'CR-81', 'CR-82', 'CR-83', 'CR-84', 'CR-85', 'CR-86', 'CR-87',
-      'CR-88', 'CR-89', 'CR-90', 'CR-91', 'CR-92', 'CR-93', 'CR-94', 'CR-95', 'CR-96', 'CR-97', 'CR-106', 'CR-107', 'CR-108',
+      'CR-88', 'CR-89', 'CR-90', 'CR-91', 'CR-92', 'CR-93', 'CR-94', 'CR-95', 'CR-96', 'CR-97', 'CR-106', 'CR-107', 'CR-108', 'CR-109', 'CR-110',
     ]) {
       expect(`${dashboard}\n${register}`).toContain(id);
     }
