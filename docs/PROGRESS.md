@@ -4199,6 +4199,30 @@ An item is `Done` only when its named source and test evidence are available.
 Paths below are repository-relative. Baseline results are not completion
 evidence for the fixes.
 
+### 2026-11-12 — CR-114 independent entities, empty slots and R7 verification
+
+- All six required gates ran sequentially on the documentation task branch and exited 0:
+
+  | Gate | Command | Exit / result |
+  |---:|---|---|
+  | 1 | `npm test -- --coverage --watchman=false` | 0; 101 suites; 1,327 passed, 1 skipped (1,328 total); coverage 95.96/92.15/98.02/97.62% statements/branches/functions/lines; pure `src/lib` 100% |
+  | 2 | `npx tsc --noEmit` | 0 |
+  | 3 | `npx expo lint` | 0 |
+  | 4 | `npx expo-doctor` | 0; 21/21 checks passed |
+  | 5 | `npx expo export --platform android` | 0 |
+  | 6 | `npx expo export --platform ios` | 0 |
+
+- Replaced assertions (none weakened):
+
+  | Old assertion | New assertion | Reason |
+  |---|---|---|
+  | Section 12 was the final section (`Phase branch index`). | Section 13 `Independent entities` is added with subsections `cleanup`, `qa-and-release`, `schema-migration`, `documentation`, and `Cancelled / unassigned`. | Separate ongoing independent lifecycle entities from numbered product phases. |
+  | P7, P27, P28 and P32 were counted in dashboard progress bars (187/229, 82%). | P7, P27, P28 and P32 appear as `Empty (reserved)` in dashboard and branch index with 0 subtasks counted; overall progress derives from non-empty phases (142/184, 77%). | Free phase numbers remain reserved empty slots without renumbering or rewriting history. |
+  | P28 rows appeared in Section 2 (Status dashboard). | 14 release/QA rows moved to Section 13 `qa-and-release`, 26 documentation rows moved to Section 13 `documentation`, each keeping legacy ID and adding a Placement line. | Reclassify historical rows to their owning independent entity. |
+  | P7 and P27-A appeared in Section 2 (Status dashboard). | P7 moved to Section 13 `schema-migration`; P27-A moved to Section 13 `cleanup`. | Ongoing migration and cleanup tracking separated to dedicated lifecycle branches. |
+  | P32-A, P32-B and P32-C occupied phase 32 in Section 2. | P32-A–C moved to Section 13 `Cancelled / unassigned`. | Preserves owner-cancelled screenshot capture history while keeping phase 32 an empty reserved slot. |
+  | R6 rules 1–5 governed all work placement. | R7 slot-filling rule added: new features may fill an empty slot only if adjacent to the phase before or after it (P7 for P6/P8; P27 for P26; P28 for P29; P32 for P31/P33). | Precedence: R6 rules 1–3 first, then R7 before R6 rule 5. |
+
 ### 2026-11-12 — CR-112 corrected six-gate run
 
 - The first `npx expo-doctor` attempt exited 1 because DNS resolution for
@@ -10316,6 +10340,35 @@ Gradle build, version bump, or release preparation was performed.
   physical-device behavior was checked; no EAS or Gradle build was run.
 
 ## 11. Session and release log
+
+### CR-114 — Restructure independent entities, empty slots and R7 (2026-11-12)
+
+- Restructured work tracking into independent lifecycle entities: `cleanup`,
+  `qa-and-release`, `schema-migration`, and `documentation`, plus a Cancelled /
+  unassigned bucket under Section 13 in `docs/PROGRESS.md`.
+- Empty reserved slots established: P7, P27, P28 and P32. Phase progress bars
+  and totals derive only from non-empty product phases (142/184, 77%).
+- R7 slot-filling rule added to AGENTS.md, docs/memory/rules.md,
+  docs/memory/work-placement.md, CONTRIBUTING.md and PROGRESS.md section 3.
+- Standalone documentation lifecycle branch `documentation` established
+  alongside `cleanup`, `qa-and-release` and `schema-migration`. Standalone
+  docs tasks branch as `task/docs-<slug>` and merge back `--no-ff`.
+- Remote branches: `schema-migration` and `documentation` pushed at their exact
+  tips and verified with `git ls-remote`; obsolete remote ref
+  `origin/phase/07-schema-migration` deleted. Historical completion tags
+  `phase-07-complete`, `phase-27-complete`, and `phase-28-complete` retained.
+- Git history map produced at `/tmp/history_map.md` classifying all 275 commits
+  and 95 PRs without rewriting any Git history.
+- All six ordered gates passed on the task branch:
+  1 `npm test -- --coverage --watchman=false` (0; 101 suites, 1,327 passed, 1 skipped)
+  2 `npx tsc --noEmit` (0)
+  3 `npx expo lint` (0)
+  4 `npx expo-doctor` (0; 21/21 checks)
+  5 `npx expo export --platform android` (0)
+  6 `npx expo export --platform ios` (0)
+- Decisions Q1–Q4 recorded: Q1 push authorized for schema-migration/documentation;
+  Q2 documentation standalone lifecycle workflow; Q3 keep historical tags;
+  Q4 history map deliverable.
 
 ### CR-110-R1 — Lifecycle and transaction planning (2026-11-12)
 
