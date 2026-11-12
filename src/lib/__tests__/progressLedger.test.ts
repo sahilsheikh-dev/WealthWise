@@ -122,37 +122,40 @@ describe('permanent progress ledger', () => {
       expect(row).toContain('Dependencies:');
       expect(row).toContain('Evidence: not started');
     }
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P43-A |'))).toContain('| Done |');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P43-F |'))).toContain('| Done |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P43-A |'))).toContain('| In progress |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P43-F |'))).toContain('| In progress |');
     expect(dashboard).toContain('Standalone lifecycle activities (not counted as development phases)');
-    expect(dashboard).toContain('| `cleanup` | Active |');
-    expect(dashboard).toContain('| `qa-and-release` | Active |');
+    expect(dashboard).toContain('| `cleanup` | `cleanup` | `cleanup` | Active (local; remote rename pending approval review) |');
+    expect(dashboard).toContain('| `qa-and-release` | `qa-and-release` | `qa-and-release` | Active (local; remote rename pending approval review) |');
     expect(register.split('\n').filter((line) => line.startsWith('| CR-110-R1 |'))).toHaveLength(1);
     expect(register.split('\n').find((line) => line.startsWith('| CR-110 |'))).toContain('Revised by CR-110-R1');
     expect(register.split('\n').find((line) => line.startsWith('| CR-110-R1 |'))).toContain('| Planned |');
     expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-110-R1 |'))).toHaveLength(1);
     expect(promptLog.split('\n').find((line) => line.startsWith('| CR-110 |'))).toContain('Revised by CR-110-R1');
     expect(promptLog.split('\n').find((line) => line.startsWith('| CR-110-R1 |'))).toContain('not started');
-    expect(roadmap).toContain('Standalone lifecycle activities (Planned; outside numbered development phases)');
+    expect(roadmap).toContain('Standalone lifecycle activities (Active; outside numbered development phases)');
     expect(roadmap).toContain('**`cleanup`**');
     expect(roadmap).toContain('**`qa-and-release`**');
-    expect(roadmap).toContain('documentation reordering only; Git chronology unchanged unless the owner gives explicit written authorization for a specific rewrite');
+    expect(roadmap).toMatch(/Documentation\s+reordering only; Git chronology remains unchanged/);
     expect(roadmap).toContain('blocked on owner approval of an exact tag list');
-    expect(roadmap).toContain('three-month minimum floor');
-    expect(roadmap).toContain('font-scale tests at 1.3 and 2.0');
-    expect(roadmap).toContain('schema impact to be determined in design');
+    const emergencyFund = dashboard.split('\n').find((line) => line.startsWith('| P21-F |')) ?? '';
+    expect(emergencyFund).toContain('three-month minimum floor');
+    expect(emergencyFund).toContain('font-scale tests at 1.3/2.0');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-W |')))
+      .toContain('resolve schema/backup impact before any implementation');
     expect(roadmap).toContain('one issue per ledger part or CR');
     expect(roadmap).toContain('API rate and noise concerns');
     expect(branchIndex).toContain('| P43 | `phase/43-lifecycle-and-transaction-planning` | — | — | 4 |');
-    expect(branchIndex).toContain('Standalone lifecycle branch index (active)');
-    expect(branchIndex).toContain('| `cleanup` | `cleanup` | `cleanup` | Active |');
-    expect(branchIndex).toContain('| `qa-and-release` | `qa-and-release` | `qa-and-release` | Active |');
+    expect(branchIndex).toContain('Standalone lifecycle branch index (active; remote rename pending)');
+    expect(branchIndex).toContain('| `cleanup` | `cleanup` (local; remote ref pending approval review) | `cleanup` | Active |');
+    expect(branchIndex).toContain('| `qa-and-release` | `qa-and-release` (local; remote ref pending approval review) | `qa-and-release` | Active |');
     expect(branchIndex).toContain('| P43 | `phase/43-lifecycle-and-transaction-planning` | — | — | 4 |');
     expect(roadmap).not.toMatch(/^\d+\. \*\*P(?:27|28) —/m);
     expect(roadmap).toContain('P27/P28 remain completed historical milestones');
     expect(roadmap).toContain('P21-F — Emergency Fund target editing');
-    expect(roadmap).toContain('P20-W — Transaction form');
+    expect(roadmap).toContain('P20-W (Previously: P43-D)');
     expect(roadmap).toContain('P43-E — GitHub issue strategy');
+    expect(roadmap).toContain('P43-F — Work placement and CM-2');
     expect(openItems).toContain('## CR-110-R1 planned work');
     expect(openItems).toContain('phase/43-lifecycle-and-transaction-planning');
     expect(status).toContain('**CR-110-R1 (2026-11-12) is Planned only:**');
@@ -204,7 +207,7 @@ describe('permanent progress ledger', () => {
     expect(dashboard).not.toContain('| CM-2 |');
     expect(register.split('\n').filter((line) => line.startsWith('| CR-111 |'))).toHaveLength(1);
     expect(register.split('\n').find((line) => line.startsWith('| CM-2 |')))
-      .toContain('| Planned |');
+      .toContain('| Active |');
     expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-111 |'))).toHaveLength(1);
     expect(promptLog.split('\n').filter((line) => line.startsWith('| CM-2 |'))).toHaveLength(1);
     expect(promptLog.split('\n').filter((line) => /^\| P44-[A-D] \|/.test(line))).toHaveLength(4);
@@ -221,7 +224,7 @@ describe('permanent progress ledger', () => {
     expect(roadmap).toContain('CM-2 Git sync rule (Active; enforced)');
     expect(roadmap).toContain('git fetch --all --prune');
     expect(register.split('\n').find((line) => line.startsWith('| CM-2 |')))
-      .toContain('Active; enforced');
+      .toContain('| Active |');
     expect(branchIndex).toContain('| P44 | `phase/44-spending-heatmap` | — | — | 4 |');
     expect(status).toContain('CR-111');
     expect(openItems).toContain('CR-111');
@@ -230,21 +233,26 @@ describe('permanent progress ledger', () => {
   it('enforces current placement records, lifecycle names and CM-2 wording', () => {
     const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
     const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
     const rules = ledger.split('## 3. Standing rules')[1]?.split('## 4. Architecture and decisions')[0] ?? '';
     const placementMoves = ledger.split('### Placement moves')[1]?.split('\n### ')[0] ?? '';
     const exactCm2 = 'After any merge that lands on a target branch (task->phase, phase->develop, release->main, main->develop): git fetch --all --prune; git switch <target>; git pull --ff-only. Refuse and report if the worktree is dirty, the fast-forward fails or the target has no upstream. This rule never authorizes pushing; R3 is unchanged.';
-    const scopedDocs = ['AGENTS.md', 'CONTRIBUTING.md', 'docs/PROGRESS.md', 'docs/memory/rules.md', 'docs/memory/open-items.md'];
+    const scopedDocs = ['AGENTS.md', 'CONTRIBUTING.md', 'docs/PROGRESS.md', 'docs/memory/rules.md', 'docs/memory/open-items.md', 'docs/releases/README.md'];
 
-    expect(rules).toContain('R6 — WORK PLACEMENT');
+    expect(rules).toContain('R6 — Work placement');
     expect(register).toContain(exactCm2);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-112 |'))).toHaveLength(1);
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-112 |'))).toHaveLength(1);
     expect(ledger).toContain('Placement moves');
     expect(placementMoves).toContain('P43-C');
     expect(placementMoves).toContain('P43-D');
     expect(placementMoves).toContain('P31-E');
+    // Placement cutoff: CR-112. Earlier part rows are grandfathered; each
+    // new or moved row introduced by this task is checked below.
     for (const id of ['P21-F', 'P20-W', 'P43-F']) {
       const rows = dashboard.split('\n').filter((line) => line.startsWith(`| ${id} |`));
       expect(rows).toHaveLength(1);
-      expect(rows[0]).toMatch(/Placement: rule [1-5]; searched .+; related .+; reason .+/);
+      expect(rows[0]).toMatch(/Placement: rule [1-5]; searched .+; related .+; reason:?.+/);
     }
     for (const name of scopedDocs) {
       const content = readFileSync(join(process.cwd(), name), 'utf8');
@@ -259,6 +267,9 @@ describe('permanent progress ledger', () => {
     expect(dashboard).not.toContain('| P31-E |');
     expect(dashboard.split('\n').filter((line) => line.startsWith('| P21-F |'))).toHaveLength(1);
     expect(dashboard.split('\n').filter((line) => line.startsWith('| P20-W |'))).toHaveLength(1);
+    const standaloneCi = dashboard.split('\n').filter((line) => line.includes('Previously: P31-E'));
+    expect(standaloneCi).toHaveLength(1);
+    expect(standaloneCi[0]).toMatch(/Placement: rule 1; searched .+; related .+; reason:?.+/);
   });
 
   it('lists every fix and CR in the dashboard or register', () => {
@@ -313,7 +324,7 @@ describe('permanent progress ledger', () => {
       'P18-R0', 'P18-R1', 'P18-R2', 'P18-R3', 'P18-R4', 'P18-R5',
       'P18-R6', 'P18-LEDGER', 'P18-R7',
       'P19-A', 'P19-B', 'P20-A', 'P20-A-R1', 'P20-A-R2', 'P20-A-R2-R1', 'P20-A-R3', 'P20-B', 'P20-C', 'P20-D', 'P20-E', 'P20-F',
-      'P20-G', 'P20-H', 'P20-I', 'P20-J', 'P20-K', 'P20-L', 'P20-M', 'P20-N', 'P20-N-R1', 'P20-N-R2', 'P20-O', 'P20-P', 'P20-Q', 'P20-R', 'P20-S', 'P20-S-R1', 'P20-S-R1-R1', 'P20-T', 'P20-U', 'P21-A', 'P21-B', 'P21-C', 'P21-C1', 'P21-D', 'P22-A', 'P23-A', 'P23-B', 'P24-A', 'P25-A', 'P25-B', 'P25-C', 'P25-D', 'P25-E', 'P26-A', 'P27-A',
+      'P20-G', 'P20-H', 'P20-I', 'P20-J', 'P20-K', 'P20-L', 'P20-M', 'P20-N', 'P20-N-R1', 'P20-N-R2', 'P20-O', 'P20-P', 'P20-Q', 'P20-R', 'P20-S', 'P20-S-R1', 'P20-S-R1-R1', 'P20-T', 'P20-U', 'P20-W', 'P21-A', 'P21-B', 'P21-C', 'P21-C1', 'P21-D', 'P21-F', 'P22-A', 'P23-A', 'P23-B', 'P24-A', 'P25-A', 'P25-B', 'P25-C', 'P25-D', 'P25-E', 'P26-A', 'P27-A',
       'P23-C', 'P23-D', 'P25-F',
       'P28-A', 'P28-A-R1', 'P28-B', 'P28-C', 'P28-C-R1', 'P28-C-R2', 'P28-C-R3', 'P28-C-R4', 'P28-D', 'P28-E', 'P28-E-R1', 'P28-E-R2', 'P28-E-R3', 'P28-E-R4', 'P28-E-R5', 'P28-E-R5-R1', 'P28-F', 'P28-F-R1', 'P28-F-R2', 'P28-F-R2-R1', 'P28-F-R3', 'P28-F-R3-R1', 'P28-F-R3-R2', 'P28-F-R3-R3', 'P28-F-R3-R3-R1', 'P28-F-R4', 'P28-F-R4-R1', 'P28-F-R4-R1-R1', 'P28-F-R4-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1-R1-R1', 'P28-F-R6-R2', 'P28-F-R6-R3', 'P28-F-R6-R3-R1',
       'P29-A', 'P29-B', 'P29-C', 'P29-D', 'P29-E', 'P29-F', 'P29-F2', 'P29-F3', 'P29-F4', 'P29-G', 'P29-H', 'P29-I', 'P29-J', 'P29-K', 'P29-L', 'P29-M', 'P29-N', 'P29-M2', 'P29-O', 'P29-O-R1', 'P29-O1-R1', 'P29-O1-R2', 'P29-O2', 'P29-Q', 'P29-R', 'P29-S', 'P29-T', 'P29-U', 'P29-V', 'P29-W', 'P29-W-R1', 'P29-W-R2', 'P29-X', 'P29-Y', 'P29-Z',
@@ -345,7 +356,7 @@ describe('permanent progress ledger', () => {
       'P23-C', 'P23-D', 'P25-F',
       'P28-A', 'P28-A-R1', 'P28-B', 'P28-C', 'P28-C-R1', 'P28-C-R2', 'P28-C-R3', 'P28-C-R4', 'P28-D', 'P28-E', 'P28-E-R1', 'P28-E-R2', 'P28-E-R3', 'P28-E-R4', 'P28-E-R5', 'P28-E-R5-R1', 'P28-F', 'P28-F-R1', 'P28-F-R2', 'P28-F-R2-R1', 'P28-F-R3', 'P28-F-R3-R1', 'P28-F-R3-R2', 'P28-F-R3-R3', 'P28-F-R3-R3-R1', 'P28-F-R4', 'P28-F-R4-R1', 'P28-F-R4-R1-R1', 'P28-F-R4-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1-R1-R1', 'P28-F-R6-R2', 'P28-F-R6-R3', 'P28-F-R6-R3-R1',
       'P29-A', 'P29-B', 'P29-C', 'P29-D', 'P29-E', 'P29-F', 'P29-F2', 'P29-F3', 'P29-F4', 'P29-G', 'P29-H', 'P29-I', 'P29-J', 'P29-K', 'P29-L', 'P29-M', 'P29-N', 'P29-M2', 'P29-O', 'P29-O-R1', 'P29-O1-R1', 'P29-O1-R2', 'P29-O2', 'P29-Q', 'P29-R', 'P29-S', 'P29-T', 'P29-U', 'P29-V', 'P29-W', 'P29-W-R1', 'P29-W-R2', 'P29-X', 'P29-Y', 'P29-Z',
-      'P29-AA', 'P29-AB', 'P29-AB-R1', 'P29-AB-R2', 'P29-AB-R2-R1', 'P30-A', 'P30-B', 'P30-C', 'P41-A', 'P42-A', 'P42-A-R1', 'P44-A', 'P44-B', 'P44-C', 'P44-D',
+      'P29-AA', 'P29-AB', 'P29-AB-R1', 'P29-AB-R2', 'P29-AB-R2-R1', 'P30-A', 'P30-B', 'P30-C', 'P41-A', 'P42-A', 'P42-A-R1', 'P43-F', 'P44-A', 'P44-B', 'P44-C', 'P44-D',
     ];
 
     for (const id of newPartIds) {
@@ -361,7 +372,7 @@ describe('permanent progress ledger', () => {
     const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
     const roadmap = ledger.split('## 9. Upcoming roadmap')[1]?.split('## 10. Verification matrix')[0] ?? '';
     const plannedPartIds = [
-      'P31-A', 'P31-B', 'P31-C', 'P31-D', 'P31-E',
+      'P31-A', 'P31-B', 'P31-C', 'P31-D',
       'P32-A', 'P32-B', 'P32-C',
       'P33-A', 'P33-B', 'P33-C',
       'P34-A', 'P34-B', 'P34-C',
@@ -524,12 +535,12 @@ describe('permanent progress ledger', () => {
     const phase18 = counts.get(18);
     expect(phase18?.total).toBeGreaterThan(0);
     expect(phase18?.done).toBe(phase18?.total);
-    for (const phase of [20, 21, 22, 23, 25, 28, 30, 44]) {
+    for (const phase of [20, 21, 22, 23, 25, 28, 30, 31, 43, 44]) {
       const count = counts.get(phase);
       expect(count?.total).toBeGreaterThan(0);
       if (phase === 20) {
         expect(count?.done).toBe(30);
-        expect(count?.total).toBe(31);
+        expect(count?.total).toBe(32);
         expect(dashboard.split('\n').find((line) => line.startsWith('| P20-A-R2 |')))
           .toContain('Revised by P20-A-R2-R1 and P20-A-R3');
         expect(dashboard.split('\n').find((line) => line.startsWith('| P20-A-R3 |')))
@@ -540,6 +551,15 @@ describe('permanent progress ledger', () => {
           .toContain('Done; Revised by P20-S-R1-R1');
         expect(dashboard.split('\n').find((line) => line.startsWith('| P20-S-R1-R1 |')))
           .toContain('| Done |');
+      } else if (phase === 21) {
+        expect(count?.done).toBe(6);
+        expect(count?.total).toBe(7);
+      } else if (phase === 31) {
+        expect(count?.done).toBe(0);
+        expect(count?.total).toBe(4);
+      } else if (phase === 43) {
+        expect(count?.done).toBe(0);
+        expect(count?.total).toBe(4);
       } else if (phase === 22) {
         expect(count?.done).toBe(2);
         expect(count?.total).toBe(2);
@@ -637,7 +657,16 @@ describe('permanent progress ledger', () => {
         expect(branch).toBe('phase/43-lifecycle-and-transaction-planning');
         expect(tag).toBe('—');
         expect(commit).toBe('—');
-        expect(Number(count)).toBe(5);
+        expect(Number(count)).toBe(4);
+        continue;
+      }
+      if (number === 27 || number === 28) {
+        expect(branch).toBe(number === 27
+          ? 'phase/27-cleanup (now cleanup)'
+          : 'phase/28-qa-and-release (now qa-and-release)');
+        expect(tag).toBe(`phase-${String(number).padStart(2, '0')}-complete`);
+        expect(commit).toMatch(/^[0-9a-f]{40}$/);
+        expect(Number(count)).toBe(counts.get(number));
         continue;
       }
       const paddedPhase = String(number).padStart(2, '0');
