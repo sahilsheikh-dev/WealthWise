@@ -66,8 +66,8 @@ apply only that exception and preserve all other rules.
   historical branch, tag, commit or ID is rewritten. A new feature may take an
   empty slot only if it is related to the phase immediately before or after it:
   P7 for backup & security (P6) or investments (P8) work; P27 for
-  accessibility & performance (P26) or adjacent work; P28 for income
-  recurrence / Budget income work; P32 for project health/community (P31) or
+  accessibility & performance (P26) work; P28 for income
+  recurrence / Budget income (P29) work; P32 for project health/community (P31) or
   widgets (P33) work. For multiple consecutive empty slots, apply the same
   adjacency pattern per slot. Unrelated work never takes an empty slot; it
   opens a new phase at the end under R6 rule 5. Precedence: R6 rules 1–3 first

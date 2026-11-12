@@ -46,11 +46,14 @@ Empty phase numbers freed by independent entity separation or cancellation
 (P7, P27, P28, P32) stay reserved as empty slots so no existing phase is
 renumbered and no historical branch, tag, commit or ID is rewritten. A new
 feature may take an empty slot only if it is related to the phase immediately
-before or after it:
+before or after it: P7 for backup & security (P6) or investments (P8) work;
+P27 for accessibility & performance (P26) work; P28 for income
+recurrence / Budget income (P29) work; P32 for project health/community (P31) or
+widgets (P33) work.
 
 - **P7**: backup & security (P6) or investments (P8) work
-- **P27**: accessibility & performance (P26) or adjacent work
-- **P28**: income recurrence / Budget income work (P29-adjacent)
+- **P27**: accessibility & performance (P26) work
+- **P28**: income recurrence / Budget income (P29) work
 - **P32**: project health/community (P31) or widgets (P33) work
 
 For multiple consecutive empty slots, apply the same adjacency pattern per
