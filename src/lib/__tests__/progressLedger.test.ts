@@ -115,16 +115,18 @@ describe('permanent progress ledger', () => {
     const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
     const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
 
-    expect(dashboard.split('\n').filter((line) => /^\| P43-[A-E] \|/.test(line))).toHaveLength(5);
-    for (const id of ['P43-A', 'P43-B', 'P43-C', 'P43-D', 'P43-E']) {
+    expect(dashboard.split('\n').filter((line) => /^\| P43-(?:A|B|E|F) \|/.test(line))).toHaveLength(4);
+    for (const id of ['P43-B', 'P43-E']) {
       const row = dashboard.split('\n').find((line) => line.startsWith(`| ${id} |`));
       expect(row).toContain('| Planned |');
       expect(row).toContain('Dependencies:');
       expect(row).toContain('Evidence: not started');
     }
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P43-A |'))).toContain('| Done |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P43-F |'))).toContain('| Done |');
     expect(dashboard).toContain('Standalone lifecycle activities (not counted as development phases)');
-    expect(dashboard).toContain('| `cleanup` | Planned |');
-    expect(dashboard).toContain('| `qa-and-release` | Planned |');
+    expect(dashboard).toContain('| `cleanup` | Active |');
+    expect(dashboard).toContain('| `qa-and-release` | Active |');
     expect(register.split('\n').filter((line) => line.startsWith('| CR-110-R1 |'))).toHaveLength(1);
     expect(register.split('\n').find((line) => line.startsWith('| CR-110 |'))).toContain('Revised by CR-110-R1');
     expect(register.split('\n').find((line) => line.startsWith('| CR-110-R1 |'))).toContain('| Planned |');
@@ -141,14 +143,15 @@ describe('permanent progress ledger', () => {
     expect(roadmap).toContain('schema impact to be determined in design');
     expect(roadmap).toContain('one issue per ledger part or CR');
     expect(roadmap).toContain('API rate and noise concerns');
-    expect(branchIndex).toContain('| P43 | `phase/43-lifecycle-and-transaction-planning` | — | — | 5 |');
-    expect(branchIndex).toContain('Standalone lifecycle branch index (planned)');
-    expect(branchIndex).toContain('`phase/27-cleanup`');
-    expect(branchIndex).toContain('`phase/28-qa-and-release`');
+    expect(branchIndex).toContain('| P43 | `phase/43-lifecycle-and-transaction-planning` | — | — | 4 |');
+    expect(branchIndex).toContain('Standalone lifecycle branch index (active)');
+    expect(branchIndex).toContain('| `cleanup` | `cleanup` | `cleanup` | Active |');
+    expect(branchIndex).toContain('| `qa-and-release` | `qa-and-release` | `qa-and-release` | Active |');
+    expect(branchIndex).toContain('| P43 | `phase/43-lifecycle-and-transaction-planning` | — | — | 4 |');
     expect(roadmap).not.toMatch(/^\d+\. \*\*P(?:27|28) —/m);
     expect(roadmap).toContain('P27/P28 remain completed historical milestones');
-    expect(roadmap).toContain('P43-C — Emergency Fund target editing');
-    expect(roadmap).toContain('P43-D — Transaction form');
+    expect(roadmap).toContain('P21-F — Emergency Fund target editing');
+    expect(roadmap).toContain('P20-W — Transaction form');
     expect(roadmap).toContain('P43-E — GitHub issue strategy');
     expect(openItems).toContain('## CR-110-R1 planned work');
     expect(openItems).toContain('phase/43-lifecycle-and-transaction-planning');
@@ -215,12 +218,47 @@ describe('permanent progress ledger', () => {
     expect(roadmap).toContain('loan proceeds/withdrawals/Borrowed');
     expect(roadmap).toContain('no persisted schema change is Assumed');
     expect(roadmap).toContain('plain seven-column React Native View');
-    expect(roadmap).toContain('CM-2 Git sync rule (Planned; not enforced)');
+    expect(roadmap).toContain('CM-2 Git sync rule (Active; enforced)');
     expect(roadmap).toContain('git fetch --all --prune');
-    expect(roadmap).toContain('Activate now? Default: No');
+    expect(register.split('\n').find((line) => line.startsWith('| CM-2 |')))
+      .toContain('Active; enforced');
     expect(branchIndex).toContain('| P44 | `phase/44-spending-heatmap` | — | — | 4 |');
     expect(status).toContain('CR-111');
     expect(openItems).toContain('CR-111');
+  });
+
+  it('enforces current placement records, lifecycle names and CM-2 wording', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const rules = ledger.split('## 3. Standing rules')[1]?.split('## 4. Architecture and decisions')[0] ?? '';
+    const placementMoves = ledger.split('### Placement moves')[1]?.split('\n### ')[0] ?? '';
+    const exactCm2 = 'After any merge that lands on a target branch (task->phase, phase->develop, release->main, main->develop): git fetch --all --prune; git switch <target>; git pull --ff-only. Refuse and report if the worktree is dirty, the fast-forward fails or the target has no upstream. This rule never authorizes pushing; R3 is unchanged.';
+    const scopedDocs = ['AGENTS.md', 'CONTRIBUTING.md', 'docs/PROGRESS.md', 'docs/memory/rules.md', 'docs/memory/open-items.md'];
+
+    expect(rules).toContain('R6 — WORK PLACEMENT');
+    expect(register).toContain(exactCm2);
+    expect(ledger).toContain('Placement moves');
+    expect(placementMoves).toContain('P43-C');
+    expect(placementMoves).toContain('P43-D');
+    expect(placementMoves).toContain('P31-E');
+    for (const id of ['P21-F', 'P20-W', 'P43-F']) {
+      const rows = dashboard.split('\n').filter((line) => line.startsWith(`| ${id} |`));
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toMatch(/Placement: rule [1-5]; searched .+; related .+; reason .+/);
+    }
+    for (const name of scopedDocs) {
+      const content = readFileSync(join(process.cwd(), name), 'utf8');
+      for (const oldName of ['phase/27-cleanup', 'phase/28-qa-and-release']) {
+        for (const line of content.split('\n').filter((candidate) => candidate.includes(oldName))) {
+          expect(line).toContain(oldName === 'phase/27-cleanup' ? '(now cleanup)' : '(now qa-and-release)');
+        }
+      }
+    }
+    expect(dashboard).not.toContain('| P43-C |');
+    expect(dashboard).not.toContain('| P43-D |');
+    expect(dashboard).not.toContain('| P31-E |');
+    expect(dashboard.split('\n').filter((line) => line.startsWith('| P21-F |'))).toHaveLength(1);
+    expect(dashboard.split('\n').filter((line) => line.startsWith('| P20-W |'))).toHaveLength(1);
   });
 
   it('lists every fix and CR in the dashboard or register', () => {
