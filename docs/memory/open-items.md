@@ -6,7 +6,7 @@
 
 CR-110's original planned-only row is retained and marked **Revised by
 CR-110-R1**. Its original five P43 rows are preserved as evidence; P43-C/D
-were relocated to P21-F/P20-W, and P43-A is in progress. P43-B/E remain
+were relocated to P21-F/P20-W, and P43-A is Done. P43-B/E remain
 Planned with dependencies and `Evidence: not started`.
 The authorized local phase `phase/43-lifecycle-and-transaction-planning` and
 task `task/P43-A-plan-cr110` were created from `develop` for the PR flow.
@@ -17,12 +17,12 @@ the phase branch is retained. Phase PR #147 merged into `develop` at
 
 - **P43-A — Lifecycle tracking separation:** list `cleanup` and
   `qa-and-release` outside numbered development phases, alongside `develop`
-  and `release/vX.Y.Z`; preserve P27/P28 completion evidence. The local
-  documentation and tests are updated. The remote rename was explicitly
-  authorized, but the automatic approval review rejected the GitHub push as
-  repository-content egress. Old remote refs remain unchanged; do not claim
-  P43-A complete until new refs are verified and old refs deleted. Retain
-  stale phase tags exactly as before.
+  and `release/vX.Y.Z`; preserve P27/P28 completion evidence. Both remote
+  renames are complete and verified: `cleanup` retained the old tip
+  `a2fa24f930da15c49f779577eb749b33f11a7059`, and `qa-and-release` retained
+  `9d914638e50462cbadef84df3294ed07cbf42732`. The old remote refs are absent.
+  Historical branch name: `phase/27-cleanup`; historical branch name:
+  `phase/28-qa-and-release`. The stale phase tags remain unchanged.
 - **P43-B — Tag and integration audit:** preserve every `vX.Y.Z` release tag.
   Non-release phase/task-tag deletion is blocked on owner approval of an exact
   tag list. Produce a separate report-only audit of branch, PR and merge
@@ -56,10 +56,10 @@ the phase branch is retained. Phase PR #147 merged into `develop` at
   ledger parts need deduplication; assess API rate, batching and noise. Issue
   creation is a separate owner-approved task; create no issues now.
 - **P43-F — Work placement and CM-2:** add R6, an indexed guide, ledger tests,
-  a placement audit and CM-2 activation. Local test-first commit `e2f0263` is
-  recorded. The six gates and PR integration remain pending; the remote push
-  was rejected by automatic approval review. No feature implementation is
-  included.
+  a placement audit and CM-2 activation. Test-first commits and the complete
+  six-gate run are recorded in [PROGRESS.md](../PROGRESS.md); all gates passed
+  after retrying the network-dependent Expo Doctor gate. Task/phase PR
+  integration remains pending. No feature implementation is included.
 - No app implementation, tag operation, issue creation or history rewrite is
   included. The branch/PR/merge-balance report is not a Git deliverable. The
   test-first commit is `e5114e01f363d6de5a12acb61886039469d4a86f`.
@@ -136,17 +136,18 @@ and phase PR #150 (`4170545cbaa8a4f37d4583b5c29c909c0c99a015`).
 
 ## CR-112 work in progress
 
-- P43-A remains In progress because remote lifecycle branch renames and
-  task/phase PR integration could not proceed after the automatic approval
-  review rejected the authorized GitHub push. No PR, branch rename, tag
-  operation or history rewrite occurred.
-- P43-F adds R6 and the indexed work-placement guide. Test-first commit:
-  `e2f0263`; ledger-test correction `d24acd9`; rules/guide `7dab04b`.
-  Gates 1, 2, 3, 5 and 6 passed. Gate 4 (`npx expo-doctor`)
-  exited 1 because npm registry DNS failed (`ENOTFOUND registry.npmjs.org`);
-  Gate 1 coverage was statements 95.97%, functions 98.03%, branches 92.16%.
-  `expo-doctor` is not installed locally. No physical-device check was run.
-  Placement-audit documentation commit and remote PR integration remain pending.
+- P43-A is Done. Remote `cleanup` and `qa-and-release` were each pushed at
+  their original tips, compared against the old refs before deletion, and
+  verified afterward with only the new remote names present. Tag targets and
+  all six protected blob IDs remain unchanged. See the rename evidence in
+  [PROGRESS.md](../PROGRESS.md).
+- P43-F adds R6 and the indexed work-placement guide. Test-first commits:
+  `e2f0263`, `d24acd9`, `e7c134a`, `770393d` and `bdbe159`; rules/guide commit
+  `7dab04b`; placement-audit commit `5841373`. The initial Expo Doctor attempt
+  exited 1 on `ENOTFOUND registry.npmjs.org`; the network retry passed 21/21,
+  then all six ordered gates exited 0. Gate 1: 101 suites, 1,324 passed,
+  1 skipped; coverage 95.96/92.15/98.02/97.62%. No physical-device check
+  was run. Task/phase PR integration remains pending.
 - P31-E CI work moved to `qa-and-release` lifecycle tracking under rule 1.
   It is still Planned and needs a real PR run before branch protection.
 - P39-A–H stay in P39 by default. The owner must decide whether the broad
@@ -182,7 +183,8 @@ and phase PR #150 (`4170545cbaa8a4f37d4583b5c29c909c0c99a015`).
   through PRs #127, #128 and #129. Final ledger/test evidence was merged and
   synchronized through PRs #130–#133; `main` and `develop` trees match.
 - The final ledger/test correction task PR #134 merged into the retained
-  `phase/28-qa-and-release (now qa-and-release)` at `2d3a0f6`; see the P28-F-R6-R2 ledger entry.
+  `qa-and-release` (historical branch name: `phase/28-qa-and-release`) at
+  `2d3a0f6`; see the P28-F-R6-R2 ledger entry.
 - P28-F-R6-R3 task PR #138 merged into the retained phase at `6f5b1cb`;
   phase PR #139 merged to `develop` at `fd7ba55`. O45-O60 are recorded as
   owner-reported Pass, with device identity details absent.

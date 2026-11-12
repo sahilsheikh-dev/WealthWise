@@ -150,7 +150,8 @@ The shared project rules are in [AGENTS.md](../../AGENTS.md),
   release-body content. The former v1.1.1 latest-named APK was renamed to
   `WealthWise-android-v1.1.1.apk`; its GitHub Download block now uses
   `Version`. Post-publication task PRs #125/#126 merged into
-  `phase/28-qa-and-release (now qa-and-release)` at `87c8e8f`/`9db08be`; phase PR #127 merged into
+  `qa-and-release` (historical branch name: `phase/28-qa-and-release`) at
+  `87c8e8f`/`9db08be`; phase PR #127 merged into
   `develop` at `d65ce75`; develop-to-main PR #128 merged at `48a64c0`; and
   main-to-develop PR #129 merged at `c554c0b`. Final ledger/test evidence was
   then synchronized by task PR #130 (`202dabe`), phase PR #131 (`6f4f4df`),
