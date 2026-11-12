@@ -73,7 +73,7 @@ parts count in the numerator and denominator. P1–P14 count as one part
 each.
 
 ```text
-Overall progress ████████░░ 84% (182/216)
+Overall progress ████████░░ 82% (182/221)
 P1          ██████████ 100% (1/1)
 P2          ██████████ 100% (1/1)
 P3          ██████████ 100% (1/1)
@@ -116,6 +116,7 @@ P39         ░░░░░░░░░░ 0% (0/8)
 P40         ░░░░░░░░░░ 0% (0/2)
 P41         ██████████ 100% (5/5)
 P42         ██████████ 100% (2/2)
+P43         ░░░░░░░░░░ 0% (0/5)
 ```
 
 | ID | Legacy ID | Status | Evidence | Last updated |
@@ -351,7 +352,19 @@ P42         ██████████ 100% (2/2)
 | P41-D | — | Done | Add the offline About route, app-menu access, confirmed browser update link, route tests and offline regression evidence. Test-first commit `bd980ad`; task PR #106 merged into `phase/41-types-frequency-completion` as `7ddfef5`; phase PR #107 merged to `develop` as `8e4a2d1`. Dependencies: none. | 2026-11-10 |
 | P42-A | — | Done; Revised by P42-A-R1 | Reconcile owner-approved future plans and close accepted follow-ups; record the deleted codex branch contents and preserve historical evidence. No application behavior changes. | 2026-11-11 |
 | P42-A-R1 | — | Done | Record P42-A task/phase PR integration and rerun the six gates on the integrated develop tree. No application behavior changes. | 2026-11-11 |
+| P43-A | — | Planned | Separate `cleanup` and `qa-and-release` lifecycle tracking from numbered phases, plan docs/reference changes and branch-rename decisions, and retain P27/P28 as historical evidence. Dependencies: owner decision on remote branch renames; retain `phase-27-complete` and `phase-28-complete`; no Git-history rewrite without explicit written authorization for a specific rewrite. Evidence: not started. | 2026-11-12 |
+| P43-B | — | Planned | Plan non-release phase/task-tag cleanup and a report-only branch/PR/merge-balance audit. Deletion is blocked on owner approval of an exact tag list; preserve all vX.Y.Z release tags and previously owner-retained stale phase tags. The audit report stays in chat or `/tmp`. Dependencies: owner approval of exact deletion list; no tag operation before approval. Evidence: not started. | 2026-11-12 |
+| P43-C | — | Planned | Plan Emergency Fund target editing and reflection on Emergency Fund, Home, Goals, allocation/bucket targets and the three-month minimum floor; one domain action, one Zustand set, one persisted write and Undo; validation, 1.3/2.0 font-scale tests and DEC-DEMO data. `app/(tabs)/index.tsx` is user-owned; editing it requires explicit owner authorization. Dependencies: design/validation decisions; explicit Home-source authorization if a Home edit is necessary. Evidence: not started. | 2026-11-12 |
+| P43-D | — | Planned | Plan transaction-form D1 investment category derivation through `investCategoryFor` only after a holding is selected; D2 user-created/Budget-defined expense categories plus Custom, with category/item hierarchy and persistence decided in design; D3 custom Income type. Schema v23 is current and P36 already claims v24. Schema impact to be determined in design; any bump needs a separate plan, identity-preserving migration, premigration archive and backup-import support. Plan test-first regressions, demo data and backup compatibility checks. Dependencies: category/item and persistence design; schema-impact decision. Evidence: not started. | 2026-11-12 |
+| P43-E | — | Planned | Plan GitHub issues only after a separate owner-approved execution task: one issue per ledger part or CR; phase/type/status labels; release milestones; pending issues open; completed work retrospective and closed; verified commits, PRs, merge SHAs and original dates in each issue; one retrospective comment per issue. GitHub controls actual create/comment/close timestamps; historical dates are issue-body text only. Estimate about 216 existing ledger parts before deduplication; assess API rate limits, batching and issue noise. Dependencies: verified ledger inventory, owner approval of scope/batching and a separate issue-creation authorization. Evidence: not started. | 2026-11-12 |
 | CR-92 | — | Done | Local schema-v13 backup reconciled against monthly income, expense, loan and emergency-fund trackers; focused import/reconciliation verification passed. This data-only deliverable does not change application phase progress. | 2026-11-01 |
+
+### Standalone lifecycle activities (not counted as development phases)
+
+| Entity | Current branch | Proposed branch | Status | Dependencies | Evidence |
+|---|---|---|---|---|---|
+| `cleanup` | `phase/27-cleanup` | `cleanup` | Planned | Owner decision on remote rename, including the required push and deletion of the old remote ref; retain historical P27 evidence and `phase-27-complete`. | not started |
+| `qa-and-release` | `phase/28-qa-and-release` | `qa-and-release` | Planned | Owner decision on remote rename, including the required push and deletion of the old remote ref; retain historical P28 evidence and `phase-28-complete`. | not started |
 
 DEC-P29AA-EF-LINK-INTEGRITY: Assumed valid Emergency Fund links are holding IDs
 present in `AppData.holdings`; plan and manual deletion must clear stale bucket
@@ -3203,6 +3216,8 @@ evidence present in exports/checkpoints.
 
 | ID | Phase | Legacy ID | Session | Date | Purpose | Outcome | Commits (Git only) | Agent mistakes / review findings | Text |
 |---|---|---|---:|---|---|---|---|---|---|
+| CR-110 | — | — | current | 2026-11-12 | Plan standalone cleanup/QA lifecycle tracking and deferred Emergency Fund and transaction improvements. | Planned; Revised by CR-110-R1. Original planned-only scope retained; CR-110-R1 adds detailed dependencies, approval gates, issue strategy and validation plan. | No implementation commit; revised in CR-110-R1. | Original: execution was deferred and no implementation or remote actions were authorized. New: details are tracked as separate Planned items; no implementation or remote action is authorized by the plan. Reason: preserve the original request record while making future work actionable. | current request |
+| CR-110-R1 | P43 | CR-110 | current | 2026-11-12 | Refine CR-110 into a dependency-aware plan for lifecycle tracking, tags, Emergency Fund editing, transaction forms and GitHub issue strategy. | Planned only; P43-A–P43-E all remain Planned with `Evidence: not started`. No app behavior, tag cleanup, issue creation or history rewrite is included. | Test-first commit `e5114e01f363d6de5a12acb61886039469d4a86f`; documentation and final integration evidence to be recorded after validation and PR merges. | Old: CR-110 grouped the requests but omitted specific dependencies, schema/backup constraints, exact approval gates, issue batching risks and dashboard/branch-index requirements. New: five independently trackable Planned items preserve owner gates and evidence status. Reason: make future work actionable without beginning implementation. | current request |
 | P42-A-R1 | P42 | P42-A | current | 2026-11-11 | Record P42-A task/phase PR integration and rerun the six gates on the integrated develop tree. | Done; task PR #142 and phase PR #143 are merged; all six ordered gates pass on integrated `develop` `8988121`. | Test-first commit `9d1d526`; implementation commit `59527b1c05699c6602e3fb6aa4981fc116d517d2`. | Old: P42-A recorded test/gate results from its task branch but not its PR merge SHAs or integrated-develop rerun. New: records both PR merges, exact integration commits and the ordered gate rerun. Reason: make the final remote state auditable. | current request |
 | P42-A | P42 | — | current | 2026-11-11 | Reconcile owner-approved future plans, accepted follow-ups, and pending-item records. | Done; task PR #142 merged into phase at `8f38e9f1fa2e0f888e1a006feac81f2dcb2d473a`; phase PR #143 merged into `develop` at `898812110a07176434533b9f638b71fa6aef80d0`. | Test-first commit `217179e`; implementation commit `15c517573ab892f8c26e2e9722669e389f8dd98f`. | Old: P40-B was Planned but owner approval remained open; CR-3, dependency-audit, backup, Node 24 and P29-J follow-ups were listed as unresolved. New: future plans are approved and current accepted behaviors are recorded separately from incomplete audit/implementation work. Reason: reflect the owner's 2026-11-11 direction without implying unperformed work. | current request |
 | CR-109 | P42 | — | current | 2026-11-11 | Update the planned/pending list from the owner's decisions and explain the deleted `codex-changes` work. | Done; P42-A task PR #142 and phase PR #143 are merged into `develop` at `8988121`; detailed plans, accepted follow-ups, and branch contents are in [open-items.md](memory/open-items.md); no app changes. | Test-first commit `217179e`; implementation commit `15c517573ab892f8c26e2e9722669e389f8dd98f`. | Old: several accepted behaviors and owner decisions appeared unresolved. New: each is classified as Planned, accepted/resolved, or still dependent on a later task. Reason: provide an accurate actionable list. | current request |
@@ -3611,6 +3626,8 @@ verification.
 | P28-F-R6-R3 | P28 | P28-F-R6 | complete | 2026-11-11 | Record the owner's report that all physical-device checks from the prior pending-check summary passed. | O54-O60 are added to the device checklist as owner-reported Pass dated 2026-11-11; O45-O53 were already recorded Pass. Open-item device claims are reconciled. This does not constitute independent observation; device identity details remain blank. | Test-first commits `71250b2` and `b7c5891`; final documentation and ledger test. | Old assertion: release/task ledgers and physical-device follow-ups said some device checks were outstanding/unverified. New assertion: the owner reports all listed checks Pass, explicitly distinguished from automated or independently observed verification. Reason: record the owner's latest device-testing report accurately. | current request |
 
 | CR-109 | Record owner-approved future plans, close accepted follow-ups, explain the deleted `codex-changes` commit, and reconcile the pending list. | Done | P42-A task PR #142 merged to phase at `8f38e9f1fa2e0f888e1a006feac81f2dcb2d473a`; phase PR #143 merged to `develop` at `898812110a07176434533b9f638b71fa6aef80d0`. P42-A-R1 records the integration and six-gate rerun. No app/runtime behavior, backup, dependency, tag, or release changed. |
+| CR-110 | Separate `cleanup` and `qa-and-release` from numbered development phases; plan Emergency Fund target editing, transaction category/type fixes, truthful retrospective issue tracking, and the required documentation/branch/tag migration. | Planned; Revised by CR-110-R1 | CR-110-R1 details five Planned P43 parts, their dependencies, owner gates and evidence state. No app implementation, branch rename, tag operation, issue creation or Git-history rewrite is authorized. |
+| CR-110-R1 | Refine CR-110 into a complete, dependency-aware plan for standalone lifecycle tracking, controlled tag cleanup, Emergency Fund target editing, transaction-form behavior and a truthful GitHub issue strategy. | Planned | P43-A–P43-E are Planned; each has named dependencies and `Evidence: not started`. Remote branch renames need an owner decision; tag deletion is blocked on approval of an exact tag list; historical P27/P28 and Git chronology are preserved; no app changes, tag operations or issues are included. |
 
 ## 8. Known issues and risks
 
@@ -3836,31 +3853,13 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
    [P15-L]; P25-C release blockers and shared AI memory (Done).
 8. **P26 — Accessibility, performance and final gates** (Done)
    [P15-M]; physical-device checks remain open.
-9. **P27 — Cleanup** (Done): dead-code/dependency cleanup, bundle audit,
-   README update and robust schedule benchmark.
-10. **P28 — QA and release** (release records and approved tag verified):
-    P28-A/P28-B/P28-C and their recorded revisions plus P28-D/P28-E,
-    P28-F-R5 and P28-G are complete. CR-107 moved all 23 screenshots into
-    versioned repository paths, changed release thumbnails to browser-viewable
-    links, removed only the screenshot release assets after URL verification,
-    and standardized ledger/memory phase labels. The v1.0.0
-    APK, EAS build metadata, public latest/versioned links and checksum are
-    verified; the approved tag points to the build commit on `origin/main`.
-    The earlier 43-row Pass report was superseded by P29-AB-R1/R2, P30-A/B/C,
-    P20-N-R1/R2 and the P20-A-R1/P29-O1-R1/P29-W-R1 device-checklist updates;
-    device re-test remains pending. The v1.0.0 release body intentionally
-    retains its pre-existing non-screenshot difference from the published
-    note; only its screenshot section was changed at the owner's direction.
-    See
-    [`docs/releases/build-config.md`](releases/build-config.md), the
-    release-build record and the device checklist.
-11. **P29 — Product delivery** (42/42 closed): P29-O-R1 closes the
+9. **P29 — Product delivery** (42/42 closed): P29-O-R1 closes the
     cancelled ledger-migration scope; P29-O1-R1 and P29-W-R1 add schedule
     counts, collapsed paid entries and maturity/final-EMI caps; P29-AB-R2
     removes non-due recurring income from planned/due rows and totals while
     preserving editability; P29-Q-R1 replaces the unsupported four-choice
     confirmation call with a scalable centered selection dialog.
-12. **P30 — Release 2 stabilization** (Done; physical-device re-test
+10. **P30 — Release 2 stabilization** (Done; physical-device re-test
     pending):
     - P30-A — Failing persistence/restart tests and mounted-screen refresh
       harness; the stale SQLite precedence defect was reproduced.
@@ -3868,7 +3867,7 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
       the newest persisted value win and expose failed writes.
     - P30-C — Memo-input/cache source guard and development-only hydration/write
       verification diagnostic.
-13. **P31 — Project health and community** (Planned):
+11. **P31 — Project health and community** (Planned):
     - P31-A — Add `CODE_OF_CONDUCT.md`. Dependencies: none. This root document
       requires explicit owner authorization when executed.
     - P31-B — Upgrade bug, feature and question issue templates to YAML issue
@@ -3890,21 +3889,21 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
     - The owner confirms public adoption as a future project goal; community
       launch activities remain separately planned and are not authorized by
       this status update.
-14. **P32 — Screenshots** (Cancelled by owner):
+12. **P32 — Screenshots** (Cancelled by owner):
     - P32-A — Cancelled because the owner already supplied the screenshots.
       Dependencies: none.
     - P32-B — Cancelled because the owner already supplied the screenshots.
       Dependencies: P32-A.
     - P32-C — Cancelled because the owner already supplied the screenshots;
       the supplied images are organized by P28-F-R5. Dependencies: P32-B.
-15. **P33 — Widgets** (Planned):
+13. **P33 — Widgets** (Planned):
     - P33-A — Research SDK 57 options, config plugin, dev-build need, privacy
       and hide-previews behavior after reactivation. Dependencies: none.
     - P33-B — Implement the Android widget only after owner reactivation and
       research approval. Dependencies: P33-A.
     - P33-C — Implement the iOS widget only if reactivated and iOS
       distribution exists. Dependencies: P33-A and iOS distribution.
-16. **P34 — Quick capture** (Planned):
+14. **P34 — Quick capture** (Planned):
     - P34-A — Research quick-capture scope and platform constraints after
       reactivation; candidates include shake, double-tap back and a key
       combination. Dependencies: none.
@@ -3914,7 +3913,7 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
     - P34-C — Consider an opt-in foreground shake gesture after reactivation.
       Background gestures remain out of scope unless research proves a
       policy-safe route. Dependencies: P34-A.
-17. **P35 — Transaction auto-detect** (Planned):
+15. **P35 — Transaction auto-detect** (Planned):
     - P35-A — Research Android notification-listener vs SMS-permission
       options, iOS limitations, Play policy, prominent disclosure, local-only
       parsing and no raw-message storage after reactivation. Dependencies:
@@ -3924,7 +3923,7 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
     - P35-C — No transaction auto-detection implementation may begin until
       the owner explicitly gives a go decision in P35-B. Dependencies: P35-B
       owner go/no-go approval.
-18. **P36 — Notes** (Planned):
+16. **P36 — Notes** (Planned):
     - P36-A — Design text notes, voice/audio recordings, photos and videos;
       optional links to financial records; offline storage, media limits,
       backup/migration compatibility and schema-v24 impact. Dependencies:
@@ -3937,7 +3936,7 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
       required per DEC-DEMO.
     - P36-D — Add deterministic Notes demo data without personal media.
       Dependencies: P36-C. Demo data and tests are required per DEC-DEMO.
-19. **P37 — First-run tutorials** (Planned):
+17. **P37 — First-run tutorials** (Planned):
     - P37-A — Design per-feature skippable coach marks, replay from the menu,
       flags in the meta store rather than AppData, and accessibility.
       Dependencies: none. Demo data and tests are required per DEC-DEMO.
@@ -3945,7 +3944,7 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
       data and tests are required per DEC-DEMO.
     - P37-C — Implement per-feature tours. Dependencies: P37-B. Demo data and
       tests are required per DEC-DEMO.
-20. **P38 — Loading feedback and skeletons** (Planned):
+18. **P38 — Loading feedback and skeletons** (Planned):
     - P38-A — Inventory operations with genuine asynchronous loading and
       define skeleton behavior, theme, accessibility and reduced-motion
       requirements. Dependencies: none.
@@ -3955,7 +3954,7 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
     - P38-C — Test loading, success, empty and failure transitions; ensure
       skeletons do not mask errors or flash during synchronous operations.
       Dependencies: P38-B.
-21. **P39 — Release audit and hardening** (Planned; report-first):
+19. **P39 — Release audit and hardening** (Planned; report-first):
     - P39-A — Read-only audit of dead code, secrets/configuration, app lock,
       notification-response routing, `wealthwise://` deep links, silent
       failures, performance, dependencies, debug residue, TODO debt,
@@ -3987,7 +3986,7 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
       batches, containment before cleanup, owner approvals and rollback.
       Detailed reports stay in chat or `/tmp`; only the findings summary table
       enters this ledger. Dependencies: P39-B through P39-G.
-22. **P40 — Agent-context hygiene** (Planned):
+20. **P40 — Agent-context hygiene** (Planned):
     - P40-A — Report-only measurement of `docs/PROGRESS.md`,
       `docs/memory/*` and `AGENTS.md` sizes, their parsing tests and
       per-prompt read cost. Dependencies: none.
@@ -3997,6 +3996,72 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
       to read archives without weakening assertions. Owner approval was
       recorded on 2026-11-11. Dependencies: P40-A.
 
+21. **P43 — Lifecycle and transaction planning** (Planned; implementation
+    has not started):
+    - **P43-A — Lifecycle tracking separation:** track `cleanup` and
+      `qa-and-release` as independent, ongoing lifecycle activities alongside
+      `develop` and `release/vX.Y.Z`, not as sequential development milestones.
+      Update PROGRESS.md, section 12, memory, tests and Markdown references
+      when this plan is executed. Preserve P27/P28 as historical completion
+      evidence. documentation reordering only; Git chronology unchanged unless the owner gives explicit written authorization for a specific rewrite.
+      The owner must decide whether to rename the remote branches;
+      that requires pushing the new names and deleting the old refs. Retain
+      the stale `phase-27-complete`, `phase-28-complete` and
+      `phase-29-complete` tags as previously directed. Dependencies: owner
+      decision on remote branch renames. Evidence: not started.
+    - **P43-B — Tag and integration audit:** plan deletion of non-release
+      phase/task tags while preserving every `vX.Y.Z` release tag. Tag
+      deletion is blocked on owner approval of an exact tag list; the existing
+      direction to retain stale phase tags remains in force. Separately audit
+      branch, PR and merge balance as a report-only item; report only in chat
+      or `/tmp`, not Git. Dependencies: explicit owner approval of the exact
+      deletion list. Evidence: not started.
+    - **P43-C — Emergency Fund target editing:** edit the target from the
+      Emergency Fund screen reached from Home and reflect it in that screen,
+      Home, Goals,       allocation targets, bucket targets and the three-month minimum floor
+      logic. Require one domain action, one Zustand `set`, one
+      persisted write and Undo; validation; font-scale tests at 1.3 and 2.0;
+      and demo data per DEC-DEMO. `app/(tabs)/index.tsx` is user-owned; obtain
+      explicit owner authorization if Home source must change. Dependencies:
+      design/validation decisions and, if required, explicit Home-source
+      authorization. Evidence: not started.
+    - **P43-D — Transaction form:** D1 must not show a default
+      `Mutual Fund/SIP` without an investment selection; after selecting a
+      holding, derive the category from its type using `investCategoryFor`.
+      D2 shows only user-created or Budget-defined expense categories plus
+      `Custom`; design the distinction and persistence of a category (for
+      example Wants or Expenses) and item (for example party or others). D3
+      adds a custom income type under Income. Schema v23 is current and P36
+      already claims v24: schema impact to be determined in design; any
+      bump needs a separate plan and an identity-preserving migration, a
+      premigration archive and backup import support. Plan test-first
+      regressions, demo-data updates and backup compatibility checks.
+      Dependencies: category/item hierarchy and persistence design; schema
+      impact decision; any required migration plan. Evidence: not started.
+    - **P43-E — GitHub issue strategy (plan only):** one issue per ledger part or CR;
+      phase/type/status labels; one milestone per release; pending
+      items open; completed items retrospective and closed; each body carries
+      verified ledger commits, PR numbers, merge SHAs and original dates; one
+      retrospective comment per issue. GitHub sets actual creation, comment
+      and closure timestamps; original dates are text in the body only.
+      Estimate about 216 existing ledger parts before deduplication. Assess
+      API rate and noise concerns, batching and issue volume; creating issues
+      is a separate owner-approved task. Create no issues as part of this
+      plan. Dependencies: verified ledger inventory and separate owner
+      approval for issue scope, batching and creation. Evidence: not started.
+
+### Standalone lifecycle activities (Planned; outside numbered development phases)
+
+- **`cleanup`** — ongoing cleanup, dependency/bundle hygiene and maintenance;
+  proposed independent branch name `cleanup`, replacing
+  `phase/27-cleanup` only after the owner decides on the remote rename.
+- **`qa-and-release`** — ongoing QA and release lifecycle tracking alongside
+  `develop` and `release/vX.Y.Z`; proposed independent branch name
+  `qa-and-release`, replacing `phase/28-qa-and-release` only after the owner
+  decides on the remote rename.
+- P27/P28 remain completed historical milestones, not current lifecycle
+  trackers.
+
 Owner-approved future scope beyond the numbered roadmap (2026-11-11):
 
 - Plan a true in-app update check; until implemented, About continues to open
@@ -4005,8 +4070,10 @@ Owner-approved future scope beyond the numbered roadmap (2026-11-11):
   liabilities; current forms and schema v23 remain unchanged.
 
 **Superseded (2026-11-08):** the earlier roadmap ended at P28 and marked
-P24, P26, P27 and P28 as in progress or planned. Those entries have been
-updated above; use the dashboard for the canonical status. Fixes to completed
+P24 and P26 as in progress or planned. Those entries have been updated above;
+use the dashboard for the canonical status. P27/P28 remain historical phase
+records; ongoing cleanup and QA/release tracking are listed separately above.
+Fixes to completed
 work remain in their original phase and use `<ID>-R<n>` (for example,
 `P29-AB-R1`), with the original row noting `Revised by`.
 
@@ -4015,6 +4082,33 @@ work remain in their original phase and use `<ID>-R<n>` (for example,
 An item is `Done` only when its named source and test evidence are available.
 Paths below are repository-relative. Baseline results are not completion
 evidence for the fixes.
+
+### 2026-11-12 — CR-110-R1 planning-only record
+
+- Test-first commit `e5114e01f363d6de5a12acb61886039469d4a86f` added ledger
+  regression requirements before the documentation update. The focused run
+  `npm test -- --runInBand src/lib/__tests__/progressLedger.test.ts src/lib/__tests__/memoryDocs.test.ts`
+  passed: 2 suites, 21 tests.
+- All six required gates ran sequentially on the P43 task branch and exited 0:
+
+  | Gate | Command | Exit / result |
+  |---:|---|---|
+  | 1 | `npm test -- --coverage` | 0; 101 suites; 1,320 passed, 1 skipped (1,321 total); coverage 95.96/92.15/98.02/97.62% statements/branches/functions/lines |
+  | 2 | `npx tsc --noEmit` | 0 |
+  | 3 | `npx expo lint` | 0 |
+  | 4 | `npx expo-doctor` | 0; 21/21 checks passed |
+  | 5 | `npx expo export --platform android` | 0 |
+  | 6 | `npx expo export --platform ios` | 0 |
+- Replaced assertions (none weakened):
+
+  | Old assertion | New assertion | Reason |
+  |---|---|---|
+  | `expect(rows).toHaveLength(32)` | `expect(rows).toHaveLength(33)` and explicitly validate P43's branch, tag, commit and five subtasks | Add the new P43 branch-index row while checking its complete expected shape. |
+  | Require roadmap labels `CR-110-C`, `CR-110-D` and `CR-110-E` | Require roadmap entries `P43-C`, `P43-D` and `P43-E` for the same Emergency Fund, transaction and issue-planning areas | The revision groups the work into five separately tracked, dependency-aware P43 items. |
+- Only local phase/task branches were created for the planned PR flow. No app
+  implementation, remote branch rename, tag operation, issue creation or
+  history rewrite occurred. Physical-device checks are not part of this
+  planning-only work and were not performed.
 
 ### 2026-11-11 — P28-F-R6-R1 final screenshot integration
 
@@ -10063,6 +10157,54 @@ Gradle build, version bump, or release preparation was performed.
 
 ## 11. Session and release log
 
+### CR-110-R1 — Lifecycle and transaction planning (2026-11-12)
+
+- Revised CR-110 as five Planned items, P43-A–P43-E. Each has explicit
+  dependencies and `Evidence: not started`; this record plans work only.
+- `cleanup` and `qa-and-release` are ongoing lifecycle activities outside the
+  numbered development phases, alongside `develop` and `release/vX.Y.Z`.
+  Preserve P27/P28 completion evidence. The owner must decide whether to
+  rename the remote branches. Retain the stale phase tags previously
+  directed. documentation reordering only; Git chronology unchanged unless
+  the owner gives explicit written authorization for a specific rewrite.
+- Non-release phase/task-tag deletion is blocked on owner approval of an
+  exact tag list; preserve every release tag. The branch/PR/merge-balance
+  audit is report-only, with output in chat or `/tmp`.
+- Emergency Fund editing must reflect the saved target throughout the
+  screen, Home, Goals, allocation/bucket targets and three-month minimum
+  floor; use one domain action, one Zustand `set`, one persisted write and
+  Undo; include validation, 1.3/2.0 font-scale tests and DEC-DEMO data.
+  `app/(tabs)/index.tsx` is user-owned and needs explicit authorization if a
+  Home-source edit is necessary.
+- Transaction plans cover investment category derivation only after holding
+  selection (`investCategoryFor`), user-created/Budget-defined expense
+  categories plus a Custom category with category/item hierarchy and
+  persistence decided in design, and custom Income types. Schema v23 is
+  current while P36 claims v24; schema impact is undetermined. Any bump needs
+  a separate plan, identity-preserving migration, premigration archive and
+  backup-import support; regressions, demo-data updates and backup
+  compatibility are planned.
+- The issue strategy proposes one issue per ledger part or CR, phase/type/
+  status labels, release milestones, pending issues open and completed work
+  retrospective/closed, with verified commits/PRs/merge SHAs and original
+  dates in bodies plus one retrospective comment. GitHub controls actual
+  timestamps. Approximately 216 ledger parts need deduplication and a rate,
+  batching and noise assessment. Issue creation is a separate
+  owner-approved task; create no issues now.
+- Test-first commit `e5114e01f363d6de5a12acb61886039469d4a86f` adds regression
+  requirements before these documentation rows. The assertion changes are
+  old / expect 32 phase-index rows and prior CR-110-C/D/E roadmap labels /
+  new / expect P43 as row 33 and verify its branch; require the consolidated
+  P43-C/D/E plan wording / reason / P43 is the newly opened planning phase
+  and the requirements have been grouped into five dependency-aware parts,
+  not the former under-specified CR-110 bullet list. The total dashboard
+  count now includes five planned P43 parts; standalone lifecycle activities
+  are excluded from development progress.
+- No app implementation, branch rename, tag operation, issue creation or
+  history rewrite is included. Only the authorized local phase/task branches
+  and PR flow for this planning record may be used. Open owner decisions:
+  remote branch renames, and any future exact tag-deletion list.
+
 ### DEC-CR109-OWNER-PLANNING-AND-CLOSEOUT (2026-11-11)
 
 - Future planning is approved for a true in-app update check, Once-only
@@ -11341,6 +11483,16 @@ are guarded by `progressLedger.test.ts`.
 | P30 | `phase/30-release-2-stabilization` | `phase-30-complete` | `a258579c4b580d6f3a157b8d13de53334aa8d34d` | 3 |
 | P41 | `phase/41-types-frequency-completion` | — | — | 5 |
 | P42 | `phase/42-owner-decision-reconciliation` | — | `15c517573ab892f8c26e2e9722669e389f8dd98f` | 2 |
+| P43 | `phase/43-lifecycle-and-transaction-planning` | — | — | 5 |
+
+### Standalone lifecycle branch index (planned)
+
+These are ongoing lifecycle activities, not numbered development phases.
+
+| Activity | Existing historical branch | Proposed ongoing branch | Status | Notes |
+|---|---|---|---|---|
+| `cleanup` | `phase/27-cleanup` | `cleanup` | Planned | Preserve P27 and `phase-27-complete` as historical evidence. Remote rename needs owner approval. |
+| `qa-and-release` | `phase/28-qa-and-release` | `qa-and-release` | Planned | Preserve P28 and `phase-28-complete` as historical evidence. Remote rename needs owner approval. |
 
 ### P29-O1-R2 / P29-W-R2 month-count layout (2026-11-08)
 

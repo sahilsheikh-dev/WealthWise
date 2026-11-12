@@ -1,6 +1,57 @@
-<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-11 | Updates: owner and AI agents -->
+<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-12 | Updates: owner and AI agents -->
 
 # Open items
+
+## CR-110-R1 planned work
+
+CR-110's original planned-only row is retained and marked **Revised by
+CR-110-R1**. Five P43 rows are Planned, each with dependencies and
+`Evidence: not started`.
+The authorized local phase `phase/43-lifecycle-and-transaction-planning` and
+task `task/P43-A-plan-cr110` were created from `develop` for the PR flow.
+
+- **P43-A — Lifecycle tracking separation:** list `cleanup` and
+  `qa-and-release` outside numbered development phases, alongside `develop`
+  and `release/vX.Y.Z`; document current branches
+  `phase/27-cleanup` and `phase/28-qa-and-release` with proposed ongoing
+  branch names `cleanup` and `qa-and-release`; preserve P27/P28 completion
+  evidence. Update
+  PROGRESS.md, section 12, memory, tests and Markdown references when the
+  plan is executed. Documentation reordering only; Git chronology unchanged
+  unless the owner gives explicit written authorization for a specific
+  rewrite. Open decision: remote branch renames, which require pushing new
+  names and deleting the old remote refs. Retain stale phase tags as
+  previously directed.
+- **P43-B — Tag and integration audit:** preserve every `vX.Y.Z` release tag.
+  Non-release phase/task-tag deletion is blocked on owner approval of an exact
+  tag list. Produce a separate report-only audit of branch, PR and merge
+  balance; report in chat or `/tmp`, not Git.
+- **P43-C — Emergency Fund target editing:** edit from the Emergency Fund
+  screen and reflect the value on that screen, Home, Goals, allocation and
+  bucket targets, and in the three-month minimum-floor logic. Require one
+  domain action, one Zustand `set`, one persisted write and Undo; validation,
+  tests at font scales 1.3 and 2.0, and DEC-DEMO data. `app/(tabs)/index.tsx`
+  is user-owned; editing it needs explicit owner authorization.
+- **P43-D — Transaction form:** derive investment category with
+  `investCategoryFor` only after a holding is selected; show only
+  user-created/Budget-defined expense categories plus Custom; design category
+  (e.g. Wants/Expenses) versus item (e.g. party/others) hierarchy and
+  persistence; add custom Income type. Schema v23 is current and P36 already
+  claims v24. Schema impact remains undetermined; any bump needs a separate
+  plan, identity-preserving migration, premigration archive and backup import
+  support. Plan test-first regressions, demo-data updates and backup
+  compatibility checks.
+- **P43-E — GitHub issue strategy (plan only):** one issue per ledger part
+  or CR; phase/type/status labels; release milestones; pending issues open;
+  completed issues retrospective and closed; verified commits, PRs, merge
+  SHAs and original dates in each body; one retrospective comment per issue.
+  GitHub sets actual timestamps; original dates are text only. About 216
+  ledger parts need deduplication; assess API rate, batching and noise. Issue
+  creation is a separate owner-approved task; create no issues now.
+- No app implementation, tag operation, issue creation or history rewrite is
+  included. The branch/PR/merge-balance report is not a Git deliverable. The
+  test-first commit is `e5114e01f363d6de5a12acb61886039469d4a86f`.
+  Full plan and final evidence: [PROGRESS.md](../PROGRESS.md).
 
 ## v1.2.0 release close-out
 

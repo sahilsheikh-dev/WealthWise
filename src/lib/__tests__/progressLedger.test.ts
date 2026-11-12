@@ -146,10 +146,10 @@ describe('permanent progress ledger', () => {
     expect(branchIndex).toContain('`phase/27-cleanup`');
     expect(branchIndex).toContain('`phase/28-qa-and-release`');
     expect(roadmap).not.toMatch(/^\d+\. \*\*P(?:27|28) —/m);
-    expect(roadmap).toContain('P27 and P28 remain unchanged as historical completion evidence');
-    expect(roadmap).toContain('CR-110-C — Emergency Fund target editing');
-    expect(roadmap).toContain('CR-110-D — Transaction form');
-    expect(roadmap).toContain('CR-110-E — GitHub issue strategy');
+    expect(roadmap).toContain('P27/P28 remain completed historical milestones');
+    expect(roadmap).toContain('P43-C — Emergency Fund target editing');
+    expect(roadmap).toContain('P43-D — Transaction form');
+    expect(roadmap).toContain('P43-E — GitHub issue strategy');
     expect(openItems).toContain('## CR-110-R1 planned work');
     expect(openItems).toContain('phase/43-lifecycle-and-transaction-planning');
     expect(status).toContain('**CR-110-R1 (2026-11-12) is Planned only:**');
@@ -199,7 +199,7 @@ describe('permanent progress ledger', () => {
   it('logs every prompt ID exactly once', () => {
     const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
     const promptIds = [
-      'P41-B-R1',
+      'P41-B-R1', 'CR-110-R1',
       'P01', 'P02', 'P03', 'P04', 'P05', 'P06', 'P06-FIX-R1',
       'P07', 'P08', 'P09', 'P10', 'P11', 'P12', 'P13', 'P14',
       'P15-A', 'P15-A2', 'P15-B', 'P15-C',
@@ -497,7 +497,7 @@ describe('permanent progress ledger', () => {
     }
 
     const rows = index.split('\n').filter((line) => /^\| P\d+ \|/.test(line));
-    expect(rows).toHaveLength(32);
+    expect(rows).toHaveLength(33);
     for (const line of rows) {
       const [, phase, branch, tag, commit, count] = line.split('|').map((cell) => cell.trim().replaceAll('`', ''));
       const number = Number(phase?.match(/^P(\d+)$/)?.[1]);
@@ -513,6 +513,13 @@ describe('permanent progress ledger', () => {
         expect(tag).toBe('—');
         expect(commit).toBe('15c517573ab892f8c26e2e9722669e389f8dd98f');
         expect(Number(count)).toBe(2);
+        continue;
+      }
+      if (number === 43) {
+        expect(branch).toBe('phase/43-lifecycle-and-transaction-planning');
+        expect(tag).toBe('—');
+        expect(commit).toBe('—');
+        expect(Number(count)).toBe(5);
         continue;
       }
       const paddedPhase = String(number).padStart(2, '0');

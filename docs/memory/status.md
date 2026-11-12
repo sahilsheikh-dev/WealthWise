@@ -1,6 +1,22 @@
-<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-11 | Updates: owner and AI agents -->
+<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-12 | Updates: owner and AI agents -->
 
 # Status
+- **CR-110-R1 (2026-11-12) is Planned only:** CR-110 is marked Revised by
+  CR-110-R1. Five P43 items record lifecycle tracking separation, tag cleanup and
+  a report-only branch/PR/merge audit, Emergency Fund target editing,
+  transaction-form changes, and a GitHub issue strategy. Every item has
+  dependencies and `Evidence: not started`. No application implementation,
+  remote branch rename, tag operation, issue creation or history rewrite is
+  authorized. Historical P27/P28 evidence and Git chronology remain intact.
+  The test-first commit is `e5114e01f363d6de5a12acb61886039469d4a86f`;
+  authorized local P43 phase/task branches were created for the planned PR
+  flow. See [open-items.md](open-items.md) and [PROGRESS.md](../PROGRESS.md).
+- Remote rename of `phase/27-cleanup` and `phase/28-qa-and-release` needs an
+  owner decision because it requires a push and deletion of old remote refs.
+  Any deletion of non-release tags is blocked on an owner-approved exact tag
+  list; retain all `vX.Y.Z` releases and stale phase tags already directed.
+  GitHub issue creation is a separate owner-approved task; GitHub controls
+  actual issue/comment/closure timestamps.
 - **Owner-decision reconciliation (CR-109, 2026-11-11):** future in-app
   update discovery, Once-only investment/liability frequencies, public
   adoption, the P31-D privacy statement, P40-B and post-P31-E branch
