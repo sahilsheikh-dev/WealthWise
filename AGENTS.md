@@ -49,6 +49,28 @@ apply only that exception and preserve all other rules.
   changes, ask whether they want those owner edits reverted before changing
   the affected file further. Revert or overwrite owner edits only when the
   owner explicitly requests it; otherwise preserve them and work around them.
+- **R6 — Work placement:** before adding a ledger row, branch or task, search
+  the dashboard, register, phase history, roadmap, memory and touched
+  files/features. Apply the first matching rule: (1) ongoing cleanup,
+  QA/release, release/hotfix, branch/tag hygiene, CI and repository-process
+  work goes in standalone lifecycle tracking; P43 is the designated temporary
+  setup-phase exception; (2) revise completed work as the next sequential
+  revision of its original part and phase; (3) widen open work in place;
+  (4) add related feature work as the next part in its phase; (5) create a new
+  phase for a new feature area. Every new or moved row has a Placement line.
+  See [work-placement.md](docs/memory/work-placement.md).
+
+Work-placement quick start:
+1. Search dashboard, register, phase history, roadmap, memory and touched files.
+2. Choose the first matching R6 rule 1–5.
+3. Add `Placement: rule <1-5>; searched <what>; related <IDs or none>; reason <one sentence>`.
+4. Select the phase/lifecycle branch from `docs/memory/work-placement.md`.
+5. Add the failing test first; preserve every existing assertion.
+6. Run all six gates in order and record actual exit codes.
+7. Update dashboard, register, prompt log, branch index and memory.
+8. Merge task -> phase -> develop through PRs with `--no-ff`.
+9. After a target merge, run CM-2 synchronization.
+10. Report branch, HEAD, gates, device checks and remaining owner decisions.
 
 ### Branching
 
@@ -76,6 +98,7 @@ apply only that exception and preserve all other rules.
   `main` or `develop`, except the explicitly authorized bootstrap. Delete
   merged task branches and keep phase branches. Do not push unless asked;
   report merge commands in chat.
+- **CM-2 — Active:** After any merge that lands on a target branch (task->phase, phase->develop, release->main, main->develop): git fetch --all --prune; git switch <target>; git pull --ff-only. Refuse and report if the worktree is dirty, the fast-forward fails or the target has no upstream. This rule never authorizes pushing; R3 is unchanged.
 
 ### Gates
 

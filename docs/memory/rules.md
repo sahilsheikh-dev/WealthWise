@@ -1,4 +1,4 @@
-<!-- Purpose: Engineering invariants, protected surfaces and verification commands. | Last updated: 2026-11-10 | Updates: owner and AI agents -->
+<!-- Purpose: Engineering invariants, protected surfaces and verification commands. | Last updated: 2026-11-12 | Updates: owner and AI agents -->
 
 # Rules
 
@@ -26,6 +26,18 @@
   `CONTRIBUTING.md`, `SECURITY.md`, and `.github/**`. Other documentation
   files may be changed only when explicitly named. Reports and generated
   output belong in chat or `/tmp`; release content must remain in Git.
+- **R6 — Work placement:** classify every new ledger row, task and branch by
+  searching the dashboard, register, phase history, roadmap, memory and
+  touched source/features. Apply the first match: (1) ongoing lifecycle,
+  branch/tag hygiene, CI and repository-process work belongs in standalone
+  lifecycle tracking; P43 is the task-designated temporary setup-phase
+  exception; (2) revise completed work as the next sequential revision of the
+  original part and phase; (3) amend open work in place when widening scope;
+  (4) use the next part in a related feature phase; (5) create a new phase for
+  a new feature area. New/moved rows require a `Placement: rule <1-5>; searched
+  <what>; related <IDs or none>; reason <one sentence>` line. See
+  [work-placement.md](work-placement.md) for the complete procedure and
+  lifecycle exception.
 - Branching: `main` is stable released code; `develop` is integration and
   must pass all six gates; phase branches use `phase/NN-slug`, task branches
   use `task/ID-slug`, release branches use `release/vX.Y.Z`, hotfix branches
@@ -37,6 +49,7 @@
   Conventional Commit title. Agents do not push unless asked, do not commit
   directly to `main`/`develop` except an authorized bootstrap, delete merged
   task branches, and keep phase branches.
+- **CM-2 — Active:** After any merge that lands on a target branch (task->phase, phase->develop, release->main, main->develop): git fetch --all --prune; git switch <target>; git pull --ff-only. Refuse and report if the worktree is dirty, the fast-forward fails or the target has no upstream. This rule never authorizes pushing; R3 is unchanged.
 - The ordered six gates are `npm test -- --coverage`, `npx tsc --noEmit`,
   `npx expo lint`, `npx expo-doctor`, `npx expo export --platform android`,
   and `npx expo export --platform ios`. Expo exports are allowed. EAS Android

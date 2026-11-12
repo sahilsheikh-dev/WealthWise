@@ -62,7 +62,7 @@ describe('shared AI memory documents', () => {
     expect(projectTests?.[2]).toBe(currentTests?.[2]);
     expect(currentTests?.[1]).toBe(latestRun?.[1]);
     expect(currentTests?.[2]).toBe(latestRun?.[2]);
-    expect(status).toContain('**CR-111 (2026-11-12) is Planned only:**');
+    expect(status).toContain('**CR-111 (2026-11-12) has Planned product work:**');
     expect(openItems).toContain('## CR-111 planned work');
   });
 
