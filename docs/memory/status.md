@@ -1,7 +1,7 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-12 | Updates: owner and AI agents -->
 
 # Status
-- **CR-114 (2026-11-12) — independent entities, empty slots and R7 implemented.**
+- **CR-114 (2026-11-12) — independent entities, empty slots and R7 merged into develop.**
   Work tracking restructured: `cleanup`, `qa-and-release`, `schema-migration`
   and `documentation` operate as independent lifecycle entities with dedicated
   branches and Section 13 tracking, excluded from phase progress bars (142/184, 77%).
@@ -12,7 +12,11 @@
   `phase/07-schema-migration` deleted on origin. Historical tags
   `phase-07-complete`, `phase-27-complete`, `phase-28-complete` retained. All
   historical commits/PRs preserved with complete history map in
-  `docs/history/entity-history-map.md`.
+  `docs/history/entity-history-map.md`. PR #161 merged `documentation` into `develop`
+  as `9058386`. Preflight Gates 1–3, 5, 6 passed; Gate 4 exit 1 owner-approved
+  exception (upstream Expo SDK 57 patch advisory on both develop and documentation).
+  Dependency patch alignment is tracked as a Planned `cleanup` task. Merge evidence
+  recorded on `documentation` (unpushed).
 - **CR-113 (2026-11-12) — owner approvals recorded; all feature work remains
   Planned.** P21-F Home-source editing is authorized if needed; P33/P34/P35
   research and stated follow-on scopes are approved; P35 has a Go after

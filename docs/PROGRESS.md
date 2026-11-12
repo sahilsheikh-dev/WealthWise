@@ -3237,7 +3237,7 @@ evidence present in exports/checkpoints.
 
 | ID | Phase | Legacy ID | Session | Date | Purpose | Outcome | Commits (Git only) | Agent mistakes / review findings | Text |
 |---|---|---|---:|---|---|---|---|---|---|
-| CR-114 | documentation | — | current | 2026-11-12 | Restructure work tracking using independent entities, empty slots and R7 slot-filling rules. | Done; all six ordered gates passed. Tests added test-first; origin/schema-migration and origin/documentation pushed and verified. | Test-first commit `f99fa67`; docs restructure commit; rules update commit. | None. | current request |
+| CR-114 | documentation | — | current | 2026-11-12 | Restructure work tracking using independent entities, empty slots and R7 slot-filling rules. | Done; PR #161 merged into `develop` as `9058386`. Preflight gates 1–3, 5, 6 passed; Gate 4 exit 1 owner-approved exception (upstream Expo SDK 57 patch advisory). | Test-first commits `f99fa67`, `83689f2`; PR #161 merge `9058386`. | None. | current request |
 | CR-110 | — | — | current | 2026-11-12 | Plan standalone cleanup/QA lifecycle tracking and deferred Emergency Fund and transaction improvements. | Planned; Revised by CR-110-R1. Original planned-only scope retained; CR-110-R1 adds detailed dependencies, approval gates, issue strategy and validation plan. | No implementation commit; revised in CR-110-R1. | Original: execution was deferred and no implementation or remote actions were authorized. New: details are tracked as separate Planned items; no implementation or remote action is authorized by the plan. Reason: preserve the original request record while making future work actionable. | current request |
 | CR-110-R1 | P43 | CR-110 | current | 2026-11-12 | Refine CR-110 into a dependency-aware plan for lifecycle tracking, tags, Emergency Fund editing, transaction forms and GitHub issue strategy. | Planned only; P43-A–P43-E all remain Planned with `Evidence: not started`. No app behavior, tag cleanup, issue creation or history rewrite is included. | Test-first commit `e5114e01f363d6de5a12acb61886039469d4a86f`; docs commit `183b18e0af473195ee62fcb4622a3b7e834d2d13`; task PR #146 merged into P43 as `e4d950adf0344dbe12e2e0d085e83d60538ede68`; phase PR #147 merged into `develop` as `a93feaecfbd591c1b6f27bac15b5839c68d10709`. | Old: CR-110 grouped the requests but omitted specific dependencies, schema/backup constraints, exact approval gates, issue batching risks and dashboard/branch-index requirements. New: five independently trackable Planned items preserve owner gates and evidence status. Reason: make future work actionable without beginning implementation. | current request |
 | CR-111 | P20, P44, repository rules | — | current | 2026-11-12 | Plan the P20 linked-savings Paid revision, P44 spending heat map and CM-2 Git sync procedure. | Product work remains Planned: P20-A-R3 and P44-A–D. CM-2 was activated under CR-112. P20-A-R3 task PR #149 merged into P20 at `7a5fed6c4a98d8394652e0dbb499b9aa810bae29`; phase PR #150 merged to `develop` at `4170545cbaa8a4f37d4583b5c29c909c0c99a015`. P44 task PR #151 merged into its phase at `0cdd8406225d15247a3843956da98c0d4dbfc2ad`; phase PR #152 merged into `develop` at `c0bb36a06b0726dcdc536243dbc10236e40d7fdd`. | Test-first commits `b15783c` (P20) and `01c707c` (CR-111); planning docs `a943b94`, `3bf0274` and `e520236`; P44 PRs #151/#152. | Original: work requested across a completed P20 behavior, a new product feature and repository workflow. New: track the completed-work fix as P20-A-R3, open P44 for the feature, and register CM-2 outside the phase dashboard. Reason: preserve R2 phase alignment and separate repository policy from product work. | current request |
@@ -3670,7 +3670,7 @@ verification.
 | CM-2 | After each target merge, fetch all remotes and fast-forward only the selected target branch. | Active | After any merge that lands on a target branch (task->phase, phase->develop, release->main, main->develop): git fetch --all --prune; git switch <target>; git pull --ff-only. Refuse and report if the worktree is dirty, the fast-forward fails or the target has no upstream. This rule never authorizes pushing; R3 is unchanged. |
 | CR-112 | Classify Planned work, separate ongoing lifecycle tracking, add R6 and activate CM-2. | Done | Local commits: tests `e2f0263`, `d24acd9`, `e7c134a`, `770393d`, `bdbe159`, `b8b90b1`; rules/guide `7dab04b`; placement audit `5841373`; gate/rename evidence `6ed0e39`. Gate 4's initial `npx expo-doctor` attempt exited 1 (`ENOTFOUND registry.npmjs.org`); network retry exited 0 (21/21), then the complete ordered rerun passed: 1 `npm test -- --coverage --watchman=false` exit 0 (101 suites, 1,324 passed, 1 skipped; coverage 95.96/92.15/98.02/97.62% statements/branches/functions/lines); 2 `npx tsc --noEmit` exit 0; 3 `npx expo lint` exit 0; 4 `npx expo-doctor` exit 0 (21/21); 5 `npx expo export --platform android` exit 0; 6 `npx expo export --platform ios` exit 0. Watchman was disabled for Gate 1 after its normal startup was denied by the sandbox. No physical-device verification was performed. P43-A lifecycle ref rename is complete and verified; P43-F PR #153/#154 integration is complete with merge commits recorded. P43-B/E and planned product work remain open. |
 | CR-113 | Record explicit owner approvals and placement decisions for Planned/Pending tasks without starting their work. | Done | All affected feature work remains Planned. Six ordered gates and task/phase PR evidence are recorded in Section 11. No research, implementation, tag deletion or issue creation was performed. Owner approvals cover P21-F, P33-B/C, P34-A–C, P35-B/C, P43-B/E, P44-A and P39/P40 placement; the exact proposed tag list and P43-E inventory remain prerequisites. |
-| CR-114 | Restructure how the project tracks work using independent entities (cleanup, qa-and-release, schema-migration, documentation), empty slots (P7, P27, P28, P32) and R7 slot-filling rule. | Done | All six gates pass; tests updated test-first; remote branches and local refs verified. |
+| CR-114 | Restructure how the project tracks work using independent entities (cleanup, qa-and-release, schema-migration, documentation), empty slots (P7, P27, P28, P32) and R7 slot-filling rule. | Done | PR #161 merged to develop as `9058386`; Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 owner-approved exception for upstream SDK 57 patch advisory; tests updated test-first; remote branches and local refs verified. |
 
 ## 8. Known issues and risks
 
@@ -4201,16 +4201,18 @@ evidence for the fixes.
 
 ### 2026-11-12 — CR-114 independent entities, empty slots and R7 verification
 
-- All six required gates ran sequentially on the documentation task branch and exited 0:
+- Verification on documentation branch and PR #161 integration candidate (HEAD `3d9efc2`):
 
   | Gate | Command | Exit / result |
   |---:|---|---|
-  | 1 | `npm test -- --coverage --watchman=false` | 0; 101 suites; 1,327 passed, 1 skipped (1,328 total); coverage 95.96/92.15/98.02/97.62% statements/branches/functions/lines; pure `src/lib` 100% |
+  | 1 | `npm test -- --coverage --watchman=false` | 0; 101 suites; 1,328 passed, 1 skipped (1,329 total); coverage 95.96/92.15/98.02/97.62% statements/branches/functions/lines; pure `src/lib` 100% |
   | 2 | `npx tsc --noEmit` | 0 |
   | 3 | `npx expo lint` | 0 |
-  | 4 | `npx expo-doctor` | 0; 21/21 checks passed |
+  | 4 | `npx expo-doctor` | 1; owner-approved exception. Pre-existing upstream advisory on both `develop` and `documentation` due to six newly published Expo SDK 57 patch releases (`expo ~57.0.33`, `expo-constants ~57.0.24`, `expo-linking ~57.0.14`, `expo-router ~57.0.31`, `expo-sharing ~57.0.26`, `expo-sqlite ~57.0.5`). Docs-only diff against `origin/develop` confirmed; dependency patch alignment tracked separately under `cleanup`. |
   | 5 | `npx expo export --platform android` | 0 |
   | 6 | `npx expo export --platform ios` | 0 |
+
+- PR integration: PR #161 merged into `develop` with merge commit `905838622e54e3c7a70a1e4b21d43862bd63f50a` (`9058386`) at 2026-11-12T18:58:36Z. Post-merge focused test suite on `develop` passed 4 suites / 47 tests.
 
 - Replaced assertions (none weakened):
 
@@ -10363,13 +10365,14 @@ Gradle build, version bump, or release preparation was performed.
   `phase-07-complete`, `phase-27-complete`, and `phase-28-complete` retained.
 - Git history map committed at `docs/history/entity-history-map.md` classifying all commits
   and 95 PRs without rewriting any Git history.
-- All six ordered gates passed on the task branch:
-  1 `npm test -- --coverage --watchman=false` (0; 101 suites, 1,327 passed, 1 skipped)
+- Verification on documentation branch and PR #161 candidate HEAD `3d9efc2`:
+  1 `npm test -- --coverage --watchman=false` (0; 101 suites, 1,328 passed, 1 skipped)
   2 `npx tsc --noEmit` (0)
   3 `npx expo lint` (0)
-  4 `npx expo-doctor` (0; 21/21 checks)
+  4 `npx expo-doctor` (1; owner-approved exception; pre-existing upstream SDK 57 patch advisory on both develop and documentation; patch alignment tracked under cleanup)
   5 `npx expo export --platform android` (0)
   6 `npx expo export --platform ios` (0)
+- PR integration: PR #161 merged `documentation` into `develop` via merge commit `9058386` at 2026-11-12T18:58:36Z; CM-2 synchronized `develop` and fast-forwarded `documentation`.
 - Decisions Q1–Q4 recorded: Q1 push authorized for schema-migration/documentation;
   Q2 documentation standalone lifecycle workflow; Q3 keep historical tags;
   Q4 history map deliverable.
@@ -11886,6 +11889,7 @@ Ongoing dead-code removal, dependency maintenance, bundle size audits and reposi
 
 | ID | Legacy ID | Status | Evidence | Last updated |
 |---|---|---|---|---|
+| cleanup: SDK 57 patch alignment | — | Planned | SDK 57 patch alignment (expo ~57.0.33, expo-constants ~57.0.24, expo-linking ~57.0.14, expo-router ~57.0.31, expo-sharing ~57.0.26, expo-sqlite ~57.0.5), then re-run all six gates. Placement: rule 1; searched dashboard, register, memory; related cleanup lifecycle; reason: dependency maintenance is ongoing repository lifecycle work. | not started |
 | P27-A | — | Done | Dead-code/dependency cleanup, bundle audit and bounded schedule benchmark; 91 suites and all six ordered gates passed. Previously: P27-A. Placement: rule 1; searched dashboard, register, memory; related cleanup lifecycle; reason: dead-code and bundle cleanup are ongoing repository lifecycle work. | 2026-11-07 |
 
 ### qa-and-release
@@ -11950,7 +11954,7 @@ Ongoing repository documentation, README, release notes, screenshots, memory, ru
 | P28-E-R5 | — | Done; Revised by P28-E-R5-R1 | Audited the 403 non-merge first-parent commits after the initial commit. They are already present in `main` and `develop`; all 30 phase branches exist, and none of these commits can be newly introduced by PR without rewriting history. Created `release/v1.0.0` at the existing v1.0.0 tag target. Task PR #52 merged into P28 as `f9bb715`; phase PR #53 later merged into `develop`. Previously: P28-E-R5. Placement: rule 2; searched dashboard, register, memory; related documentation lifecycle; reason: revision to release documentation. | 2026-11-09 |
 | P28-E-R5-R1 | — | Done | Finalized P28-E-R5 integration evidence: P28 PR #53 merged into `develop` as `0402592`; no historical commit subjects or hashes were changed, and `main` and release branch trees remain unchanged. Previously: P28-E-R5-R1. Placement: rule 2; searched dashboard, register, memory; related documentation lifecycle; reason: revision to release documentation. | 2026-11-09 |
 | P28-G | — | Done | `e6395a1`; converted ledger/shared-memory phase labels to PN notation, added the derived glossary and notation/exclusion/prefix regression guards. Focused tests passed 2 suites/15 tests; PR #85 merged into P28. Previously: P28-G. Placement: rule 1; searched dashboard, register, memory; related documentation lifecycle; reason: repository documentation is an ongoing lifecycle activity. | 2026-11-10 |
-| CR-114 | — | Done | Restructure independent entities, empty slots and R7. Test-first commit `f99fa67`; gates 1–6 pass; Q1–Q4 recorded; origin/schema-migration and origin/documentation pushed. Previously: CR-114. Placement: rule 1; searched dashboard, register, memory, rules; related independent entities restructure; reason: documentation and repository process work. | 2026-11-12 |
+| CR-114 | — | Done | Restructure independent entities, empty slots and R7. Test-first commits; PR #161 merged into `develop` as `9058386`; Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 owner-approved exception (upstream Expo SDK 57 patch advisory: expo ~57.0.33, expo-constants ~57.0.24, expo-linking ~57.0.14, expo-router ~57.0.31, expo-sharing ~57.0.26, expo-sqlite ~57.0.5); origin/schema-migration and origin/documentation pushed. Previously: CR-114. Placement: rule 1; searched dashboard, register, memory, rules; related independent entities restructure; reason: documentation and repository process work. | 2026-11-12 |
 | CR-106 | — | Done | Plan report-first external-guidance work for P31 privacy/CI rows, new P39 release audit and hardening, and P40 agent-context hygiene; record owner decisions and keep reports out of Git except for the findings summary table. Previously: CR-106. Placement: rule 1; searched dashboard, register, memory; related documentation lifecycle; reason: external guidance and repository planning are ongoing documentation work. | 2026-11-10 |
 | CR-109 | — | Done | Record owner-approved future plans, close accepted follow-ups, explain the deleted codex-changes commit, and reconcile the pending list. Previously: CR-109. Placement: rule 1; searched dashboard, register, memory; related documentation lifecycle; reason: roadmap and documentation reconciliation are ongoing documentation work. | 2026-11-11 |
 | CR-113 | — | Done | Record explicit owner approvals and placement decisions for Planned/Pending tasks without starting their work. Previously: CR-113. Placement: rule 1; searched dashboard, register, memory; related documentation lifecycle; reason: recording owner decisions is ongoing documentation work. | 2026-11-12 |
