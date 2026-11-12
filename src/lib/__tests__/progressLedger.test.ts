@@ -177,6 +177,52 @@ describe('permanent progress ledger', () => {
     expect(roadmap).toContain('P20-A-R3 — Linked one-time savings Paid from Transactions');
   });
 
+  it('records P44 and CM-2 as separate planned work under CR-111', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const roadmap = ledger.split('## 9. Upcoming roadmap')[1]?.split('## 10. Verification matrix')[0] ?? '';
+    const branchIndex = ledger.split('## 12. Phase branch index')[1] ?? '';
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+
+    expect(dashboard.split('\n').filter((line) => /^\| P44-[A-D] \|/.test(line))).toHaveLength(4);
+    for (const [id, dependency] of [
+      ['P44-A', 'none'],
+      ['P44-B', 'P44-A'],
+      ['P44-C', 'P44-B'],
+      ['P44-D', 'P44-C'],
+    ]) {
+      const row = dashboard.split('\n').find((line) => line.startsWith(`| ${id} |`));
+      expect(row).toContain('| Planned |');
+      expect(row).toContain(`Dependencies: ${dependency}`);
+      expect(row).toContain('Evidence: not started');
+    }
+    expect(dashboard).not.toContain('| CM-2 |');
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-111 |'))).toHaveLength(1);
+    expect(register.split('\n').find((line) => line.startsWith('| CM-2 |')))
+      .toContain('| Planned |');
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-111 |'))).toHaveLength(1);
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CM-2 |'))).toHaveLength(1);
+    expect(promptLog.split('\n').filter((line) => /^\| P44-[A-D] \|/.test(line))).toHaveLength(4);
+    expect(roadmap).toContain('P44-A — Design');
+    expect(roadmap).toContain('P44-B — Pure daily totals selector');
+    expect(roadmap).toContain('P44-C — Spending heat map screen and route');
+    expect(roadmap).toContain('P44-D — Demo data, layout, accessibility and device checklist');
+    expect(roadmap).toContain('OWNER DECISION');
+    expect(roadmap).toContain('unbounded month navigation');
+    expect(roadmap).toContain('50-year and 126-year stress fixtures');
+    expect(roadmap).toContain('loan proceeds/withdrawals/Borrowed');
+    expect(roadmap).toContain('no persisted schema change is Assumed');
+    expect(roadmap).toContain('plain seven-column React Native View');
+    expect(roadmap).toContain('CM-2 Git sync rule (Planned; not enforced)');
+    expect(roadmap).toContain('git fetch --all --prune');
+    expect(roadmap).toContain('Activate now? Default: No');
+    expect(branchIndex).toContain('| P44 | `phase/44-spending-heatmap` | — | — | 4 |');
+    expect(status).toContain('CR-111');
+    expect(openItems).toContain('CR-111');
+  });
+
   it('lists every fix and CR in the dashboard or register', () => {
     const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
     const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
@@ -198,7 +244,7 @@ describe('permanent progress ledger', () => {
       'CR-58', 'CR-59', 'CR-60', 'CR-61', 'CR-62', 'CR-63', 'CR-64', 'CR-65',
       'CR-66', 'CR-67', 'CR-68', 'CR-69', 'CR-70', 'CR-71', 'CR-72', 'CR-73', 'CR-74', 'CR-75',
       'CR-76', 'CR-77', 'CR-78', 'CR-79', 'CR-80', 'CR-81', 'CR-82', 'CR-83', 'CR-84', 'CR-85', 'CR-86', 'CR-87',
-      'CR-88', 'CR-89', 'CR-90', 'CR-91', 'CR-92', 'CR-93', 'CR-94', 'CR-95', 'CR-96', 'CR-97', 'CR-98', 'CR-99', 'CR-100', 'CR-101', 'CR-102', 'CR-103', 'CR-106', 'CR-107', 'CR-109', 'CR-110',
+      'CR-88', 'CR-89', 'CR-90', 'CR-91', 'CR-92', 'CR-93', 'CR-94', 'CR-95', 'CR-96', 'CR-97', 'CR-98', 'CR-99', 'CR-100', 'CR-101', 'CR-102', 'CR-103', 'CR-106', 'CR-107', 'CR-109', 'CR-110', 'CR-111',
     ]) {
       expect(statusRecords).toContain(id);
     }
@@ -221,7 +267,7 @@ describe('permanent progress ledger', () => {
   it('logs every prompt ID exactly once', () => {
     const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
     const promptIds = [
-      'P41-B-R1', 'CR-110-R1',
+      'P41-B-R1', 'CR-110-R1', 'CR-111', 'CM-2',
       'P01', 'P02', 'P03', 'P04', 'P05', 'P06', 'P06-FIX-R1',
       'P07', 'P08', 'P09', 'P10', 'P11', 'P12', 'P13', 'P14',
       'P15-A', 'P15-A2', 'P15-B', 'P15-C',
@@ -233,8 +279,8 @@ describe('permanent progress ledger', () => {
       'P23-C', 'P23-D', 'P25-F',
       'P28-A', 'P28-A-R1', 'P28-B', 'P28-C', 'P28-C-R1', 'P28-C-R2', 'P28-C-R3', 'P28-C-R4', 'P28-D', 'P28-E', 'P28-E-R1', 'P28-E-R2', 'P28-E-R3', 'P28-E-R4', 'P28-E-R5', 'P28-E-R5-R1', 'P28-F', 'P28-F-R1', 'P28-F-R2', 'P28-F-R2-R1', 'P28-F-R3', 'P28-F-R3-R1', 'P28-F-R3-R2', 'P28-F-R3-R3', 'P28-F-R3-R3-R1', 'P28-F-R4', 'P28-F-R4-R1', 'P28-F-R4-R1-R1', 'P28-F-R4-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1-R1-R1', 'P28-F-R6-R2', 'P28-F-R6-R3', 'P28-F-R6-R3-R1',
       'P29-A', 'P29-B', 'P29-C', 'P29-D', 'P29-E', 'P29-F', 'P29-F2', 'P29-F3', 'P29-F4', 'P29-G', 'P29-H', 'P29-I', 'P29-J', 'P29-K', 'P29-L', 'P29-M', 'P29-N', 'P29-M2', 'P29-O', 'P29-O-R1', 'P29-O1-R1', 'P29-O1-R2', 'P29-O2', 'P29-Q', 'P29-R', 'P29-S', 'P29-T', 'P29-U', 'P29-V', 'P29-W', 'P29-W-R1', 'P29-W-R2', 'P29-X', 'P29-Y', 'P29-Z',
-      'P29-AA', 'P29-AB', 'P29-AB-R1', 'P29-AB-R2', 'P29-AB-R2-R1', 'P30-A', 'P30-B', 'P30-C', 'P41-A',
-      'CR-92', 'CR-93', 'CR-94', 'CR-95', 'CR-96', 'CR-106', 'CR-107', 'CR-109', 'CR-110',
+      'P29-AA', 'P29-AB', 'P29-AB-R1', 'P29-AB-R2', 'P29-AB-R2-R1', 'P30-A', 'P30-B', 'P30-C', 'P41-A', 'P44-A', 'P44-B', 'P44-C', 'P44-D',
+      'CR-92', 'CR-93', 'CR-94', 'CR-95', 'CR-96', 'CR-106', 'CR-107', 'CR-109', 'CR-110', 'CR-111', 'CM-2',
     ];
 
     const loggedIds = promptLog.split('\n')
@@ -261,7 +307,7 @@ describe('permanent progress ledger', () => {
       'P23-C', 'P23-D', 'P25-F',
       'P28-A', 'P28-A-R1', 'P28-B', 'P28-C', 'P28-C-R1', 'P28-C-R2', 'P28-C-R3', 'P28-C-R4', 'P28-D', 'P28-E', 'P28-E-R1', 'P28-E-R2', 'P28-E-R3', 'P28-E-R4', 'P28-E-R5', 'P28-E-R5-R1', 'P28-F', 'P28-F-R1', 'P28-F-R2', 'P28-F-R2-R1', 'P28-F-R3', 'P28-F-R3-R1', 'P28-F-R3-R2', 'P28-F-R3-R3', 'P28-F-R3-R3-R1', 'P28-F-R4', 'P28-F-R4-R1', 'P28-F-R4-R1-R1', 'P28-F-R4-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1-R1-R1', 'P28-F-R6-R2', 'P28-F-R6-R3', 'P28-F-R6-R3-R1',
       'P29-A', 'P29-B', 'P29-C', 'P29-D', 'P29-E', 'P29-F', 'P29-F2', 'P29-F3', 'P29-F4', 'P29-G', 'P29-H', 'P29-I', 'P29-J', 'P29-K', 'P29-L', 'P29-M', 'P29-N', 'P29-M2', 'P29-O', 'P29-O-R1', 'P29-O1-R1', 'P29-O1-R2', 'P29-O2', 'P29-Q', 'P29-R', 'P29-S', 'P29-T', 'P29-U', 'P29-V', 'P29-W', 'P29-W-R1', 'P29-W-R2', 'P29-X', 'P29-Y', 'P29-Z',
-      'P29-AA', 'P29-AB', 'P29-AB-R1', 'P29-AB-R2', 'P29-AB-R2-R1', 'P30-A', 'P30-B', 'P30-C', 'P41-A', 'P42-A', 'P42-A-R1',
+      'P29-AA', 'P29-AB', 'P29-AB-R1', 'P29-AB-R2', 'P29-AB-R2-R1', 'P30-A', 'P30-B', 'P30-C', 'P41-A', 'P42-A', 'P42-A-R1', 'P44-A', 'P44-B', 'P44-C', 'P44-D',
     ];
 
     for (const id of newPartIds) {
@@ -328,7 +374,7 @@ describe('permanent progress ledger', () => {
     expect(roadmapLabels).toContain('P31');
     expect(branchLabels).toEqual([
       ...Array.from({ length: 30 }, (_, index) => `P${index + 1}`),
-      'P41', 'P42', 'P43',
+      'P41', 'P42', 'P43', 'P44',
     ]);
 
     let inSubjectMap = false;
@@ -440,7 +486,7 @@ describe('permanent progress ledger', () => {
     const phase18 = counts.get(18);
     expect(phase18?.total).toBeGreaterThan(0);
     expect(phase18?.done).toBe(phase18?.total);
-    for (const phase of [20, 21, 22, 23, 25, 28, 30]) {
+    for (const phase of [20, 21, 22, 23, 25, 28, 30, 44]) {
       const count = counts.get(phase);
       expect(count?.total).toBeGreaterThan(0);
       if (phase === 20) {
@@ -459,6 +505,9 @@ describe('permanent progress ledger', () => {
       } else if (phase === 22) {
         expect(count?.done).toBe(2);
         expect(count?.total).toBe(2);
+      } else if (phase === 44) {
+        expect(count?.done).toBe(0);
+        expect(count?.total).toBe(4);
       } else if (phase === 28) {
         expect(count?.done).toBe(40);
         expect(count?.total).toBe(40);
@@ -521,7 +570,7 @@ describe('permanent progress ledger', () => {
     }
 
     const rows = index.split('\n').filter((line) => /^\| P\d+ \|/.test(line));
-    expect(rows).toHaveLength(33);
+    expect(rows).toHaveLength(34);
     for (const line of rows) {
       const [, phase, branch, tag, commit, count] = line.split('|').map((cell) => cell.trim().replaceAll('`', ''));
       const number = Number(phase?.match(/^P(\d+)$/)?.[1]);
@@ -530,6 +579,13 @@ describe('permanent progress ledger', () => {
         expect(tag).toBe('—');
         expect(commit).toBe('—');
         expect(Number(count)).toBe(5);
+        continue;
+      }
+      if (number === 44) {
+        expect(branch).toBe('phase/44-spending-heatmap');
+        expect(tag).toBe('—');
+        expect(commit).toBe('—');
+        expect(Number(count)).toBe(4);
         continue;
       }
       if (number === 42) {
@@ -554,7 +610,7 @@ describe('permanent progress ledger', () => {
     }
   });
 
-  it('records the unchanged FX/CH IDs, CR-4 through CR-110 and current phase work', () => {
+  it('records the unchanged FX/CH IDs, CR-4 through CR-111 and current phase work', () => {
     const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
     const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
     const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
@@ -574,7 +630,7 @@ describe('permanent progress ledger', () => {
       'CR-62', 'CR-63', 'CR-64', 'CR-65', 'CR-66', 'CR-67', 'CR-68', 'CR-69',
       'CR-70', 'CR-71', 'CR-72', 'CR-73', 'CR-74', 'CR-75', 'CR-76', 'CR-77',
       'CR-78', 'CR-79', 'CR-80', 'CR-81', 'CR-82', 'CR-83', 'CR-84', 'CR-85', 'CR-86', 'CR-87',
-      'CR-88', 'CR-89', 'CR-90', 'CR-91', 'CR-92', 'CR-93', 'CR-94', 'CR-95', 'CR-96', 'CR-97', 'CR-106', 'CR-107', 'CR-108', 'CR-109', 'CR-110',
+      'CR-88', 'CR-89', 'CR-90', 'CR-91', 'CR-92', 'CR-93', 'CR-94', 'CR-95', 'CR-96', 'CR-97', 'CR-106', 'CR-107', 'CR-108', 'CR-109', 'CR-110', 'CR-111', 'CM-2',
     ]) {
       expect(`${dashboard}\n${register}`).toContain(id);
     }

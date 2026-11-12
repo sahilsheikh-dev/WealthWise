@@ -57,6 +57,85 @@ the phase branch is retained. Phase PR #147 merged into `develop` at
   test-first commit is `e5114e01f363d6de5a12acb61886039469d4a86f`.
   Full plan and final evidence: [PROGRESS.md](../PROGRESS.md).
 
+## CR-111 planned work
+
+CR-111 remains planning-only. P20-A-R3 is a revision to completed P20-A-R2;
+P44 is a new development phase; CM-2 is a repository rule outside the
+dashboard. All Planned rows require dependencies and `Evidence: not started`.
+P20-A-R3 is integrated through task PR #149 (`7a5fed6c4a98d8394652e0dbb499b9aa810bae29`)
+and phase PR #150 (`4170545cbaa8a4f37d4583b5c29c909c0c99a015`).
+
+- **P20-A-R3 — Linked one-time savings Paid from Transactions:** the
+  owner-reported behavior is not yet reproduced. Treat all causes as
+  hypotheses, not conclusions: the Transactions pending row may lack the
+  holding ID or viewed month and fall through to generic `addTransaction`;
+  a generated `Other investments` transaction may not match the Budget item
+  and create an unbudgeted actual; or a recurring item linked to a one-time
+  holding may generate a plan-style due unlinked to the manual holding.
+  Dependencies: none. Before any implementation, reproduce with a real
+  `createAppStore` store-level regression and a component test for each entry
+  point: Transactions, Budget, Home, `/payment-confirm` and reminders.
+  Expected: one Deposit on the holding, one linked invest transaction, the
+  same Budget item actual equals the paid amount, no new Budget row or
+  unbudgeted row, one persisted write and one-step Undo. Cover exact, lower
+  and higher amounts; Cash, Savings and Other holdings; exclude Fixed
+  deposit. No schema change is Assumed and must be verified during
+  implementation. Reserve the next free N checklist number for a future
+  physical-device check; none is claimed now.
+- **P44-A — Design:** dependencies none. Placement is an owner decision;
+  recommend a stack route (for example `/spending-heatmap`) opened by a
+  Transactions header action. Home is user-owned, Budget is protected and
+  tabs remain Home/Transactions/Goals/Budget; do not edit Home or Budget
+  without explicit authorization. A Budget section remains an alternative,
+  not the default.
+- **P44-B — Pure selector:** depends on P44-A. Add an injected-date pure
+  `src/domain/` selector for daily totals by transaction type for one month,
+  with no React/Expo imports, clock reads or randomness. Tests include a
+  seeded oracle and 50-year and 126-year stress fixtures.
+- **P44-C — Screen and route:** depends on P44-B. Add a stack route, month
+  navigation, one-at-a-time Expense (default)/Income/Investment toggle and
+  day detail. “Infinite” means previous/next navigation clamped to available
+  data plus the current month, not an infinite rendered list. Group
+  transactions by date in one pass per month and meet existing stress-tier
+  budgets. Use font-scale tests at 1.0, 1.3 and 2.0.
+- **P44-D — Demo/layout/accessibility:** depends on P44-C. Add DEC-DEMO
+  fixtures, simulated layout tests, accessibility checks and device
+  checklist rows. Cells need exact-date/amount accessible labels, numeric
+  day labels and a bucket-range legend; color alone cannot carry meaning.
+  Targets are at least 44pt; support dark/light/all themes and explicit-tier
+  `AmountText`/`formatAmount`. Use a plain seven-column React Native View;
+  no new dependency or charting library.
+- P44-A owner decisions: placement; whether Income includes loan
+  proceeds/withdrawals/Borrowed; whether linked investment transactions count
+  only as Investment. Recommend a Transactions stack route, all inflows in
+  Income with a toggle to exclude non-earned inflows, and linked investment
+  transactions only in Investment. Five intensity buckets are relative to
+  the visible month's maximum, with an option for a trailing-12-month
+  percentile to resist outlier flattening. No persisted schema change is
+  Assumed; any user setting belongs in the meta store, not AppData.
+- Separately approvable P44 candidates (none included as committed scope):
+  weekday average spend; no-spend-day count and longest streak; top spending
+  days with day transaction tap-through; month-over-month delta; payday
+  effect (seven days after main income vs. the rest); biggest category on
+  day tap; and a Budget over-plan overlay. More than three add-ons would
+  bloat v1. Recommended v1 is the heat grid, day detail, weekday summary and
+  no-spend streak.
+- **CM-2 — Git sync rule:** Planned, not enforced; “Activate now?” defaults
+  to No. Proposed procedure after a commit/PR merge to a target
+  (task→phase, phase→develop, release→main, main→develop):
+  `git fetch --all --prune`, `git switch <target branch>`, then
+  `git pull --ff-only`. Refuse and report if the worktree is dirty, the
+  target lacks an upstream, or fast-forward fails. Never push, force-push or
+  rewrite history. Delete a merged task branch after switching and report
+  the resulting branch and HEAD. “Pull all branches” means fetch every
+  remote, then fast-forward only the selected branch because `git pull`
+  updates only the current branch.
+- Editing `AGENTS.md`, `docs/memory/rules.md` or `CONTRIBUTING.md` (if it lists
+  agent workflow), and activating/enforcing CM-2, are out of scope until
+  separately authorized. PROGRESS section 3 records the proposal only. No
+  GitHub issues, schema, app behavior, demo data, device checks, tags or
+  history changes are part of this plan.
+
 ## v1.2.0 release close-out
 
 - v1.2.0 was published on 2026-11-11. Release PR #124 merged
