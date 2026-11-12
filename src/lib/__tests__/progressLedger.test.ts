@@ -241,7 +241,7 @@ describe('permanent progress ledger', () => {
     expect(register.split('\n').find((line) => line.startsWith('| CM-2 |')))
       .toContain('| Active |');
     expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-111 |'))).toHaveLength(1);
-    expect(promptLog.split('\n').find((line) => line.startsWith('| CM-2 |'))).toHaveLength(1);
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CM-2 |'))).toHaveLength(1);
     expect(promptLog.split('\n').filter((line) => /^\| P44-[A-D] \|/.test(line))).toHaveLength(4);
     expect(roadmap).toContain('P44-A — Design');
     expect(roadmap).toContain('P44-B — Pure daily totals selector');
@@ -1077,7 +1077,7 @@ describe('permanent progress ledger', () => {
       expect(matches).toHaveLength(1);
       expect(matches[0]).toContain('Previously:');
       expect(matches[0]).toMatch(/Placement: rule [1-5];/);
-      expect(dashboard.split('\n').filter((line) => line.startsWith(`| ${id} |`))).toHaveLength(0);
+      expect(dashboard.split('\n').filter((line) => line.startsWith(`| ${id} |`) && !line.includes('Empty (reserved)'))).toHaveLength(0);
     }
 
     // R7 in AGENTS.md, rules.md, PROGRESS.md, work-placement.md
