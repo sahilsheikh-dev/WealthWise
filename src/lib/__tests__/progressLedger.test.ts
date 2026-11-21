@@ -224,19 +224,25 @@ describe('permanent progress ledger', () => {
     const roadmap = ledger.split('## 9. Upcoming roadmap')[1]?.split('## 10. Verification matrix')[0] ?? '';
     const branchIndex = ledger.split('## 12. Phase branch index')[1]?.split('## 13. Independent entities')[0] ?? '';
     const independentEntities = ledger.split('## 13. Independent entities')[1] ?? '';
+    const checklist = readFileSync(join(process.cwd(), 'docs/releases/device-test-checklist.md'), 'utf8');
 
     const p20u = dashboard.split('\n').find((line) => line.startsWith('| P20-U |'));
     const p20uR1 = dashboard.split('\n').find((line) => line.startsWith('| P20-U-R1 |'));
     expect(p20u).toContain('Done; Revised by P20-U-R1');
-    expect(p20uR1).toContain('| Done |');
+    expect(p20uR1).toContain('| In progress |');
     expect(p20uR1).toContain('superseded CR-115’s earlier');
     expect(p20uR1).toContain('four reproducible stale schedule cells');
     expect(p20uR1).toContain('O73 physical-device check remains Not run');
+    expect(p20uR1).toContain('optional due-day or holding-ID clearing overwrote other changed Budget item fields');
     expect(p20uR1).toMatch(/Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and touched Budget forms\/domain\/store; related P20-U; reason: fix a defect in the completed P20-U Budget route forms\./);
 
     // Exact fields in evidence/scope
     expect(p20uR1).toContain('item, value, amount, start-month, frequency, due-day, etc.');
     expect(p20uR1).toContain('single month and this and following months');
+    const o73 = checklist.split('\n').find((line) => line.startsWith('| O73 |'));
+    expect(o73).toContain('one-time and recurring');
+    expect(o73).toContain('Spend, Invest and Income');
+    expect(o73).toContain('restart');
 
     // Register and prompt log checks
     expect(register).toContain('| CR-115 |');
