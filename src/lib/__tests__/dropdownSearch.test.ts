@@ -42,5 +42,7 @@ describe('filterAndRankDropdownOptions', () => {
     const entries = [{ value: 'custom', title: 'Add another' }, { value: 'x', title: 'Alpha' }];
     expect(filterAndRankDropdownOptions(entries, 'missing')).toEqual([entries[0]]);
     expect(filterAndRankDropdownOptions(entries, 'add')).toEqual([entries[0]]);
+    const matching = [{ value: 'custom', title: 'Custom' }, { value: 'label', title: 'Customarily named' }];
+    expect(filterAndRankDropdownOptions(matching, 'custom')).toEqual([matching[1], matching[0]]);
   });
 });
