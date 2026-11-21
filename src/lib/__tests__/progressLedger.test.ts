@@ -150,6 +150,9 @@ describe('permanent progress ledger', () => {
     expect(emergencyFund).toContain('effective target = max(stored target, three-month floor)');
     expect(emergencyFund).toContain('three-month minimum floor');
     expect(emergencyFund).toContain('font-scale tests at 1.0/1.3/2.0');
+    expect(emergencyFund).toContain('owner-supplied Gate 4 exit 1: 20/21 checks; six SDK 57 patch mismatches');
+    expect(emergencyFund).toContain('session Gate 4 attempt exit 1: ENOTFOUND registry.npmjs.org');
+    expect(emergencyFund).toContain('Gate 5 exit 0; Gate 6 exit 0');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-W |')))
       .toContain('resolve schema/backup impact before any implementation');
     expect(roadmap).toContain('one issue per ledger part or CR');
