@@ -1,4 +1,4 @@
-<!-- Purpose: Index and protocol for shared repository AI memory. | Last updated: 2026-10-26 | Updates: owner and AI agents -->
+<!-- Purpose: Index and protocol for shared repository AI memory. | Last updated: 2026-11-12 | Updates: owner and AI agents -->
 
 # Shared AI memory
 
@@ -18,6 +18,8 @@ but does not replace or shorten, the canonical [progress ledger](../PROGRESS.md)
 6. [open-items.md](open-items.md) — unresolved requirements, risks and owner
    decisions.
 7. [working-style.md](working-style.md) — collaboration and reporting norms.
+8. [work-placement.md](work-placement.md) — classify work and select its
+   phase, lifecycle table and branch.
 
 ## Files and update protocol
 
@@ -31,6 +33,7 @@ but does not replace or shorten, the canonical [progress ledger](../PROGRESS.md)
 | [status.md](status.md) | Current phase, gates and blockers |
 | [open-items.md](open-items.md) | Unresolved items, assumptions and device checks |
 | [working-style.md](working-style.md) | Owner/AI working agreement |
+| [work-placement.md](work-placement.md) | Work classification, placement rules and branch workflow |
 
 Before work, read this index, the relevant memory files, and the matching
 ledger section. After work, update `status.md` and `open-items.md`; record

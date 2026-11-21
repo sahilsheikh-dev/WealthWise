@@ -1,12 +1,92 @@
-<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-12 | Updates: owner and AI agents -->
+<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-13 | Updates: owner and AI agents -->
 
 # Open items
+
+## Budget item/schedule edit and delete bug (P20-U-R1, Planned)
+
+- **P20-U-R1 (Planned; not started):** owner-reported defect in Budget route form
+  updating and deletion. Owner report (verbatim):
+  > "In budget while updating any item/value/amount/start-month/frequency/due-day/etc it is not updating also while trying to delete it is not even deleting, not for single month and this and following months."
+  Owner instruction: "Don't start working on this."
+  Affected fields: item, value, amount, start-month, frequency, due-day, etc.
+  Delete cases: single month and this and following months.
+  Open questions (as questions, not assumptions):
+  - Which Budget screens and sections (spend, invest, income schedules, one-time vs recurring)?
+  - Whether the bug is UI, store, or persistence?
+  - App/schema version and whether it began after a specific release or CR?
+  - Exact reproduction steps and expected behavior?
+  - Whether data on device persists after restart?
+  Dependencies: report-first investigation with a red regression test before any fix (R1), then a fix with all six ordered gates; physical-device check likely required (planned process, not authorized work).
+  Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and touched files; related P20-U; reason: defect in completed budget route form item/schedule updating and deletion.
+
+## CR-114 independent entities, empty slots and R7 (2026-11-12)
+
+Restructuring of work tracking completed under CR-114 and merged into `develop` via PR #161 (`9058386`):
+- Independent lifecycle entities established: `cleanup`, `qa-and-release`,
+  `schema-migration` and `documentation`. They operate on dedicated branches and
+  are tracked in Section 13 outside the phase denominator.
+- Empty reserved slots established: P7, P27, P28 and P32. Reserved for adjacent
+  feature work under R7; no renumbering or ref rewrite.
+- R7 slot-filling rule added to AGENTS.md, rules.md, work-placement.md and
+  PROGRESS.md.
+- Branches: `origin/schema-migration` and `origin/documentation` pushed and
+  verified; old `origin/phase/07-schema-migration` deleted.
+- Git history map committed at `docs/history/entity-history-map.md`.
+- PR #161 merged into `develop` with merge commit `9058386`.
+
+## Cleanup lifecycle planned work
+
+- **SDK 57 patch alignment (Planned):** align Expo SDK 57 patch dependencies
+  (`expo ~57.0.33`, `expo-constants ~57.0.24`, `expo-linking ~57.0.14`,
+  `expo-router ~57.0.31`, `expo-sharing ~57.0.26`, `expo-sqlite ~57.0.5`),
+  then re-run all six gates. Placement: rule 1; searched dashboard, register,
+  memory; related cleanup lifecycle; reason: dependency maintenance is ongoing
+  repository lifecycle work. Gate 4 exit 1 was recorded as an owner-approved
+  exception on PR #161 pending this alignment.
+
+## CR-113 owner-approved planning (2026-11-12)
+
+The owner approved planning/research and the decisions below. All affected
+feature parts remain **Planned**; this update starts no research,
+implementation, tag deletion or GitHub issue creation.
+
+- **P21-F:** explicit authorization is granted to edit the user-owned
+  `app/(tabs)/index.tsx` if needed. The feature remains unimplemented.
+- **P33-A–C:** widgets are reactivated and platform research is approved.
+  Android implementation is approved after research/scope confirmation;
+  iOS implementation still depends on iOS distribution. No research has
+  started.
+- **P34-A–C:** renewed quick-capture scope and platform research are
+  approved. Research and dependent evaluation remain unstarted.
+- **P35-A–C:** permission/platform/policy research is approved, and the owner
+  has given a Go for implementation after that research. P35-A research is a
+  prerequisite; no research or implementation has started.
+- **P43-B:** tag-cleanup scope and the report-only branch/PR/merge audit are
+  approved. The exact proposed deletion list has not been supplied or
+  approved, so no tag deletion is authorized yet. Preserve every release tag
+  and the stale phase tags already directed.
+- **P43-E:** GitHub issue scope, strategy and batching direction are approved,
+  including issue creation. No issues are created in this planning-only task;
+  verify the ledger inventory and use a separate execution task.
+- **P44-A:** use a Transactions header action to open a stack screen. Include
+  all inflows in Income with an option to exclude non-earned inflows; count
+  linked investment transactions only under Investment. Remaining design and
+  implementation work is Planned.
+- **P39-A–H:** approved to remain in P39; no lifecycle move.
+- **P40-A–B:** approved to remain in P40; P40-B still depends on P40-A.
+
+Full row-level details and verification are in [PROGRESS.md](../PROGRESS.md).
+P43-G task PR #157 merged into P43 at
+`01e5559f00a3b7008292db07ed7900af0ea8f828`; phase PR #158 merged into
+`develop` at `14f539b4c70da1a00e24642fd3e6068091f3ed9c`. CM-2 synchronization
+completed after both merges.
 
 ## CR-110-R1 planned work
 
 CR-110's original planned-only row is retained and marked **Revised by
-CR-110-R1**. Five P43 rows are Planned, each with dependencies and
-`Evidence: not started`.
+CR-110-R1**. Its original five P43 rows are preserved as evidence; P43-C/D
+were relocated to P21-F/P20-W, and P43-A is Done. P43-B/E remain
+Planned with dependencies and `Evidence: not started`.
 The authorized local phase `phase/43-lifecycle-and-transaction-planning` and
 task `task/P43-A-plan-cr110` were created from `develop` for the PR flow.
 Task PR #146 merged into the phase at
@@ -16,27 +96,27 @@ the phase branch is retained. Phase PR #147 merged into `develop` at
 
 - **P43-A — Lifecycle tracking separation:** list `cleanup` and
   `qa-and-release` outside numbered development phases, alongside `develop`
-  and `release/vX.Y.Z`; document current branches
-  `phase/27-cleanup` and `phase/28-qa-and-release` with proposed ongoing
-  branch names `cleanup` and `qa-and-release`; preserve P27/P28 completion
-  evidence. Update
-  PROGRESS.md, section 12, memory, tests and Markdown references when the
-  plan is executed. Documentation reordering only; Git chronology unchanged
-  unless the owner gives explicit written authorization for a specific
-  rewrite. Open decision: remote branch renames, which require pushing new
-  names and deleting the old remote refs. Retain stale phase tags as
-  previously directed.
-- **P43-B — Tag and integration audit:** preserve every `vX.Y.Z` release tag.
-  Non-release phase/task-tag deletion is blocked on owner approval of an exact
-  tag list. Produce a separate report-only audit of branch, PR and merge
-  balance; report in chat or `/tmp`, not Git.
-- **P43-C — Emergency Fund target editing:** edit from the Emergency Fund
-  screen and reflect the value on that screen, Home, Goals, allocation and
-  bucket targets, and in the three-month minimum-floor logic. Require one
-  domain action, one Zustand `set`, one persisted write and Undo; validation,
-  tests at font scales 1.3 and 2.0, and DEC-DEMO data. `app/(tabs)/index.tsx`
-  is user-owned; editing it needs explicit owner authorization.
-- **P43-D — Transaction form:** derive investment category with
+  and `release/vX.Y.Z`; preserve P27/P28 completion evidence. Both remote
+  renames are complete and verified: `cleanup` retained the old tip
+  `a2fa24f930da15c49f779577eb749b33f11a7059`, and `qa-and-release` retained
+  `9d914638e50462cbadef84df3294ed07cbf42732`. The old remote refs are absent.
+  Historical branch name: `phase/27-cleanup`; historical branch name:
+  `phase/28-qa-and-release`. The stale phase tags remain unchanged.
+- **P43-B — Tag and integration audit:** owner approved the cleanup scope and
+  report-only branch/PR/merge audit. Preserve every `vX.Y.Z` release tag and
+  previously retained stale phase tags. Prepare the exact proposed deletion
+  list for owner review; the list has not yet been supplied or approved, so
+  no deletion is authorized. Report the audit in chat or `/tmp`, not Git.
+- **P21-F (Previously: P43-C) — Emergency Fund target editing:** edit from
+  the Emergency Fund screen and reflect the value on that screen, Home, Goals,
+  allocation and bucket targets, and in the three-month minimum-floor logic.
+  Require one domain action, one Zustand `set`, one persisted write and Undo;
+  validation, tests at font scales 1.3 and 2.0, and DEC-DEMO data.
+  `app/(tabs)/index.tsx` is user-owned; the owner explicitly authorized
+  editing it if needed (CR-113). Placement: rule 4; searched dashboard, register, P21-A–E,
+  roadmap, memory and Emergency Fund modules; related P21-A–E; reason: the
+  work extends the existing Emergency Fund feature area.
+- **P20-W (Previously: P43-D) — Transaction form:** derive investment category with
   `investCategoryFor` only after a holding is selected; show only
   user-created/Budget-defined expense categories plus Custom; design category
   (e.g. Wants/Expenses) versus item (e.g. party/others) hierarchy and
@@ -44,18 +124,121 @@ the phase branch is retained. Phase PR #147 merged into `develop` at
   claims v24. Schema impact remains undetermined; any bump needs a separate
   plan, identity-preserving migration, premigration archive and backup import
   support. Plan test-first regressions, demo-data updates and backup
-  compatibility checks.
+  compatibility checks. Placement: rule 4; searched dashboard, register,
+  P20-O/P, P3 history, roadmap, memory and transaction form modules; related
+  P20-O and P20-P; reason: the work extends the existing Budget/category form
+  area.
 - **P43-E — GitHub issue strategy (plan only):** one issue per ledger part
   or CR; phase/type/status labels; release milestones; pending issues open;
   completed issues retrospective and closed; verified commits, PRs, merge
   SHAs and original dates in each body; one retrospective comment per issue.
   GitHub sets actual timestamps; original dates are text only. About 216
-  ledger parts need deduplication; assess API rate, batching and noise. Issue
-  creation is a separate owner-approved task; create no issues now.
+  ledger parts need deduplication; assess API rate, batching and noise.
+  Strategy, scope and batching are owner-approved; issue creation was not
+  started in CR-113 and requires a separate execution task.
+- **P43-F — Work placement and CM-2:** add R6, an indexed guide, ledger tests,
+  a placement audit and CM-2 activation. Test-first commits and the complete
+  six-gate run are recorded in [PROGRESS.md](../PROGRESS.md); all gates passed
+  after retrying the network-dependent Expo Doctor gate. Task PR #153 merged
+  into P43 at `6e8632f61226fabbfdeca1040f6dee097a808607`; phase PR #154
+  merged into `develop` at `faa126ba75ee58ee703b8e43b375aece91c8f4d1`.
+  P43-F-R1 records these merge SHAs. No feature implementation is included.
 - No app implementation, tag operation, issue creation or history rewrite is
   included. The branch/PR/merge-balance report is not a Git deliverable. The
   test-first commit is `e5114e01f363d6de5a12acb61886039469d4a86f`.
   Full plan and final evidence: [PROGRESS.md](../PROGRESS.md).
+
+## CR-111 planned work
+
+CR-111's product work remains planning-only. P20-A-R3 is a revision to
+completed P20-A-R2; P44 is a new development phase; CM-2 is now Active and
+enforced outside the dashboard. Planned product rows retain dependencies and
+`Evidence: not started`.
+P20-A-R3 is integrated through task PR #149 (`7a5fed6c4a98d8394652e0dbb499b9aa810bae29`)
+and phase PR #150 (`4170545cbaa8a4f37d4583b5c29c909c0c99a015`).
+
+- **P20-A-R3 — Linked one-time savings Paid from Transactions:** the
+  owner-reported behavior is not yet reproduced. Treat all causes as
+  hypotheses, not conclusions: the Transactions pending row may lack the
+  holding ID or viewed month and fall through to generic `addTransaction`;
+  a generated `Other investments` transaction may not match the Budget item
+  and create an unbudgeted actual; or a recurring item linked to a one-time
+  holding may generate a plan-style due unlinked to the manual holding.
+  Dependencies: none. Before any implementation, reproduce with a real
+  `createAppStore` store-level regression and a component test for each entry
+  point: Transactions, Budget, Home, `/payment-confirm` and reminders.
+  Expected: one Deposit on the holding, one linked invest transaction, the
+  same Budget item actual equals the paid amount, no new Budget row or
+  unbudgeted row, one persisted write and one-step Undo. Cover exact, lower
+  and higher amounts; Cash, Savings and Other holdings; exclude Fixed
+  deposit. No schema change is Assumed and must be verified during
+  implementation. Reserve the next free N checklist number for a future
+  physical-device check; none is claimed now.
+- **P44-A — Design:** owner approved a stack route opened by a Transactions
+  header action; include all inflows as Income with a toggle to exclude
+  non-earned inflows, and count linked investment transactions only as
+  Investment. Home is user-owned, Budget is protected and
+  tabs remain Home/Transactions/Goals/Budget; do not edit Home or Budget
+  without explicit authorization. A Budget section remains an alternative,
+  not the default.
+- **P44-B — Pure selector:** depends on P44-A. Add an injected-date pure
+  `src/domain/` selector for daily totals by transaction type for one month,
+  with no React/Expo imports, clock reads or randomness. Tests include a
+  seeded oracle and 50-year and 126-year stress fixtures.
+- **P44-C — Screen and route:** depends on P44-B. Add a stack route, month
+  navigation, one-at-a-time Expense (default)/Income/Investment toggle and
+  day detail. “Infinite” means previous/next navigation clamped to available
+  data plus the current month, not an infinite rendered list. Group
+  transactions by date in one pass per month and meet existing stress-tier
+  budgets. Use font-scale tests at 1.0, 1.3 and 2.0.
+- **P44-D — Demo/layout/accessibility:** depends on P44-C. Add DEC-DEMO
+  fixtures, simulated layout tests, accessibility checks and device
+  checklist rows. Cells need exact-date/amount accessible labels, numeric
+  day labels and a bucket-range legend; color alone cannot carry meaning.
+  Targets are at least 44pt; support dark/light/all themes and explicit-tier
+  `AmountText`/`formatAmount`. Use a plain seven-column React Native View;
+  no new dependency or charting library.
+- P44-A placement and counting decisions are approved by the owner (CR-113).
+  Five intensity buckets are relative to
+  the visible month's maximum, with an option for a trailing-12-month
+  percentile to resist outlier flattening. No persisted schema change is
+  Assumed; any user setting belongs in the meta store, not AppData.
+- Separately approvable P44 candidates (none included as committed scope):
+  weekday average spend; no-spend-day count and longest streak; top spending
+  days with day transaction tap-through; month-over-month delta; payday
+  effect (seven days after main income vs. the rest); biggest category on
+  day tap; and a Budget over-plan overlay. More than three add-ons would
+  bloat v1. Recommended v1 is the heat grid, day detail, weekday summary and
+  no-spend streak.
+- **CM-2 — Git sync rule:** Active and enforced in `AGENTS.md`, `rules.md`,
+  `CONTRIBUTING.md` and PROGRESS section 3 using the owner's exact sentence.
+  It does not authorize pushes. No app behavior, schema, demo data, device
+  checks, tags or history changes are part of the rule.
+
+## CR-112 closeout
+
+- P43-A and P43-F are Done. Remote `cleanup` and `qa-and-release` were each pushed at
+  their original tips, compared against the old refs before deletion, and
+  verified afterward with only the new remote names present. Tag targets and
+  all six protected blob IDs remain unchanged. See the rename evidence in
+  [PROGRESS.md](../PROGRESS.md).
+- P43-F adds R6 and the indexed work-placement guide. Test-first commits:
+  `e2f0263`, `d24acd9`, `e7c134a`, `770393d` and `bdbe159`; rules/guide commit
+  `7dab04b`; placement-audit commit `5841373`. The initial Expo Doctor attempt
+  exited 1 on `ENOTFOUND registry.npmjs.org`; the network retry passed 21/21,
+  then all six ordered gates exited 0. Gate 1: 101 suites, 1,324 passed,
+  1 skipped; coverage 95.96/92.15/98.02/97.62%. Task PR #153 merged into
+  P43 at `6e8632f61226fabbfdeca1040f6dee097a808607`; phase PR #154 merged
+  into `develop` at `faa126ba75ee58ee703b8e43b375aece91c8f4d1`. No
+  physical-device check was run.
+- P31-E CI work moved to `qa-and-release` lifecycle tracking under rule 1.
+  It is still Planned and needs a real PR run before branch protection.
+- P39-A–H remain in P39 by owner decision (CR-113); no lifecycle move.
+- P40-A/B remain under Agent-context hygiene by owner decision (CR-113); no
+  lifecycle move. P40-B remains dependent on P40-A.
+- All placements, exact row mappings, count changes and assertion replacements
+  are in [PROGRESS.md](../PROGRESS.md). No Planned application feature was
+  implemented and no device verification is claimed.
 
 ## v1.2.0 release close-out
 
@@ -78,7 +261,8 @@ the phase branch is retained. Phase PR #147 merged into `develop` at
   through PRs #127, #128 and #129. Final ledger/test evidence was merged and
   synchronized through PRs #130–#133; `main` and `develop` trees match.
 - The final ledger/test correction task PR #134 merged into the retained
-  `phase/28-qa-and-release` at `2d3a0f6`; see the P28-F-R6-R2 ledger entry.
+  `qa-and-release` (historical branch name: `phase/28-qa-and-release`) at
+  `2d3a0f6`; see the P28-F-R6-R2 ledger entry.
 - P28-F-R6-R3 task PR #138 merged into the retained phase at `6f5b1cb`;
   phase PR #139 merged to `develop` at `fd7ba55`. O45-O60 are recorded as
   owner-reported Pass, with device identity details absent.
@@ -163,8 +347,9 @@ Not adopted in CR-106:
   captures or capture script are needed. Widgets, quick capture (shake,
   double-tap back or key combination) and notification/SMS detection are
   Planned, with research/reactivation requirements retained. P33-C still
-  requires iOS distribution; P35-C requires the P35-B owner go/no-go before
-  implementation. Notes includes text, voice/audio recordings, photos and
+  requires iOS distribution. These research and scope gates were updated by
+  the owner's 2026-11-12 approvals in CR-113; P35-C remains gated on completed
+  P35-A research. Notes includes text, voice/audio recordings, photos and
   videos; its planned migration impact is now schema v24 after CR-108's v23
   release. Skeleton loading is planned as P38. See
   [PROGRESS.md](../PROGRESS.md) for the recorded acceptance scope.

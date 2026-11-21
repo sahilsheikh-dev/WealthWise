@@ -16,7 +16,7 @@ describe('permanent progress ledger', () => {
     expect(sections.map(({ number }) => number)).toEqual(
       Array.from({ length: sections.length }, (_, index) => String(index + 1)),
     );
-    expect(sections[sections.length - 1]?.title).toBe('Phase branch index');
+    expect(sections[sections.length - 1]?.title).toBe('Independent entities');
   });
 
   it('tracks CR-108 completion with owner-reported physical-device checks', () => {
@@ -40,15 +40,16 @@ describe('permanent progress ledger', () => {
   });
 
   it('records P28-F-R6-R3 task and phase PR integration', () => {
-    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
-    const revisionRow = dashboard.split('\n').find((line) => line.startsWith('| P28-F-R6-R3 |'));
+    const independentEntities = ledger.split('## 13. Independent entities')[1] ?? '';
+    const revisionRow = independentEntities.split('\n').find((line) => line.startsWith('| P28-F-R6-R3 |'));
     const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
 
+    expect(revisionRow).toBeDefined();
     expect(revisionRow).toContain('task PR #138');
     expect(revisionRow).toContain('phase PR #139 merged to `develop` at `fd7ba55`');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P28-F-R6-R3 |')))
+    expect(independentEntities.split('\n').find((line) => line.startsWith('| P28-F-R6-R3 |')))
       .toContain('Done; Revised by P28-F-R6-R3-R1');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P28-F-R6-R3-R1 |')))
+    expect(independentEntities.split('\n').find((line) => line.startsWith('| P28-F-R6-R3-R1 |')))
       .toContain('| Done |');
     expect(status).toContain('P28-F-R6-R3');
     expect(status).toContain('is integrated into `develop` at `fd7ba55`');
@@ -111,45 +112,59 @@ describe('permanent progress ledger', () => {
     const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
     const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
     const roadmap = ledger.split('## 9. Upcoming roadmap')[1]?.split('## 10. Verification matrix')[0] ?? '';
-    const branchIndex = ledger.split('## 12. Phase branch index')[1] ?? '';
+    const branchIndex = ledger.split('## 12. Phase branch index')[1]?.split('## 13. Independent entities')[0] ?? '';
     const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
     const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
 
-    expect(dashboard.split('\n').filter((line) => /^\| P43-[A-E] \|/.test(line))).toHaveLength(5);
-    for (const id of ['P43-A', 'P43-B', 'P43-C', 'P43-D', 'P43-E']) {
+    expect(dashboard.split('\n').filter((line) => /^\| P43-(?:A|B|E|F|G) \|/.test(line))).toHaveLength(5);
+    for (const id of ['P43-B', 'P43-E']) {
       const row = dashboard.split('\n').find((line) => line.startsWith(`| ${id} |`));
       expect(row).toContain('| Planned |');
       expect(row).toContain('Dependencies:');
       expect(row).toContain('Evidence: not started');
     }
-    expect(dashboard).toContain('Standalone lifecycle activities (not counted as development phases)');
-    expect(dashboard).toContain('| `cleanup` | Planned |');
-    expect(dashboard).toContain('| `qa-and-release` | Planned |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P43-A |'))).toContain('| Done |');
+    const workPlacement = dashboard.split('\n').find((line) => line.startsWith('| P43-F |')) ?? '';
+    expect(workPlacement).toContain('| Done; Revised by P43-F-R1 |');
+    expect(workPlacement).toContain('task PR #153');
+    expect(workPlacement).toContain('phase PR #154');
+    expect(workPlacement).toContain('6e8632f61226fabbfdeca1040f6dee097a808607');
+    expect(workPlacement).toContain('faa126ba75ee58ee703b8e43b375aece91c8f4d1');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P43-F-R1 |'))).toContain('| Done |');
+    const lifecycleRename = dashboard.split('\n').find((line) => line.startsWith('| P43-A |')) ?? '';
+    expect(lifecycleRename).toContain('a2fa24f930da15c49f779577eb749b33f11a7059');
+    expect(lifecycleRename).toContain('9d914638e50462cbadef84df3294ed07cbf42732');
     expect(register.split('\n').filter((line) => line.startsWith('| CR-110-R1 |'))).toHaveLength(1);
     expect(register.split('\n').find((line) => line.startsWith('| CR-110 |'))).toContain('Revised by CR-110-R1');
     expect(register.split('\n').find((line) => line.startsWith('| CR-110-R1 |'))).toContain('| Planned |');
     expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-110-R1 |'))).toHaveLength(1);
     expect(promptLog.split('\n').find((line) => line.startsWith('| CR-110 |'))).toContain('Revised by CR-110-R1');
     expect(promptLog.split('\n').find((line) => line.startsWith('| CR-110-R1 |'))).toContain('not started');
-    expect(roadmap).toContain('Standalone lifecycle activities (Planned; outside numbered development phases)');
+    expect(roadmap).toContain('Standalone lifecycle activities (Active; outside numbered development phases)');
     expect(roadmap).toContain('**`cleanup`**');
     expect(roadmap).toContain('**`qa-and-release`**');
-    expect(roadmap).toContain('documentation reordering only; Git chronology unchanged unless the owner gives explicit written authorization for a specific rewrite');
-    expect(roadmap).toContain('blocked on owner approval of an exact tag list');
-    expect(roadmap).toContain('three-month minimum floor');
-    expect(roadmap).toContain('font-scale tests at 1.3 and 2.0');
-    expect(roadmap).toContain('schema impact to be determined in design');
+    expect(roadmap).toMatch(/Documentation\s+reordering only; Git chronology remains unchanged/);
+    expect(roadmap).toContain('list has not yet been supplied or approved');
+    const emergencyFund = dashboard.split('\n').find((line) => line.startsWith('| P21-F |')) ?? '';
+    expect(emergencyFund).toContain('three-month minimum floor');
+    expect(emergencyFund).toContain('font-scale tests at 1.3/2.0');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-W |')))
+      .toContain('resolve schema/backup impact before any implementation');
     expect(roadmap).toContain('one issue per ledger part or CR');
     expect(roadmap).toContain('API rate and noise concerns');
-    expect(branchIndex).toContain('| P43 | `phase/43-lifecycle-and-transaction-planning` | — | — | 5 |');
-    expect(branchIndex).toContain('Standalone lifecycle branch index (planned)');
-    expect(branchIndex).toContain('`phase/27-cleanup`');
-    expect(branchIndex).toContain('`phase/28-qa-and-release`');
+    expect(branchIndex).toContain('| P43 | `phase/43-lifecycle-and-transaction-planning` | — | — | 7 |');
+    expect(branchIndex).toContain('Independent entity branch index');
+    expect(branchIndex).toContain('| `cleanup` | `cleanup` | `phase/27-cleanup` | `phase-27-complete` | Active |');
+    expect(branchIndex).toContain('| `qa-and-release` | `qa-and-release` | `phase/28-qa-and-release` | `phase-28-complete` | Active |');
+    expect(branchIndex).toContain('| `schema-migration` | `schema-migration` | `phase/07-schema-migration` | `phase-07-complete` | Active |');
+    expect(branchIndex).toContain('| `documentation` | `documentation` | — | — | Active |');
     expect(roadmap).not.toMatch(/^\d+\. \*\*P(?:27|28) —/m);
     expect(roadmap).toContain('P27/P28 remain completed historical milestones');
-    expect(roadmap).toContain('P43-C — Emergency Fund target editing');
-    expect(roadmap).toContain('P43-D — Transaction form');
+    expect(roadmap).toContain('P21-F — Emergency Fund target editing');
+    expect(roadmap).toContain('P20-W (Previously: P43-D)');
     expect(roadmap).toContain('P43-E — GitHub issue strategy');
+    expect(roadmap).toContain('P43-F — Work placement and CM-2');
+    expect(roadmap).toContain('P43-G — Owner-approval planning reconciliation');
     expect(openItems).toContain('## CR-110-R1 planned work');
     expect(openItems).toContain('phase/43-lifecycle-and-transaction-planning');
     expect(status).toContain('**CR-110-R1 (2026-11-12) is Planned only:**');
@@ -177,6 +192,159 @@ describe('permanent progress ledger', () => {
     expect(roadmap).toContain('P20-A-R3 — Linked one-time savings Paid from Transactions');
   });
 
+  it('records the P20-U-R1 Budget edit and delete bug follow-up as Planned', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const roadmap = ledger.split('## 9. Upcoming roadmap')[1]?.split('## 10. Verification matrix')[0] ?? '';
+    const branchIndex = ledger.split('## 12. Phase branch index')[1]?.split('## 13. Independent entities')[0] ?? '';
+    const independentEntities = ledger.split('## 13. Independent entities')[1] ?? '';
+
+    const p20u = dashboard.split('\n').find((line) => line.startsWith('| P20-U |'));
+    const p20uR1 = dashboard.split('\n').find((line) => line.startsWith('| P20-U-R1 |'));
+    expect(p20u).toContain('Done; Revised by P20-U-R1');
+    expect(p20uR1).toContain('| Planned |');
+    expect(p20uR1).toContain('not started; owner said not to start');
+    expect(p20uR1).toMatch(/Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and touched files; related P20-U; reason: defect in completed budget route form item\/schedule updating and deletion\./);
+
+    // Exact fields in evidence/scope
+    expect(p20uR1).toContain('item, value, amount, start-month, frequency, due-day, etc.');
+    expect(p20uR1).toContain('single month and this and following months');
+
+    // Register and prompt log checks
+    expect(register).toContain('| CR-115 |');
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| P20-U-R1 |'))).toHaveLength(1);
+    expect(roadmap).toContain('P20-U-R1');
+    expect(branchIndex).toContain('| P20 | `phase/20-budget` | `phase-20-complete` | `eed40750f68bebc9168907f79f74a67c1f301b83` | 33 |');
+
+    // Entity checks: CR-115 belongs in documentation entity under Section 13
+    expect(independentEntities).toContain('| CR-115 |');
+  });
+
+  it('records CR-113 owner approvals while keeping implementation Planned', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+
+    expect(register.split('\n').find((line) => line.startsWith('| CR-113 |'))).toContain('| Done |');
+    for (const [id, decision] of [
+      ['P21-F', 'Owner explicitly authorized editing'],
+      ['P33-B', 'Android widget implementation is approved'],
+      ['P34-A', 'scope and platform research approved'],
+      ['P35-B', 'Owner has given a Go'],
+      ['P43-B', 'Owner approved the non-release tag-cleanup scope'],
+      ['P43-E', 'Owner approved the GitHub issue strategy'],
+      ['P44-A', 'owner approved a Transactions stack route'],
+      ['P39-A', 'Owner approved keeping P39-A–H in P39'],
+      ['P40-A', 'Owner approved keeping P40-A/B in P40'],
+    ]) {
+      expect(dashboard.split('\n').find((line) => line.startsWith(`| ${id} |`))).toContain(decision);
+    }
+    expect(openItems).toContain('this update starts no research');
+    expect(openItems).toContain('The exact proposed deletion list has not been supplied');
+  });
+
+  it('records P44 and CM-2 as separate planned work under CR-111', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const roadmap = ledger.split('## 9. Upcoming roadmap')[1]?.split('## 10. Verification matrix')[0] ?? '';
+    const branchIndex = ledger.split('## 12. Phase branch index')[1]?.split('## 13. Independent entities')[0] ?? '';
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+
+    expect(dashboard.split('\n').filter((line) => /^\| P44-[A-D] \|/.test(line))).toHaveLength(4);
+    for (const [id, dependency] of [
+      ['P44-A', 'none'],
+      ['P44-B', 'P44-A'],
+      ['P44-C', 'P44-B'],
+      ['P44-D', 'P44-C'],
+    ]) {
+      const row = dashboard.split('\n').find((line) => line.startsWith(`| ${id} |`));
+      expect(row).toContain('| Planned |');
+      expect(row).toContain(`Dependencies: ${dependency}`);
+      expect(row).toContain('Evidence: not started');
+    }
+    expect(dashboard).not.toContain('| CM-2 |');
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-111 |'))).toHaveLength(1);
+    expect(register.split('\n').find((line) => line.startsWith('| CM-2 |')))
+      .toContain('| Active |');
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-111 |'))).toHaveLength(1);
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CM-2 |'))).toHaveLength(1);
+    expect(promptLog.split('\n').filter((line) => /^\| P44-[A-D] \|/.test(line))).toHaveLength(4);
+    expect(roadmap).toContain('P44-A — Design');
+    expect(roadmap).toContain('P44-B — Pure daily totals selector');
+    expect(roadmap).toContain('P44-C — Spending heat map screen and route');
+    expect(roadmap).toContain('P44-D — Demo data, layout, accessibility and device checklist');
+    expect(roadmap).toContain('owner approved a Transactions stack route');
+    expect(roadmap).toContain('unbounded\n      month navigation');
+    expect(roadmap).toContain('50-year and 126-year stress fixtures');
+    expect(roadmap).toContain('all inflows\n      in Income');
+    expect(roadmap).toContain('no\n      persisted schema change is Assumed');
+    expect(roadmap).toContain('plain seven-column React Native View');
+    expect(roadmap).toContain('CM-2 Git sync rule (Active; enforced)');
+    expect(roadmap).toContain('git fetch --all --prune');
+    expect(register.split('\n').find((line) => line.startsWith('| CM-2 |')))
+      .toContain('| Active |');
+    expect(branchIndex).toContain('| P44 | `phase/44-spending-heatmap` | — | — | 4 |');
+    expect(status).toContain('CR-111');
+    expect(openItems).toContain('CR-111');
+  });
+
+  it('enforces current placement records, lifecycle names and CM-2 wording', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const rules = ledger.split('## 3. Standing rules')[1]?.split('## 4. Architecture and decisions')[0] ?? '';
+    const placementMoves = ledger.split('### Placement moves')[1]?.split('\n### ')[0] ?? '';
+    const exactCm2 = 'After any merge that lands on a target branch (task->phase, phase->develop, release->main, main->develop): git fetch --all --prune; git switch <target>; git pull --ff-only. Refuse and report if the worktree is dirty, the fast-forward fails or the target has no upstream. This rule never authorizes pushing; R3 is unchanged.';
+    const scopedDocs = ['AGENTS.md', 'CONTRIBUTING.md', 'docs/PROGRESS.md', 'docs/memory/rules.md', 'docs/memory/status.md', 'docs/memory/open-items.md', 'docs/memory/project.md', 'docs/releases/README.md'];
+
+    expect(rules).toContain('R6 — Work placement');
+    expect(register).toContain(exactCm2);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-112 |'))).toHaveLength(1);
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-112 |'))).toHaveLength(1);
+    expect(ledger).toContain('Placement moves');
+    expect(placementMoves).toContain('P43-C');
+    expect(placementMoves).toContain('P43-D');
+    expect(placementMoves).toContain('P31-E');
+    // Placement cutoff: CR-112. Earlier part rows are grandfathered; each
+    // new or moved row introduced by this task is checked below.
+    for (const id of ['P21-F', 'P20-W', 'P43-F', 'P43-F-R1']) {
+      const rows = dashboard.split('\n').filter((line) => line.startsWith(`| ${id} |`));
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toMatch(/Placement: rule [1-5]; searched .+; related .+; reason:?.+/);
+    }
+    for (const name of scopedDocs) {
+      const content = readFileSync(join(process.cwd(), name), 'utf8');
+      for (const oldName of ['phase/27-cleanup', 'phase/28-qa-and-release']) {
+        for (const paragraph of content.split(/\n\s*\n/).filter((candidate) => candidate.includes(oldName))) {
+          expect(paragraph.toLowerCase().replace(/\s+/g, ' '))
+            .toContain(`historical branch name: \`${oldName}\``);
+        }
+      }
+    }
+    expect(dashboard).not.toContain('| P43-C |');
+    expect(dashboard).not.toContain('| P43-D |');
+    expect(dashboard).not.toContain('| P31-E |');
+    expect(dashboard.split('\n').filter((line) => line.startsWith('| P21-F |'))).toHaveLength(1);
+    expect(dashboard.split('\n').filter((line) => line.startsWith('| P20-W |'))).toHaveLength(1);
+    const standaloneCi = ledger.split('\n').filter((line) => line.includes('Previously: P31-E'));
+    expect(standaloneCi).toHaveLength(1);
+    expect(standaloneCi[0]).toMatch(/Placement: rule 1; searched .+; related .+; reason:?.+/);
+  });
+
+  it('records the CR-112 Doctor retry and complete ordered gate rerun', () => {
+    const verification = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+
+    expect(verification).toContain('The first `npx expo-doctor` attempt exited 1');
+    expect(verification).toContain('A network retry exited 0 with 21/21 checks');
+    expect(verification).toContain('npm test -- --coverage --watchman=false');
+    expect(verification).toContain('1,324 passed, 1 skipped (1,325 total)');
+    expect(verification).toContain('| 4 | `npx expo-doctor` | 0; 21/21 checks passed |');
+    expect(verification).toContain('| 6 | `npx expo export --platform ios` | 0 |');
+  });
+
   it('lists every fix and CR in the dashboard or register', () => {
     const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
     const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
@@ -198,7 +366,7 @@ describe('permanent progress ledger', () => {
       'CR-58', 'CR-59', 'CR-60', 'CR-61', 'CR-62', 'CR-63', 'CR-64', 'CR-65',
       'CR-66', 'CR-67', 'CR-68', 'CR-69', 'CR-70', 'CR-71', 'CR-72', 'CR-73', 'CR-74', 'CR-75',
       'CR-76', 'CR-77', 'CR-78', 'CR-79', 'CR-80', 'CR-81', 'CR-82', 'CR-83', 'CR-84', 'CR-85', 'CR-86', 'CR-87',
-      'CR-88', 'CR-89', 'CR-90', 'CR-91', 'CR-92', 'CR-93', 'CR-94', 'CR-95', 'CR-96', 'CR-97', 'CR-98', 'CR-99', 'CR-100', 'CR-101', 'CR-102', 'CR-103', 'CR-106', 'CR-107', 'CR-109', 'CR-110',
+      'CR-88', 'CR-89', 'CR-90', 'CR-91', 'CR-92', 'CR-93', 'CR-94', 'CR-95', 'CR-96', 'CR-97', 'CR-98', 'CR-99', 'CR-100', 'CR-101', 'CR-102', 'CR-103', 'CR-106', 'CR-107', 'CR-109', 'CR-110', 'CR-111', 'CR-115',
     ]) {
       expect(statusRecords).toContain(id);
     }
@@ -221,7 +389,7 @@ describe('permanent progress ledger', () => {
   it('logs every prompt ID exactly once', () => {
     const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
     const promptIds = [
-      'P41-B-R1', 'CR-110-R1',
+      'P41-B-R1', 'CR-110-R1', 'CR-111', 'CR-113', 'P43-G', 'P43-G-R1', 'CM-2',
       'P01', 'P02', 'P03', 'P04', 'P05', 'P06', 'P06-FIX-R1',
       'P07', 'P08', 'P09', 'P10', 'P11', 'P12', 'P13', 'P14',
       'P15-A', 'P15-A2', 'P15-B', 'P15-C',
@@ -229,12 +397,12 @@ describe('permanent progress ledger', () => {
       'P18-R0', 'P18-R1', 'P18-R2', 'P18-R3', 'P18-R4', 'P18-R5',
       'P18-R6', 'P18-LEDGER', 'P18-R7',
       'P19-A', 'P19-B', 'P20-A', 'P20-A-R1', 'P20-A-R2', 'P20-A-R2-R1', 'P20-A-R3', 'P20-B', 'P20-C', 'P20-D', 'P20-E', 'P20-F',
-      'P20-G', 'P20-H', 'P20-I', 'P20-J', 'P20-K', 'P20-L', 'P20-M', 'P20-N', 'P20-N-R1', 'P20-N-R2', 'P20-O', 'P20-P', 'P20-Q', 'P20-R', 'P20-S', 'P20-S-R1', 'P20-S-R1-R1', 'P20-T', 'P20-U', 'P21-A', 'P21-B', 'P21-C', 'P21-C1', 'P21-D', 'P22-A', 'P23-A', 'P23-B', 'P24-A', 'P25-A', 'P25-B', 'P25-C', 'P25-D', 'P25-E', 'P26-A', 'P27-A',
+      'P20-G', 'P20-H', 'P20-I', 'P20-J', 'P20-K', 'P20-L', 'P20-M', 'P20-N', 'P20-N-R1', 'P20-N-R2', 'P20-O', 'P20-P', 'P20-Q', 'P20-R', 'P20-S', 'P20-S-R1', 'P20-S-R1-R1', 'P20-T', 'P20-U', 'P20-U-R1', 'P20-W', 'P21-A', 'P21-B', 'P21-C', 'P21-C1', 'P21-D', 'P21-F', 'P22-A', 'P23-A', 'P23-B', 'P24-A', 'P25-A', 'P25-B', 'P25-C', 'P25-D', 'P25-E', 'P26-A', 'P27-A',
       'P23-C', 'P23-D', 'P25-F',
       'P28-A', 'P28-A-R1', 'P28-B', 'P28-C', 'P28-C-R1', 'P28-C-R2', 'P28-C-R3', 'P28-C-R4', 'P28-D', 'P28-E', 'P28-E-R1', 'P28-E-R2', 'P28-E-R3', 'P28-E-R4', 'P28-E-R5', 'P28-E-R5-R1', 'P28-F', 'P28-F-R1', 'P28-F-R2', 'P28-F-R2-R1', 'P28-F-R3', 'P28-F-R3-R1', 'P28-F-R3-R2', 'P28-F-R3-R3', 'P28-F-R3-R3-R1', 'P28-F-R4', 'P28-F-R4-R1', 'P28-F-R4-R1-R1', 'P28-F-R4-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1-R1-R1', 'P28-F-R6-R2', 'P28-F-R6-R3', 'P28-F-R6-R3-R1',
       'P29-A', 'P29-B', 'P29-C', 'P29-D', 'P29-E', 'P29-F', 'P29-F2', 'P29-F3', 'P29-F4', 'P29-G', 'P29-H', 'P29-I', 'P29-J', 'P29-K', 'P29-L', 'P29-M', 'P29-N', 'P29-M2', 'P29-O', 'P29-O-R1', 'P29-O1-R1', 'P29-O1-R2', 'P29-O2', 'P29-Q', 'P29-R', 'P29-S', 'P29-T', 'P29-U', 'P29-V', 'P29-W', 'P29-W-R1', 'P29-W-R2', 'P29-X', 'P29-Y', 'P29-Z',
-      'P29-AA', 'P29-AB', 'P29-AB-R1', 'P29-AB-R2', 'P29-AB-R2-R1', 'P30-A', 'P30-B', 'P30-C', 'P41-A',
-      'CR-92', 'CR-93', 'CR-94', 'CR-95', 'CR-96', 'CR-106', 'CR-107', 'CR-109', 'CR-110',
+      'P29-AA', 'P29-AB', 'P29-AB-R1', 'P29-AB-R2', 'P29-AB-R2-R1', 'P30-A', 'P30-B', 'P30-C', 'P41-A', 'P44-A', 'P44-B', 'P44-C', 'P44-D',
+      'CR-92', 'CR-93', 'CR-94', 'CR-95', 'CR-96', 'CR-106', 'CR-107', 'CR-109', 'CR-110', 'CR-111', 'CM-2',
     ];
 
     const loggedIds = promptLog.split('\n')
@@ -251,21 +419,29 @@ describe('permanent progress ledger', () => {
   it('logs every remapped/new part exactly once in the dashboard and prompt log', () => {
     const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
     const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const independentEntities = ledger.split('## 13. Independent entities')[1] ?? '';
     const newPartIds = [
       'P41-B-R1', 'P42-A', 'P42-A-R1',
       'P16-A', 'P16-B', 'P16-C', 'P17-A', 'P17-B', 'P17-C',
       'P18-R0', 'P18-R1', 'P18-R2', 'P18-R3', 'P18-R4', 'P18-R5',
       'P18-R6', 'P18-LEDGER', 'P18-R7',
       'P19-A', 'P19-B', 'P20-A', 'P20-A-R1', 'P20-A-R2', 'P20-A-R2-R1', 'P20-A-R3', 'P20-B', 'P20-C', 'P20-D', 'P20-E', 'P20-F',
-      'P20-G', 'P20-H', 'P20-I', 'P20-J', 'P20-K', 'P20-L', 'P20-M', 'P20-N', 'P20-N-R1', 'P20-N-R2', 'P20-O', 'P20-P', 'P20-Q', 'P20-R', 'P20-S', 'P20-S-R1', 'P20-S-R1-R1', 'P20-T', 'P20-U', 'P21-A', 'P21-B', 'P21-C', 'P21-C1', 'P21-D', 'P22-A', 'P23-A', 'P23-B', 'P24-A', 'P25-A', 'P25-B', 'P25-C', 'P25-D', 'P25-E', 'P26-A', 'P27-A',
+      'P20-G', 'P20-H', 'P20-I', 'P20-J', 'P20-K', 'P20-L', 'P20-M', 'P20-N', 'P20-N-R1', 'P20-N-R2', 'P20-O', 'P20-P', 'P20-Q', 'P20-R', 'P20-S', 'P20-S-R1', 'P20-S-R1-R1', 'P20-T', 'P20-U', 'P20-U-R1', 'P21-A', 'P21-B', 'P21-C', 'P21-C1', 'P21-D', 'P22-A', 'P23-A', 'P23-B', 'P24-A', 'P25-A', 'P25-B', 'P25-C', 'P25-D', 'P25-E', 'P26-A',
       'P23-C', 'P23-D', 'P25-F',
-      'P28-A', 'P28-A-R1', 'P28-B', 'P28-C', 'P28-C-R1', 'P28-C-R2', 'P28-C-R3', 'P28-C-R4', 'P28-D', 'P28-E', 'P28-E-R1', 'P28-E-R2', 'P28-E-R3', 'P28-E-R4', 'P28-E-R5', 'P28-E-R5-R1', 'P28-F', 'P28-F-R1', 'P28-F-R2', 'P28-F-R2-R1', 'P28-F-R3', 'P28-F-R3-R1', 'P28-F-R3-R2', 'P28-F-R3-R3', 'P28-F-R3-R3-R1', 'P28-F-R4', 'P28-F-R4-R1', 'P28-F-R4-R1-R1', 'P28-F-R4-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1-R1-R1', 'P28-F-R6-R2', 'P28-F-R6-R3', 'P28-F-R6-R3-R1',
       'P29-A', 'P29-B', 'P29-C', 'P29-D', 'P29-E', 'P29-F', 'P29-F2', 'P29-F3', 'P29-F4', 'P29-G', 'P29-H', 'P29-I', 'P29-J', 'P29-K', 'P29-L', 'P29-M', 'P29-N', 'P29-M2', 'P29-O', 'P29-O-R1', 'P29-O1-R1', 'P29-O1-R2', 'P29-O2', 'P29-Q', 'P29-R', 'P29-S', 'P29-T', 'P29-U', 'P29-V', 'P29-W', 'P29-W-R1', 'P29-W-R2', 'P29-X', 'P29-Y', 'P29-Z',
-      'P29-AA', 'P29-AB', 'P29-AB-R1', 'P29-AB-R2', 'P29-AB-R2-R1', 'P30-A', 'P30-B', 'P30-C', 'P41-A', 'P42-A', 'P42-A-R1',
+      'P29-AA', 'P29-AB', 'P29-AB-R1', 'P29-AB-R2', 'P29-AB-R2-R1', 'P30-A', 'P30-B', 'P30-C', 'P41-A', 'P42-A', 'P42-A-R1', 'P43-F', 'P43-F-R1', 'P43-G', 'P43-G-R1', 'P44-A', 'P44-B', 'P44-C', 'P44-D',
+    ];
+    const movedEntityPartIds = [
+      'P27-A',
+      'P28-A', 'P28-A-R1', 'P28-B', 'P28-C', 'P28-C-R1', 'P28-C-R2', 'P28-C-R3', 'P28-C-R4', 'P28-D', 'P28-E', 'P28-E-R1', 'P28-E-R2', 'P28-E-R3', 'P28-E-R4', 'P28-E-R5', 'P28-E-R5-R1', 'P28-F', 'P28-F-R1', 'P28-F-R2', 'P28-F-R2-R1', 'P28-F-R3', 'P28-F-R3-R1', 'P28-F-R3-R2', 'P28-F-R3-R3', 'P28-F-R3-R3-R1', 'P28-F-R4', 'P28-F-R4-R1', 'P28-F-R4-R1-R1', 'P28-F-R4-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1-R1-R1', 'P28-F-R6-R2', 'P28-F-R6-R3', 'P28-F-R6-R3-R1',
     ];
 
     for (const id of newPartIds) {
       expect(dashboard.split('\n').filter((line) => line.startsWith(`| ${id} |`))).toHaveLength(1);
+      expect(promptLog.split('\n').filter((line) => line.startsWith(`| ${id} |`))).toHaveLength(1);
+    }
+    for (const id of movedEntityPartIds) {
+      expect(independentEntities.split('\n').filter((line) => line.startsWith(`| ${id} |`))).toHaveLength(1);
       expect(promptLog.split('\n').filter((line) => line.startsWith(`| ${id} |`))).toHaveLength(1);
     }
     expect(dashboard.split('\n').find((line) => line.startsWith('| P41-B |')))
@@ -277,8 +453,7 @@ describe('permanent progress ledger', () => {
     const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
     const roadmap = ledger.split('## 9. Upcoming roadmap')[1]?.split('## 10. Verification matrix')[0] ?? '';
     const plannedPartIds = [
-      'P31-A', 'P31-B', 'P31-C', 'P31-D', 'P31-E',
-      'P32-A', 'P32-B', 'P32-C',
+      'P31-A', 'P31-B', 'P31-C', 'P31-D',
       'P33-A', 'P33-B', 'P33-C',
       'P34-A', 'P34-B', 'P34-C',
       'P35-A', 'P35-B', 'P35-C',
@@ -288,21 +463,19 @@ describe('permanent progress ledger', () => {
       'P39-A', 'P39-B', 'P39-C', 'P39-D', 'P39-E', 'P39-F', 'P39-G', 'P39-H',
       'P40-A', 'P40-B',
     ];
-    const cancelledPartIds = new Set(['P32-A', 'P32-B', 'P32-C']);
 
     for (const id of plannedPartIds) {
       const dashboardRows = dashboard.split('\n').filter((line) => line.startsWith(`| ${id} |`));
       expect(dashboardRows).toHaveLength(1);
-      const expectedStatus = cancelledPartIds.has(id) ? '| Cancelled by owner |' : '| Planned |';
-      expect(dashboardRows[0]).toContain(expectedStatus);
+      expect(dashboardRows[0]).toContain('| Planned |');
       expect(roadmap.split('\n').filter((line) => line.includes(`${id} —`))).toHaveLength(1);
       expect(promptLog.split('\n').find((line) => line.startsWith(`| ${id} |`))).toBeUndefined();
     }
     expect(dashboard.split('\n').find((line) => line.startsWith('| P33-C |')))
       .toContain('iOS distribution');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P35-C |')))
-      .toContain('P35-B owner go/no-go approval');
-    for (const phase of [31, 32, 33, 34, 35, 36, 37, 38, 39, 40]) {
+      .toContain('P35-B Go');
+    for (const phase of [31, 33, 34, 35, 36, 37, 38, 39, 40]) {
       expect(roadmap).toContain(`**P${phase} —`);
     }
   });
@@ -311,7 +484,7 @@ describe('permanent progress ledger', () => {
     const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
     const progressBlock = dashboard.match(/```text\n([\s\S]*?)\n```/)?.[1] ?? '';
     const roadmap = ledger.split('## 9. Upcoming roadmap')[1]?.split('## 10. Verification matrix')[0] ?? '';
-    const branchIndex = ledger.split('## 12. Phase branch index')[1] ?? '';
+    const branchIndex = ledger.split('## 12. Phase branch index')[1]?.split('## 13. Independent entities')[0] ?? '';
     const dashboardIds = dashboard.split('\n')
       .filter((line) => /^\| P\d+(?:-[A-Za-z0-9-]+)* \|/.test(line))
       .map((line) => line.split('|')[1]?.trim() ?? '');
@@ -322,13 +495,12 @@ describe('permanent progress ledger', () => {
       .map((line) => line.split('|')[1]?.trim() ?? '');
 
     expect(dashboardIds).toContain('P1');
-    expect(dashboardIds).toContain('P28-G');
     expect(dashboardIds.every((id) => /^P\d+(?:-[A-Za-z0-9-]+)*$/.test(id))).toBe(true);
     expect(bars.every((line) => /^(?:P\d+|Overall progress)\s/.test(line))).toBe(true);
     expect(roadmapLabels).toContain('P31');
     expect(branchLabels).toEqual([
       ...Array.from({ length: 30 }, (_, index) => `P${index + 1}`),
-      'P41', 'P42', 'P43',
+      'P32', 'P41', 'P42', 'P43', 'P44',
     ]);
 
     let inSubjectMap = false;
@@ -395,6 +567,7 @@ describe('permanent progress ledger', () => {
     );
     const rowIds = rows.map((row) => row.split('|')[1]?.trim());
     const counts = new Map<number, { done: number; total: number }>();
+    const emptySlots = new Set([7, 27, 28, 32]);
 
     expect(rowIds).toHaveLength(new Set(rowIds).size);
     for (const row of rows) {
@@ -405,6 +578,9 @@ describe('permanent progress ledger', () => {
       const phaseMatch = id.match(/^P(\d+)(?:-|$)/);
       if (!phaseMatch) continue;
       const phase = Number(phaseMatch[1]);
+      if (emptySlots.has(phase) || status.startsWith('Empty (reserved)')) {
+        continue;
+      }
       const count = counts.get(phase) ?? { done: 0, total: 0 };
       count.total += 1;
       if (status.startsWith('Done') || status.startsWith('Superseded') || status.startsWith('Cancelled')) count.done += 1;
@@ -418,11 +594,12 @@ describe('permanent progress ledger', () => {
     const lastPhase = Math.max(...counts.keys());
     const expected: [string, number, number][] = [
       ['Overall progress', done, total],
-      ...Array.from({ length: lastPhase }, (_, index): [string, number, number] => {
+      ...Array.from({ length: lastPhase }, (_, index): [string, number, number] | null => {
         const phase = index + 1;
+        if (emptySlots.has(phase)) return null;
         const count = counts.get(phase) ?? { done: 0, total: 0 };
         return [`P${phase}`, count.done, count.total];
-      }),
+      }).filter((item): item is [string, number, number] => item !== null),
     ];
     const lines = progressBlock.split('\n');
     expect(lines).toHaveLength(expected.length);
@@ -440,12 +617,12 @@ describe('permanent progress ledger', () => {
     const phase18 = counts.get(18);
     expect(phase18?.total).toBeGreaterThan(0);
     expect(phase18?.done).toBe(phase18?.total);
-    for (const phase of [20, 21, 22, 23, 25, 28, 30]) {
+    for (const phase of [20, 21, 22, 23, 25, 30, 31, 43, 44]) {
       const count = counts.get(phase);
       expect(count?.total).toBeGreaterThan(0);
       if (phase === 20) {
         expect(count?.done).toBe(30);
-        expect(count?.total).toBe(31);
+        expect(count?.total).toBe(33);
         expect(dashboard.split('\n').find((line) => line.startsWith('| P20-A-R2 |')))
           .toContain('Revised by P20-A-R2-R1 and P20-A-R3');
         expect(dashboard.split('\n').find((line) => line.startsWith('| P20-A-R3 |')))
@@ -456,72 +633,42 @@ describe('permanent progress ledger', () => {
           .toContain('Done; Revised by P20-S-R1-R1');
         expect(dashboard.split('\n').find((line) => line.startsWith('| P20-S-R1-R1 |')))
           .toContain('| Done |');
+      } else if (phase === 21) {
+        expect(count?.done).toBe(6);
+        expect(count?.total).toBe(7);
+      } else if (phase === 31) {
+        expect(count?.done).toBe(0);
+        expect(count?.total).toBe(4);
+      } else if (phase === 43) {
+        expect(count?.done).toBe(5);
+        expect(count?.total).toBe(7);
       } else if (phase === 22) {
         expect(count?.done).toBe(2);
         expect(count?.total).toBe(2);
-      } else if (phase === 28) {
-        expect(count?.done).toBe(40);
-        expect(count?.total).toBe(40);
-        expect(dashboard.split('\n').find((line) => line.startsWith('| P28-E-R4 |')))
-          .toContain('| Done |');
-        expect(dashboard.split('\n').find((line) => line.startsWith('| P28-E-R5 |')))
-          .toContain('| Done; Revised by P28-E-R5-R1 |');
-        expect(dashboard.split('\n').find((line) => line.startsWith('| P28-F |')))
-          .toContain('Revised by P28-F-R4');
-        expect(dashboard.split('\n').find((line) => line.startsWith('| P28-F-R4 |')))
-          .toContain('Done; Revised by P28-F-R4-R1');
-        expect(dashboard.split('\n').find((line) => line.startsWith('| P28-F-R4-R1 |')))
-          .toContain('Done; Revised by P28-F-R4-R1-R1');
-        expect(dashboard.split('\n').find((line) => line.startsWith('| P28-F-R4-R1-R1 |')))
-          .toContain('Done; Revised by P28-F-R4-R1-R1-R1');
-        expect(dashboard.split('\n').find((line) => line.startsWith('| P28-F-R4-R1-R1-R1 |')))
-          .toContain('Done; Revised by P28-F-R4-R1-R1-R1-R1');
-        expect(dashboard.split('\n').find((line) => line.startsWith('| P28-F-R4-R1-R1-R1-R1 |')))
-          .toContain('Done; Revised by P28-F-R4-R1-R1-R1-R1-R1');
-        expect(dashboard.split('\n').find((line) => line.startsWith('| P28-F-R4-R1-R1-R1-R1-R1 |')))
-          .toContain('Done; Revised by P28-F-R4-R1-R1-R1-R1-R1-R1');
-        expect(dashboard.split('\n').find((line) => line.startsWith('| P28-F-R4-R1-R1-R1-R1-R1-R1 |')))
-          .toContain('Done; Revised by P28-F-R4-R1-R1-R1-R1-R1-R1-R1');
-        expect(dashboard.split('\n').find((line) => line.startsWith('| P28-F-R4-R1-R1-R1-R1-R1-R1-R1 |')))
-          .toContain('| Done |');
-        expect(dashboard.split('\n').find((line) => line.startsWith('| P28-F-R6 |')))
-          .toContain('| Done; Revised by P28-F-R6-R1, P28-F-R6-R2 and P28-F-R6-R3 |');
-        expect(dashboard.split('\n').find((line) => line.startsWith('| P28-F-R6-R2 |')))
-          .toContain('| Done |');
-        expect(dashboard.split('\n').find((line) => line.startsWith('| P28-F-R6-R3 |')))
-          .toContain('| Done; Revised by P28-F-R6-R3-R1 |');
-        expect(dashboard.split('\n').find((line) => line.startsWith('| P28-F-R6-R3-R1 |')))
-          .toContain('| Done |');
+      } else if (phase === 44) {
+        expect(count?.done).toBe(0);
+        expect(count?.total).toBe(4);
       } else {
         expect(count?.done).toBe(count?.total);
       }
     }
-    const phase28 = counts.get(28);
-    const phase28Total = phase28?.total ?? 0;
-    const phase28Done = phase28?.done ?? 0;
-    const phase28Rows = rows.filter((row) => row.split('|')[1]?.trim().startsWith('P28-'));
-    const releaseRevision = phase28Rows.find((row) => row.split('|')[1]?.trim() === 'P28-F-R2');
-    const incompleteRows = phase28Rows.filter((row) => {
-      const status = row.split('|')[3]?.trim() ?? '';
-      return !['Done', 'Superseded', 'Cancelled'].some((closed) => status.startsWith(closed));
-    });
-    expect(phase28Total).toBeGreaterThan(0);
-    expect(releaseRevision).toBeDefined();
-    expect(phase28Done).toBe(phase28Total - incompleteRows.length);
   });
 
   it('keeps the phase branch index aligned with dashboard subtask counts', () => {
     const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
-    const index = ledger.split('## 12. Phase branch index')[1] ?? '';
+    const index = ledger.split('## 12. Phase branch index')[1]?.split('## 13. Independent entities')[0] ?? '';
     const counts = new Map<number, number>();
+    const emptySlots = new Set([7, 27, 28, 32]);
     for (const line of dashboard.split('\n')) {
       const id = line.split('|')[1]?.trim();
       const phase = id?.match(/^P(\d+)(?:-|$)/);
-      if (phase) counts.set(Number(phase[1]), (counts.get(Number(phase[1])) ?? 0) + 1);
+      if (phase && !emptySlots.has(Number(phase[1]))) {
+        counts.set(Number(phase[1]), (counts.get(Number(phase[1])) ?? 0) + 1);
+      }
     }
 
     const rows = index.split('\n').filter((line) => /^\| P\d+ \|/.test(line));
-    expect(rows).toHaveLength(33);
+    expect(rows).toHaveLength(35);
     for (const line of rows) {
       const [, phase, branch, tag, commit, count] = line.split('|').map((cell) => cell.trim().replaceAll('`', ''));
       const number = Number(phase?.match(/^P(\d+)$/)?.[1]);
@@ -530,6 +677,13 @@ describe('permanent progress ledger', () => {
         expect(tag).toBe('—');
         expect(commit).toBe('—');
         expect(Number(count)).toBe(5);
+        continue;
+      }
+      if (number === 44) {
+        expect(branch).toBe('phase/44-spending-heatmap');
+        expect(tag).toBe('—');
+        expect(commit).toBe('—');
+        expect(Number(count)).toBe(4);
         continue;
       }
       if (number === 42) {
@@ -543,7 +697,28 @@ describe('permanent progress ledger', () => {
         expect(branch).toBe('phase/43-lifecycle-and-transaction-planning');
         expect(tag).toBe('—');
         expect(commit).toBe('—');
-        expect(Number(count)).toBe(5);
+        expect(Number(count)).toBe(7);
+        continue;
+      }
+      if (emptySlots.has(number)) {
+        expect(branch).toContain('Empty (reserved)');
+        expect(Number(count)).toBe(0);
+        if (number === 7) {
+          expect(branch).toContain('schema-migration (historical branch name: phase/07-schema-migration)');
+          expect(tag).toBe('phase-07-complete');
+          expect(commit).toMatch(/^[0-9a-f]{40}$/);
+        } else if (number === 27) {
+          expect(branch).toContain('cleanup (historical branch name: phase/27-cleanup)');
+          expect(tag).toBe('phase-27-complete');
+          expect(commit).toMatch(/^[0-9a-f]{40}$/);
+        } else if (number === 28) {
+          expect(branch).toContain('qa-and-release (historical branch name: phase/28-qa-and-release)');
+          expect(tag).toBe('phase-28-complete');
+          expect(commit).toMatch(/^[0-9a-f]{40}$/);
+        } else if (number === 32) {
+          expect(tag).toBe('—');
+          expect(commit).toBe('—');
+        }
         continue;
       }
       const paddedPhase = String(number).padStart(2, '0');
@@ -554,7 +729,7 @@ describe('permanent progress ledger', () => {
     }
   });
 
-  it('records the unchanged FX/CH IDs, CR-4 through CR-110 and current phase work', () => {
+  it('records the unchanged FX/CH IDs, CR-4 through CR-111 and current phase work', () => {
     const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
     const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
     const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
@@ -574,7 +749,7 @@ describe('permanent progress ledger', () => {
       'CR-62', 'CR-63', 'CR-64', 'CR-65', 'CR-66', 'CR-67', 'CR-68', 'CR-69',
       'CR-70', 'CR-71', 'CR-72', 'CR-73', 'CR-74', 'CR-75', 'CR-76', 'CR-77',
       'CR-78', 'CR-79', 'CR-80', 'CR-81', 'CR-82', 'CR-83', 'CR-84', 'CR-85', 'CR-86', 'CR-87',
-      'CR-88', 'CR-89', 'CR-90', 'CR-91', 'CR-92', 'CR-93', 'CR-94', 'CR-95', 'CR-96', 'CR-97', 'CR-106', 'CR-107', 'CR-108', 'CR-109', 'CR-110',
+      'CR-88', 'CR-89', 'CR-90', 'CR-91', 'CR-92', 'CR-93', 'CR-94', 'CR-95', 'CR-96', 'CR-97', 'CR-106', 'CR-107', 'CR-108', 'CR-109', 'CR-110', 'CR-111', 'CM-2',
     ]) {
       expect(`${dashboard}\n${register}`).toContain(id);
     }
@@ -618,16 +793,17 @@ describe('permanent progress ledger', () => {
     const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
     const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
     const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const independentEntities = ledger.split('## 13. Independent entities')[1] ?? '';
     const registerRows = register.split('\n').filter((line) => line.startsWith('| CR-107 |'));
     const promptRows = promptLog.split('\n').filter((line) => line.startsWith('| CR-107 |'));
 
     expect(dashboard.split('\n').find((line) => line.startsWith('| P22-A |')))
       .toContain('Revised by P22-A-R1');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P22-A-R1 |'))).toContain('| Done |');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P28-F |')))
+    expect(independentEntities.split('\n').find((line) => line.startsWith('| P28-F |')))
       .toContain('P28-F-R5');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P28-F-R5 |'))).toContain('| Done |');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P28-G |'))).toContain('| Done |');
+    expect(independentEntities.split('\n').find((line) => line.startsWith('| P28-F-R5 |'))).toContain('| Done |');
+    expect(independentEntities.split('\n').find((line) => line.startsWith('| P28-G |'))).toContain('| Done |');
     expect(registerRows).toHaveLength(1);
     expect(registerRows[0]).toContain('| Done |');
     expect(promptRows).toHaveLength(1);
@@ -637,6 +813,7 @@ describe('permanent progress ledger', () => {
     const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
     const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
     const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const independentEntities = ledger.split('## 13. Independent entities')[1] ?? '';
     const statusFor = (id: string) => register.split('\n')
       .find((line) => line.startsWith(`| ${id} |`))
       ?.split('|')[3]?.trim();
@@ -667,7 +844,7 @@ describe('permanent progress ledger', () => {
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-S-R1-R1 |')))
       .toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-T |'))).toContain('| Done |');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-U |'))).toContain('| Done |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-U |'))).toContain('Done; Revised by P20-U-R1');
     for (const id of ['CR-27', 'CR-28', 'CR-31']) {
       expect(statusFor(id)).toBe('Done');
     }
@@ -728,29 +905,34 @@ describe('permanent progress ledger', () => {
     expect(ledger).not.toContain('P22-B spreadsheet importer');
     expect(dashboard.split('\n').some((line) => line.includes('| P15-SEED |'))).toBe(false);
     for (const id of [
-      'P26-A', 'P27-A',       'P28-A', 'P28-A-R1', 'P28-B', 'P28-C', 'P28-C-R1', 'P28-C-R2', 'P28-C-R3', 'P28-C-R4', 'P28-D', 'P28-E', 'P28-E-R1', 'P28-E-R2', 'P28-E-R3', 'P28-E-R4', 'P28-E-R5', 'P28-E-R5-R1', 'P29-AA', 'P29-AB', 'P29-AB-R1', 'P29-AB-R2', 'P29-AB-R2-R1',
+      'P26-A', 'P29-AA', 'P29-AB', 'P29-AB-R1', 'P29-AB-R2', 'P29-AB-R2-R1',
     ]) {
       expect(dashboard.split('\n').filter((line) => line.startsWith(`| ${id} |`))).toHaveLength(1);
     }
+    for (const id of [
+      'P27-A', 'P28-A', 'P28-A-R1', 'P28-B', 'P28-C', 'P28-C-R1', 'P28-C-R2', 'P28-C-R3', 'P28-C-R4', 'P28-D', 'P28-E', 'P28-E-R1', 'P28-E-R2', 'P28-E-R3', 'P28-E-R4', 'P28-E-R5', 'P28-E-R5-R1',
+    ]) {
+      expect(independentEntities.split('\n').filter((line) => line.startsWith(`| ${id} |`))).toHaveLength(1);
+    }
     expect(dashboard.split('\n').find((line) => line.startsWith('| P26-A |'))).toContain('| Done');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P27-A |'))).toContain('| Done');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P28-A |'))).toContain('Revised by P28-A-R1');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P28-C |'))).toContain('Revised by P28-C-R4 and earlier revisions');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P28-A-R1 |'))).toContain('| Done');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P28-C-R1 |'))).toContain('| Done');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P28-C-R2 |'))).toContain('| Done');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P28-C-R3 |'))).toContain('| Done');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P28-C-R4 |'))).toContain('| Done');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P28-E |'))).toContain('Revised by P28-E-R1, P28-E-R2, P28-E-R3, P28-E-R4, P28-E-R5 and P28-E-R5-R1');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P28-E-R1 |'))).toContain('| Done |');
+    expect(independentEntities.split('\n').find((line) => line.startsWith('| P27-A |'))).toContain('| Done');
+    expect(independentEntities.split('\n').find((line) => line.startsWith('| P28-A |'))).toContain('Revised by P28-A-R1');
+    expect(independentEntities.split('\n').find((line) => line.startsWith('| P28-C |'))).toContain('Revised by P28-C-R4 and earlier revisions');
+    expect(independentEntities.split('\n').find((line) => line.startsWith('| P28-A-R1 |'))).toContain('| Done');
+    expect(independentEntities.split('\n').find((line) => line.startsWith('| P28-C-R1 |'))).toContain('| Done');
+    expect(independentEntities.split('\n').find((line) => line.startsWith('| P28-C-R2 |'))).toContain('| Done');
+    expect(independentEntities.split('\n').find((line) => line.startsWith('| P28-C-R3 |'))).toContain('| Done');
+    expect(independentEntities.split('\n').find((line) => line.startsWith('| P28-C-R4 |'))).toContain('| Done');
+    expect(independentEntities.split('\n').find((line) => line.startsWith('| P28-E |'))).toContain('Revised by P28-E-R1, P28-E-R2, P28-E-R3, P28-E-R4, P28-E-R5 and P28-E-R5-R1');
+    expect(independentEntities.split('\n').find((line) => line.startsWith('| P28-E-R1 |'))).toContain('| Done |');
     expect(promptLog.split('\n').find((line) => line.startsWith('| P28-E-R1 |'))).toContain('| Done;');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P28-E-R3 |'))).toContain('| Done |');
+    expect(independentEntities.split('\n').find((line) => line.startsWith('| P28-E-R3 |'))).toContain('| Done |');
     expect(promptLog.split('\n').find((line) => line.startsWith('| P28-E-R3 |'))).toContain('| Done;');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P28-E-R4 |'))).toContain('| Done |');
+    expect(independentEntities.split('\n').find((line) => line.startsWith('| P28-E-R4 |'))).toContain('| Done |');
     expect(promptLog.split('\n').find((line) => line.startsWith('| P28-E-R4 |'))).toContain('| Done;');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P28-E-R5 |'))).toContain('| Done; Revised by P28-E-R5-R1 |');
+    expect(independentEntities.split('\n').find((line) => line.startsWith('| P28-E-R5 |'))).toContain('| Done; Revised by P28-E-R5-R1 |');
     expect(promptLog.split('\n').find((line) => line.startsWith('| P28-E-R5 |'))).toContain('| Done;');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P28-E-R5-R1 |'))).toContain('| Done |');
+    expect(independentEntities.split('\n').find((line) => line.startsWith('| P28-E-R5-R1 |'))).toContain('| Done |');
     expect(promptLog.split('\n').find((line) => line.startsWith('| P28-E-R5-R1 |'))).toContain('| Done;');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P29-AB |'))).toContain('Revised by P29-AB-R1');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P29-AB-R1 |'))).toContain('| Done; Revised by P29-AB-R2 |');
@@ -772,7 +954,7 @@ describe('permanent progress ledger', () => {
     expect(promptLog.split('\n').find((line) => line.startsWith('| P20-N-R1 |'))).toContain('| current request |');
     expect(ledger).toContain('Revised by P28-A-R1');
     expect(ledger).toContain('Revised by P28-C-R4 and earlier revisions');
-    expect(dashboard).toContain('Revised by P28-B');
+    expect(ledger).toContain('Revised by P28-B');
     expect(ledger).toContain('P30 — Release 2 stabilization');
     const release2Roadmap = ledger.split('## 9. Upcoming roadmap')[1]?.split('## 10. Verification matrix')[0] ?? '';
     expect(release2Roadmap).toContain('P30-A — Failing persistence/restart tests');
@@ -856,5 +1038,179 @@ describe('permanent progress ledger', () => {
     expect(ledger).toContain('schema v9');
     expect(ledger).toContain('DEC-P21C-CR37-38');
     expect(ledger).toContain('DEC-P21C1-CR39');
+  });
+
+  it('restructures independent entities, empty slots, and enforces R7 slot-filling rules', () => {
+    const independentEntities = ledger.split('## 13. Independent entities')[1] ?? '';
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const branchIndex = ledger.split('## 12. Phase branch index')[1]?.split('## 13. Independent entities')[0] ?? '';
+    const agents = readFileSync(join(process.cwd(), 'AGENTS.md'), 'utf8');
+    const rules = readFileSync(join(process.cwd(), 'docs/memory/rules.md'), 'utf8');
+    const placement = readFileSync(join(process.cwd(), 'docs/memory/work-placement.md'), 'utf8');
+    const standingRules = ledger.split('## 3. Standing rules')[1]?.split('## 4. Architecture and decisions')[0] ?? '';
+
+    // Independent entities section and subsections
+    expect(ledger).toContain('## 13. Independent entities');
+    for (const subsection of [
+      '### cleanup',
+      '### qa-and-release',
+      '### schema-migration',
+      '### documentation',
+      '### Cancelled / unassigned',
+    ]) {
+      expect(independentEntities).toContain(subsection);
+    }
+
+    // Empty slots in dashboard
+    for (const phase of [7, 27, 28, 32]) {
+      const row = dashboard.split('\n').find((line) => line.startsWith(`| P${phase} |`));
+      expect(row).toBeDefined();
+      expect(row).toContain('Empty (reserved)');
+    }
+
+    // Empty slots in branch index
+    for (const phase of [7, 27, 28, 32]) {
+      const row = branchIndex.split('\n').find((line) => line.startsWith(`| P${phase} |`));
+      expect(row).toBeDefined();
+      expect(row).toContain('Empty (reserved)');
+    }
+    expect(branchIndex.split('\n').find((line) => line.startsWith('| P7 |'))).toContain('schema-migration');
+    expect(branchIndex.split('\n').find((line) => line.startsWith('| P7 |'))).toContain('historical branch name: `phase/07-schema-migration`');
+    expect(branchIndex.split('\n').find((line) => line.startsWith('| P27 |'))).toContain('cleanup');
+    expect(branchIndex.split('\n').find((line) => line.startsWith('| P27 |'))).toContain('historical branch name: `phase/27-cleanup`');
+    expect(branchIndex.split('\n').find((line) => line.startsWith('| P28 |'))).toContain('qa-and-release');
+    expect(branchIndex.split('\n').find((line) => line.startsWith('| P28 |'))).toContain('historical branch name: `phase/28-qa-and-release`');
+
+    // Independent entity branch index table
+    expect(branchIndex).toContain('### Independent entity branch index');
+    for (const entity of ['cleanup', 'qa-and-release', 'schema-migration', 'documentation']) {
+      const row = branchIndex.split('\n').find((line) => line.includes(`\`${entity}\``));
+      expect(row).toBeDefined();
+    }
+
+    // Every moved row keeps original ID, has Previously: P<old> and Placement line, appears exactly once
+    const movedIds = [
+      'P7',
+      'P27-A',
+      'P28-A', 'P28-A-R1', 'P28-B', 'P28-C', 'P28-C-R1', 'P28-C-R2', 'P28-C-R3', 'P28-C-R4', 'P28-D',
+      'P28-E', 'P28-E-R1', 'P28-E-R2', 'P28-E-R3', 'P28-E-R4', 'P28-E-R5', 'P28-E-R5-R1',
+      'P28-F', 'P28-F-R1', 'P28-F-R2', 'P28-F-R2-R1', 'P28-F-R3', 'P28-F-R3-R1', 'P28-F-R3-R2',
+      'P28-F-R3-R3', 'P28-F-R3-R3-R1', 'P28-F-R4', 'P28-F-R4-R1', 'P28-F-R4-R1-R1', 'P28-F-R4-R1-R1-R1',
+      'P28-F-R4-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1-R1',
+      'P28-F-R4-R1-R1-R1-R1-R1-R1-R1', 'P28-F-R5', 'P28-F-R6', 'P28-F-R6-R1', 'P28-F-R6-R2',
+      'P28-F-R6-R3', 'P28-F-R6-R3-R1', 'P28-G',
+      'P32-A', 'P32-B', 'P32-C',
+    ];
+    for (const id of movedIds) {
+      const matches = independentEntities.split('\n').filter((line) => line.startsWith(`| ${id} |`));
+      expect(matches).toHaveLength(1);
+      expect(matches[0]).toContain('Previously:');
+      expect(matches[0]).toMatch(/Placement: rule [1-5];/);
+      expect(dashboard.split('\n').filter((line) => line.startsWith(`| ${id} |`) && !line.includes('Empty (reserved)'))).toHaveLength(0);
+    }
+
+    // R7 in AGENTS.md, rules.md, PROGRESS.md, work-placement.md with exact adjacencies
+    for (const doc of [agents, rules, standingRules, placement]) {
+      const norm = doc.replace(/\s+/g, ' ');
+      expect(norm).toMatch(/R7\s*[—–-]\s*Slot[- ]filling/i);
+      expect(norm).toContain('P7 for backup & security (P6) or investments (P8)');
+      expect(norm).toContain('P27 for accessibility & performance (P26) work');
+      expect(norm).toContain('P28 for income recurrence / Budget income (P29) work');
+      expect(norm).toContain('P32 for project health/community (P31) or widgets (P33) work');
+    }
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P7 |'))).toContain('adjacent backup & security (P6) or investments (P8) work per R7');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P27 |'))).toContain('adjacent accessibility & performance (P26) work per R7');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P28 |'))).toContain('adjacent income recurrence / Budget income (P29) work per R7');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P32 |'))).toContain('adjacent project health/community (P31) or widgets (P33) work per R7');
+  });
+
+  it('enforces entity naming in register, verification matrix and prompt log, and maintains revision chain integrity', () => {
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const crRegister = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const verificationMatrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const independentEntities = ledger.split('## 13. Independent entities')[1] ?? '';
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+
+    // (a) Prompt log rows must not have P7/P07/P27/P28/P32 in Phase column
+    const promptLogRows = promptLog.split('\n').filter((l) => l.startsWith('|') && !l.startsWith('| ID') && !l.startsWith('|---'));
+    for (const row of promptLogRows) {
+      const phaseCol = row.split('|')[2]?.trim();
+      expect(phaseCol).not.toMatch(/^(?:P0?7|P27|P28|P32)$/);
+    }
+
+    // CR register rows must not have P28 in phase column or stray P28 rows
+    const crRows = crRegister.split('\n').filter((l) => l.startsWith('|') && !l.startsWith('| ID') && !l.startsWith('|---'));
+    for (const row of crRows) {
+      const parts = row.split('|').map((s) => s.trim());
+      if (parts.length > 3) {
+        expect(parts[2]).not.toMatch(/^(?:P0?7|P27|P28|P32)$/);
+      }
+    }
+
+    // CR-106 must not be in the Section 2 dashboard
+    expect(dashboard.split('\n').filter((l) => l.startsWith('| CR-106 |'))).toHaveLength(0);
+
+    // Section 10 verification matrix must not name legacy P28/P27 phases without entity attribution
+    expect(verificationMatrix).not.toContain('| P28-A QA and release |');
+    expect(verificationMatrix).not.toContain('| P28-B release metadata |');
+    expect(verificationMatrix).not.toContain('| P28-C release organization/build management |');
+    expect(verificationMatrix).not.toContain('| P27-A cleanup |');
+    expect(verificationMatrix).toContain('cleanup: P27-A (Previously: P27-A)');
+    expect(verificationMatrix).toContain('qa-and-release: P28-A (Previously: P28-A)');
+    expect(verificationMatrix).toContain('qa-and-release: P28-B (Previously: P28-B)');
+    expect(verificationMatrix).toContain('documentation: P28-C (Previously: P28-C)');
+
+    // (b) Revision chains must not straddle independent entities
+    const entitySubsections = independentEntities.split(/\n###\s+/).slice(1);
+    const entityMap = new Map<string, string>();
+    for (const sub of entitySubsections) {
+      const entityName = sub.split('\n')[0].trim();
+      const rows = sub.split('\n').filter((l) => l.startsWith('|') && !l.startsWith('| ID') && !l.startsWith('|---'));
+      for (const row of rows) {
+        const id = row.split('|')[1]?.trim();
+        if (id) {
+          entityMap.set(id, entityName);
+        }
+      }
+    }
+
+    // Every revision in P28-F* belongs in qa-and-release
+    const p28fParts = [
+      'P28-F', 'P28-F-R1', 'P28-F-R2', 'P28-F-R2-R1', 'P28-F-R3', 'P28-F-R3-R1', 'P28-F-R3-R2',
+      'P28-F-R3-R3', 'P28-F-R3-R3-R1', 'P28-F-R4', 'P28-F-R4-R1', 'P28-F-R4-R1-R1', 'P28-F-R4-R1-R1-R1',
+      'P28-F-R4-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1-R1',
+      'P28-F-R4-R1-R1-R1-R1-R1-R1-R1', 'P28-F-R5', 'P28-F-R6', 'P28-F-R6-R1', 'P28-F-R6-R2',
+      'P28-F-R6-R3', 'P28-F-R6-R3-R1',
+    ];
+    for (const part of p28fParts) {
+      expect(entityMap.get(part)).toBe('qa-and-release');
+    }
+
+    // P28-C* belongs in documentation
+    for (const part of ['P28-C', 'P28-C-R1', 'P28-C-R2', 'P28-C-R3', 'P28-C-R4']) {
+      expect(entityMap.get(part)).toBe('documentation');
+    }
+
+    // P28-E* belongs in documentation
+    for (const part of ['P28-E', 'P28-E-R1', 'P28-E-R2', 'P28-E-R3', 'P28-E-R4', 'P28-E-R5', 'P28-E-R5-R1']) {
+      expect(entityMap.get(part)).toBe('documentation');
+    }
+
+    // (c) Docs-only rows outside P28 moved to documentation entity
+    for (const crId of ['CR-106', 'CR-109', 'CR-113', 'CR-114']) {
+      expect(entityMap.get(crId)).toBe('documentation');
+    }
+
+    // (d) History map deliverable committed and /tmp citations replaced
+    const historyMapPath = join(process.cwd(), 'docs/history/entity-history-map.md');
+    expect(existsSync(historyMapPath)).toBe(true);
+    expect(readFileSync(historyMapPath, 'utf8').length).toBeGreaterThan(100);
+    expect(ledger).not.toContain('/tmp/history_map.md');
+    expect(status).not.toContain('/tmp/history_map.md');
+    expect(openItems).not.toContain('/tmp/history_map.md');
+    expect(independentEntities).toContain('docs/history/entity-history-map.md');
+
   });
 });

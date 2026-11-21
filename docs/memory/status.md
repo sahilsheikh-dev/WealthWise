@@ -1,6 +1,74 @@
-<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-12 | Updates: owner and AI agents -->
+<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-13 | Updates: owner and AI agents -->
 
 # Status
+- **CR-115 (2026-11-13) — Budget edit and delete bug recorded as Planned (P20-U-R1).**
+  Owner reported: "In budget while updating any item/value/amount/start-month/frequency/due-day/etc
+  it is not updating also while trying to delete it is not even deleting, not for
+  single month and this and following months." Owner instruction: "Don't start working on this."
+  The defect is placed in P20 as Planned revision P20-U-R1 (rule 2, completed work revision of P20-U).
+  No investigation, reproduction, app code, schema, demo data or dependency changes were made; work on the bug is unstarted.
+- **CR-114 (2026-11-12) — independent entities, empty slots and R7 merged into develop.**
+  Work tracking restructured: `cleanup`, `qa-and-release`, `schema-migration`
+  and `documentation` operate as independent lifecycle entities with dedicated
+  branches and Section 13 tracking, excluded from phase progress bars (142/184, 77%).
+  Freed phase slots P7, P27, P28 and P32 remain reserved as Empty (reserved)
+  slots so no phase is renumbered and no historical ref is rewritten. R7
+  slot-filling rule enforced across instructions and placement guide. Remote
+  branches `schema-migration` and `documentation` pushed and verified;
+  `phase/07-schema-migration` deleted on origin. Historical tags
+  `phase-07-complete`, `phase-27-complete`, `phase-28-complete` retained. All
+  historical commits/PRs preserved with complete history map in
+  `docs/history/entity-history-map.md`. PR #161 merged `documentation` into `develop`
+  as `9058386`. Preflight Gates 1–3, 5, 6 passed; Gate 4 exit 1 owner-approved
+  exception (upstream Expo SDK 57 patch advisory on both develop and documentation).
+  Dependency patch alignment is tracked as a Planned `cleanup` task. Merge evidence
+  recorded on `documentation` (unpushed).
+- **CR-113 (2026-11-12) — owner approvals recorded; all feature work remains
+  Planned.** P21-F Home-source editing is authorized if needed; P33/P34/P35
+  research and stated follow-on scopes are approved; P35 has a Go after
+  research; P43-B/E planning direction is approved; P44-A placement/counting
+  is decided; P39/P40 stay in their existing areas. No research, app
+  implementation, tag deletion or issue creation started. The exact proposed
+  non-release tag list still needs approval, and P43-E needs verified inventory.
+  P43-G task PR #157 and phase PR #158 are merged; their exact merge commits
+  are recorded in [PROGRESS.md](../PROGRESS.md).
+  See [open-items.md](open-items.md) and [PROGRESS.md](../PROGRESS.md).
+- **CR-111 (2026-11-12) has Planned product work:** P20-A-R3 revises completed
+  P20-A-R2; new P44-A–P44-D plan a spending heat map. CM-2 is Active and
+  enforced as a repository rule, not a phase part. Planned product items keep
+  their dependencies and `Evidence: not started`. P20-A-R3 remains unimplemented and its
+  owner-reported behavior is not yet reproduced. P20 task PR #149 merged into
+  `phase/20-budget` at `7a5fed6c4a98d8394652e0dbb499b9aa810bae29`; phase PR
+  #150 merged into `develop` at
+  `4170545cbaa8a4f37d4583b5c29c909c0c99a015`. No app/schema/demo changes,
+  issue creation, tag operations or history rewrites. All six ordered gates
+  passed on the CR-111 task tree; Gate 1 had 101 suites, 1322 passed and
+  1 skipped. See [open-items.md](open-items.md) and [PROGRESS.md](../PROGRESS.md).
+- **CR-112 (2026-11-12) is complete:** R6, the indexed placement guide,
+  ledger relocations, tests and CM-2 are complete on
+  `task/P43-F-work-placement-rules`. Test-first commits include `e2f0263`,
+  `d24acd9`, `e7c134a`, `770393d` and `bdbe159`; the placement audit is
+  `5841373`.
+  Initial Gate 4 exited 1 on registry DNS (`ENOTFOUND registry.npmjs.org`);
+  the authorized network retry passed 21/21, then the full ordered rerun
+  passed all six gates. Gate 1: 101 suites, 1,324 passed, 1 skipped;
+  coverage 95.96/92.15/98.02/97.62% statements/branches/functions/lines.
+  No physical-device verification was performed. Task PR #153 and phase PR
+  #154 are merged as recorded in the CR-112 closeout.
+- **P43-A is Done:** `origin/cleanup` is at the old
+  `origin/phase/27-cleanup` tip `a2fa24f930da15c49f779577eb749b33f11a7059`;
+  `origin/qa-and-release` is at the old
+  `origin/phase/28-qa-and-release` tip
+  `9d914638e50462cbadef84df3294ed07cbf42732`. Each new ref matched its old
+  counterpart before deletion; final checks show the old refs are absent.
+  Historical branch name: `phase/27-cleanup`; historical branch name:
+  `phase/28-qa-and-release`. The retained `phase-27-complete`,
+  `phase-28-complete` and `phase-29-complete` tag targets are unchanged.
+  P43-A and P43-F are Done. Task PR #153 merged into P43 at
+  `6e8632f61226fabbfdeca1040f6dee097a808607`; phase PR #154 merged into
+  `develop` at `faa126ba75ee58ee703b8e43b375aece91c8f4d1`. P43-F-R1 records
+  the verified merge evidence. No application/schema/demo, release, tag,
+  issue or history work occurred.
 - **CR-110-R1 (2026-11-12) is Planned only:** CR-110 is marked Revised by
   CR-110-R1. Five P43 items record lifecycle tracking separation, tag cleanup and
   a report-only branch/PR/merge audit, Emergency Fund target editing,
@@ -15,8 +83,9 @@
   `develop` at `a93feaecfbd591c1b6f27bac15b5839c68d10709`. The task branch
   was deleted and the phase branch is retained. See
   [open-items.md](open-items.md) and [PROGRESS.md](../PROGRESS.md).
-- Remote rename of `phase/27-cleanup` and `phase/28-qa-and-release` needs an
-  owner decision because it requires a push and deletion of old remote refs.
+- Lifecycle branches are currently `cleanup` and `qa-and-release`; the
+  historical branch name: `phase/27-cleanup`; historical branch name:
+  `phase/28-qa-and-release`. Their remote refs have been renamed and verified.
   Any deletion of non-release tags is blocked on an owner-approved exact tag
   list; retain all `vX.Y.Z` releases and stale phase tags already directed.
   GitHub issue creation is a separate owner-approved task; GitHub controls
@@ -47,7 +116,8 @@
   PR #132 (`b678493`) and main-to-develop PR #133 (`eedff48`); `main` and
   `develop` trees match.
 - P28-F-R6-R2's ledger regression correction merged from task PR #134 into
-  `phase/28-qa-and-release` at `2d3a0f6`. Its evidence records the prior
+  `qa-and-release` (historical branch name: `phase/28-qa-and-release`) at
+  `2d3a0f6`. Its evidence records the prior
   release sync and exact P28 38/38 completion status.
 - The owner reports all previously listed physical-device follow-ups passed
   on 2026-11-11. O54-O60 in the device checklist record the grouped areas:
@@ -181,7 +251,7 @@
   recorded in [PROGRESS.md](../PROGRESS.md).
 - P28-E-R3 records the selected P25-F, v1.1.0 merge and P1 commits as
   ancestry through `task/P28-E-R3-record-selected-ancestry` and
-  `phase/28-qa-and-release`. The ancestry merges preserve the captured
+  `qa-and-release` (historical branch name: `phase/28-qa-and-release`). The ancestry merges preserve the captured
   `develop` tree; the task adds only ledger/memory documentation and a ledger
   test. PR #47 merged to P28 and PR #48 merged to `develop`; no
   application source or `main` changes were included.
@@ -218,7 +288,7 @@
   read-only `history/by-phase` archive, all 30 phase branches, and release
   branches `release/v1.0.0` and `release/v1.1.0`.
   Publication PRs #11-#15 are merged in order; their task branch was deleted
-  and `phase/28-qa-and-release` was retained.
+  and `qa-and-release` (historical branch name: `phase/28-qa-and-release`) was retained.
   `phase/25-release-and-backups` remains outside this Release 2 PR chain.
   P28-E's final-verification commit was reconciled in P28-E-R2; at that time
   the separate `codex-changes` branch was under review. The later owner
@@ -516,9 +586,10 @@
   historical records in [PROGRESS.md](../PROGRESS.md).
 - CR-108 baseline: 101 suites, 1317 tests (1316 passed, 1 skipped) on
   2026-11-11; all six CR-108 gates exited 0.
-- Test counts: 101 suites, 1320 tests (1319 passed, 1 skipped) on 2026-11-11.
-- Latest validated run: 101 suites, 1320 tests (1319 passed, 1 skipped) on
-  2026-11-11 on integrated `develop` `8988121`; all six P42-A gates exit 0.
+- Test counts: 101 suites, 1325 tests (1324 passed, 1 skipped) on
+  2026-11-12.
+- Latest validated run: 101 suites, 1325 tests (1324 passed, 1 skipped) on
+  2026-11-12 on the CR-112 task tree; all six ordered gates exited 0.
   Coverage and exact commands are recorded in [PROGRESS.md](../PROGRESS.md).
 - All six P29-L gates exit 0: Jest coverage, TypeScript, Expo lint with zero
   warnings, Expo Doctor 21/21, Android export and iOS export. Exact commands

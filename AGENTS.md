@@ -49,6 +49,43 @@ apply only that exception and preserve all other rules.
   changes, ask whether they want those owner edits reverted before changing
   the affected file further. Revert or overwrite owner edits only when the
   owner explicitly requests it; otherwise preserve them and work around them.
+- **R6 — Work placement:** before adding a ledger row, branch or task, search
+  the dashboard, register, phase history, roadmap, memory and touched
+  files/features. Apply the first matching rule: (1) ongoing standalone
+  lifecycle work (cleanup, qa-and-release, schema-migration, documentation,
+  release/hotfix, branch/tag hygiene, CI and repository-process work) goes in
+  standalone lifecycle tracking; P43 is the designated temporary setup-phase
+  exception; (2) revise completed work as the next sequential revision of its
+  original part and phase; (3) widen open work in place; (4) add related
+  feature work as the next part in its phase; (5) create a new phase for a new
+  feature area. Every new or moved row has a Placement line. See
+  [work-placement.md](docs/memory/work-placement.md).
+- **R7 — Slot-filling and empty phase reservations:** empty phase numbers freed
+  by independent entity separation or cancellation (P7, P27, P28, P32) stay
+  reserved as empty slots so no existing phase is renumbered and no
+  historical branch, tag, commit or ID is rewritten. A new feature may take an
+  empty slot only if it is related to the phase immediately before or after it:
+  P7 for backup & security (P6) or investments (P8) work; P27 for
+  accessibility & performance (P26) work; P28 for income
+  recurrence / Budget income (P29) work; P32 for project health/community (P31) or
+  widgets (P33) work. For multiple consecutive empty slots, apply the same
+  adjacency pattern per slot. Unrelated work never takes an empty slot; it
+  opens a new phase at the end under R6 rule 5. Precedence: R6 rules 1–3 first
+  (standalone lifecycle, completed-part revisions, and open-part scope), then
+  R7 for new-feature placement into an eligible adjacent empty slot before
+  opening a new phase.
+
+Work-placement quick start:
+1. Search dashboard, register, phase history, roadmap, memory and touched files.
+2. Choose the first matching R6 rule 1–5.
+3. Add `Placement: rule <1-5>; searched <what>; related <IDs or none>; reason <one sentence>`.
+4. Select the phase/lifecycle branch from `docs/memory/work-placement.md`.
+5. Add the failing test first; preserve every existing assertion.
+6. Run all six gates in order and record actual exit codes.
+7. Update dashboard, register, prompt log, branch index and memory.
+8. Merge task -> phase -> develop through PRs with `--no-ff`.
+9. After a target merge, run CM-2 synchronization.
+10. Report branch, HEAD, gates, device checks and remaining owner decisions.
 
 ### Branching
 
@@ -71,11 +108,20 @@ apply only that exception and preserve all other rules.
 - External contributors fork and use `contrib/ISSUE-slug`, submitting a PR
   into `develop`. Contributor PRs are squash-merged with a Conventional
   Commit title.
+- Standalone lifecycle branches (`cleanup`, historical branch name:
+  `phase/27-cleanup`; `qa-and-release`, historical branch name:
+  `phase/28-qa-and-release`; `schema-migration`, historical branch name:
+  `phase/07-schema-migration`; and `documentation`) operate independently of
+  numbered product phases and live alongside `develop`. Standalone docs tasks
+  branch from `documentation` as `task/docs-<slug>` and merge back `--no-ff`,
+  then merge `documentation` into `develop` via PR; code tasks continue
+  updating their own ledger rows in the same commit.
 - Merge task into phase, then phase into `develop`, with `--no-ff`. Merge
   release/hotfix to `main` with `--no-ff`. Agents never commit directly to
   `main` or `develop`, except the explicitly authorized bootstrap. Delete
   merged task branches and keep phase branches. Do not push unless asked;
   report merge commands in chat.
+- **CM-2 — Active:** After any merge that lands on a target branch (task->phase, phase->develop, release->main, main->develop): git fetch --all --prune; git switch <target>; git pull --ff-only. Refuse and report if the worktree is dirty, the fast-forward fails or the target has no upstream. This rule never authorizes pushing; R3 is unchanged.
 
 ### Gates
 
