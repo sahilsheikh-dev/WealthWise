@@ -33,10 +33,7 @@
   `effectiveMonthBudget`. The fix updates the plan and selected month row in one
   domain result/store action. Schema remains v23; no migration, backup, demo or
   dependency changes were needed.
-- Focused Budget/domain/store/route suites pass (4 suites, 358 tests). The prior
-  assertion that a following-scope schedule edit leaves the month snapshot
-  frozen was replaced with explicit updated schedule assertions; the change
-  and reason are recorded in `docs/PROGRESS.md`.
+- Focused Budget/domain/store/route suites pass (4 suites, 358 tests). The six ordered gates were: 1 exit 0 (103 suites, 1,374 passed, 1 skipped); 2 exit 0; 3 exit 0; 4 exit 1 (`ENOTFOUND registry.npmjs.org`, no retry); 5–6 exit 0. Coverage: domain 98.32% lines/92.99% branches, pure src/lib 100%/100%, data 94.20%/87.47%. The prior assertion that a following-scope schedule edit leaves the month snapshot frozen was replaced with explicit updated schedule assertions; the change and reason are recorded in `docs/PROGRESS.md`.
 - O73 remains Not run: on a physical device, edit each listed field, delete
   with both scopes, restart, and confirm the changes persist.
 

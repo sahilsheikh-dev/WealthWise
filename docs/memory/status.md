@@ -8,8 +8,7 @@
   recurring income updated the plan but retained an old selected-month
   snapshot, which the form then read. Other tested edits and all deletes
   persisted and rehydrated. The domain action now updates both plan and month.
-  Focused Budget/domain/store/route suites pass (4 suites, 358 tests). Schema
-  remains v23. Test-first commits are `c7ff3a6` and `db4c338`; fix commit is
+  Focused Budget/domain/store/route suites pass (4 suites, 358 tests). Six gates: 1 exit 0 (103 suites, 1,374 passed, 1 skipped); 2 exit 0; 3 exit 0; 4 exit 1 (`ENOTFOUND registry.npmjs.org`, no retry); 5–6 exit 0. Coverage: domain 98.32% lines/92.99% branches, pure src/lib 100%/100%, data 94.20%/87.47%. Schema remains v23. Test-first commits are `c7ff3a6` and `db4c338`; fix commit is
   `2dc72b5`. O73 physical-device edit/delete/restart verification is Not run.
   The AGENTS.md schema-v22 statement conflicts with code; `SCHEMA_VERSION` is
   23 and current memory is v23.
