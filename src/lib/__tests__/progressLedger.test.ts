@@ -146,13 +146,28 @@ describe('permanent progress ledger', () => {
     expect(roadmap).toMatch(/Documentation\s+reordering only; Git chronology remains unchanged/);
     expect(roadmap).toContain('list has not yet been supplied or approved');
     const emergencyFund = dashboard.split('\n').find((line) => line.startsWith('| P21-F |')) ?? '';
-    expect(emergencyFund).toContain('| In progress |');
+    expect(emergencyFund).toContain('Done; Revised by P21-F-R1');
     expect(emergencyFund).toContain('effective target = max(stored target, three-month floor)');
     expect(emergencyFund).toContain('three-month minimum floor');
     expect(emergencyFund).toContain('font-scale tests at 1.0/1.3/2.0');
     expect(emergencyFund).toContain('owner-supplied Gate 4 exit 1 (20/21; six SDK 57 patch mismatches)');
     expect(emergencyFund).toContain('local Gate 4 attempt exit 1 (`ENOTFOUND registry.npmjs.org`)');
     expect(emergencyFund).toContain('Gates 5–6 exit 0');
+    const emergencyFundIntegration = dashboard.split('\n').find((line) => line.startsWith('| P21-F-R1 |')) ?? '';
+    expect(emergencyFundIntegration).toContain('| Done |');
+    expect(emergencyFundIntegration).toContain('task PR #170');
+    expect(emergencyFundIntegration).toContain('c877f6d19e35c0b9fbcba90e9722da7531948c8e');
+    expect(emergencyFundIntegration).toContain('phase PR #171');
+    expect(emergencyFundIntegration).toContain('2e5e18a7a2be207387a7462b039547f51b0e4631');
+    expect(emergencyFundIntegration).toContain('Placement: rule 2;');
+    expect(register.split('\n').find((line) => line.startsWith('| CR-117 |'))).toContain('| Done; Revised by P21-F-R1 |');
+    expect(register.split('\n').find((line) => line.startsWith('| CR-117 |'))).toContain('Task PR #170');
+    expect(register.split('\n').find((line) => line.startsWith('| CR-117 |'))).toContain('phase PR #171');
+    expect(promptLog.split('\n').find((line) => line.startsWith('| CR-117 |'))).toContain('Revised by P21-F-R1');
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| P21-F-R1 |'))).toHaveLength(1);
+    expect(branchIndex).toMatch(/\| P21 \| `phase\/21-emergency-fund` \| `phase-21-complete` \| `[0-9a-f]+` \| 8 \|/);
+    expect(openItems).toContain('P21-F is integrated into `develop` through PR #170 and PR #171');
+    expect(status).toContain('P21-F-R1 records task PR #170 and phase PR #171');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-W |')))
       .toContain('resolve schema/backup impact before any implementation');
     expect(roadmap).toContain('one issue per ledger part or CR');
@@ -165,7 +180,7 @@ describe('permanent progress ledger', () => {
     expect(branchIndex).toContain('| `documentation` | `documentation` | — | — | Active |');
     expect(roadmap).not.toMatch(/^\d+\. \*\*P(?:27|28) —/m);
     expect(roadmap).toContain('P27/P28 remain completed historical milestones');
-    expect(roadmap).toContain('P21-F — Emergency Fund target editing');
+    expect(roadmap).toContain('P21-F (Previously: P43-C) is Done: one Emergency Fund edit action and combined target/allocation form');
     expect(roadmap).toContain('P20-W (Previously: P43-D)');
     expect(roadmap).toContain('P43-E — GitHub issue strategy');
     expect(roadmap).toContain('P43-F — Work placement and CM-2');
@@ -641,8 +656,8 @@ describe('permanent progress ledger', () => {
         expect(dashboard.split('\n').find((line) => line.startsWith('| P20-S-R1-R1 |')))
           .toContain('| Done |');
       } else if (phase === 21) {
-        expect(count?.done).toBe(6);
-        expect(count?.total).toBe(7);
+        expect(count?.done).toBe(8);
+        expect(count?.total).toBe(8);
       } else if (phase === 31) {
         expect(count?.done).toBe(0);
         expect(count?.total).toBe(4);
@@ -1067,7 +1082,7 @@ describe('permanent progress ledger', () => {
     expect(registerRow).toContain('185a5ea125f64ac104344f00ad013d68cdb7a946');
     expect(registerRow).toContain('6b50a1d');
     expect(phaseRow).toContain('| 36 |');
-    expect(ledger).toContain('Overall progress ████████░░ 77% (145/188)');
+    expect(ledger).toContain('Overall progress ████████░░ 78% (147/189)');
     expect(ledger).toContain('P20         █████████░ 92% (33/36)');
     expect(status).toContain('P20-S-R2-R1 records the verified');
   });
