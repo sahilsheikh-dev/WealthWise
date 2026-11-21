@@ -144,7 +144,7 @@ the phase branch is retained. Phase PR #147 merged into `develop` at
   Placement: rule 4; searched dashboard, register, P21-A–E, phase history,
   roadmap, memory and Emergency Fund/Home/Goals modules; related P21-A–E;
   reason this extends the existing Emergency Fund feature area.
-- **P20-W (Previously: P43-D) — Transaction form (D1/D2 In progress; D3 Planned):**
+- **P20-W (Previously: P43-D) — Transaction form (D1/D2 integrated; D3 implemented, final gates/PR pending):**
   P20-S-R2 is confirmed on `develop` at merge `6b50a1d`; phase sync commit
   `e44ce6f` and task branch `task/P20-W-transaction-form-categories` are ready.
   D1 is implemented without a persisted-schema change: a new Invest form starts
@@ -166,28 +166,27 @@ the phase branch is retained. Phase PR #147 merged into `develop` at
   known SDK 57 patch mismatches; owner-approved cleanup exception); Gates 5–6
   exit 0. Dependencies and app config did not change since the owner run. Task PR #174 merged at `419a37b07e6853b3c683d22ec243ea58223514c1`; phase
   PR #175 merged at `9e47856f20848e03ac6a4b8e699f47c387d08161`; CM-2 synchronized local `develop`. P20-W
-  remains open for D3; O69–O72 remain Not run.
+  D3 implementation commit `f2541fd` is on the current v24 task branch; final
+  gates and PR integration remain pending. O69–O72 remain Not run.
 
   Integration evidence: P20-W-R1 records task PR #174 merge `419a37b07e6853b3c683d22ec243ea58223514c1` and
   phase PR #175 merge `9e47856f20848e03ac6a4b8e699f47c387d08161`. D1/D2 are integrated; P20-W remains open for D3. O69–O72 remain Not run.
 
-  D3 custom Income remains gated. Transaction `category` is already a bounded
-  string, but scheduled earned-income `BudgetIncomeItem.category` is the fixed
-  `EarnedIncomeCategory` enum. Proposed change: widen that same field to a
-  trimmed, nonempty string up to 60 characters, with no new field; preserve all
-  v23 category strings unchanged in v23-to-v24 migration. Update app and backup
-  schemas, domain income validation, labels/filters, and demo fixtures. Keep
-  backup format v1 and import v1–v23 through the migration chain; test plain
-  and encrypted round trips with custom income. Extend pre-migration archive
-  recognition and erase-all cleanup to include `.premigration.v23`.
-  **STOP GATE RESOLVED (DEC-P20W-D3-SCHEMA24, 2026-11-21):** owner assigns
-  schema v24 to P20-W and replans P36-A/B to v25. P20-W-D3 implementation is
-  authorized; code still starts at v23. Physical-device checks O69–O72 cover the placeholder, derived
-  category/section, searchable category picker, custom income and font scales
-  1.3/2.0; D3 is authorized and its device scenario remains unrun until
-  implementation is complete. Placement: rule 4; searched dashboard, register, P20-O/P,
-  P3 history, roadmap, memory and transaction form modules; related P20-O and
-  P20-P; reason this work extends the existing Budget/category form area.
+  **D3 implemented on schema v24** under DEC-P20W-D3-SCHEMA24. The existing
+  `BudgetIncomeItem.category` field is a trimmed nonempty string up to 60
+  characters; v23→v24 is identity-preserving. Backup format v1 and imports
+  v1–v23 remain supported, including plain/encrypted custom-category round
+  trips. `.premigration.v23` is archived and removed by erase-all. Custom
+  earned-income entry is available in the Budget income and Transaction forms;
+  labels, filtering, and a deterministic demo override preserve the custom
+  value. Focused verification passed (8 suites / 524 tests); the six final
+  gates and PR integration are pending. O69–O72 remain Not run; O71 now checks
+  custom income persistence and reopening on device. **STOP GATE RESOLVED (DEC-P20W-D3-SCHEMA24,
+  2026-11-21):** P20-W owns v24 and P36-A/B remain on v25.
+  Placement: rule 3; searched dashboard, register, phase history, roadmap,
+  memory, P20-W/P20-O/P20-P records and income/transaction form modules;
+  related P20-W D1/D2 and P36-A/B; reason this widens the existing open
+  Budget/category behavior after the owner resolved schema ownership.
 - **P43-E — GitHub issue strategy (plan only):** one issue per ledger part
   or CR; phase/type/status labels; release milestones; pending issues open;
   completed issues retrospective and closed; verified commits, PRs, merge

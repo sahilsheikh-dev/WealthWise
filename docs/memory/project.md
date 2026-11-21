@@ -11,7 +11,7 @@ runtime synchronization.
   migration), Zod, React Hook Form and Jest.
 - Toolchain: Node.js 26; `.nvmrc` selects 26.13.0 and `engines` allows
   `>=26.0.0 <27`.
-- Schema version: v23 (`SCHEMA_VERSION` in `src/domain/schemas.ts`). Once-only
+- Schema version: v24 (`SCHEMA_VERSION` in `src/domain/schemas.ts`). Once-only
   recurrence applies to Budget items, Budget income and insurance premiums;
   investment plans and liabilities remain excluded.
 - Liability and goal lists show in-progress entries before collapsed
@@ -69,8 +69,9 @@ runtime synchronization.
 - P20-W integration: task PR #174 merged into `phase/20-budget` at
   `419a37b07e6853b3c683d22ec243ea58223514c1`; phase PR #175 merged into `develop` at `9e47856f20848e03ac6a4b8e699f47c387d08161`.
   CM-2 synchronized local `develop`. P20-W-R1 records the merge evidence.
-  D1/D2 are integrated; D3 is authorized to take v24 and P36-A/B are replanned
-  to v25.
+  D1/D2 are integrated. D3 implementation commit `f2541fd` widens earned-income
+  categories under v24 and P36-A/B are replanned to v25; focused suites passed
+  (8 suites / 524 tests). Final gates and PR integration are pending.
   Device checks O69–O72 remain Not run.
 - P21-F synced Gate 1 was 102 suites, 1,366 tests (1,365 passed; one skipped),
   coverage 95.96/92.14/98.03/97.63%. Gates 1–3 and 5–6 exited 0. Gate 4

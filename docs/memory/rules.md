@@ -4,6 +4,9 @@
 
 ## Invariants
 
+- Persisted schema is v24 (`SCHEMA_VERSION` in `src/domain/schemas.ts`);
+  preserve migrations and backup imports from schemas v1–v23.
+
 - **COMMON RULES apply to every prompt**, even if not repeated in a prompt.
   R1 requires a dirty-file preflight with `git diff --stat` and the complete
   diff; before each commit show its subject and staged diff-stat, commit only

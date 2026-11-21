@@ -101,7 +101,7 @@ version, and tester fields remain blank.
 | O68 | Verify Emergency Fund target form layout at font scales 1.3 and 2.0 on a physical device. | Not run | P21-F; device check required. |
 | O69 | Verify an Invest transaction shows a neutral category before holding selection, blocks Save without a holding, and derives the category after selection. | Not run | P20-W D1; physical-device check required. |
 | O70 | Verify the expense Budget category picker, derived section context, searchable Custom option and custom category entry on iOS and Android. | Not run | P20-W D2; physical-device check required. |
-| O71 | Verify custom earned-income type entry and persistence after D3 schema work is approved and implemented. | Not run | P20-W D3; pending schema-version decision. |
+| O71 | Verify custom earned-income type entry and persistence in Budget income and Transaction forms, including trimming and reopening the saved value. | Not run | P20-W D3 implemented under schema v24; physical-device check required. |
 | O72 | Verify Transaction form scrolling, validation, category picker and custom category entry at font scales 1.3 and 2.0 on iOS and Android. | Not run | P20-W; physical-device check required. |
 
 The owner reports O45-O60 passed on 2026-11-11. Device model, Android

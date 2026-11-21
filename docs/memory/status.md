@@ -1,7 +1,8 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-21 | Updates: owner and AI agents -->
 
 # Status
-- **P20-W (2026-11-21) — D1/D2 integrated; D3 authorized under schema v24.**
+- **P20-W (2026-11-21) — D1/D2 integrated; D3 implemented under schema v24.**
+  Schema version: v24.
   P20-S-R2 merge `6b50a1d` is on `develop`; phase `phase/20-budget` was
   synced from current `origin/develop`, and the task tree now includes that
   phase history. D1/D2 remain schema-free and implemented; focused
@@ -13,9 +14,10 @@
   the six known SDK 57 patch mismatches (owner-approved cleanup exception);
   Gates 5–6 exited 0. Dependencies and app config did not change since the
   owner run. DEC-P20W-D3-SCHEMA24 resolves schema ownership: P20-W takes v24
-  and P36-A/B are replanned to v25. Implementation is starting on the D3 task
-  branch. Physical checks O69–O72 remain Not
-  run; O65–O68 belong to P21-F. Task PR #174 merged at `419a37b07e6853b3c683d22ec243ea58223514c1`; phase
+  and P36-A/B are replanned to v25. D3 commit `f2541fd` adds custom income schemas/forms, identity
+  v23→v24 migration, archive cleanup and backup compatibility. Focused checks
+  pass (8 suites / 524 tests); final gates and PR integration remain pending.
+  Physical checks O69–O72 remain Not run; O65–O68 belong to P21-F. Task PR #174 merged at `419a37b07e6853b3c683d22ec243ea58223514c1`; phase
   PR #175 merged at `9e47856f20848e03ac6a4b8e699f47c387d08161`; CM-2 synchronized local `develop`.
   P20-W-R1 records task PR #174 and phase PR #175; D3 schema ownership is
   resolved by DEC-P20W-D3-SCHEMA24.
