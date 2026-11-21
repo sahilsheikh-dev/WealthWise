@@ -126,12 +126,13 @@ the phase branch is retained. Phase PR #147 merged into `develop` at
   the existing persisted Goal.target is reused; schema v23 and backup formats
   remain unchanged. DEC-P21F-FLOOR keeps the effective max(stored target,
   three-month floor) and rejects below-floor input with the existing typed
-  validation. Header action, shared target form, one domain/store write, Undo,
-  target/bucket reflection, demo fixture and v23 backup round-trip tests are
-  committed. Gates 1–3 passed; Expo Doctor and its retry exited 1 with
-  `ENOTFOUND registry.npmjs.org`. Per the stop rule, Android/iOS exports and PR
-  integration remain pending. Home source is untouched. Device checks O65–O68
-  are Not run.
+  validation. One header edit action opens a combined target/allocation form;
+  the plan saves through one domain action, one store write and one Undo.
+  Target/bucket reflection, demo fixture and v23 backup round-trip tests are
+  covered. Gates 1–3 exit 0 (102 suites, 1,365 passed, 1 skipped); Expo
+  Doctor and its retry exit 1 with `ENOTFOUND registry.npmjs.org`. Per the stop
+  rule, exports and PR integration were not run. Home source is untouched.
+  Device checks O65–O68 are Not run.
   Placement: rule 4; searched dashboard, register, P21-A–E, phase history,
   roadmap, memory and Emergency Fund/Home/Goals modules; related P21-A–E;
   reason this extends the existing Emergency Fund feature area.

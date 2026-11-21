@@ -169,7 +169,6 @@ jest.mock('../../data/store', () => {
       undoImport: jest.fn(async () => ({ ok: true })),
       addGoal: jest.fn(),
       updateGoal: jest.fn(),
-      setEmergencyFundTarget: jest.fn(),
       deleteGoal: jest.fn(),
       addTransaction: jest.fn(),
       updateTransaction: jest.fn(),

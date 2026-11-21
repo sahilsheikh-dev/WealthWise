@@ -149,7 +149,7 @@ describe('permanent progress ledger', () => {
     expect(emergencyFund).toContain('| In progress |');
     expect(emergencyFund).toContain('effective target = max(stored target, three-month floor)');
     expect(emergencyFund).toContain('three-month minimum floor');
-    expect(emergencyFund).toContain('font-scale tests at 1.3/2.0');
+    expect(emergencyFund).toContain('font-scale tests at 1.0/1.3/2.0');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-W |')))
       .toContain('resolve schema/backup impact before any implementation');
     expect(roadmap).toContain('one issue per ledger part or CR');

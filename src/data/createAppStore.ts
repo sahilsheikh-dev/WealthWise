@@ -656,7 +656,13 @@ export function createAppStore(
           applyDataAction((data) => setEfBucketLinks(data, bucketId, holdingIds));
         },
         saveEfPlan(plan) {
-          applyDataAction((data) => saveEfPlan(data, plan, deps.newId));
+          applyDataActionWithUndo((data) => saveEfPlan(data, plan, deps.newId, {
+            expenseBaseline: emergencyFundBaseline(
+              data.transactions,
+              data.settings.monthlySalary,
+              deps.today(),
+            ).amount,
+          }), 'Emergency fund updated');
         },
         dismissStorageError() {
           suppressNextWrite = true;

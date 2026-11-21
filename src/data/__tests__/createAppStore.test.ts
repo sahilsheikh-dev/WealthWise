@@ -25,7 +25,7 @@ import { planReminders } from '../../domain/reminders';
 import { liabilitySchedule, upcomingDue } from '../../domain/schedule';
 import { mockAppData } from '../../mock/data';
 import { buildDemoData } from '../../mock/demoData';
-import { SUGGESTED_EF_ALLOCATION } from '../../domain/efAllocation';
+import { DEFAULT_EF_ALLOCATION, SUGGESTED_EF_ALLOCATION } from '../../domain/efAllocation';
 import { createAppStore } from '../createAppStore';
 import { useUIStore } from '../uiStore';
 import { makeV1Fixture, makeV2Fixture, makeV4Fixture, makeV5Fixture, makeV6Fixture } from '../testFixtures/v1';
@@ -756,24 +756,28 @@ describe('createAppStore persistence', () => {
       { id: 'expense-sep', type: 'expense', amount: 20_000, category: 'Food', note: '', date: '2026-09-01' },
     ];
     data.goals[0] = { ...data.goals[0]!, target: 60_000 };
-    data.efAllocation = { ...SUGGESTED_EF_ALLOCATION, cash: 20, bank: 30 };
+    data.efAllocation = { ...DEFAULT_EF_ALLOCATION, cash: 20, bank: 30 };
     storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data }, version: 23 }));
     const store = makeStore(storage, { isDev: false });
     await waitForHydration(store);
+    expect(store.getState().status).toBe('ready');
     useUIStore.getState().setActionToast(null);
     const before = store.getState().data;
     const writes = storage.setItemCalls;
+    const calls = storage.calls.length;
 
     store.getState().actions.saveEfPlan({
       customBuckets: before.efCustomBuckets,
-      allocation: { ...SUGGESTED_EF_ALLOCATION, cash: 10, bank: 40 },
+      allocation: { ...DEFAULT_EF_ALLOCATION, cash: 10, bank: 40 },
       links: before.efBucketLinks,
       target: 90_000,
     });
 
-    expect(storage.setItemCalls - writes).toBe(1);
+    expect(store.getState().lastError).toBeNull();
     expect(store.getState().data.goals.find((goal) => goal.auto === 'ef')?.target).toBe(90_000);
     expect(store.getState().data.efAllocation).toMatchObject({ cash: 10, bank: 40 });
+    expect(storage.calls.slice(calls)).toEqual(['set:wealthwise.app.v1']);
+    expect(storage.setItemCalls - writes).toBe(1);
     expect(useUIStore.getState().actionToast).toMatchObject({
       message: 'Emergency fund updated',
       actionLabel: 'Undo',

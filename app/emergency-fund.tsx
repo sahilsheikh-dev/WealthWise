@@ -67,12 +67,8 @@ export default function EmergencyFundScreen() {
         showDefaultMenu={false}
         rightActions={[{
           icon: 'edit-2',
-          label: 'Edit allocation',
+          label: 'Edit Emergency Fund',
           onPress: () => router.push('/ef-allocation-form'),
-        }, {
-          icon: 'edit-2',
-          label: 'Edit target',
-          onPress: () => router.push('/ef-target-form'),
         }]}
       />
       <Card>
@@ -104,7 +100,7 @@ export default function EmergencyFundScreen() {
         <AppText weight="semibold" style={styles.allocationTitle}>Allocation</AppText>
         {repaired ? (
           <AppText style={[typography.meta, { color: colors.text2 }]}>
-            Your allocation was adjusted to total 100%. Check it in Edit allocation.
+            Your allocation was adjusted to total 100%. Check it in Edit Emergency Fund.
           </AppText>
         ) : null}
         {!hasLinkedAssets ? (
