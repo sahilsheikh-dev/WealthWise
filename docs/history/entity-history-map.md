@@ -2,6 +2,8 @@
 
 | Short SHA | Ledger Ref | Owning Entity | Docs-only? | Subject |
 |---|---|---|---|---|
+| `ef4f263` | CR-118 | documentation | Yes (documentation) | docs(ledger): record documentation task commits |
+| `8b059db` | CR-118 | documentation | Yes (documentation) | docs(history): map current reconciliation commits |
 | `1c27944` | CR-118 | documentation | Yes (documentation) | docs(memory): record final gate and status updates |
 | `917b313` | CR-118 | documentation | Yes (documentation) | docs(ledger): reconcile remote history |
 | `3c54da3` | CR-118 | documentation | Yes (documentation) | docs(memory): sync status and open items |
