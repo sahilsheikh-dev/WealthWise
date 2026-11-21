@@ -180,6 +180,25 @@ describe('transaction add form', () => {
     mockUpdateTransaction.mockClear();
   });
 
+  it('keeps an unlinked investment category neutral and blocks saving until a holding is selected', async () => {
+    mockParams = { type: 'invest' };
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    await act(async () => { renderer = TestRenderer.create(<TransactionFormScreen />); });
+    if (!renderer) throw new Error('Transaction form renderer was not created.');
+
+    expect(renderer.root.findAll((node) => String(node.type) === 'readonly')
+      .some((node) => node.props.label === 'Category' && node.props.value === 'Choose an investment')).toBe(true);
+
+    await act(async () => {
+      renderer?.root.findByProps({ label: 'Save' }).props.onPress();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(mockAddInstrumentTransaction).not.toHaveBeenCalled();
+    expect(renderer.root.findByProps({ label: 'Save' }).props.disabled).toBe(true);
+    expect(renderer.root.findAll((node) => String(node.type) === 'dropdown')
+      .find((node) => node.props.label === 'Invest in')?.props.error).toBe('Choose where this is invested');
+  });
+
   it.each([
     ['expense', 'expense'],
     ['income', 'income'],
