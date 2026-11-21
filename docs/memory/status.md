@@ -1,6 +1,18 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-21 | Updates: owner and AI agents -->
 
 # Status
+- **P20-W (2026-11-21) — Transaction form D1/D2 in progress; D3 schema gate open.**
+  P20-S-R2 merge `6b50a1d` is on `develop`; phase `phase/20-budget` was
+  synced from current `origin/develop`, and the task tree now includes that
+  phase history. D1/D2 remain schema-free and implemented; focused
+  TransactionForm/schema suites pass (68 tests). On the synced task tree,
+  Gate 1 exited 0 (102 suites, 1,368 passed, 1 skipped; coverage
+  95.96/92.14/98.03/97.63% statements/branches/functions/lines); Gates 2–3
+  exited 0; Gate 4 exited 1 with `ENOTFOUND registry.npmjs.org`; Gates 5–6
+  exited 0. D3 custom earned-income types still require changing validation,
+  backup and migration/archive behavior. It remains Planned pending the owner’s
+  v24 ownership decision against P36-A/B. Physical checks O69–O72 remain Not
+  run; O65–O68 belong to P21-F. No PRs have been opened yet.
 - **P21-F / CR-117 (2026-11-21) — Emergency Fund target editing merged; P21-F-R1 records integration.**
   Read-only investigation confirms the existing persisted `Goal.target` is used;
   schema v23 and backup shape remain unchanged. DEC-P21F-FLOOR keeps the
@@ -618,15 +630,13 @@
   historical records in [PROGRESS.md](../PROGRESS.md).
 - CR-108 baseline: 101 suites, 1317 tests (1316 passed, 1 skipped) on
   2026-11-11; all six CR-108 gates exited 0.
-- Test counts: 102 suites, 1366 tests (1365 passed, 1 skipped) on
+- Test counts: 102 suites, 1369 tests (1,368 passed, 1 skipped) on
   2026-11-21.
-- Latest validated run: 102 suites, 1366 tests (1365 passed, 1 skipped) on
-  2026-11-21 on the synced P21-F task tree; Gate 1 coverage was
+- Latest validated run: 102 suites, 1369 tests (1,368 passed, 1 skipped) on
+  2026-11-21 on the synced P20-W task tree; Gate 1 coverage was
   95.96/92.14/98.03/97.63% statements/branches/functions/lines; Gates 1–3 and
-  5–6 exited 0. This session's Gate 4 attempt exited 1 with
-  `ENOTFOUND registry.npmjs.org`; owner-supplied Gate 4 exited 1 (20/21) on
-  the known six-package SDK 57 patch mismatch. The network failure is recorded
-  separately from the accepted owner-approved exception.
+  5–6 exited 0. Gate 4 exited 1 with `ENOTFOUND registry.npmjs.org`. P20-W D3
+  remains behind the P36 v24 ownership decision; O69–O72 remain Not run.
   Coverage and exact commands are recorded in [PROGRESS.md](../PROGRESS.md).
 - All six P29-L gates exit 0: Jest coverage, TypeScript, Expo lint with zero
   warnings, Expo Doctor 21/21, Android export and iOS export. Exact commands

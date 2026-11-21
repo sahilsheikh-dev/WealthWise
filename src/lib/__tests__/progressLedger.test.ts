@@ -150,6 +150,11 @@ describe('permanent progress ledger', () => {
     expect(emergencyFund).toContain('effective target = max(stored target, three-month floor)');
     expect(emergencyFund).toContain('three-month minimum floor');
     expect(emergencyFund).toContain('font-scale tests at 1.0/1.3/2.0');
+    const transactionForm = dashboard.split('\n').find((line) => line.startsWith('| P20-W |')) ?? '';
+    expect(transactionForm).toContain('| In progress |');
+    expect(transactionForm).toContain('D1/D2 schema-free scope');
+    expect(transactionForm).toContain('D3 remains Planned pending the owner schema-version decision');
+    expect(emergencyFund).toContain('font-scale tests at 1.0/1.3/2.0');
     expect(emergencyFund).toContain('owner-supplied Gate 4 exit 1 (20/21; six SDK 57 patch mismatches)');
     expect(emergencyFund).toContain('local Gate 4 attempt exit 1 (`ENOTFOUND registry.npmjs.org`)');
     expect(emergencyFund).toContain('Gates 5–6 exit 0');
@@ -169,7 +174,7 @@ describe('permanent progress ledger', () => {
     expect(openItems).toContain('P21-F is integrated into `develop` through PR #170 and PR #171');
     expect(status).toContain('P21-F-R1 records task PR #170 and phase PR #171');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-W |')))
-      .toContain('resolve schema/backup impact before any implementation');
+      .toContain('D3 remains Planned pending the owner schema-version decision');
     expect(roadmap).toContain('one issue per ledger part or CR');
     expect(roadmap).toContain('API rate and noise concerns');
     expect(branchIndex).toContain('| P43 | `phase/43-lifecycle-and-transaction-planning` | — | — | 7 |');
