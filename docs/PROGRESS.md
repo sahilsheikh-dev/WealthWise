@@ -187,7 +187,7 @@ P44         ░░░░░░░░░░ 0% (0/4)
 | P20-U | `02bfbb1` | Done; Revised by P20-U-R1 | CR-86–CR-87: replace BudgetManagementSheet with section, item and income FormScreen routes; scoped save/delete Undo and route coverage. Focused suites pass; final gates and device limitations recorded below. | 2026-10-21 |
 | P20-U-R1 | P20-U | Done | Owner authorization on 2026-11-21 superseded CR-115’s earlier hold. CONT3 completed the real-form/store/persistence matrix across Spend, Invest and Income, recurring and one-time kinds where applicable, edit fields and both scopes; delete coverage passes for both scopes across each section/kind. The original store matrix reproduced four following-scope Income schedule snapshot defects (one-time/recurring × frequency/start-month), fixed by `2dc72b5`. Real-form edit reproduced amount loss when optional fields were cleared, fixed by `a292f33`; the legacy category-line action also dropped `holdingId` in both scopes, fixed by `e4accf5`. Name, amount/value, start month, frequency, due day and other tested cells pass. Backup restore, demo origin, non-current viewed month, and H1–H5 findings are recorded in CONT3. Tests: `936ff8f`, `3866bf3`, `10a8f6f`, `8ceecb5`, `4f02446`, `88693ab`, `51a907c`, `7074b25`, `c3d0cc7`, `421d080`, `a5ea806`; harness typing `cc0b3c6`; fixes: `2dc72b5`, `a292f33`, `e4accf5`. Six-gate results below. Schema v23; no migration, dependency or protected-file change. O73 physical-device check remains Not run. Placement: initial work rule 2; continuations rule 3; searched dashboard, register, phase history, roadmap, memory and touched Budget forms/domain/store; related P20-U-R1; reason: complete the widened owner-report scope in place. | 2026-11-21 |
 | P20-V | `6d3feab`, `82793e8`, `1afac16`, `139230d` | Done | CR-88/CR-89: schema v13 and migration, recurrence-aware Budget planning/dues, route form, row display, demo and tests. All six automated gates pass; native-device checks remain unverified. | 2026-10-21 |
-| P20-W | — | In progress; Revised by P20-W-R1 | Previously: P43-D. D1/D2 schema-free scope: both implemented. D1: no investment category before holding selection; selected holding derives via `investCategoryFor`; missing holding blocks Save. D2: the picker groups Budget-defined/effective-month expense categories plus a Custom entry, shows the derived Budget section, and retains removed-item transaction categories. Custom names save as transaction category strings only; no new persisted field. Focused TransactionForm/schema tests pass (68 tests). Post-sync Gate 1 exit 0 (102 suites, 1,368 passed, 1 skipped; coverage 95.96/92.14/98.03/97.63%); Gate 2 exit 0; Gate 3 exit 0; local Gate 4 attempt exit 1 (`ENOTFOUND registry.npmjs.org`); owner-supplied Gate 4 exit 1 (20/21 checks, six SDK 57 patch mismatches; owner-approved cleanup exception); Gates 5–6 exit 0. Task PR #174 merged into `phase/20-budget` at `419a37b07e6853b3c683d22ec243ea58223514c1`; phase PR #175 merged into `develop` at `9e47856f20848e03ac6a4b8e699f47c387d08161`; CM-2 synchronized local `develop`. D3 remains Planned pending the owner schema-version decision; P20-W-R1 records integration evidence. Placement: rule 4; searched dashboard, register, P20-O/P, P3 history, roadmap, memory and transaction form modules; related P20-O and P20-P; reason Budget category and transaction-form behavior belongs to the existing P20 feature area. | 2026-11-21 |
+| P20-W | — | In progress; Revised by P20-W-R1 | Previously: P43-D. D1/D2 schema-free scope: both implemented. D1: no investment category before holding selection; selected holding derives via `investCategoryFor`; missing holding blocks Save. D2: the picker groups Budget-defined/effective-month expense categories plus a Custom entry, shows the derived Budget section, and retains removed-item transaction categories. Custom names save as transaction category strings only; no new persisted field. D3 is authorized: widen earned-income category to a trimmed nonempty string up to 60 characters; preserve v23 strings in an identity v23→v24 migration; retain backup format v1 and v1–v23 import compatibility; add v23 pre-migration archive recognition/erase cleanup; offer custom earned-income entry in Budget income and Transaction forms. Owner decision DEC-P20W-D3-SCHEMA24 assigns schema v24 to P20-W and replans P36-A/B to v25; implementation `f2541fd` adds custom earned-income categories, v23→v24 identity migration and `.premigration.v23` handling. Focused suites pass (8 suites / 524 tests). Gate 1 passes (102 suites, 1,381 passed, 1 skipped); Gates 2–3 and 5–6 exit 0; Gate 4 exits 1 (`ENOTFOUND registry.npmjs.org`). PR integration is pending. Prior six-gate evidence includes local Gate 4 exit 1 (`ENOTFOUND registry.npmjs.org`) and owner-supplied Gate 4 exit 1 (20/21 checks, six SDK 57 patch mismatches; owner-approved cleanup exception); prior PR #174/#175 evidence remains recorded. Placement: rule 3; searched dashboard, register, phase history, roadmap, memory, P20-W/P20-O/P20-P records and income/transaction form modules; related P20-W D1/D2 and P36-A/B; reason this widens the existing open Budget/category behavior after the owner resolved schema ownership. | 2026-11-21 |
 | P20-W-R1 | — | Done | Record P20-W task PR #174 merge `419a37b07e6853b3c683d22ec243ea58223514c1` and phase PR #175 merge `9e47856f20848e03ac6a4b8e699f47c387d08161`; local `develop` was synchronized by CM-2. No application behavior changed; D3 remains Planned and O69–O72 remain Not run. Test-first commit `6f31775`. Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and P20-W records; related P20-W and CM-2; reason: record verified task/phase integration as the next P20-W revision required by the integration workflow. | 2026-11-21 |
 | P20-S-R2 | — | Done; Revised by P20-S-R2-R1 and P20-S-R2-R2 | Searchable shared Dropdown with Unicode-normalized, case/diacritic-insensitive AND matching; exact/prefix/word-start/contains ranking; grouping; selected-state behavior; Custom pinning; no-match feedback; query reset; accessibility announcements. No call-site edits, schema/domain/demo-data changes or new dependencies. All six gates completed; Gate 4 exited 1 on the known SDK 57 patch mismatch after the required DNS retry. Task PR #164 and phase PR #165 are merged; O61–O64 remain open. | 2026-11-21 |
 | P20-S-R2-R1 | — | Done | Record verified task and phase PR integration for searchable Dropdowns. Task PR #164 merged into `phase/20-budget` at `185a5ea125f64ac104344f00ad013d68cdb7a946`; phase PR #165 merged into `develop` at `6b50a1dbd36b401352776e71028fc07071c11991`. Focused ledger and memory tests pass. O61–O64 remain Not run on physical devices. Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and touched records; related P20-S-R2 and CM-2; reason: record integration evidence as the next sequential revision in the original phase. | 2026-11-21 |
@@ -290,8 +290,8 @@ P44         ░░░░░░░░░░ 0% (0/4)
 | P35-A | — | Planned | SMS/notification transaction auto-detection permission, platform and policy research approved; research is not started. Dependencies: none. | 2026-11-10 |
 | P35-B | — | Planned | Owner has given a Go for implementation after P35-A research; validate research findings and scope before implementation. No implementation started. Dependencies: P35-A. | 2026-11-10 |
 | P35-C | — | Planned | Transaction auto-detection implementation is owner-approved after P35-A research and P35-B Go; implementation remains unstarted until those prerequisites are completed. Dependencies: P35-B and completed P35-A research. | 2026-11-10 |
-| P36-A | — | Planned | Design Notes for text, voice/audio recordings, photos and videos; define optional financial-record links, local storage, limits, backup/migration and schema-v24 impact. Dependencies: none. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
-| P36-B | — | Planned | Implement Notes schema, attachment metadata and pure domain behavior with offline-safe storage and backup compatibility. Dependencies: P36-A. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
+| P36-A | — | Planned | Design Notes for text, voice/audio recordings, photos and videos; define optional financial-record links, local storage, limits, backup/migration and schema-v25 impact. Dependencies: none. Demo data and tests required per DEC-DEMO. Placement: rule 3; searched dashboard, register, phase history, roadmap, memory and P36 planning records; related P20-W D3; reason the owner assigns v24 to P20-W and keeps Notes schema planning at v25. | 2026-11-09 |
+| P36-B | — | Planned | Implement Notes schema, attachment metadata and pure domain behavior with offline-safe storage and backup compatibility. Dependencies: P36-A. Demo data and tests required per DEC-DEMO. Placement: rule 3; searched dashboard, register, phase history, roadmap, memory and P36 planning records; related P20-W D3; reason the owner assigns v24 to P20-W and keeps Notes schema implementation at v25. | 2026-11-09 |
 | P36-C | — | Planned | Implement Notes UI for writing, recording and attaching/viewing photos and videos. Dependencies: P36-B. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
 | P36-D | — | Planned | Add deterministic Notes demo data without personal media. Dependencies: P36-C. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
 | P37-A | — | Planned | Design per-feature skippable coach marks, replay from menu, meta-store flags rather than AppData, and accessibility. Dependencies: none. Demo data and tests required per DEC-DEMO. | 2026-11-09 |
@@ -2807,6 +2807,21 @@ source/test hit and its disposition is listed here:
 - Implementation completes P25-B below; physical-device checks remain
   unverified.
 
+### DEC-P20W-D3-SCHEMA24 — Income category schema ownership (2026-11-21)
+
+- Owner decision: P20-W D3 uses persisted schema v24. P36-A/B Notes work is
+  replanned to schema v25; their IDs, phase, dependencies and ordering stay
+  unchanged. This resolves the prior P20-W STOP GATE.
+- D3 widens the existing `BudgetIncomeItem.category` field to a trimmed,
+  nonempty string with a 60-character maximum. No new field is introduced.
+  Migration v23→v24 must preserve existing category strings byte-for-byte.
+- Backup format remains v1. Imports of schemas v1–v23 continue through the
+  existing migration chain; plain and encrypted round trips must preserve a
+  custom earned-income category. Safe-storage archives and erase-all cleanup
+  include `.premigration.v23`.
+- The decision changes ownership/planning only. At decision commit time,
+  `SCHEMA_VERSION` remains v23 and no app implementation has started.
+
 ## 5. Phase history
 
 Historical descriptions without a repository commit have the user confirmation
@@ -3314,7 +3329,7 @@ evidence present in exports/checkpoints.
 |---|---|---|---:|---|---|---|---|---|---|
 | CR-115 | documentation | — | complete | 2026-11-13 | Record the owner-reported Budget edit/delete defect under P20-U-R1. | Recording is Done; the original “Don’t start working on this” instruction was superseded by the owner’s explicit 2026-11-21 authorization. Product work completed under P20-U-R1. | Original documentation commit; implementation evidence is recorded in P20-U-R1. | No owner edits were overwritten; source and current schema v23 were inspected. | current request |
 | CR-116 | P20 | — | current | 2026-11-21 | Add searchable filtering and stable relevance ranking to the shared Dropdown sheet across the app. | Done as P20-S-R2; task PR #164 and phase PR #165 are merged and verified by P20-S-R2-R1. Six ordered gates completed with the documented Gate 4 SDK patch exception. | Test-first ledger `36e8ba4`; implementation commits through `d69c5cf`; task merge `185a5ea125f64ac104344f00ad013d68cdb7a946`; phase merge `6b50a1dbd36b401352776e71028fc07071c11991`. | Assumed and confirmed: no schema, domain, demo-data or dependency changes. O61–O64 remain Not run on physical devices. | current request |
-| P20-W | P20 | P43-D | current | 2026-11-21 | Implement D1/D2 schema-free transaction form behavior; investigate custom Income D3 and resolve its schema-version STOP GATE. | In progress; Revised by P20-W-R1. D1/D2 implemented; focused TransactionForm/schema suites pass (68 tests). Pre-sync Gate 1 exit 0 (102 suites, 1,347 passed, 1 skipped); Gate 2 initially exited 2, corrected and rerun exit 0; Gate 3 exit 0; Gate 4 and retry exit 1 with `ENOTFOUND registry.npmjs.org`; Gates 5–6 not run. Synced Gate 1 exit 0 (102 suites, 1,368 passed, 1 skipped; 95.96/92.14/98.03/97.63%); Gates 2–3 exit 0; local Gate 4 attempt exit 1 (`ENOTFOUND registry.npmjs.org`); owner-supplied Gate 4 exit 1 (20/21, six SDK 57 patch mismatches; owner-approved cleanup exception); Gates 5–6 exit 0. Task PR #174 merged at `419a37b07e6853b3c683d22ec243ea58223514c1`; phase PR #175 merged at `9e47856f20848e03ac6a4b8e699f47c387d08161`; CM-2 synchronized `develop`. D3 remains Planned pending owner choice between P20-W v24 and P36 v24. | Phase sync `e44ce6f0dc4614339f766ac91d73f0df0d428363`; ledger red `c1eb54d`; D1 red/green `3ad0dd8`/`3683793`; D2 red tests `0986632`, `0deda30`; implementation `6074155`; null-safe fixture `2c90215`. | D1/D2 use existing persisted Budget items/transaction category strings; Custom text is only the transaction category. No schema field or migration is required. D3 remains gated because of the v24 collision. | current request |
+| P20-W | P20 | P43-D | current | 2026-11-21 | Implement D1/D2 transaction forms and custom earned-income D3 with schema v24. | In progress; Revised by P20-W-R1. D1/D2 are integrated. D3 authorized by DEC-P20W-D3-SCHEMA24; P20-W owns v24 and P36-A/B are replanned to v25. Test-first commit `06b2659`; implementation commit `f2541fd` on `task/P20-W-D3-custom-earned-income`. Focused verification: 8 suites / 524 tests passed. Final gates: Gate 1 exit 0 (102 suites, 1,381 passed, 1 skipped); Gates 2–3 exit 0; Gate 4 exit 1 (`ENOTFOUND registry.npmjs.org`); Gates 5–6 exit 0. Task/phase PR integration pending. Prior task/phase integration and six-gate evidence remains recorded above. | Prior phase sync `e44ce6f0dc4614339f766ac91d73f0df0d428363`; D1/D2 commits and task/phase merge SHAs are recorded in the P20-W session history. | D3 keeps the existing category field, widens it to a trimmed nonempty string up to 60 characters, preserves v23 strings in identity migration, retains backup format v1 and v1–v23 imports, and adds `.premigration.v23` recognition/cleanup. | current request |
 | P20-W-R1 | P20 | P20-W | current | 2026-11-21 | Record verified P20-W task and phase PR integration while retaining D3 as Planned. | Done; P20-W remains In progress because D3 is gated on the P36 schema v24 decision. Task PR #174 merged into `phase/20-budget` at `419a37b07e6853b3c683d22ec243ea58223514c1`; phase PR #175 merged into `develop` at `9e47856f20848e03ac6a4b8e699f47c387d08161`; CM-2 synchronized local `develop`. O69–O72 remain Not run. | Test-first commit `6f31775`; task integration commit `8d04514ff0fd057365506433f2a9f0a0fbb7b32e`. | No application behavior changed. Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and P20-W records; related P20-W and CM-2; reason: record verified task/phase integration as the next P20-W revision required by the integration workflow. | current request |
 | CR-117 | P21 | — | current | 2026-11-21 | Implement one Emergency Fund edit entry point and one form to change the saved target and allocation together, with floor behavior, cross-screen reflection, one action/write and Undo, validation, demo fixture and backup round-trip proof. | Done as P21-F; Revised by P21-F-R1; task PR #170 merged at `c877f6d19e35c0b9fbcba90e9722da7531948c8e`, phase PR #171 merged at `2e5e18a7a2be207387a7462b039547f51b0e4631`, and CM-2 synchronized local `develop`. Synced task gates: Gate 1 exit 0 (102 suites, 1,365 passed, 1 skipped); Gates 2–3 exit 0; local Gate 4 attempt exit 1 (`ENOTFOUND registry.npmjs.org`); owner-supplied Gate 4 exit 1 (20/21 checks, six SDK 57 patch mismatches); Gates 5–6 exit 0. O65–O68 remain Not run on physical devices. | Test-first ledger assertion `f759932`; gate-evidence regression `54dc17f`; evidence-revision test `647a0c9`; combined-editor test commit `99ec2fc`; integration evidence P21-F-R1. | DEC-P21F-FLOOR: retain max(stored target, three-month floor) and reject below-floor input to match existing typed validation; no schema bump or backup shape change. | current request |
 | P21-F-R1 | P21 | P21-F | current | 2026-11-21 | Record verified integration of completed P21-F through task PR #170 and phase PR #171. | Done; exact merge SHAs and CM-2 synchronization are recorded. | Test-first commit `647a0c9`; task merge `c877f6d19e35c0b9fbcba90e9722da7531948c8e`; phase merge `2e5e18a7a2be207387a7462b039547f51b0e4631`. | No app behavior changed; O65–O68 remain Not run. Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and P21-F records; related P21-F and CM-2; reason: record integration evidence as the next revision of completed P21-F. | current request |
@@ -3759,7 +3774,7 @@ verification.
 | CR-115 | Record the owner-reported Budget edit/delete failure and place it under P20-U-R1. | Done; original hold superseded by explicit owner authorization on 2026-11-21; P20-U-R1 implementation is Done, with O73 device verification still open. | Store-only Income schedule defects, real-form optional-field overwrite, and category-line holding-link loss were reproduced and fixed under P20-U-R1; the complete automated matrix is recorded in CONT3. |
 | P20-W-R1 | Record verified P20-W task and phase PR integration while retaining D3 as Planned. | Done | Test-first commit `6f31775`; task PR #174 merge `419a37b07e6853b3c683d22ec243ea58223514c1`; phase PR #175 merge `9e47856f20848e03ac6a4b8e699f47c387d08161`; CM-2 synchronized local `develop`. P20-W remains In progress because D3 is gated on the P36 v24 ownership decision. O69–O72 remain Not run. Process deviation: phase sync commit `206f116` was created directly by `git merge` before a separate staged diff-stat display, contrary to R1; it changed no files. Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and P20-W records; related P20-W and CM-2; reason: record verified task/phase integration as the next P20-W revision required by the integration workflow. |
 | CR-116 | Add searchable filtering and stable relevance ranking to shared Dropdown options across the app. | Done as P20-S-R2; PR integration recorded by P20-S-R2-R1 | Helper coverage is 100% lines/branches; focused component and route/form suites pass. Six ordered gates: 1 exit 0 (102 suites, 1,342 passed, 1 skipped); 2 exit 0; 3 exit 0; 4 exit 1 (known Expo SDK 57 patch mismatch after one DNS retry); 5 exit 0; 6 exit 0. Task PR #164 and phase PR #165 merge SHAs are recorded in the revision row. No caller edits, schema/domain/demo-data changes or new dependencies. O61–O64 physical checks remain Not run. |
-| P20-W | Implement transaction form D1/D2 category behavior; leave custom Income D3 behind its schema STOP GATE. | In progress; Revised by P20-W-R1 | Pre-sync Gate 1 exit 0 (102 suites, 1,347 passed, 1 skipped); Gate 2 initially exited 2, corrected and rerun exit 0; Gate 3 exit 0; Gate 4 and retry exit 1 with `ENOTFOUND registry.npmjs.org`; Gates 5–6 not run. Synced Gate 1 exit 0 (102 suites, 1,368 passed, 1 skipped; 95.96/92.14/98.03/97.63%); Gates 2–3 exit 0; local Gate 4 attempt exit 1 (`ENOTFOUND registry.npmjs.org`); owner-supplied Gate 4 exit 1 (20/21, six SDK 57 patch mismatches; owner-approved cleanup exception); Gates 5–6 exit 0. Task PR #174 merged at `419a37b07e6853b3c683d22ec243ea58223514c1`; phase PR #175 merged at `9e47856f20848e03ac6a4b8e699f47c387d08161`; CM-2 synchronized `develop`. D3 remains Planned pending owner choice between P20-W v24 and P36 v24. |
+| P20-W | Implement transaction form D1/D2 category behavior; implement custom earned-income D3 under v24. | In progress; Revised by P20-W-R1 | Prior D1/D2 gates and task PR #174 / phase PR #175 integration passed as recorded. D3 schema ownership is resolved by DEC-P20W-D3-SCHEMA24: P20-W takes v24 and P36-A/B are replanned to v25. D3 implementation and six gates are complete; Gate 4 is recorded as a DNS/network failure. Task/phase PR integration remains pending. |
 | CR-117 | Implement one Emergency Fund edit action and combined target/allocation form in P21-F, with cross-screen reflection, one-write Undo, validation and synthetic demo coverage. | Done; Revised by P21-F-R1 | Existing persisted `Goal.target` reused; schema v23 unchanged. DEC-P21F-FLOOR selects effective max(stored target, three-month floor) and rejects below-floor input, matching existing typed validation. Combined editor, single plan action/store write and Undo are implemented; focused tests pass. Task PR #170 merged into P21 at `c877f6d19e35c0b9fbcba90e9722da7531948c8e`; phase PR #171 merged into develop at `2e5e18a7a2be207387a7462b039547f51b0e4631`; CM-2 synchronized local `develop`. Synced gates: Gate 1 exit 0 (102 suites, 1,365 passed, 1 skipped); Gates 2–3 exit 0; local Gate 4 attempt exit 1 (`ENOTFOUND registry.npmjs.org`); owner-supplied Gate 4 exit 1 (20/21 checks, six SDK 57 patch mismatches); Gates 5–6 exit 0. O65–O68 remain Not run. Placement: rule 4; searched dashboard, register, phase history, roadmap, memory, P21-A–E and affected Emergency Fund/Home/Goals modules; related P21-A–E; reason this extends the existing Emergency Fund feature area. | current request |
 | P21-F-R1 | Record P21-F task PR #170 merge `c877f6d19e35c0b9fbcba90e9722da7531948c8e` and phase PR #171 merge `2e5e18a7a2be207387a7462b039547f51b0e4631`; local `develop` was synchronized by CM-2. No application behavior changed. Focused ledger and memory tests pass; O65–O68 remain Not run on physical devices. Test-first commit `647a0c9`. Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and touched P21-F records; related P21-F and CM-2; reason: record verified PR integration as the next sequential revision of completed P21-F. | current request |
 | P20-S-R2-R1 | Record the task/phase integration evidence for CR-116. | Done | Task PR #164 merged into `phase/20-budget` at `185a5ea125f64ac104344f00ad013d68cdb7a946`; phase PR #165 merged into `develop` at `6b50a1dbd36b401352776e71028fc07071c11991`. Test-first commit `cf90f78`; focused ledger and memory tests pass; CM-2 synchronized `develop`. No app behavior changed. O61–O64 remain Not run. Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and touched records; related P20-S-R2 and CM-2; reason: record integration evidence as the next sequential revision. |
@@ -3977,10 +3992,10 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
    categories plus Custom; the selected section is derived, and deleted Budget
    items do not rewrite transactions. Full Gate 1 and Gates 2–3 pass; Gate 4
    and the required retry both failed with `ENOTFOUND registry.npmjs.org`, so
-   Gates 5–6 and PR integration remain stopped. D3
-   custom Income remains Planned pending the owner schema-version decision: its
-   Budget income item category is currently a fixed enum. Current schema v23;
-   P36-A/B already claim v24. No schema change has started. Placement: rule 4;
+   Gates 5–6 and PR integration remained stopped on that earlier tree. D3
+   custom Income is authorized by DEC-P20W-D3-SCHEMA24 to use v24; its Budget
+   income item category is currently a fixed enum. Current schema is v23;
+   P36-A/B are replanned to v25. Placement: rule 3;
    searched dashboard, register, P20-O/P, P3
    history, roadmap, memory and transaction form modules; related P20-O and
    P20-P; reason: the work extends existing Budget/category forms.
@@ -4075,7 +4090,7 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
 16. **P36 — Notes** (Planned):
     - P36-A — Design text notes, voice/audio recordings, photos and videos;
       optional links to financial records; offline storage, media limits,
-      backup/migration compatibility and schema-v24 impact. Dependencies:
+      backup/migration compatibility and schema-v25 impact. Dependencies:
       none. Demo data and tests are required per DEC-DEMO.
     - P36-B — Implement Notes schema, attachment metadata and pure domain
       behavior with offline-safe storage and backup compatibility.
@@ -10795,6 +10810,34 @@ Gradle build, version bump, or release preparation was performed.
   exit 0; Gate 6 iOS export exit 0. No Gate 4 retry. Protected-file hashes
   match `docs/memory/rules.md`. O73 and O74 remain Not run.
 
+### INTEGRATE-LOCAL-P20-W-D3 — phase sync and task merge preparation (2026-11-22)
+
+- Local refs confirm PR #178 merged at
+  `e1e2fc9cb6472daf6ec121d65e9075e421ceadde`, PR #179 at
+  `f7d40f47d00aa14969799461de25631ae16d98c8`, PR #180 at
+  `5cf3360a55cbd57f97945f6bed4c7cb7a2a03478`, and PR #181 at
+  `22f332fe9310e92c50d94cc6640c19f4e1552dcc`; each was verified as a commit.
+  Synced local `phase/20-budget` from `develop` with no-ff commit
+  `b5f8c52477ba88dce1c376904c36dee72b84a092`.
+- The expected D3 branch tip `0257452a2410733354cdf2a084230b4fe7a6d864`
+  matched. Merging the synced phase caused text conflicts in
+  `docs/memory/project.md` and `docs/memory/status.md`. The ledger, open-items,
+  checklist, tests and `src/domain/budget.ts` merged automatically. The budget
+  merge retains U-R1's `holdingId` preservation and schedule snapshot updates,
+  plus A-R3's cross-month linked-actual behavior and D3's custom income logic.
+- On the merged tree, `SCHEMA_VERSION` is 24; safe-storage recognizes v23
+  premigration data, and erase-all removes `.premigration.v23`. O71 describes
+  the implemented custom income flow and remains Not run. O73 and O74 remain
+  unchanged, unique and Not run. No protected file or Home screen was changed.
+  Focused suites passed (15 suites / 664 tests). Full gates on task merge
+  `8f0840f82646f2b3ec91457cb48b932abf8caeaa`: Gate 1 exit 0 (105 suites,
+  1,436 passed, 1 skipped; coverage 96.08/92.35/98.22/97.71% statements/
+  branches/functions/lines); Gate 2 TypeScript exit 0; Gate 3 Expo lint exit 0;
+  Gate 4 Expo Doctor exit 1 because npm could not resolve the package from
+  `registry.npmjs.org` (`ENOTFOUND`); Gate 5 Android export exit 0; Gate 6 iOS
+  export exit 0. Gate 4 was not retried. Task/phase PR integration remains
+  owner-side work under the local-only instruction.
+
 
 ### P20-W — Transaction form/category investigation (2026-11-21)
 
@@ -10810,6 +10853,76 @@ Gradle build, version bump, or release preparation was performed.
 - Physical-device follow-ups O69–O72 were added as Not run for P20-W because P21-F already uses O65–O68; they cover investment placeholder/derivation, searchable expense Custom/category behavior, D3 custom income after approval, and form usability at font scales 1.3/2.0.
 - Integration assertion updates: old P20-W ledger test expected all work to wait for schema/backup review; new expectation keeps D1/D2 In progress and D3 Planned behind the schema-version decision. Reason: D1/D2 are authorized and schema-free. Old P21-F font-scale ledger expectation listed 1.3/2.0; new expectation requires 1.0/1.3/2.0. Reason: preserve the merged P21-F coverage at all recorded scales. P20-W physical-check IDs moved from O65–O68 to O69–O72 because P21-F had already merged with O65–O68; no device scenario was removed. Old memory summary named the P21-F tree as latest and showed 1,366 tests; new project/status counts name synced P20-W as latest with 1,369 tests (1,368 passed, one skipped). Reason: record the most recent completed full run accurately.
 - Final Gate 1 on task head `2c90215539c0a628a7cd0323b84deed862959bb2` exited 0: 102 suites, 1,347 passed, 1 skipped; coverage 95.97/92.15/98.02/97.63% statements/branches/functions/lines. Gate 2 first exited 2 because the new deleted-item fixture treated optional `monthBudgets` as defined; corrected with `(mockAppData.monthBudgets ?? [])` in `2c90215`, then Gate 2 exited 0. Gate 3 exited 0. Gate 4 `npx expo-doctor` exited 1 with `ENOTFOUND registry.npmjs.org`; its single retry exited 1 with the same error. Under the task stop rule, Gates 5–6 were not run and the push/PR/merge workflow was not started. Node was `v26.10.0`; Expo was `57.0.32`.
+
+### P20-W-D3 — Custom earned-income categories (2026-11-21)
+
+- Test-first commit `06b2659` added app/backup schema acceptance and bounds,
+  v23→v24 identity migration preservation, v1–v23 backup import coverage,
+  plain/encrypted custom-category round trips, `.premigration.v23` archive and
+  erase-all checks, Budget reconciliation/filter/labels, both custom-income
+  forms and demo-fixture coverage. Its focused red run reported 8 suites / 530
+  tests with one suite passing; the expected implementation gaps remained.
+- Implementation commit `f2541fd` advances `SCHEMA_VERSION` to 24, widens the
+  existing Budget income category to a trimmed nonempty string up to 60
+  characters, registers an identity-preserving v23→v24 migration, recognizes
+  and removes `.premigration.v23`, and retains backup format v1. Budget income
+  and Transaction forms expose a searchable Custom choice and bounded field;
+  domain actions normalize and validate the value. Budget actual-income
+  reconciliation, category labels/filtering and a deterministic upcoming demo
+  override retain custom strings. No protected file or the user-owned Home
+  route changed.
+- Focused verification passed: 8 suites / 524 tests, including app and backup
+  schemas, migration/import, archive cleanup, domain behavior, both forms and
+  demo data. Physical-device checks O69–O72 remain Not run; O71 now covers
+  custom income entry, persistence and reopening. Full gates are recorded in
+  the follow-up verification below.
+- Final ordered-gate results (the coverage command used `--watchman=false` after
+  the default Watchman client failed its state-directory `fchmod`):
+
+| Gate | Command | Exit | Result |
+|---:|---|---:|---|
+| 1 | `npm test -- --coverage --watchman=false` | 0 | 102 suites; 1,381 passed, 1 skipped. Coverage statements/branches/functions/lines: overall 95.97/92.15/98.03/97.64%; `src/data` 91.12/87.51/94.53/94.21%; `src/domain` 96.93/92.97/98.81/98.32%; pure `src/lib` 100% in all measures. |
+| 2 | `npx tsc --noEmit` | 0 | Passed after fixing Custom option inference and including schema 23 in the premigration type. |
+| 3 | `npx expo lint` | 0 | Passed. |
+| 4 | `npx expo-doctor` | 1 | `ENOTFOUND registry.npmjs.org`; one attempt, no retry. |
+| 5 | `npx expo export --platform android` | 0 | Exported to `dist`. |
+| 6 | `npx expo export --platform ios` | 0 | Exported to `dist`. |
+
+- The first two Gate 1 invocations failed before Jest due to Watchman `fchmod`;
+  a no-Watchman full run exposed the stale future-schema fixture, changed from
+  v24 to v25. The corrected no-Watchman coverage run passed. Gate 2 first exited
+  2 on two typing errors; both were corrected in `b817944`, then Gate 2 passed.
+  Coverage floors are met: domain and pure-lib line/branch coverage are at least
+  90%, and data line/branch coverage exceeds 85%.
+- Assertion replacements (old / new / reason):
+  - Old schema expectations used v23 as current and refused v24; new tests
+    require v24 and refuse v25. Reason: owner decision DEC-P20W-D3-SCHEMA24
+    assigns v24 to P20-W.
+  - Old current-schema migration identity test passed version 23; it now passes
+    v24, while the new v23→v24 test checks exact serialized preservation.
+    Reason: version 23 now requires the identity migration.
+  - Old store test expected a v22 blob to persist at v23; it now expects v24,
+    retaining exact `.premigration.v22` bytes and erase-all checks. Reason:
+    hydration applies both v22→v23 and v23→v24.
+  - Old income-edit invalid-input assertion used category `Invalid`; it now uses
+    an empty category because arbitrary nonempty category strings are valid.
+    New assertions reject blank and 61-character categories and accept a
+    trimmed custom category. Reason: preserve invalid-input coverage under the
+    wider contract.
+  - Old progress-ledger assertions described D3 as blocked by the v24 decision;
+    new assertions require the resolved decision and v25 P36 plan. Reason: the
+    owner authorized D3 and resolved the schema collision.
+  - The P20-W dashboard retains the owner-supplied Gate 4 20/21 result and its
+    six SDK 57 patch mismatch detail, alongside the prior local `ENOTFOUND`.
+    Reason: preserve verified integration-era evidence while recording D3.
+  - Old safe-storage future-version fixture used schema v24; new fixture uses
+    v25 and still requires rejection. Reason: schema v24 is now current.
+- README.md still describes supported backup imports only through v22. It was
+  left unchanged as explicitly directed; current source and tests support
+  imports through v23.
+- Branch `task/P20-W-D3-custom-earned-income` is based on `phase/20-budget`;
+  no push was authorized. PR merge commands and remaining owner actions are
+  reported after the final gates.
 
 ### P20-W-R1 — P20-W integration evidence (2026-11-21)
 

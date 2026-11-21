@@ -853,6 +853,10 @@ export function migrateV22ToV23(persisted: unknown): unknown {
   return persisted;
 }
 
+export function migrateV23ToV24(persisted: unknown): unknown {
+  return persisted;
+}
+
 export function migratePersisted(
   persisted: unknown,
   fromVersion: number,
@@ -902,6 +906,7 @@ export function migratePersisted(
     if (fromVersion <= 20) result = migrateV20ToV21(result);
     if (fromVersion <= 21) result = migrateV21ToV22(result);
     if (fromVersion <= 22) result = migrateV22ToV23(result);
+    if (fromVersion <= 23) result = migrateV23ToV24(result);
     return result;
   };
   if (isRecord(persisted) && 'data' in persisted) {

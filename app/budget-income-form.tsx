@@ -27,11 +27,19 @@ const budgetIncomeFormSchema = z.object({
   amount: z.string().trim().regex(/^\d+(?:\.\d{1,2})?$/, 'Enter a valid income amount.')
     .transform(Number).pipe(z.number().positive().max(1_000_000_000)),
   day: z.string(),
-  category: z.enum(EARNED_INCOME_CATEGORIES),
+  category: z.string().refine(
+    (category) => category === '__custom-income-category__'
+      || EARNED_INCOME_CATEGORIES.some((known) => known === category),
+    'Choose an income category.',
+  ),
+  customCategory: z.string().trim().max(60, 'Keep the category under 60 characters').optional(),
   scope: z.enum(['month', 'following']),
   frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly', 'once']),
   firstDueMonth: z.string(),
 }).superRefine((values, context) => {
+  if (values.category === '__custom-income-category__' && !values.customCategory) {
+    context.addIssue({ code: 'custom', path: ['customCategory'], message: 'Enter an income category.' });
+  }
   if (values.day !== '' && (!/^\d+$/.test(values.day) || Number(values.day) < 1 || Number(values.day) > 31)) {
     context.addIssue({ code: 'custom', path: ['day'], message: 'Enter a day from 1 to 31.' });
   }
@@ -50,10 +58,10 @@ function isMonthKey(value: string): boolean {
   return /^\d{4}-(0[1-9]|1[0-2])$/.test(value);
 }
 
-const incomeCategoryOptions: readonly DropdownOption[] = EARNED_INCOME_CATEGORIES.map((category) => ({
-  value: category,
-  title: category,
-}));
+const incomeCategoryOptions: readonly DropdownOption[] = [
+  ...EARNED_INCOME_CATEGORIES.map((category) => ({ value: category, title: category })),
+  { value: '__custom-income-category__', title: 'Custom' },
+];
 
 const incomeFrequencyOptions: readonly DropdownOption[] = [
   { value: 'monthly', title: 'Monthly' },
@@ -90,6 +98,9 @@ export default function BudgetIncomeFormScreen() {
     : undefined;
   const requestedCategory = firstParam(params.category);
   const initialCategory = EARNED_INCOME_CATEGORIES.find((category) => category === requestedCategory);
+  const customIncomeCategory = income && !EARNED_INCOME_CATEGORIES.some((category) => category === income.category)
+    ? income.category
+    : '';
   const requestedScope = firstParam(params.scope);
   const {
     control,
@@ -105,13 +116,15 @@ export default function BudgetIncomeFormScreen() {
       day: income?.day !== undefined
         ? String(income.day)
         : firstParam(params.day),
-      category: income?.category ?? initialCategory ?? 'Salary',
+      category: income && customIncomeCategory ? '__custom-income-category__' : income?.category ?? initialCategory ?? 'Salary',
+      customCategory: customIncomeCategory,
       scope: requestedScope === 'month' ? 'month' : 'following',
       frequency: income?.frequency ?? 'monthly',
       firstDueMonth: income?.firstDueMonth ?? month,
     },
   });
   const frequency = useWatch({ control, name: 'frequency' });
+  const category = useWatch({ control, name: 'category' });
   const [scopeDialogOpen, setScopeDialogOpen] = useState(false);
   const [deleteScopeDialogOpen, setDeleteScopeDialogOpen] = useState(false);
   const [pendingValues, setPendingValues] = useState<z.output<typeof budgetIncomeFormSchema> | null>(null);
@@ -162,7 +175,9 @@ export default function BudgetIncomeFormScreen() {
     const updatedValues = {
       name: values.name,
       amount: values.amount,
-      category: values.category,
+      category: values.category === '__custom-income-category__'
+        ? values.customCategory?.trim() ?? ''
+        : values.category,
       ...(values.day === '' ? {} : { day: Number(values.day) }),
       frequency: values.frequency,
       ...(values.frequency === 'monthly' ? {} : { firstDueMonth: values.firstDueMonth }),
@@ -263,6 +278,26 @@ export default function BudgetIncomeFormScreen() {
           />
         )}
       />
+      {category === '__custom-income-category__' ? (
+        <Controller
+          control={control}
+          name="customCategory"
+          render={({ field }) => (
+            <FieldTitle title="Custom income category">
+              <TextField
+                label="Custom income category"
+                accessibilityLabel="Custom income category"
+                value={field.value ?? ''}
+                onChangeText={field.onChange}
+                onBlur={field.onBlur}
+                placeholder="Enter an income category"
+                maxLength={60}
+                error={errors.customCategory?.message}
+              />
+            </FieldTitle>
+          )}
+        />
+      ) : null}
       <Controller
         control={control}
         name="frequency"

@@ -118,6 +118,8 @@ describe('six-month demo data', () => {
       expect.objectContaining({ id: 'demo-income-salary', amount: 80_000, day: 1 }),
       expect.objectContaining({ id: 'demo-income-freelance', amount: 20_000, day: 15 }),
     ]));
+    expect(data.monthBudgets?.find((budget) => budget.month === customMonth)?.incomes)
+      .toContainEqual(expect.objectContaining({ id: 'demo-income-freelance', category: 'Consulting' }));
     expect(data.budgetPlan?.incomes.reduce((sum, item) => sum + item.amount, 0)).toBe(100_000);
     for (const month of months) {
       const rows = data.transactions.filter((transaction) => monthKey(transaction.date) === month);

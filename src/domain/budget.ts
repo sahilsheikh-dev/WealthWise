@@ -18,7 +18,6 @@ import type {
   BudgetItem,
   BudgetItemFrequency,
   BudgetSection,
-  EarnedIncomeCategory,
   BudgetIncomeItem,
   BudgetLine,
   BudgetPlan,
@@ -141,8 +140,9 @@ export function defaultBudgetSectionIdFor(category: string): string {
 
 const INVESTMENT_CATEGORIES = new Set(BUDGET_GROUPS[1]?.categories ?? []);
 
-function isEarnedIncomeCategory(category: string): category is EarnedIncomeCategory {
-  return (EARNED_INCOME_CATEGORIES as readonly string[]).includes(category);
+function normalizedEarnedIncomeCategory(category: string): string | null {
+  const normalized = category.trim();
+  return normalized.length > 0 && normalized.length <= 60 ? normalized : null;
 }
 
 function isInvestmentCategory(category: string): boolean {
@@ -515,7 +515,7 @@ export function effectiveMonthBudget(
 
 export type BudgetItemSource =
   | { kind: 'line'; category: string }
-  | { kind: 'income'; incomeId: string; category: EarnedIncomeCategory };
+  | { kind: 'income'; incomeId: string; category: string };
 
 export type BudgetItemScope = 'month' | 'following';
 
@@ -868,11 +868,12 @@ export function addIncomeItem(
 ): AppData {
   const month = monthOf(monthInput);
   const name = input.name.trim();
+  const category = normalizedEarnedIncomeCategory(input.category);
   if (!input.id || !name || name.length > 40) {
     throw new BudgetMutationError('invalid-name', 'Enter an income name under 40 characters.');
   }
   const normalizedAmount = normalizeMoney(input.amount);
-  if (!isEarnedIncomeCategory(input.category)
+  if (category === null
     || !Number.isFinite(input.amount) || input.amount <= 0 || normalizedAmount <= 0 || input.amount > 1_000_000_000
     || (input.day !== undefined && (!Number.isInteger(input.day) || input.day < 1 || input.day > 31))) {
     throw new BudgetMutationError('invalid-item', 'Enter a valid income category, amount, and due day.');
@@ -883,7 +884,7 @@ export function addIncomeItem(
   if (budget.incomes.some((income) => income.id === input.id)) {
     throw new BudgetMutationError('duplicate-name', 'Income item IDs must be unique.');
   }
-  const income = { ...input, ...schedule, name, amount: normalizedAmount };
+  const income = { ...input, ...schedule, name, category, amount: normalizedAmount };
   if (scope === 'month') {
     return replaceMonth(data, { ...budget, source: 'custom', incomes: [...budget.incomes, income] });
   }
@@ -912,10 +913,11 @@ export function editBudgetIncome(
 ): AppData {
   const month = monthOf(monthInput);
   const name = input.values.name.trim();
+  const category = normalizedEarnedIncomeCategory(input.values.category);
   if (!name || name.length > 40) {
     throw new BudgetMutationError('invalid-name', 'Enter an income name under 40 characters.');
   }
-  if (!isEarnedIncomeCategory(input.values.category)
+  if (category === null
     || !Number.isFinite(input.values.amount) || input.values.amount <= 0
     || input.values.amount > 1_000_000_000
     || (input.values.day !== undefined
@@ -941,6 +943,7 @@ export function editBudgetIncome(
     ...schedule,
     id: input.incomeId,
     name,
+    category,
     amount: normalizedAmount,
   };
 
@@ -1571,7 +1574,7 @@ export type BudgetOverviewItem = {
   kind: 'line' | 'linked' | 'income';
   editable: boolean;
   source: { kind: 'line'; category: string }
-    | { kind: 'income'; incomeId: string; category: EarnedIncomeCategory }
+    | { kind: 'income'; incomeId: string; category: string }
     | { kind: 'other-income'; category: string }
     | { kind: 'plan' | 'liability' | 'policy'; parentId: string };
 };
@@ -1695,12 +1698,16 @@ export function budgetOverview(data: AppData, monthInput: string, today: ISODate
     }
     return items;
   };
-  const actualEarnedByCategory = new Map<EarnedIncomeCategory, number>();
+  const plannedEarnedCategories = new Set([
+    ...EARNED_INCOME_CATEGORIES,
+    ...budget.incomes.map((income) => income.category),
+  ]);
+  const actualEarnedByCategory = new Map<string, number>();
   const actualOtherIncomeByCategory = new Map<string, number>();
   for (const transaction of actualTransactions) {
     if (transaction.type !== 'income') continue;
     const category = transaction.category;
-    if (isEarnedIncomeCategory(category)
+    if (plannedEarnedCategories.has(category)
       && !(NON_EARNED_INCOME_CATEGORIES as readonly string[]).includes(category)) {
       actualEarnedByCategory.set(
         category,
@@ -1742,7 +1749,7 @@ export function budgetOverview(data: AppData, monthInput: string, today: ISODate
       source: { kind: 'income', incomeId: income.id, category: income.category },
     });
   }
-  for (const category of EARNED_INCOME_CATEGORIES) {
+  for (const category of actualEarnedByCategory.keys()) {
     const extra = remainingEarned.get(category) ?? 0;
     if (extra <= 0) continue;
     itemsForSection(incomeSectionId).push({
