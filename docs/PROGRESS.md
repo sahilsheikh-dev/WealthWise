@@ -4376,6 +4376,12 @@ evidence for the fixes.
   omitted `holdingId` (`e4accf5`). Other Budget update spread paths reviewed did
   not place stale original values after changes. No schema change is required;
   source schema is v23.
+- Optional-field audit: Budget spend/invest items support `dueDay`,
+  `firstDueMonth` and the holding link (`holdingId`); Budget income supports
+  `day` and `firstDueMonth`. These optional values are preserved, cleared or
+  normalized explicitly in the reviewed edit actions. Budget item/income types
+  have no `endMonth` or `note` field, so those requested optional-field cases
+  do not apply to Budget edits.
 - The real-form harness covers name, amount/value, start month, frequency and
   due day in following scope; name, amount/value, due day and frequency in
   month-only scope, plus start month month-only while viewing a non-current
