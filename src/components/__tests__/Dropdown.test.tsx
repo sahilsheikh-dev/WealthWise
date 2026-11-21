@@ -98,6 +98,7 @@ describe('Dropdown', () => {
     if (!sheet) throw new Error('Dropdown sheet was not rendered.');
     expect(sheet.props.centered).toBe(true);
     expect(sheet.props.sheetTestID).toBe('dropdown-sheet');
+    expect(JSON.stringify(sheet.props.contentStyle)).toContain('"flexShrink":1');
     expect(sheet.findAllByType('text').map((node) => node.children.join(''))).toEqual([
       'Search', '3 results', 'Essentials', 'Food', 'Rent', 'Other', 'Pets',
     ]);
@@ -145,8 +146,21 @@ describe('Dropdown', () => {
     act(() => input.props.onChangeText('missing'));
     const sheet = renderer.root.findByProps({ sheetTestID: 'dropdown-sheet' });
     expect(sheet.findAllByType('text').map((node) => node.children.join(''))).toContain('No matches');
+    expect(sheet.findAllByProps({ accessibilityLiveRegion: 'polite' }).map((node) => node.children.join(''))).toContain('No matches');
     expect(sheet.findByProps({ accessibilityLabel: 'Custom' }).props.accessibilityState).toEqual({ selected: true });
     expect(renderer.root.findAll((node) => String(node.type) === 'sheet')).toHaveLength(1);
+  });
+
+  it('does not pin a selected option that does not match the query', () => {
+    const choices = [{ value: 'selected', title: 'Selected value' }, { value: 'other', title: 'Other value' }];
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    act(() => { renderer = TestRenderer.create(<Dropdown label="Type" accessibilityLabel="Type" value="selected" options={choices} onChange={jest.fn()} />); });
+    if (!renderer) throw new Error('Dropdown renderer was not created.');
+    act(() => renderer?.root.findByProps({ testID: 'dropdown-control' }).props.onPress());
+    act(() => renderer?.root.findByProps({ accessibilityLabel: 'Search' }).props.onChangeText('other'));
+    const sheet = renderer.root.findByProps({ sheetTestID: 'dropdown-sheet' });
+    expect(sheet.findAll((node) => String(node.type) === 'pressable' && node.props.accessibilityRole === 'radio').map((node) => node.props.accessibilityLabel))
+      .toEqual(['Other value']);
   });
 
   it('omits search when searchable is false and resets query on reopen', () => {
