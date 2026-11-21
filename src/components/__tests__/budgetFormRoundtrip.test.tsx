@@ -672,6 +672,30 @@ describe('Budget form persisted store roundtrip', () => {
     act(() => form.unmount());
   });
 
+  it('round-trips a month-only start-month edit in a non-current viewed month', async () => {
+    const viewedMonth = shiftMonth(month, 1);
+    mockRouteParams = { month: viewedMonth, sectionId: 'survival', itemId, scope: 'month' };
+    useUIStore.getState().setTxMonth(viewedMonth);
+    storage.writes = 0;
+    const form = renderScreen(React.createElement(BudgetItemFormScreen));
+    pressAccessibleControl(form, 'Budget item frequency');
+    pressAccessibleControl(form, 'Quarterly');
+    pressAccessibleControl(form, 'Budget item start month');
+    pressAccessibleControl(form, formatMonth(viewedMonth));
+    await act(async () => {
+      form.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
+    });
+    await act(async () => {
+      form.root.findByProps({ accessibilityLabel: 'This month only' }).props.onPress();
+      await flushPersistence();
+    });
+
+    expect(storage.writes).toBe(1);
+    expect(mockStore?.getState().data.budgetPlan?.items.find((item) => item.id === itemId)?.firstDueMonth).toBe(month);
+    expect(mockStore?.getState().data.monthBudgets?.find((row) => row.month === viewedMonth)?.items[0]?.firstDueMonth).toBe(viewedMonth);
+    act(() => form.unmount());
+  });
+
   it('round-trips a form edit after restoring a plain backup', async () => {
     const plan = budgetPlanFromLines([{ category: 'Rent', value: 300, firstDueMonth: month }], {
       incomes: [], repeatMonthly: true, repeatFrom: month,
