@@ -102,16 +102,38 @@ it('hydrates v12 item recurrence defaults and archives the original bytes once',
   expect(storage.values.has(archiveKey)).toBe(false);
 });
 
-it('hydrates v22 data through v23, archives the original bytes once and erases the archive', async () => {
+it('hydrates v22 data through v24, archives the original bytes once and erases the archive', async () => {
   const storage = new MemoryStorage();
   const originalBytes = JSON.stringify({ state: { data: mockAppData }, version: 22 });
   storage.values.set('wealthwise.app.v1', originalBytes);
 
   const first = makeStore(storage, { isDev: false });
   await waitForHydration(first);
-  expect(JSON.parse(storage.values.get('wealthwise.app.v1') ?? '{}').version).toBe(23);
+  expect(JSON.parse(storage.values.get('wealthwise.app.v1') ?? '{}').version).toBe(24);
   expect(first.getState().data).toEqual(mockAppData);
   const archiveKey = 'wealthwise.app.v1.premigration.v22';
+  expect(storage.values.get(archiveKey)).toBe(originalBytes);
+  const archiveWrites = storage.calls.filter((call) => call === `set:${archiveKey}`).length;
+  expect(archiveWrites).toBe(1);
+
+  const second = makeStore(storage, { isDev: false });
+  await waitForHydration(second);
+  expect(storage.values.get(archiveKey)).toBe(originalBytes);
+  expect(storage.calls.filter((call) => call === `set:${archiveKey}`)).toHaveLength(archiveWrites);
+  expect((await second.getState().actions.eraseAllData()).ok).toBe(true);
+  expect(storage.values.has(archiveKey)).toBe(false);
+});
+
+it('hydrates v23 data through v24, archives its exact original bytes once and erases the archive', async () => {
+  const storage = new MemoryStorage();
+  const originalBytes = JSON.stringify({ state: { data: mockAppData }, version: 23 });
+  storage.values.set('wealthwise.app.v1', originalBytes);
+
+  const first = makeStore(storage, { isDev: false });
+  await waitForHydration(first);
+  expect(JSON.parse(storage.values.get('wealthwise.app.v1') ?? '{}').version).toBe(24);
+  expect(first.getState().data).toEqual(mockAppData);
+  const archiveKey = 'wealthwise.app.v1.premigration.v23';
   expect(storage.values.get(archiveKey)).toBe(originalBytes);
   const archiveWrites = storage.calls.filter((call) => call === `set:${archiveKey}`).length;
   expect(archiveWrites).toBe(1);
@@ -1076,6 +1098,63 @@ describe('createAppStore persistence', () => {
     expect(validateIntegrity(store.getState().data)).toEqual([]);
   });
 
+  it.each(['month', 'following'] as const)(
+    'preserves linked holdings when updating a Budget line in %s scope',
+    async (scope) => {
+      const storage = new MemoryStorage();
+      const today = '2026-03-15';
+      const month = '2026-03';
+      const plan = budgetPlanFromLines([{ category: 'Long-term savings', value: 100 }], { incomes: [] });
+      const linkedItem = {
+        id: 'linked-budget-line',
+        sectionId: 'savings-investments',
+        name: 'Long-term savings',
+        mode: 'amount' as const,
+        value: 100,
+        dueDay: 14,
+        frequency: 'monthly' as const,
+        firstDueMonth: month,
+        holdingId: 'holding-cash',
+      };
+      plan.items = [linkedItem];
+      const snapshot = monthBudgetFromLines(month, [{ category: 'Long-term savings', planned: 100 }], {
+        incomes: [], source: 'plan',
+      });
+      snapshot.items = [linkedItem];
+      const holding = mockAppData.holdings.find((item) => item.id === 'holding-cash');
+      if (!holding) throw new Error('Savings holding fixture is missing.');
+      const data = {
+        ...emptyAppData(today),
+        holdings: [holding],
+        budgetPlan: plan,
+        monthBudgets: [snapshot],
+      };
+      const store = makeStore(storage, { today: () => today, isDev: false });
+      await waitForHydration(store);
+      store.setState({ data });
+      storage.setItemCalls = 0;
+
+      store.getState().actions.editBudgetItem(
+        month,
+        { kind: 'line', category: 'Long-term savings' },
+        { amount: 250 },
+        scope,
+        today,
+      );
+
+      expect(store.getState().lastError).toBeNull();
+      expect(storage.setItemCalls).toBe(1);
+      expect(store.getState().data.monthBudgets?.[0]?.items[0]).toMatchObject({
+        value: 250,
+        holdingId: 'holding-cash',
+      });
+      expect(store.getState().data.budgetPlan?.items[0]).toMatchObject({
+        value: scope === 'following' ? 250 : 100,
+        holdingId: 'holding-cash',
+      });
+    },
+  );
+
   it('edits and removes budget items in one write and restores exact data with one Undo write', async () => {
     const storage = new MemoryStorage();
     const before = {
@@ -1508,10 +1587,14 @@ describe('createAppStore persistence', () => {
       frequency: 'half-yearly' as const,
       firstDueMonth: '2026-04',
     };
-    const frozenMonthSnapshot = store.getState().data.monthBudgets?.[0];
     actions.editBudgetIncome(month, 'income-1', halfYearlyEditPayload, 'following', today);
     assertPersisted();
-    expect(store.getState().data.monthBudgets?.[0]).toEqual(frozenMonthSnapshot);
+    expect(store.getState().data.monthBudgets?.[0]?.incomes).toContainEqual(expect.objectContaining({
+      id: 'income-1',
+      amount: 13_000,
+      frequency: 'half-yearly',
+      firstDueMonth: '2026-04',
+    }));
     expect(store.getState().data.budgetPlan?.incomes).toContainEqual(expect.objectContaining({
       id: 'income-1',
       amount: 13_000,

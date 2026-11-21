@@ -236,7 +236,7 @@ local Gradle builds still require explicit authorization.
 
 ## Schema and verification
 
-Current persisted schema version: **22**. Preserve migration and backup-import
+Current persisted schema version: **24**. Preserve migration and backup-import
 compatibility.
 
 Run the gates in this order, recording each exit code:

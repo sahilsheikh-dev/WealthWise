@@ -18,7 +18,6 @@ import type {
   BudgetItem,
   BudgetItemFrequency,
   BudgetSection,
-  EarnedIncomeCategory,
   BudgetIncomeItem,
   BudgetLine,
   BudgetPlan,
@@ -141,8 +140,9 @@ export function defaultBudgetSectionIdFor(category: string): string {
 
 const INVESTMENT_CATEGORIES = new Set(BUDGET_GROUPS[1]?.categories ?? []);
 
-function isEarnedIncomeCategory(category: string): category is EarnedIncomeCategory {
-  return (EARNED_INCOME_CATEGORIES as readonly string[]).includes(category);
+function normalizedEarnedIncomeCategory(category: string): string | null {
+  const normalized = category.trim();
+  return normalized.length > 0 && normalized.length <= 60 ? normalized : null;
 }
 
 function isInvestmentCategory(category: string): boolean {
@@ -515,7 +515,7 @@ export function effectiveMonthBudget(
 
 export type BudgetItemSource =
   | { kind: 'line'; category: string }
-  | { kind: 'income'; incomeId: string; category: EarnedIncomeCategory };
+  | { kind: 'income'; incomeId: string; category: string };
 
 export type BudgetItemScope = 'month' | 'following';
 
@@ -551,6 +551,7 @@ function updateBudgetItemInMonth(
       value: values.amount,
       frequency: existing?.frequency ?? 'monthly',
       ...(existing?.firstDueMonth === undefined ? {} : { firstDueMonth: existing.firstDueMonth }),
+      ...(existing?.holdingId === undefined ? {} : { holdingId: existing.holdingId }),
       ...(values.dueDay === undefined ? {} : { dueDay: values.dueDay }),
     };
     const items = remove
@@ -610,6 +611,7 @@ function updateBudgetItemInPlan(
       value: values.amount,
       frequency: existing?.frequency ?? 'monthly',
       ...(existing?.firstDueMonth === undefined ? {} : { firstDueMonth: existing.firstDueMonth }),
+      ...(existing?.holdingId === undefined ? {} : { holdingId: existing.holdingId }),
       ...(values.dueDay === undefined ? {} : { dueDay: values.dueDay }),
     };
     const items = remove
@@ -866,11 +868,12 @@ export function addIncomeItem(
 ): AppData {
   const month = monthOf(monthInput);
   const name = input.name.trim();
+  const category = normalizedEarnedIncomeCategory(input.category);
   if (!input.id || !name || name.length > 40) {
     throw new BudgetMutationError('invalid-name', 'Enter an income name under 40 characters.');
   }
   const normalizedAmount = normalizeMoney(input.amount);
-  if (!isEarnedIncomeCategory(input.category)
+  if (category === null
     || !Number.isFinite(input.amount) || input.amount <= 0 || normalizedAmount <= 0 || input.amount > 1_000_000_000
     || (input.day !== undefined && (!Number.isInteger(input.day) || input.day < 1 || input.day > 31))) {
     throw new BudgetMutationError('invalid-item', 'Enter a valid income category, amount, and due day.');
@@ -881,7 +884,7 @@ export function addIncomeItem(
   if (budget.incomes.some((income) => income.id === input.id)) {
     throw new BudgetMutationError('duplicate-name', 'Income item IDs must be unique.');
   }
-  const income = { ...input, ...schedule, name, amount: normalizedAmount };
+  const income = { ...input, ...schedule, name, category, amount: normalizedAmount };
   if (scope === 'month') {
     return replaceMonth(data, { ...budget, source: 'custom', incomes: [...budget.incomes, income] });
   }
@@ -910,10 +913,11 @@ export function editBudgetIncome(
 ): AppData {
   const month = monthOf(monthInput);
   const name = input.values.name.trim();
+  const category = normalizedEarnedIncomeCategory(input.values.category);
   if (!name || name.length > 40) {
     throw new BudgetMutationError('invalid-name', 'Enter an income name under 40 characters.');
   }
-  if (!isEarnedIncomeCategory(input.values.category)
+  if (category === null
     || !Number.isFinite(input.values.amount) || input.values.amount <= 0
     || input.values.amount > 1_000_000_000
     || (input.values.day !== undefined
@@ -939,6 +943,7 @@ export function editBudgetIncome(
     ...schedule,
     id: input.incomeId,
     name,
+    category,
     amount: normalizedAmount,
   };
 
@@ -960,18 +965,14 @@ export function editBudgetIncome(
       : [...plan.incomes, updatedIncome],
   };
   if (!stored) return { ...data, budgetPlan: updatedPlan };
-  const scheduleChanged = (currentIncome.frequency ?? 'monthly') !== (updatedIncome.frequency ?? 'monthly')
-    || currentIncome.firstDueMonth !== updatedIncome.firstDueMonth;
   return {
     ...data,
     budgetPlan: updatedPlan,
     monthBudgets: monthRows(data).map((row) => row.month === month
-      ? scheduleChanged
-        ? row
-        : {
-          ...row,
-          incomes: row.incomes.map((income) => income.id === input.incomeId ? updatedIncome : income),
-        }
+      ? {
+        ...row,
+        incomes: row.incomes.map((income) => income.id === input.incomeId ? updatedIncome : income),
+      }
       : row),
   };
 }
@@ -1139,21 +1140,27 @@ export function editItem(
     }
     return {
       sections,
-      items: items.map((item) => item.id !== target.id ? item : {
-        ...(() => {
-          const { firstDueMonth: _firstDueMonth, ...withoutFirstDueMonth } = item;
-          return withoutFirstDueMonth;
-        })(),
-        ...(name === undefined ? {} : { name }),
-        ...(input.patch.mode === undefined ? {} : { mode: input.patch.mode }),
-        ...(input.patch.value === undefined ? {} : { value: normalizedValue }),
-        ...(input.patch.dueDay === undefined ? {} : input.patch.dueDay === null
-          ? (() => { const { dueDay: _dueDay, ...withoutDay } = item; return withoutDay; })()
-          : { dueDay: input.patch.dueDay }),
-        ...schedule,
-        ...(input.patch.holdingId === null
-          ? (() => { const { holdingId: _holdingId, ...withoutHolding } = item; return withoutHolding; })()
-          : nextHoldingId ? { holdingId: nextHoldingId } : {}),
+      items: items.map((item) => {
+        if (item.id !== target.id) return item;
+        const {
+          firstDueMonth: _firstDueMonth,
+          dueDay: _dueDay,
+          holdingId: _holdingId,
+          ...withoutOptionalFields
+        } = item;
+        return {
+          ...withoutOptionalFields,
+          ...(name === undefined ? {} : { name }),
+          ...(input.patch.mode === undefined ? {} : { mode: input.patch.mode }),
+          ...(input.patch.value === undefined ? {} : { value: normalizedValue }),
+          ...(input.patch.dueDay === undefined
+            ? item.dueDay === undefined ? {} : { dueDay: item.dueDay }
+            : input.patch.dueDay === null ? {} : { dueDay: input.patch.dueDay }),
+          ...schedule,
+          ...(input.patch.holdingId === undefined
+            ? item.holdingId === undefined ? {} : { holdingId: item.holdingId }
+            : input.patch.holdingId === null ? {} : nextHoldingId ? { holdingId: nextHoldingId } : {}),
+        };
       }),
     };
   });
@@ -1302,7 +1309,7 @@ export function budgetLineActual(
   const linkedHoldingIds = new Set(
     [
       ...(data.budgetPlan?.items ?? []),
-      ...(data.monthBudgets?.filter((snapshot) => snapshot.month === month).flatMap((snapshot) => snapshot.items) ?? []),
+      ...(data.monthBudgets?.flatMap((snapshot) => snapshot.items) ?? []),
     ]
       .filter((item) => item.name === category && item.holdingId)
       .map((item) => item.holdingId),
@@ -1567,7 +1574,7 @@ export type BudgetOverviewItem = {
   kind: 'line' | 'linked' | 'income';
   editable: boolean;
   source: { kind: 'line'; category: string }
-    | { kind: 'income'; incomeId: string; category: EarnedIncomeCategory }
+    | { kind: 'income'; incomeId: string; category: string }
     | { kind: 'other-income'; category: string }
     | { kind: 'plan' | 'liability' | 'policy'; parentId: string };
 };
@@ -1691,12 +1698,16 @@ export function budgetOverview(data: AppData, monthInput: string, today: ISODate
     }
     return items;
   };
-  const actualEarnedByCategory = new Map<EarnedIncomeCategory, number>();
+  const plannedEarnedCategories = new Set([
+    ...EARNED_INCOME_CATEGORIES,
+    ...budget.incomes.map((income) => income.category),
+  ]);
+  const actualEarnedByCategory = new Map<string, number>();
   const actualOtherIncomeByCategory = new Map<string, number>();
   for (const transaction of actualTransactions) {
     if (transaction.type !== 'income') continue;
     const category = transaction.category;
-    if (isEarnedIncomeCategory(category)
+    if (plannedEarnedCategories.has(category)
       && !(NON_EARNED_INCOME_CATEGORIES as readonly string[]).includes(category)) {
       actualEarnedByCategory.set(
         category,
@@ -1738,7 +1749,7 @@ export function budgetOverview(data: AppData, monthInput: string, today: ISODate
       source: { kind: 'income', incomeId: income.id, category: income.category },
     });
   }
-  for (const category of EARNED_INCOME_CATEGORIES) {
+  for (const category of actualEarnedByCategory.keys()) {
     const extra = remainingEarned.get(category) ?? 0;
     if (extra <= 0) continue;
     itemsForSection(incomeSectionId).push({

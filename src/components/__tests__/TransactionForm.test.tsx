@@ -594,6 +594,33 @@ describe('transaction add form', () => {
     }));
   });
 
+  it('offers and saves a bounded custom earned-income category', async () => {
+    mockParams = { type: 'income' };
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    await act(async () => { renderer = TestRenderer.create(<TransactionFormScreen />); });
+    if (!renderer) throw new Error('Transaction form renderer was not created.');
+    const categoryField = renderer.root.findAll((node) =>
+      String(node.type) === 'dropdown' && node.props.label === 'Category',
+    )[0];
+    if (!categoryField) throw new Error('Income category selector was not rendered.');
+    expect(categoryField.props.options).toContainEqual({ value: '__custom-income-category__', title: 'Custom' });
+    await act(async () => categoryField.props.onChange('__custom-income-category__'));
+    const customField = renderer.root.findAll((node) => String(node.type) === 'textfield')
+      .find((node) => node.props.label === 'Custom income category');
+    if (!customField) throw new Error('Custom income category field was not rendered.');
+    await act(async () => customField.props.onChangeText('Consulting'));
+    const amount = renderer.root.findAll((node) => String(node.type) === 'moneyfield')[0];
+    if (!amount) throw new Error('Amount input was not rendered.');
+    await act(async () => amount.props.onChangeText('750'));
+    await act(async () => {
+      renderer?.root.findByProps({ label: 'Save' }).props.onPress();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(mockAddTransaction).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'income', category: 'Consulting', amount: 750,
+    }));
+  });
+
   it('keeps investment categories instrument-derived without budget hint text', async () => {
     const previousPlan = mockData.budgetPlan;
     const previousBudgets = mockData.monthBudgets;
