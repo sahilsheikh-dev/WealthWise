@@ -137,12 +137,14 @@ the phase branch is retained. Phase PR #147 merged into `develop` at
   D1 is implemented without a persisted-schema change: a new Invest form starts
   with a neutral category until a holding is selected, derives with
   `investCategoryFor`, and blocks Save with the existing missing-holding
-  message. The focused TransactionForm suite passes (26 tests). D2 has no
-  persisted-schema need: group effective-month
-  Budget expense items by section, show the selected item’s section as derived
+  message. D2 is implemented without a persisted-schema change: show
+  effective-month Budget-defined categories grouped by section, include a
+  Custom entry with a bounded name field, derive the selected section as
   read-only context, and preserve transaction category strings when Budget
-  items are deleted. Existing transactions store the item/category string, and
-  Budget sections/items already support the hierarchy.
+  items are deleted. Custom input is stored only in the existing transaction
+  category string. Focused TransactionForm and schema suites pass (68 tests);
+  existing demo fixtures already include effective Budget items and require no
+  change.
 
   D3 custom Income is gated. Transaction `category` is already a bounded
   string, but scheduled earned-income `BudgetIncomeItem.category` is the fixed
@@ -158,7 +160,8 @@ the phase branch is retained. Phase PR #147 merged into `develop` at
   v24 and P20-W is replanned. D1/D2 may proceed independently without schema
   changes. Physical-device checks for placeholder, derived category/section,
   searchable category picker, custom income and font scales 1.3/2.0 remain Not
-  run; reserve checklist IDs when implementation is ready. Placement: rule 4;
+  run as O65–O68; D3 remains gated and its device scenario is deferred until
+  implementation. Placement: rule 4;
   searched dashboard, register, P20-O/P, P3 history, roadmap, memory and
   transaction form modules; related P20-O and P20-P; reason: the work extends
   the existing Budget/category form area.
