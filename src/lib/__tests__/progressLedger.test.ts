@@ -195,7 +195,7 @@ describe('permanent progress ledger', () => {
     expect(status).toContain('**CR-110-R1 (2026-11-12) is Planned only:**');
   });
 
-  it('records the P20-A-R3 linked savings Paid implementation and verification', () => {
+  it('records the P20-A-R3 linked savings Paid implementation and verification status', () => {
     const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
     const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
     const roadmap = ledger.split('## 9. Upcoming roadmap')[1]?.split('## 10. Verification matrix')[0] ?? '';
@@ -203,18 +203,17 @@ describe('permanent progress ledger', () => {
 
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-A-R2 |')))
       .toContain('Revised by P20-A-R2-R1 and P20-A-R3');
-    expect(revision).toContain('| Done |');
+    expect(revision).toContain('| In progress |');
     expect(revision).toContain('Dependencies: none');
-    expect(revision).toContain('Confirmed in realistic plan/snapshot placement tests');
-    expect(revision).toContain('one Deposit entry');
+    expect(revision).toContain('Reproduced two plan/snapshot link-placement failures');
     expect(revision).toContain('one Deposit entry');
     expect(revision).toContain('no new Budget row');
     expect(revision).toContain('Cash, Savings and Other');
     expect(revision).toContain('Fixed deposit excluded');
     expect(promptLog.split('\n').filter((line) => line.startsWith('| P20-A-R3 |'))).toHaveLength(1);
     expect(promptLog.split('\n').find((line) => line.startsWith('| P20-A-R3 |')))
-      .toContain('| Done;');
-    expect(roadmap).toContain('P20-A-R3 — Linked one-time savings Paid from Transactions (Done)');
+      .toContain('| In progress;');
+    expect(roadmap).toContain('P20-A-R3 — Linked one-time savings Paid from Transactions (In progress');
   });
 
   it('records the P20-U-R1 Budget edit and delete bug follow-up as Planned', () => {
@@ -648,12 +647,12 @@ describe('permanent progress ledger', () => {
       const count = counts.get(phase);
       expect(count?.total).toBeGreaterThan(0);
       if (phase === 20) {
-        expect(count?.done).toBe(35);
+        expect(count?.done).toBe(34);
         expect(count?.total).toBe(37);
         expect(dashboard.split('\n').find((line) => line.startsWith('| P20-A-R2 |')))
           .toContain('Revised by P20-A-R2-R1 and P20-A-R3');
         expect(dashboard.split('\n').find((line) => line.startsWith('| P20-A-R3 |')))
-          .toContain('| Done |');
+          .toContain('| In progress |');
         expect(dashboard.split('\n').find((line) => line.startsWith('| P20-A-R2-R1 |')))
           .toContain('| Done |');
         expect(dashboard.split('\n').find((line) => line.startsWith('| P20-S-R1 |')))
@@ -971,7 +970,7 @@ describe('permanent progress ledger', () => {
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-A-R2 |')))
       .toContain('Revised by P20-A-R2-R1 and P20-A-R3');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-A-R3 |')))
-      .toContain('| Done |');
+      .toContain('| In progress |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-A-R2-R1 |'))).toContain('| Done |');
     expect(promptLog.split('\n').find((line) => line.startsWith('| P20-A-R2 |'))).toContain('| Done;');
     expect(promptLog.split('\n').find((line) => line.startsWith('| P20-A-R2-R1 |'))).toContain('| current request |');
