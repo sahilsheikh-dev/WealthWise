@@ -231,14 +231,16 @@ describe('permanent progress ledger', () => {
     expect(p20u).toContain('Done; Revised by P20-U-R1');
     expect(p20uR1).toContain('| Done |');
     expect(p20uR1).toContain('superseded CR-115’s earlier');
-    expect(p20uR1).toContain('four reproducible stale schedule cells');
+    expect(p20uR1).toContain('four following-scope Income schedule snapshot defects');
     expect(p20uR1).toContain('O73 physical-device check remains Not run');
-    expect(p20uR1).toContain('item edit loss when optional due-day/holding-ID fields were cleared');
-    expect(p20uR1).toContain('Placement: initial work rule 2; continuation placement rule 3;');
+    expect(p20uR1).toContain('Real-form edit reproduced amount loss when optional fields were cleared');
+    expect(p20uR1).toContain('category-line action also dropped `holdingId` in both scopes');
+    expect(p20uR1).toContain('Placement: initial work rule 2; continuations rule 3;');
 
     // Exact fields in evidence/scope
-    expect(p20uR1).toContain('item, value, amount, start-month, frequency, due-day, etc.');
-    expect(p20uR1).toContain('single month and this and following months');
+    expect(p20uR1).toContain('start month, frequency, due day');
+    expect(p20uR1).toContain('both scopes');
+    expect(p20uR1).toContain('H1–H5 findings are recorded in CONT3');
     expect(ledger).toContain('Overall progress ████████░░ 78% (149/190)');
     expect(ledger).toContain('P20         █████████░ 95% (35/37)');
     const o73 = checklist.split('\n').find((line) => line.startsWith('| O73 |'));
@@ -658,7 +660,7 @@ describe('permanent progress ledger', () => {
       const count = counts.get(phase);
       expect(count?.total).toBeGreaterThan(0);
       if (phase === 20) {
-        expect(count?.done).toBe(34);
+        expect(count?.done).toBe(35);
         expect(count?.total).toBe(37);
         expect(dashboard.split('\n').find((line) => line.startsWith('| P20-A-R2 |')))
           .toContain('Revised by P20-A-R2-R1 and P20-A-R3');
@@ -1097,8 +1099,8 @@ describe('permanent progress ledger', () => {
     expect(registerRow).toContain('185a5ea125f64ac104344f00ad013d68cdb7a946');
     expect(registerRow).toContain('6b50a1d');
     expect(phaseRow).toContain('| 37 |');
-    expect(ledger).toContain('Overall progress ████████░░ 78% (148/190)');
-    expect(ledger).toContain('P20         █████████░ 92% (34/37)');
+    expect(ledger).toContain('Overall progress ████████░░ 78% (149/190)');
+    expect(ledger).toContain('P20         █████████░ 95% (35/37)');
     expect(status).toContain('P20-S-R2-R1 records the verified');
   });
 
@@ -1126,8 +1128,8 @@ describe('permanent progress ledger', () => {
     expect(registerRow).toContain('CM-2 synchronized local `develop`');
     expect(promptLog.split('\n').filter((line) => line.startsWith('| P20-W-R1 |'))).toHaveLength(1);
     expect(phaseRow).toContain('| 37 |');
-    expect(ledger).toContain('Overall progress ████████░░ 78% (148/190)');
-    expect(ledger).toContain('P20         █████████░ 92% (34/37)');
+    expect(ledger).toContain('Overall progress ████████░░ 78% (149/190)');
+    expect(ledger).toContain('P20         █████████░ 95% (35/37)');
     expect(status).toContain('P20-W-R1 records task PR #174 and phase PR #175');
     expect(openItems).toContain('P20-W remains open for D3');
     expect(openItems).toContain('O69–O72 remain Not run');
