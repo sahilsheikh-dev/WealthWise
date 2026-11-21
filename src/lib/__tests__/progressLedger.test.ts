@@ -160,11 +160,12 @@ describe('permanent progress ledger', () => {
     expect(emergencyFundIntegration).toContain('phase PR #171');
     expect(emergencyFundIntegration).toContain('2e5e18a7a2be207387a7462b039547f51b0e4631');
     expect(emergencyFundIntegration).toContain('Placement: rule 2;');
-    expect(register.split('\n').find((line) => line.startsWith('| CR-117 |'))).toContain('| Done |');
-    expect(register.split('\n').find((line) => line.startsWith('| CR-117 |'))).toContain('PR #170/#171');
+    expect(register.split('\n').find((line) => line.startsWith('| CR-117 |'))).toContain('| Done; Revised by P21-F-R1 |');
+    expect(register.split('\n').find((line) => line.startsWith('| CR-117 |'))).toContain('Task PR #170');
+    expect(register.split('\n').find((line) => line.startsWith('| CR-117 |'))).toContain('phase PR #171');
     expect(promptLog.split('\n').find((line) => line.startsWith('| CR-117 |'))).toContain('Revised by P21-F-R1');
     expect(promptLog.split('\n').filter((line) => line.startsWith('| P21-F-R1 |'))).toHaveLength(1);
-    expect(branchIndex).toMatch(/\| P21 \| `phase\/21-emergency-fund` \| `phase-21-complete` \| [0-9a-f]+ \| 8 \|/);
+    expect(branchIndex).toMatch(/\| P21 \| `phase\/21-emergency-fund` \| `phase-21-complete` \| `[0-9a-f]+` \| 8 \|/);
     expect(openItems).toContain('P21-F is integrated into `develop` through PR #170 and PR #171');
     expect(status).toContain('P21-F-R1 records task PR #170 and phase PR #171');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-W |')))
@@ -655,8 +656,8 @@ describe('permanent progress ledger', () => {
         expect(dashboard.split('\n').find((line) => line.startsWith('| P20-S-R1-R1 |')))
           .toContain('| Done |');
       } else if (phase === 21) {
-        expect(count?.done).toBe(6);
-        expect(count?.total).toBe(7);
+        expect(count?.done).toBe(8);
+        expect(count?.total).toBe(8);
       } else if (phase === 31) {
         expect(count?.done).toBe(0);
         expect(count?.total).toBe(4);
@@ -1081,7 +1082,7 @@ describe('permanent progress ledger', () => {
     expect(registerRow).toContain('185a5ea125f64ac104344f00ad013d68cdb7a946');
     expect(registerRow).toContain('6b50a1d');
     expect(phaseRow).toContain('| 36 |');
-    expect(ledger).toContain('Overall progress ████████░░ 77% (145/188)');
+    expect(ledger).toContain('Overall progress ████████░░ 78% (147/189)');
     expect(ledger).toContain('P20         █████████░ 92% (33/36)');
     expect(status).toContain('P20-S-R2-R1 records the verified');
   });
