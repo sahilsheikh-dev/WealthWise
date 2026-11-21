@@ -146,6 +146,7 @@ describe('permanent progress ledger', () => {
     expect(roadmap).toMatch(/Documentation\s+reordering only; Git chronology remains unchanged/);
     expect(roadmap).toContain('list has not yet been supplied or approved');
     const emergencyFund = dashboard.split('\n').find((line) => line.startsWith('| P21-F |')) ?? '';
+    expect(emergencyFund).toContain('| In progress |');
     expect(emergencyFund).toContain('three-month minimum floor');
     expect(emergencyFund).toContain('font-scale tests at 1.3/2.0');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-W |')))
