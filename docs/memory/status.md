@@ -13,7 +13,7 @@
   demo-data or dependency changes were needed; confirmed. Native keyboard,
   result-count announcement, clear tap target and real-device 1.3/2.0 font
   scale checks remain unverified (O61–O64). P20-S-R2-R1 records the verified
-  integration evidence.
+  integration evidence; P20-S-R2-R2 preserves the complete revision chain.
 - **CR-115 (2026-11-13) — Budget edit and delete bug recorded as Planned (P20-U-R1).**
   Owner reported: "In budget while updating any item/value/amount/start-month/frequency/due-day/etc
   it is not updating also while trying to delete it is not even deleting, not for
