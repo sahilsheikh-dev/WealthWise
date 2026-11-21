@@ -95,10 +95,14 @@ version, and tester fields remain blank.
 | O62 | Verify screen readers announce the filtered-result count politely on iOS and Android. | Not run | P20-S-R2; physical-device check required. |
 | O63 | Verify the Dropdown clear-search control meets the 44x44 pt tap target on iOS and Android. | Not run | P20-S-R2; physical-device check required. |
 | O64 | Verify searchable Dropdown row layout and operation at real-device font scales 1.3 and 2.0 on iOS and Android. | Not run | P20-S-R2; physical-device check required. |
-| O65 | Verify an Invest transaction shows a neutral category before holding selection, blocks Save without a holding, and derives the category after selection. | Not run | P20-W D1; physical-device check required. |
-| O66 | Verify the expense Budget category picker, derived section context, searchable Custom option and custom category entry on iOS and Android. | Not run | P20-W D2; physical-device check required. |
-| O67 | Verify custom earned-income type entry and persistence after D3 schema work is approved and implemented. | Not run | P20-W D3; pending schema-version decision. |
-| O68 | Verify Transaction form scrolling, validation, category picker and custom category entry at font scales 1.3 and 2.0 on iOS and Android. | Not run | P20-W; physical-device check required. |
+| O65 | Edit and save an Emergency Fund target from its screen on a physical device. | Not run | P21-F; device check required. |
+| O66 | Verify Emergency Fund target Undo toast timing and exact one-step restoration on a physical device. | Not run | P21-F; device check required. |
+| O67 | Verify Home and Goals refresh to the edited Emergency Fund target on a physical device. | Not run | P21-F; device check required. |
+| O68 | Verify Emergency Fund target form layout at font scales 1.3 and 2.0 on a physical device. | Not run | P21-F; device check required. |
+| O69 | Verify an Invest transaction shows a neutral category before holding selection, blocks Save without a holding, and derives the category after selection. | Not run | P20-W D1; physical-device check required. |
+| O70 | Verify the expense Budget category picker, derived section context, searchable Custom option and custom category entry on iOS and Android. | Not run | P20-W D2; physical-device check required. |
+| O71 | Verify custom earned-income type entry and persistence after D3 schema work is approved and implemented. | Not run | P20-W D3; pending schema-version decision. |
+| O72 | Verify Transaction form scrolling, validation, category picker and custom category entry at font scales 1.3 and 2.0 on iOS and Android. | Not run | P20-W; physical-device check required. |
 
 The owner reports O45-O60 passed on 2026-11-11. Device model, Android
 version, and tester fields were not supplied and remain blank.

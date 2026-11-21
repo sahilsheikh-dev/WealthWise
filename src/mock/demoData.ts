@@ -383,7 +383,7 @@ function makeGoals(): Goal[] {
   return [{
     id: 'demo-goal-emergency',
     name: 'Emergency fund',
-    target: 2_500_000,
+    target: 2_400_000,
     saved: 0,
     year: 2029,
     auto: 'ef',
