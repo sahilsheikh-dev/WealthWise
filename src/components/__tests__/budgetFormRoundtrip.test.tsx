@@ -4,6 +4,7 @@ import type { StateStorage } from 'zustand/middleware';
 
 import BudgetScreen from '../../../app/(tabs)/budget';
 import BudgetItemFormScreen from '../../../app/budget-item-form';
+import BudgetIncomeFormScreen from '../../../app/budget-income-form';
 import { emptyAppData } from '../../domain/actions';
 import { createAppStore } from '../../data/createAppStore';
 import { budgetPlanFromLines, monthBudgetFromLines } from '../../testFixtures/budget';
@@ -11,6 +12,7 @@ import { todayISO } from '../../lib/clock';
 import { formatMonth } from '../../lib/format';
 import { useUIStore } from '../../data/uiStore';
 import { shiftMonth } from '../../domain/dates';
+import type { BudgetIncomeItem } from '../../domain/types';
 
 let mockStore: ReturnType<typeof createAppStore> | null = null;
 let mockRouteParams: Record<string, string> = {};
@@ -157,6 +159,16 @@ function pressAccessibleControl(renderer: TestRenderer.ReactTestRenderer, label:
     .find((node) => typeof node.props.onPress === 'function');
   if (!control) throw new Error(`Pressable control "${label}" was not rendered.`);
   act(() => control.props.onPress());
+}
+
+function changeAccessibleText(renderer: TestRenderer.ReactTestRenderer, label: string, value: string): void {
+  const control = renderer.root.findAllByType('textinput')
+    .find((node) => node.props.accessibilityLabel === label);
+  if (!control) throw new Error(`Text input "${label}" was not rendered.`);
+  act(() => {
+    control.props.onFocus?.();
+    control.props.onChangeText(value);
+  });
 }
 
 function persistedData(storage: MemoryStorage): ReturnType<typeof emptyAppData> & { budgetPlan: NonNullable<ReturnType<typeof emptyAppData>['budgetPlan']> } {
@@ -410,6 +422,125 @@ describe('Budget form persisted store roundtrip', () => {
       }
       expect(persistedData(storage).monthBudgets?.[0]?.items.find((item) => item.id === itemId))
         .toEqual(editedSnapshotItem);
+      act(() => form.unmount());
+    },
+  );
+
+  it.each(['monthly', 'once'])(
+    'edits a %s Invest item through the real form and preserves its section',
+    async (kind) => {
+      const frequency = kind === 'once' ? 'once' : 'monthly';
+      const plan = budgetPlanFromLines([{ category: 'Rent', value: 300, frequency, firstDueMonth: month }], {
+        incomes: [], repeatMonthly: true, repeatFrom: month,
+      });
+      const investSection = plan.sections.find((section) => section.type === 'invest');
+      if (!investSection) throw new Error('Invest section fixture is missing.');
+      const investItem = { ...plan.items[0], id: itemId, name: 'Equity investments', sectionId: investSection.id };
+      plan.items = [investItem];
+      const snapshot = monthBudgetFromLines(month, [{ category: 'Equity investments', planned: 300, frequency, firstDueMonth: month }], {
+        incomes: [], source: 'plan', sections: plan.sections,
+      });
+      snapshot.items = [investItem];
+      baseline = { ...emptyAppData(today), budgetPlan: plan, monthBudgets: [snapshot] };
+      mockRouteParams = { month, sectionId: investSection.id, itemId, scope: 'following' };
+      mockStore?.setState({ data: baseline });
+      await flushPersistence();
+      storage.writes = 0;
+
+      const form = renderScreen(React.createElement(BudgetItemFormScreen));
+      changeAccessibleText(form, 'Planned amount', '475');
+      expect(form.root.findAllByType('textinput').find((node) => node.props.accessibilityLabel === 'Planned amount')?.props.value).toBe('475');
+      await act(async () => {
+        form.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
+      });
+      await act(async () => {
+        form.root.findByProps({ accessibilityLabel: 'This and following months' }).props.onPress();
+        await flushPersistence();
+      });
+
+      expect(storage.writes).toBe(1);
+      expect(mockStore?.getState().data.budgetPlan?.items[0]).toMatchObject({
+        sectionId: investSection.id,
+        name: 'Equity investments',
+        value: 475,
+        frequency,
+      });
+      expect(mockStore?.getState().data.monthBudgets?.[0]?.items[0])
+        .toMatchObject({ sectionId: investSection.id, value: 475, frequency });
+      act(() => form.unmount());
+    },
+  );
+
+  it('edits a one-time Spend item through the real form', async () => {
+    const plan = budgetPlanFromLines([{ category: 'Rent', value: 300, frequency: 'once', firstDueMonth: month }], {
+      incomes: [], repeatMonthly: true, repeatFrom: month,
+    });
+    plan.items[0].id = itemId;
+    const snapshot = monthBudgetFromLines(month, [{ category: 'Rent', planned: 300, frequency: 'once', firstDueMonth: month }], {
+      incomes: [], source: 'plan',
+    });
+    snapshot.items[0].id = itemId;
+    baseline = { ...emptyAppData(today), budgetPlan: plan, monthBudgets: [snapshot] };
+    mockRouteParams = { month, sectionId: 'survival', itemId, scope: 'following' };
+    mockStore?.setState({ data: baseline });
+    await flushPersistence();
+    storage.writes = 0;
+
+    const form = renderScreen(React.createElement(BudgetItemFormScreen));
+    changeAccessibleText(form, 'Planned amount', '325');
+    await act(async () => {
+      form.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
+    });
+    await act(async () => {
+      form.root.findByProps({ accessibilityLabel: 'This and following months' }).props.onPress();
+      await flushPersistence();
+    });
+
+    expect(mockStore?.getState().data.budgetPlan?.items[0]).toMatchObject({ frequency: 'once', value: 325 });
+    expect(mockStore?.getState().data.monthBudgets?.[0]?.items[0]).toMatchObject({ frequency: 'once', value: 325 });
+    expect(storage.writes).toBe(1);
+    act(() => form.unmount());
+  });
+
+  it.each(['monthly', 'once'])(
+    'edits a %s Income through the real income form',
+    async (kind) => {
+      const income: BudgetIncomeItem = {
+        id: 'salary',
+        name: 'Salary',
+        category: 'Salary',
+        amount: 1_000,
+        day: 12,
+        frequency: kind === 'once' ? 'once' : 'monthly',
+        ...(kind === 'once' ? { firstDueMonth: month } : {}),
+      };
+      const plan = budgetPlanFromLines([{ category: 'Rent', value: 300 }], {
+        incomes: [income], repeatMonthly: true, repeatFrom: month,
+      });
+      const snapshot = monthBudgetFromLines(month, [{ category: 'Rent', planned: 300 }], {
+        incomes: [income], source: 'plan',
+      });
+      baseline = { ...emptyAppData(today), budgetPlan: plan, monthBudgets: [snapshot] };
+      mockRouteParams = { month, incomeId: 'salary', scope: 'following' };
+      mockStore?.setState({ data: baseline });
+      await flushPersistence();
+      storage.writes = 0;
+
+      const form = renderScreen(React.createElement(BudgetIncomeFormScreen));
+      changeAccessibleText(form, 'Income amount', '1250');
+      await act(async () => {
+        form.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
+      });
+      await act(async () => {
+        form.root.findByProps({ accessibilityLabel: 'This and following months' }).props.onPress();
+        await flushPersistence();
+      });
+
+      expect(storage.writes).toBe(1);
+      expect(mockStore?.getState().data.budgetPlan?.incomes.find((row) => row.id === 'salary'))
+        .toMatchObject({ amount: 1250, frequency: income.frequency });
+      expect(mockStore?.getState().data.monthBudgets?.[0]?.incomes.find((row) => row.id === 'salary'))
+        .toMatchObject({ amount: 1250, frequency: income.frequency });
       act(() => form.unmount());
     },
   );
