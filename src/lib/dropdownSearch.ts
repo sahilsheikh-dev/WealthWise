@@ -16,6 +16,10 @@ function rank(title: string, query: string, words: readonly string[]): number {
   return 3;
 }
 
+function isCustom(option: SearchableDropdownOption): boolean {
+  return option.title.trim().toLowerCase() === 'custom' || option.value.toLowerCase() === 'custom';
+}
+
 export function filterAndRankDropdownOptions<T extends SearchableDropdownOption>(
   options: readonly T[],
   rawQuery: string,
@@ -23,11 +27,11 @@ export function filterAndRankDropdownOptions<T extends SearchableDropdownOption>
   const query = normalize(rawQuery.trim());
   if (!query) return [...options];
   const words = query.split(/\s+/u);
-  const custom = options.filter((option) => option.title.trim().toLowerCase() === 'custom' || option.value.toLowerCase() === 'custom');
+  const custom = options.filter(isCustom);
   const matches = options
     .map((option, index) => ({ option, index, title: normalize(option.title) }))
-    .filter(({ title }) => words.every((word) => title.includes(word)))
+    .filter(({ option, title }) => !isCustom(option) && words.every((word) => title.includes(word)))
     .sort((a, b) => rank(a.title, query, words) - rank(b.title, query, words) || a.index - b.index)
     .map(({ option }) => option);
-  return [...matches, ...custom.filter((option) => !matches.includes(option))];
+  return [...matches, ...custom];
 }
