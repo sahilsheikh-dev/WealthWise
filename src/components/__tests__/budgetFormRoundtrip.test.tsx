@@ -178,14 +178,16 @@ describe('Budget form persisted store roundtrip', () => {
     storage.writes = 0;
   };
 
-  const assertPersistedAndRehydrated = async (expectedValue: number | null) => {
+  const assertPersistedAndRehydrated = async (expectedPlanValue: number | null, expectedSnapshotValue: number | null) => {
     const data = persistedData(storage);
-    const persistedItem = data.budgetPlan.items.find((item) => item.id === itemId);
-    expect(persistedItem?.value ?? null).toBe(expectedValue);
+    expect(data.budgetPlan?.items.find((item) => item.id === itemId)?.value ?? null).toBe(expectedPlanValue);
+    expect(data.monthBudgets?.[0]?.items.find((item) => item.id === itemId)?.value ?? null).toBe(expectedSnapshotValue);
     const freshStore = makeStore();
     await waitForHydration(freshStore);
     expect(freshStore.getState().data.budgetPlan?.items.find((item) => item.id === itemId)?.value ?? null)
-      .toBe(expectedValue);
+      .toBe(expectedPlanValue);
+    expect(freshStore.getState().data.monthBudgets?.[0]?.items.find((item) => item.id === itemId)?.value ?? null)
+      .toBe(expectedSnapshotValue);
   };
 
   beforeEach(async () => {
@@ -206,6 +208,7 @@ describe('Budget form persisted store roundtrip', () => {
     baseline = { ...data, budgetPlan: plan, monthBudgets: [snapshot] };
     mockStore.setState({ data: baseline });
     await flushPersistence();
+    storage.writes = 0;
     useUIStore.getState().setTxMonth(month);
   });
 
@@ -227,9 +230,10 @@ describe('Budget form persisted store roundtrip', () => {
         form.root.findByProps({ accessibilityLabel: 'This and following months' }).props.onPress();
         await flushPersistence();
       });
+      expect(storage.writes).toBe(1);
       expect(mockStore?.getState().data.budgetPlan?.items.find((item) => item.id === itemId)?.value).toBe(450);
       expect(mockStore?.getState().data.monthBudgets?.[0]?.items.find((item) => item.id === itemId)?.value).toBe(450);
-      await assertPersistedAndRehydrated(450);
+      await assertPersistedAndRehydrated(450, 450);
       act(() => form?.unmount());
       form = null;
     } finally {
@@ -252,6 +256,7 @@ describe('Budget form persisted store roundtrip', () => {
     act(() => budget.unmount());
 
     form = renderScreen(React.createElement(BudgetItemFormScreen));
+    storage.writes = 0;
     await act(async () => {
       form.root.findByProps({ accessibilityLabel: 'Delete item' }).props.onPress();
       await Promise.resolve();
@@ -260,9 +265,10 @@ describe('Budget form persisted store roundtrip', () => {
       form.root.findByProps({ accessibilityLabel: 'This month only' }).props.onPress();
       await flushPersistence();
     });
+    expect(storage.writes).toBe(1);
     expect(mockStore?.getState().data.monthBudgets?.[0]?.items.some((item) => item.id === itemId)).toBe(false);
     expect(mockStore?.getState().data.budgetPlan?.items.some((item) => item.id === itemId)).toBe(true);
-    await assertPersistedAndRehydrated(450);
+    await assertPersistedAndRehydrated(450, null);
     act(() => form.unmount());
     budget = renderScreen(React.createElement(BudgetScreen));
     expect(visibleText(budget)).not.toContain('Rent');
@@ -270,6 +276,7 @@ describe('Budget form persisted store roundtrip', () => {
 
     await seed();
     form = renderScreen(React.createElement(BudgetItemFormScreen));
+    storage.writes = 0;
     await act(async () => {
       form.root.findByProps({ accessibilityLabel: 'Delete item' }).props.onPress();
       await Promise.resolve();
@@ -278,12 +285,14 @@ describe('Budget form persisted store roundtrip', () => {
       form.root.findByProps({ accessibilityLabel: 'This and following months' }).props.onPress();
       await flushPersistence();
     });
+    expect(storage.writes).toBe(1);
     expect(mockStore?.getState().data.budgetPlan?.items.some((item) => item.id === itemId)).toBe(false);
     expect(mockStore?.getState().data.monthBudgets?.[0]?.items.some((item) => item.id === itemId)).toBe(false);
-    await assertPersistedAndRehydrated(null);
+    await assertPersistedAndRehydrated(null, null);
     act(() => form.unmount());
     budget = renderScreen(React.createElement(BudgetScreen));
     expect(visibleText(budget)).not.toContain('Rent');
     act(() => budget.unmount());
   });
+
 });
