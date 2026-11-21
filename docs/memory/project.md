@@ -55,12 +55,12 @@ runtime synchronization.
   pure utilities and platform helpers in `src/lib/`; demo data in `src/mock/`.
 - Other source groups: `src/hooks/`, `src/theme/`, `src/constants/`, `assets/`
   and `scripts/`.
-- Test counts: 105 suites, 1425 tests (1,424 passed; one skipped) on
-- Test counts record the most recent full run: 105 suites, 1425 tests
-  (1,424 passed; one skipped) on 2026-11-22, with coverage
-  96.07/92.35/98.22/97.70% statements/branches/functions/lines on the local
-  P20-U-R1 integration tree before D3 was merged. The merged D3 tree still
-  requires full ordered gates.
+- Test counts: 105 suites, 1437 tests (1,436 passed; one skipped) on
+  2026-11-22. The merged D3 task tree Gate 1 coverage was
+  96.08/92.35/98.22/97.71% statements/branches/functions/lines. Gates 1–3 and
+  5–6 passed; Gate 4 exited 1 because `npx` could not resolve `expo-doctor`
+  from `registry.npmjs.org` (`ENOTFOUND`). See [status.md](status.md) for the
+  exact ordered-gate results and local merge SHAs.
 - P20-W-D3's pre-merge Gate 1 was 102 suites, 1382 tests (1,381 passed; one
   skipped), coverage 95.97/92.15/98.03/97.64% statements/branches/functions/
   lines; `src/data` 91.12/87.51/94.53/94.21%, `src/domain`

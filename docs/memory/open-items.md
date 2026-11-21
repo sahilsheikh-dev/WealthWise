@@ -38,7 +38,10 @@
   `phase/20-budget` with the locally available `develop` commit
   `cb363423384923ef19f00399cd380baba01e9e59`. Gates 1–3 and 5–6 pass; Gate 4
   could not resolve `expo-doctor` (`ENOTFOUND registry.npmjs.org`). No push or
-  PR was created; owner-side push/PR/merge remains pending. O73 is still Not run.
+  PR was created during that prep. The owner subsequently merged task PR #180
+  at `5cf3360a55cbd57f97945f6bed4c7cb7a2a03478` and phase PR #181 at
+  `22f332fe9310e92c50d94cc6640c19f4e1552dcc`; both merge commits are verified
+  in local refs. O73 is still Not run.
 
 ## CR-114 independent entities, empty slots and R7 (2026-11-12)
 
@@ -194,12 +197,15 @@ the phase branch is retained. Phase PR #147 merged into `develop` at
   memory, P20-W/P20-O/P20-P records and income/transaction form modules;
   related P20-W D1/D2 and P36-A/B; reason this widens the existing open
   Budget/category behavior after the owner resolved schema ownership.
-- Local D3 merge preparation is in progress on
-  `task/P20-W-D3-custom-earned-income`. PRs #178–#181 and their merge commits
-  are present in local refs; `phase/20-budget` is synced through
-  `b5f8c52477ba88dce1c376904c36dee72b84a092`. Gate reruns on the merged task
-  tree and owner-side PR integration remain pending. O71 is implemented but
-  Not run; O73 and O74 are unchanged and Not run.
+- Local D3 merge preparation is complete on
+  `task/P20-W-D3-custom-earned-income` at
+  `8f0840f6ca4297ebcc2db62861f6d0e110435204`. PRs #178–#181 and their merge
+  commits are present in local refs; `phase/20-budget` is synced through
+  `b5f8c52477ba88dce1c376904c36dee72b84a092`. Focused suites passed (15/664).
+  Gates 1–3 and 5–6 exited 0; Gate 4 exited 1 (`ENOTFOUND
+  registry.npmjs.org`). Owner-side task/phase PR integration remains pending
+  under the local-only instruction. O71 is implemented but Not run; O73 and
+  O74 are unchanged and Not run.
 - **P43-E — GitHub issue strategy (plan only):** one issue per ledger part
   or CR; phase/type/status labels; release milestones; pending issues open;
   completed issues retrospective and closed; verified commits, PRs, merge

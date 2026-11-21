@@ -10829,7 +10829,14 @@ Gradle build, version bump, or release preparation was performed.
   premigration data, and erase-all removes `.premigration.v23`. O71 describes
   the implemented custom income flow and remains Not run. O73 and O74 remain
   unchanged, unique and Not run. No protected file or Home screen was changed.
-  Focused and ordered verification is pending.
+  Focused suites passed (15 suites / 664 tests). Full gates on task merge
+  `8f0840f6ca4297ebcc2db62861f6d0e110435204`: Gate 1 exit 0 (105 suites,
+  1,436 passed, 1 skipped; coverage 96.08/92.35/98.22/97.71% statements/
+  branches/functions/lines); Gate 2 TypeScript exit 0; Gate 3 Expo lint exit 0;
+  Gate 4 Expo Doctor exit 1 because npm could not resolve the package from
+  `registry.npmjs.org` (`ENOTFOUND`); Gate 5 Android export exit 0; Gate 6 iOS
+  export exit 0. Gate 4 was not retried. Task/phase PR integration remains
+  owner-side work under the local-only instruction.
 
 
 ### P20-W — Transaction form/category investigation (2026-11-21)
