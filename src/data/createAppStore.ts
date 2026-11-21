@@ -51,7 +51,7 @@ import {
   type LinkedTransactionPatch,
 } from '../domain/instruments';
 import { validateIntegrity } from '../domain/links';
-import { monthlyBaseline } from '../domain/ef';
+import { emergencyFundBaseline, monthlyBaseline } from '../domain/ef';
 import { ensureEfGoal } from '../domain/goals';
 import {
   repairEfLinkedHoldings,
@@ -541,7 +541,7 @@ export function createAppStore(
         },
         setEmergencyFundTarget(target) {
           applyDataActionWithUndo((data) => updateEmergencyFundTarget(data, target, {
-            expenseBaseline: monthlyBaseline(data.transactions, 'expense', deps.today()),
+            expenseBaseline: emergencyFundBaseline(data.transactions, data.settings.monthlySalary, deps.today()).amount,
           }), 'Emergency fund target updated');
         },
         setGoalLinks(goalId, links) {

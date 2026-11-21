@@ -69,6 +69,10 @@ export default function EmergencyFundScreen() {
           icon: 'edit-2',
           label: 'Edit allocation',
           onPress: () => router.push('/ef-allocation-form'),
+        }, {
+          icon: 'edit-2',
+          label: 'Edit target',
+          onPress: () => router.push('/ef-target-form'),
         }]}
       />
       <Card>

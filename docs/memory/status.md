@@ -7,7 +7,8 @@
   max(stored target, three-month floor) effective target and rejects below-floor
   edits using current typed validation. Task branch is
   `task/P21-F-emergency-fund-target-editing`; test-first ledger commit is
-  `f759932`. Implementation, verification and integration remain pending.
+  `f759932`. Focused domain, store, backup, schema, screen and route tests pass;
+  full six gates and PR integration remain pending.
 - **P20-S-R2 / CR-116 (2026-11-21) — searchable Dropdown implementation complete.**
   Task branch `task/P20-S-R2-dropdown-search` merged into `phase/20-budget`
   through PR #164 at `185a5ea125f64ac104344f00ad013d68cdb7a946`; phase PR #165

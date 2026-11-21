@@ -161,6 +161,19 @@ function renderedText(root: TestRenderer.ReactTestInstance): string {
 }
 
 describe('three-month emergency target screens', () => {
+  it('uses the edited target to compute the allocation bucket targets', () => {
+    mockData.current = fixture(80_000, 20_000);
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    act(() => { renderer = TestRenderer.create(<EmergencyFundScreen />); });
+    if (!renderer) throw new Error('Emergency fund did not render.');
+    expect(renderedText(renderer.root)).toContain('Target');
+    expect(renderedText(renderer.root)).toContain('₹80,000');
+    expect(renderedText(renderer.root)).toContain('₹8,000');
+    expect(renderedText(renderer.root)).toContain('₹32,000');
+    expect(renderedText(renderer.root)).toContain('₹40,000');
+    act(() => renderer?.unmount());
+  });
+
   it('shows the Home asset, emergency fund and liability pills with net worth as assets minus liabilities', async () => {
     const data = fixture(300_000, 0, 75_000, 200_000);
     mockData.current = {

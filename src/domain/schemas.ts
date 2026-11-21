@@ -972,6 +972,24 @@ export function makeGoalFormSchema(
   });
 }
 
+export function makeEmergencyFundTargetFormSchema(minimumTarget: number) {
+  return z.object({
+    target: moneyInputSchema({
+      minimum: 0.01,
+      maximum: 10_000_000_000,
+      maximumMessage: 'Amount is too large',
+    }),
+  }).superRefine(({ target }, context) => {
+    if (minimumTarget > 0 && target < minimumTarget) {
+      context.addIssue({
+        code: 'custom',
+        path: ['target'],
+        message: `The emergency fund target must be at least 3 months of cover (${formatINR(minimumTarget)})`,
+      });
+    }
+  });
+}
+
 export function makeHoldingFormSchema(ctx: { otherNames: string[]; entriesExist?: boolean }) {
   return z.object({
     name: z.string().trim().min(1, 'Enter a name up to 40 characters').max(40, 'Enter a name up to 40 characters')
