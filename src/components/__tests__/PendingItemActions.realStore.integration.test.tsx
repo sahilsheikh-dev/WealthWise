@@ -611,6 +611,7 @@ describe('P20-A-R3 shared Paid flow with real store persistence', () => {
       monthBudgets: [snapshot],
     };
     store.setState({ data: routeData });
+    const beforePaid = store.getState().data;
     const pending = pendingItems(routeData, routeMonth, routeToday).find((row) => row.kind === 'budget');
     if (!pending?.dueDate) throw new Error('Payment-confirm route fixture has no dated pending savings row.');
     mockRouteParams = { dueItemId: pending.id, dueDate: pending.dueDate };
@@ -629,8 +630,16 @@ describe('P20-A-R3 shared Paid flow with real store persistence', () => {
       if (holding?.kind !== 'manual') throw new Error('Payment-confirm lost the Savings account.');
       expect(holding.logs).toHaveLength(1);
       expect(result.transactions).toHaveLength(1);
+      expect(result.transactions[0]).toMatchObject({
+        type: 'invest', amount: 5_000, category: 'Other investments',
+        source: { kind: 'holding-entry', parentId: 'manual-savings', entryId: holding.logs[0]?.id },
+      });
       expect(budgetLineActual(result, routeMonth, 'Emergency savings')).toBe(5_000);
+      expect(result.budgetPlan?.items).toEqual(beforePaid.budgetPlan?.items);
       expect(storage.writes.filter((write) => write.key === 'wealthwise.app.v1').length - writesBefore).toBe(1);
+      const toast = useUIStore.getState().actionToast;
+      await act(async () => { toast?.onAction?.(); });
+      expect(store.getState().data).toEqual(beforePaid);
     } finally {
       if (renderer) act(() => renderer?.unmount());
     }
@@ -659,6 +668,8 @@ describe('P20-A-R3 shared Paid flow with real store persistence', () => {
     const pending = pendingItems(store.getState().data, demoMonth, demoToday)
       .find((row) => row.kind === 'budget' && row.category === 'Demo linked reserve');
     if (!pending) throw new Error('Demo-created linked row is not pending.');
+    const beforePaid = store.getState().data;
+    const writesBeforePaid = storage.writes.filter((write) => write.key === 'wealthwise.app.v1').length;
 
     let renderer: TestRenderer.ReactTestRenderer | undefined;
     try {
@@ -676,6 +687,11 @@ describe('P20-A-R3 shared Paid flow with real store persistence', () => {
       expect(paid.transactions.filter((row) => row.source?.kind === 'holding-entry'
         && row.source.parentId === holding.id)).toHaveLength(1);
       expect(budgetLineActual(paid, demoMonth, 'Demo linked reserve')).toBe(5_000);
+      expect(paid.budgetPlan?.items).toHaveLength(beforePaid.budgetPlan?.items.length ?? 0);
+      expect(storage.writes.filter((write) => write.key === 'wealthwise.app.v1').length - writesBeforePaid).toBe(1);
+      const toast = useUIStore.getState().actionToast;
+      await act(async () => { toast?.onAction?.(); });
+      expect(store.getState().data).toEqual(beforePaid);
     } finally {
       if (renderer) act(() => renderer?.unmount());
     }
@@ -714,6 +730,7 @@ describe('P20-A-R3 shared Paid flow with real store persistence', () => {
       },
       monthBudgets: [snapshot],
     } });
+    const beforePaid = store.getState().data;
     let renderer: TestRenderer.ReactTestRenderer | undefined;
     try {
       await act(async () => { renderer = TestRenderer.create(<TransactionsScreen />); });
@@ -728,8 +745,16 @@ describe('P20-A-R3 shared Paid flow with real store persistence', () => {
       if (holding?.kind !== 'manual') throw new Error('Transactions lost the Savings account.');
       expect(holding.logs).toHaveLength(1);
       expect(paid.transactions).toHaveLength(1);
+      expect(paid.transactions[0]).toMatchObject({
+        type: 'invest', amount: 5_000, category: 'Other investments',
+        source: { kind: 'holding-entry', parentId: 'manual-savings', entryId: holding.logs[0]?.id },
+      });
       expect(budgetLineActual(paid, routeMonth, 'Emergency savings')).toBe(5_000);
+      expect(paid.budgetPlan?.items).toEqual(beforePaid.budgetPlan?.items);
       expect(storage.writes.filter((write) => write.key === 'wealthwise.app.v1').length - beforeWrites).toBe(1);
+      const toast = useUIStore.getState().actionToast;
+      await act(async () => { toast?.onAction?.(); });
+      expect(store.getState().data).toEqual(beforePaid);
     } finally {
       if (renderer) act(() => renderer?.unmount());
     }
