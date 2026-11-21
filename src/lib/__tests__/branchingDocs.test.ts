@@ -21,7 +21,7 @@ describe('shared branching and contributor rules', () => {
     expect(read('docs/memory/README.md')).toContain('Remote snapshot export');
     expect(read('docs/memory/working-style.md')).toContain('Owner-run actions log');
     const progress = read('docs/PROGRESS.md');
-    expect(progress).toContain('## Owner-run actions log');
+    expect(progress).toContain('### Owner-run actions log');
     for (const column of ['Date and time (IST and UTC)', 'Evidence kind', 'Action', 'Branch or PR', 'SHA', 'Result', 'Source file']) {
       expect(progress).toContain(column);
     }
