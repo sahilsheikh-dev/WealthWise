@@ -78,6 +78,7 @@ describe('six-month demo data', () => {
     const summary = homeSummary(data, today);
     const emergencyGoal = data.goals.find((goal) => goal.auto === 'ef');
     if (!emergencyGoal) throw new Error('Demo Emergency Fund goal is missing.');
+    if (!data.efAllocation) throw new Error('Demo Emergency Fund allocation is missing.');
     const minimum = emergencyMinimumTarget(summary.expenseBaseline);
     expect(emergencyGoal.target).toBe(2_400_000);
     expect(emergencyGoal.target).toBeGreaterThan(minimum);

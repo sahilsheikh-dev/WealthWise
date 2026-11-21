@@ -819,7 +819,6 @@ describe('route render smoke audit', () => {
   });
 
   it.each([1, 1.3, 2])('renders the Emergency Fund target form shell and Save at font scale %s', async (fontScale) => {
-    const storeState = useAppStore((state) => state);
     mockFontScale = fontScale;
     let renderer: TestRenderer.ReactTestRenderer | undefined;
     await act(async () => {
@@ -833,12 +832,12 @@ describe('route render smoke audit', () => {
     expect(visibleText(renderer)).toContain('3 months of cover');
     act(() => renderer?.unmount());
     mockFontScale = 1;
-    storeState.actions.setEmergencyFundTarget.mockClear();
+    jest.clearAllMocks();
   });
 
   it('validates the target against its floor and saves the entered amount', async () => {
     const storeState = useAppStore((state) => state);
-    storeState.actions.setEmergencyFundTarget.mockClear();
+    jest.clearAllMocks();
     mockFontScale = 1;
     const renderer = renderScreen(React.createElement(EmergencyFundTargetFormScreen));
     const targetField = renderer.root.findByProps({ accessibilityLabel: 'Emergency fund target' });
