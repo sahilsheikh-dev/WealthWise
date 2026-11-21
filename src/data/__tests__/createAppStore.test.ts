@@ -747,6 +747,43 @@ describe('createAppStore persistence', () => {
     expect(storage.setItemCalls - writes).toBe(0);
   });
 
+  it('erases the edited Emergency Fund target along with financial data', async () => {
+    const storage = new MemoryStorage();
+    const data = emptyAppData('2026-10-10');
+    data.goals[0] = { ...data.goals[0]!, target: 85_000 };
+    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data }, version: 23 }));
+    const store = makeStore(storage, { isDev: false });
+    await waitForHydration(store);
+    expect(store.getState().data.goals[0]?.target).toBe(85_000);
+
+    const erased = await store.getState().actions.eraseAllData();
+    expect(erased.ok).toBe(true);
+    expect(store.getState().data.goals.find((goal) => goal.auto === 'ef')?.target).toBe(300_000);
+    const persisted = storage.values.get('wealthwise.app.v1');
+    if (!persisted) throw new Error('Erased app data was not persisted.');
+    const persistedState = JSON.parse(persisted) as { state: { data: AppData } };
+    expect(persistedState.state.data.goals.find((goal) => goal.auto === 'ef')?.target).toBe(300_000);
+  });
+
+  it('uses monthly salary as the target floor when expense history is unavailable', async () => {
+    const storage = new MemoryStorage();
+    const data = emptyAppData('2026-10-10');
+    data.settings.monthlySalary = 40_000;
+    data.goals[0] = { ...data.goals[0]!, target: 120_000 };
+    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data }, version: 23 }));
+    const store = makeStore(storage, { isDev: false });
+    await waitForHydration(store);
+    useUIStore.getState().setActionToast(null);
+    const writes = storage.setItemCalls;
+
+    store.getState().actions.setEmergencyFundTarget(100_000);
+
+    expect(storage.setItemCalls - writes).toBe(0);
+    expect(store.getState().data.goals.find((goal) => goal.auto === 'ef')?.target).toBe(120_000);
+    expect(store.getState().lastError).toContain('at least 3 months of cover (₹1,20,000)');
+    expect(useUIStore.getState().actionToast).toBeNull();
+  });
+
   it('persists policy add and delete atomically and Undo restores deep-equal data', async () => {
     const storage = new MemoryStorage();
     const store = makeStore(storage, { newId: () => 'created-policy' });

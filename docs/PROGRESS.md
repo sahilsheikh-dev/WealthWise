@@ -692,6 +692,8 @@ persisted migration chain and backup importer cover v1 through v22.
 ### P21-F floor design (2026-11-21)
 
 **DEC-P21F-FLOOR:** retain the existing effective target `max(stored target, three-month floor)` and reject a user-entered target below the floor with the existing typed `GoalTargetBelowMinimumError`; show the computed floor as helper text. This matches `updateGoal` and schema validation, keeps target intent explicit in `Goal.target`, and requires no schema or backup-format change.
+
+Store test assertion correction: the initial erase check expected the AppData key to be absent. Existing erase behavior persists a fresh default AppData; the replacement asserts that the Emergency Fund target is reset to Rs 3,00,000 in both memory and persisted state. This verifies that the edited target was erased without changing established erase semantics.
 **Superseded (2026-11-08):** the prior v15 current-schema statement and
 v1-through-v14 migration boundary were accurate only at their earlier
 checkpoint; the table now records the subsequent source-backed v16–v23
