@@ -41,5 +41,6 @@ describe('filterAndRankDropdownOptions', () => {
   it('pins a value-sentinel Custom even when its display title differs', () => {
     const entries = [{ value: 'custom', title: 'Add another' }, { value: 'x', title: 'Alpha' }];
     expect(filterAndRankDropdownOptions(entries, 'missing')).toEqual([entries[0]]);
+    expect(filterAndRankDropdownOptions(entries, 'add')).toEqual([entries[0]]);
   });
 });
