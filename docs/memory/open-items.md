@@ -17,38 +17,22 @@
   polite result-count announcements, clear-button tap target and font scales
   1.3/2.0. Track these as O61–O64 in the release device checklist.
 
-## P20-U-R1 Budget edit/delete defect (in progress; device check open)
+## P20-U-R1 Budget edit/delete defect (automated implementation complete; device check open)
 
-- The owner authorized the work on 2026-11-21, superseding CR-115's earlier
-  instruction not to start.
-- The initial createAppStore matrix covered Spend, Invest and Income; one-time and
-  recurring entries; applicable name/value/amount/start-month/frequency/due-day
-  edits; month and following scopes; and both deletion scopes. Four reproducible
-  cases were following-scope Income schedule changes (frequency/start month for
-  one-time/recurring entries). The plan persisted, but the selected month
-  snapshot stayed old and the form read it. Other tested edits and all deletes
-  updated and survived rehydration.
-- Root cause: `editBudgetIncome` retained the month row when its schedule
-  changed, while `budget-income-form.tsx` loads that row through
-  `effectiveMonthBudget`. The fix updates the plan and selected month row in one
-  domain result/store action. Schema remains v23; no migration, backup, demo or
-  dependency changes were needed.
-- The follow-up real-form roundtrip reproduced a second defect in item edits:
-  `editItem` removed optional `dueDay`/`holdingId` properties by spreading the
-  original item after applying the new values, restoring the old name/value and
-  other fields. `a292f33` now builds from the item without optional fields and
-  applies the changed fields afterward.
-- `budgetFormRoundtrip.test.tsx` currently verifies a real form amount edit
-  with following scope, exact serialized plan/snapshot contents, fresh-store
-  rehydration, Budget display and reopen, both delete scopes, and one persisted
-  write per action. Broader field-by-field, section/kind, viewed-month,
-  session/rehydrated/backup-origin and H1/H2/H3/H5 checks remain unrun. H4 is
-  confirmed for clearing optional fields during an item edit. No new schema or
-  migration is needed.
-- Focused Budget/domain/store/route suites pass (4 suites, 358 tests). The six ordered gates were: 1 exit 0 (103 suites, 1,374 passed, 1 skipped); 2 exit 0; 3 exit 0; 4 exit 1 (`ENOTFOUND registry.npmjs.org`, no retry); 5–6 exit 0. Coverage: domain 98.32% lines/92.99% branches, pure src/lib 100%/100%, data 94.20%/87.47%. The prior assertion that a following-scope schedule edit leaves the month snapshot frozen was replaced with explicit updated schedule assertions; the change and reason are recorded in `docs/PROGRESS.md`.
-- O73 remains Not run: exercise Spend, Invest and Income, one-time and
-  recurring items where applicable, each editable field, both edit/delete
-  scopes, then restart and confirm values and deletions persist.
+- CONT3 completed the owner-report matrix on the existing P20-U-R1 branch.
+  Confirmed root causes: Income plan/snapshot schedule mismatch fixed by
+  `2dc72b5`; optional-field item edit overwrite fixed by `a292f33`; and
+  category-line holding-link loss in both scopes fixed by `e4accf5`.
+- Automated form/store coverage includes item name, amount/value, start month,
+  frequency and due day; Spend, Invest and Income; one-time and recurring cases
+  where applicable; month-only and following edits/deletes; non-current viewed
+  month; backup restore and demo-data origin. Persistence and rehydration pass.
+  H1/H2/H5 are refuted for tested scenarios; H3 was not reproduced in tested
+  Budget routes (Alert/reminder entry points not exercised); H4 was confirmed
+  and fixed. Details and six gate results are in `docs/PROGRESS.md`.
+- O73 remains Not run: on a physical device, restart after edits/deletions and
+  verify persistence for Spend, Invest and Income, one-time/recurring items,
+  all fields, and both scopes.
 
 ## CR-114 independent entities, empty slots and R7 (2026-11-12)
 

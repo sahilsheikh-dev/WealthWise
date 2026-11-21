@@ -1,26 +1,22 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-21 | Updates: owner and AI agents -->
 
 # Status
-- **P20-U-R1 (2026-11-21) — In progress; route-to-persistence fix verified, expanded matrix and device check open.**
-  The owner's explicit authorization superseded the earlier CR-115 hold. A
-  60-edit/12-delete createAppStore matrix reproduced four following-scope
-  Income schedule cases: changing start month or frequency for one-time or
-  recurring income updated the plan but retained an old selected-month
-  snapshot, which the form then read. Other tested edits and all deletes
-  persisted and rehydrated in those store-only cases. A real Budget form to
-  store to persistence roundtrip then reproduced another item-edit failure:
-  clearing optional due-day/holding-ID fields spread the old item after the
-  changed values. `a292f33` fixes the ordering. The integrated harness passes
-  the amount/following edit, persisted plan/snapshot, rehydration, Budget
-  display/reopen, single-month and following deletion checks, and one-write
-  assertions. Remaining item fields, sections, kinds, viewed months, data
-  origins and H1/H2/H3/H5 checks are not yet run. The original income schedule
-  fix is `2dc72b5`; regression/fix for the new failure are `936ff8f` and
-  `a292f33`. Current six gates: 1 exit 0 (104 suites, 1,375 passed, 1
-  skipped); 2 exit 0; 3 exit 0; 4 exit 1 (`ENOTFOUND registry.npmjs.org`,
-  run once); 5–6 exit 0. O73 remains Not run. Schema remains v23.
-  The AGENTS.md schema-v22 statement conflicts with code; `SCHEMA_VERSION` is
-  23 and current memory is v23.
+- **P20-U-R1 (2026-11-21) — Done; O73 physical-device restart check remains open.**
+  CONT3 completed the form/store/persistence matrix for reported fields,
+  sections, kinds and both scopes, plus non-current viewed months, plain-backup
+  restore, demo origin and H1–H5. Confirmed fixes: Income plan/snapshot
+  schedule mismatch (`2dc72b5`), optional-field item edit overwrite
+  (`a292f33`), and category-line holding-link loss (`e4accf5`). Name,
+  amount/value, start month, frequency and due day are covered; Spend, Invest
+  and Income include one-time/recurring cases where applicable. H1 is refuted
+  for the tested reopen flow; H2 for live update followed by selected-ID
+  deletion; H3 was not reproduced in tested Budget routes (Alert/reminder
+  entry points were not exercised); H4 is confirmed/fixed; H5 is refuted for
+  the synchronous test-storage path. O73 remains Not run. Schema is v23, with
+  no migration or protected-file change. Final gates: 1 exit 0 (104 suites,
+  1,406 passed, 1 skipped); 2 exit 0 after test-only harness typing fixes;
+  3 exit 0; 4 exit 1 once (`ENOTFOUND registry.npmjs.org`); 5–6 exit 0.
+  Protected-file hashes match `docs/memory/rules.md`. O73 remains Not run.
 - **P20-W (2026-11-21) — Transaction form D1/D2 in progress; D3 schema gate open.**
   P20-S-R2 merge `6b50a1d` is on `develop`; phase `phase/20-budget` was
   synced from current `origin/develop`, and the task tree now includes that
@@ -80,8 +76,8 @@
   it is not updating also while trying to delete it is not even deleting, not for
   single month and this and following months." The original "Don't start
   working on this" instruction was superseded by explicit owner authorization
-  on 2026-11-21. P20-U-R1 remains In progress while the expanded owner-report
-  matrix is completed; physical-device verification O73 remains open.
+  on 2026-11-21. P20-U-R1 is Done after the complete automated owner-report
+  matrix; physical-device restart verification O73 remains open and Not run.
 - **CR-114 (2026-11-12) — independent entities, empty slots and R7 merged into develop.**
   Work tracking restructured: `cleanup`, `qa-and-release`, `schema-migration`
   and `documentation` operate as independent lifecycle entities with dedicated
