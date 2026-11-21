@@ -14,3 +14,5 @@
 - Do not use emojis in reports or memory.
 - Preserve all user work; describe each committed change accurately and never
   rewrite history.
+
+- Maintain the **Owner-run actions log** in `docs/PROGRESS.md` from verifiable terminal output, owner snapshots, or Git refs; mark absent exit codes `not captured`. End reports with an **Owner actions pending** list.

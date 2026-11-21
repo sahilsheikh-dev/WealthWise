@@ -35,11 +35,42 @@ but does not replace or shorten, the canonical [progress ledger](../PROGRESS.md)
 | [working-style.md](working-style.md) | Owner/AI working agreement |
 | [work-placement.md](work-placement.md) | Work classification, placement rules and branch workflow |
 
-Before work, read this index, the relevant memory files, and the matching
-ledger section. After work, update `status.md` and `open-items.md`; record
+Before work, reconcile remote state using the latest owner snapshot or available
+Git refs as required by R8. Read this index, the relevant memory files, and the
+matching ledger section. After work, update `status.md` and `open-items.md`; record
 decisions, scope, assumptions, replaced assertions, tests, gate exit codes and
 verified commit evidence in `docs/PROGRESS.md`. Update other memory pages only
 when their facts change. Keep the ledger's historical material intact; link to
 it instead of copying its tables. Use repository source as truth over memory,
 and correct stale memory in the same task. Never store personal financial
 data, credentials, tokens or private account information here.
+
+## Remote snapshot export
+
+Before repository work, an owner with authenticated GitHub CLI access can export
+remote evidence without placing it in Git. Run from the repository root; keep
+the resulting directory under `/tmp/wealthwise-remote-snapshot/` and supply it
+with the task. These commands are for the owner to run; agents must not run them
+when the task prohibits network access.
+
+```bash
+S=/tmp/wealthwise-remote-snapshot
+mkdir -p "$S"
+git for-each-ref --format='%(refname) %(objectname)' refs/remotes refs/tags > "$S/refs.txt"
+for b in develop main documentation cleanup qa-and-release schema-migration; do
+  git log --first-parent --merges --format='%H%x09%P%x09%cI%x09%s' "$b" > "$S/firstparent-$b.txt" 2>&1 || true
+done
+git log --all --merges --format='%H%x09%P%x09%cI%x09%s' > "$S/all-merges.txt"
+git branch -r --format='%(refname:short) %(objectname)' > "$S/remote-branches.txt"
+git tag --format='%(refname:short) %(objectname)' > "$S/tags.txt"
+gh pr list --state all --limit 1000 --json number,title,state,baseRefName,headRefName,mergedAt,mergeCommit,url > "$S/prs.json"
+gh issue list --state all --limit 1000 --json number,title,state,url,createdAt,closedAt > "$S/issues.json"
+gh release list --limit 1000 --json tagName,name,isDraft,isLatest,publishedAt,url > "$S/releases.txt"
+printf '%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$S/exported-at.txt"
+for n in $(gh pr list --state all --limit 1000 --json number --jq '.[].number'); do
+  gh pr view "$n" --json number,title,body,state,baseRefName,headRefName,mergedAt,mergeCommit,url,comments > "$S/pr-$n-detail.json"
+done
+```
+
+Record each command's exit status and retain owner terminal output for actions
+that are not represented by Git refs or the exported JSON.
