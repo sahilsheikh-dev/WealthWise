@@ -9,7 +9,8 @@ import {
 import { monthPositions } from '../../domain/cashFlow';
 import { addMonths, monthKey, shiftMonth } from '../../domain/dates';
 import { goalProjection, goalSavedFor } from '../../domain/goalLinks';
-import { goalView } from '../../domain/goals';
+import { emergencyMinimumTarget, goalView } from '../../domain/goals';
+import { allocateAmounts } from '../../domain/efAllocation';
 import { isLiabilityClosed, liabilitySummary } from '../../domain/liability';
 import { validateIntegrity } from '../../domain/links';
 import { duesThroughPreview } from '../../domain/dues';
@@ -71,6 +72,20 @@ describe('six-month demo data', () => {
       expect.objectContaining({ access: 'slow' }),
     ]));
     expect(data.efCustomBuckets).toHaveLength(3);
+  });
+
+  it('uses an edited Emergency Fund target above the three-month floor in demo data', () => {
+    const summary = homeSummary(data, today);
+    const emergencyGoal = data.goals.find((goal) => goal.auto === 'ef');
+    if (!emergencyGoal) throw new Error('Demo Emergency Fund goal is missing.');
+    const minimum = emergencyMinimumTarget(summary.expenseBaseline);
+    expect(emergencyGoal.target).toBe(2_400_000);
+    expect(emergencyGoal.target).toBeGreaterThan(minimum);
+    expect(allocateAmounts(emergencyGoal.target, data.efAllocation)).toMatchObject({
+      cash: 240_000,
+      bank: 960_000,
+      'fd-rd': 1_200_000,
+    });
   });
 
   it('includes a paid-premium Term policy and leaves the Life placeholder available', () => {
@@ -468,11 +483,12 @@ describe('six-month demo data', () => {
       ...goalView(goal, { expenseBaseline: summary.expenseBaseline, data, asOf: today }),
     }));
     const percentages = goals.map(({ pct }) => pct);
+    expect(goals.find(({ id }) => id === 'demo-goal-emergency')?.pct).toBeCloseTo(83.333, 3);
     expect(Math.min(...percentages)).toBeLessThanOrEqual(25);
     expect(Math.max(...percentages)).toBeGreaterThanOrEqual(75);
     expect(Math.max(...percentages)).toBeLessThanOrEqual(87);
     expect(goals).toEqual(expect.arrayContaining([
-      expect.objectContaining({ id: 'demo-goal-emergency', saved: 2_000_000, pct: 80 }),
+      expect.objectContaining({ id: 'demo-goal-emergency', saved: 2_000_000 }),
       expect.objectContaining({ id: 'demo-goal-retirement', saved: 4_000, pct: 20 }),
       expect.objectContaining({ id: 'demo-goal-home', saved: 4_000_000 }),
       expect.objectContaining({ id: 'demo-goal-education', saved: 2_000_000, pct: 80 }),
