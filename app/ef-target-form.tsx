@@ -32,7 +32,9 @@ export default function EmergencyFundTargetFormScreen() {
   const baseline = emergencyFundBaseline(data.transactions, data.settings.monthlySalary, today).amount;
   const minimumTarget = emergencyMinimumTarget(baseline);
   const goal = data.goals.find((item) => item.auto === 'ef');
-  const schema = useMemo(() => makeEmergencyFundTargetFormSchema(minimumTarget), [minimumTarget]);
+  const schema = useMemo(() => makeEmergencyFundTargetFormSchema(
+    emergencyMinimumTarget(emergencyFundBaseline(data.transactions, data.settings.monthlySalary, today).amount),
+  ), [data.settings.monthlySalary, data.transactions, today]);
   const { control, handleSubmit, formState: { errors, isDirty, isSubmitting, submitCount } } =
     useForm<TargetFormInput, undefined, TargetFormOutput>({
       resolver: zodResolver(schema),
