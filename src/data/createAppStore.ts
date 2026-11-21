@@ -16,7 +16,7 @@ import {
   addLiability, addLiabilityPayment, closeRecurringLiability, deleteLiability, deleteLiabilityPayment, updateLiability, updateLiabilityPayment,
   type AddLiabilityInput, type CloseLiabilityInput, type LiabilityPatch, type LiabilityPaymentPatch,
 } from '../domain/liabilityActions';
-import { addGoal, deleteGoal, updateGoal, type AddGoalInput, type GoalPatch } from '../domain/goalActions';
+import { addGoal, deleteGoal, updateEmergencyFundTarget, updateGoal, type AddGoalInput, type GoalPatch } from '../domain/goalActions';
 import {
   addPolicy as addPolicyData,
   deletePolicy as deletePolicyData,
@@ -163,6 +163,7 @@ export type AppActions = {
   deleteLiabilityPayment: (liabilityId: string, paymentId: string) => void;
   addGoal: (input: AddGoalInput) => void;
   updateGoal: (id: string, patch: GoalPatch) => void;
+  setEmergencyFundTarget: (target: number) => void;
   setGoalLinks: (goalId: string, links: GoalLink[]) => void;
   fundShortfall: (month: string, allocations: ShortfallAllocation[]) => void;
   allocateSurplus: (date: ISODate, allocations: SurplusAllocation[]) => void;
@@ -537,6 +538,11 @@ export function createAppStore(
           applyDataAction((data) => updateGoal(data, id, patch, {
             expenseBaseline: monthlyBaseline(data.transactions, 'expense', deps.today()),
           }));
+        },
+        setEmergencyFundTarget(target) {
+          applyDataActionWithUndo((data) => updateEmergencyFundTarget(data, target, {
+            expenseBaseline: monthlyBaseline(data.transactions, 'expense', deps.today()),
+          }), 'Emergency fund target updated');
         },
         setGoalLinks(goalId, links) {
           applyDataAction((data) => setGoalLinks(data, goalId, links));
