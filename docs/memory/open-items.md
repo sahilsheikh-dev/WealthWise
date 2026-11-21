@@ -180,13 +180,12 @@ the phase branch is retained. Phase PR #147 merged into `develop` at
   backup format v1 and import v1–v23 through the migration chain; test plain
   and encrypted round trips with custom income. Extend pre-migration archive
   recognition and erase-all cleanup to include `.premigration.v23`.
-  **STOP GATE:** P36-A/B already claim schema v24. Owner decision required
-  before D3: either P20-W takes v24 and P36 is replanned to v25, or P36 keeps
-  v24 and P20-W is replanned. D1/D2 may proceed independently without schema
-  changes. Physical-device checks O69–O72 cover the placeholder, derived
+  **STOP GATE RESOLVED (DEC-P20W-D3-SCHEMA24, 2026-11-21):** owner assigns
+  schema v24 to P20-W and replans P36-A/B to v25. P20-W-D3 implementation is
+  authorized; code still starts at v23. Physical-device checks O69–O72 cover the placeholder, derived
   category/section, searchable category picker, custom income and font scales
-  1.3/2.0; D3 remains gated and its device scenario is deferred until
-  implementation. Placement: rule 4; searched dashboard, register, P20-O/P,
+  1.3/2.0; D3 is authorized and its device scenario remains unrun until
+  implementation is complete. Placement: rule 4; searched dashboard, register, P20-O/P,
   P3 history, roadmap, memory and transaction form modules; related P20-O and
   P20-P; reason this work extends the existing Budget/category form area.
 - **P43-E — GitHub issue strategy (plan only):** one issue per ledger part
@@ -411,7 +410,7 @@ Not adopted in CR-106:
   requires iOS distribution. These research and scope gates were updated by
   the owner's 2026-11-12 approvals in CR-113; P35-C remains gated on completed
   P35-A research. Notes includes text, voice/audio recordings, photos and
-  videos; its planned migration impact is now schema v24 after CR-108's v23
+  videos; its planned migration impact is now schema v25 after CR-108's v23
   release. Skeleton loading is planned as P38. See
   [PROGRESS.md](../PROGRESS.md) for the recorded acceptance scope.
 - **Release screenshots and APK handoff:** all 23 owner-supplied screenshots
