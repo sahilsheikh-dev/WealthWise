@@ -50,7 +50,7 @@ export function Dropdown({
 
   useEffect(() => {
     if (open && searchable && Platform.OS === 'ios') {
-      AccessibilityInfo.announceForAccessibility(`${matchCount} results`);
+      AccessibilityInfo?.announceForAccessibility?.(`${matchCount} results`);
     }
   }, [matchCount, open, query, searchable]);
 

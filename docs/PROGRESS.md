@@ -4209,6 +4209,29 @@ An item is `Done` only when its named source and test evidence are available.
 Paths below are repository-relative. Baseline results are not completion
 evidence for the fixes.
 
+### 2026-11-21 — P20-S-R2 searchable shared Dropdown
+
+- Added search to the shared component only; all existing call sites compile
+  and the requested route/form suites pass without call-site edits.
+- Focused component acceptance: 1 suite / 12 tests passed. Pure helper
+  acceptance: 6 tests passed; `dropdownSearch.ts` reports 100% lines and
+  branches. Route/form regression: 6 suites / 228 tests passed. TypeScript
+  exits 0. The ordered full gates remain pending.
+- The first route-suite attempt exited 1 because some existing React Native
+  test mocks omit `AccessibilityInfo`; making the announcement call optional
+  preserves native announcement behavior when the installed API is present and
+  lets minimal mocks omit it. The rerun passed.
+- Replaced assertion (not weakened):
+
+  | Old assertion | New assertion | Reason |
+  |---|---|---|
+  | Dropdown sheet text was exactly `Essentials`, `Food`, `Rent`, `Other`, `Pets`. | It now includes the visible `Search` label and the polite `3 results` text before those unchanged group and option labels. | The open sheet now contains the requested search field and result-count feedback. |
+
+- **Assumed:** no schema, domain, demo-data or dependency changes are required;
+  no such changes are part of this implementation. Physical-device checks are
+  not run; O61–O64 track keyboard, announcement, tap-target and font-scale
+  verification.
+
 ### 2026-11-13 — CR-115 planned Budget edit and delete bug recording
 
 - Recorded owner-reported Budget update and delete failure across single month and following months as Planned under P20-U-R1. Owner instruction: "Don't start working on this."
