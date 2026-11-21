@@ -148,8 +148,10 @@ describe('permanent progress ledger', () => {
     const emergencyFund = dashboard.split('\n').find((line) => line.startsWith('| P21-F |')) ?? '';
     expect(emergencyFund).toContain('three-month minimum floor');
     expect(emergencyFund).toContain('font-scale tests at 1.3/2.0');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-W |')))
-      .toContain('resolve schema/backup impact before any implementation');
+    const transactionForm = dashboard.split('\n').find((line) => line.startsWith('| P20-W |')) ?? '';
+    expect(transactionForm).toContain('| In progress |');
+    expect(transactionForm).toContain('D1/D2 schema-free scope');
+    expect(transactionForm).toContain('D3 remains Planned pending the owner schema-version decision');
     expect(roadmap).toContain('one issue per ledger part or CR');
     expect(roadmap).toContain('API rate and noise concerns');
     expect(branchIndex).toContain('| P43 | `phase/43-lifecycle-and-transaction-planning` | — | — | 7 |');
