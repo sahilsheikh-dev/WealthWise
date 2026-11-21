@@ -229,7 +229,7 @@ describe('permanent progress ledger', () => {
     const p20u = dashboard.split('\n').find((line) => line.startsWith('| P20-U |'));
     const p20uR1 = dashboard.split('\n').find((line) => line.startsWith('| P20-U-R1 |'));
     expect(p20u).toContain('Done; Revised by P20-U-R1');
-    expect(p20uR1).toContain('| In progress |');
+    expect(p20uR1).toContain('| Done |');
     expect(p20uR1).toContain('superseded CR-115’s earlier');
     expect(p20uR1).toContain('four reproducible stale schedule cells');
     expect(p20uR1).toContain('O73 physical-device check remains Not run');
@@ -239,6 +239,8 @@ describe('permanent progress ledger', () => {
     // Exact fields in evidence/scope
     expect(p20uR1).toContain('item, value, amount, start-month, frequency, due-day, etc.');
     expect(p20uR1).toContain('single month and this and following months');
+    expect(ledger).toContain('Overall progress ████████░░ 78% (149/190)');
+    expect(ledger).toContain('P20         █████████░ 95% (35/37)');
     const o73 = checklist.split('\n').find((line) => line.startsWith('| O73 |'));
     expect(o73).toContain('one-time and recurring');
     expect(o73).toContain('Spend, Invest and Income');
