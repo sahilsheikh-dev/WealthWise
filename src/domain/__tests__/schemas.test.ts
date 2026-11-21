@@ -638,6 +638,18 @@ describe('makeTransactionFormSchema', () => {
     }
   });
 
+  it('trims and bounds custom earned-income transaction categories', () => {
+    const customIncome = {
+      ...validInput,
+      type: 'income' as const,
+      category: '__custom-income-category__',
+      customCategory: '  Consulting  ',
+    };
+    expect(schema.parse(customIncome).category).toBe('Consulting');
+    expect(schema.safeParse({ ...customIncome, customCategory: '   ' }).success).toBe(false);
+    expect(schema.safeParse({ ...customIncome, customCategory: 'x'.repeat(61) }).success).toBe(false);
+  });
+
   it('accepts a custom category only in the selected month budget', () => {
     const customSchema = makeTransactionFormSchema('2026-10-10', {}, {
       instruments: [],

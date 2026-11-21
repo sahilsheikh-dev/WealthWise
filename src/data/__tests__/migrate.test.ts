@@ -199,7 +199,7 @@ describe('schema migration', () => {
 
   it('passes the current persisted schema through unchanged', () => {
     const persisted = { data: { version13: true } };
-    expect(migratePersisted(persisted, 23)).toBe(persisted);
+    expect(migratePersisted(persisted, 24)).toBe(persisted);
   });
 
   it('preserves v22 financial records unchanged through the v23 migration', () => {

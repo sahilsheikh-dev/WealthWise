@@ -17,7 +17,7 @@ import {
   type Transaction,
 } from './types';
 
-export const SCHEMA_VERSION = 23;
+export const SCHEMA_VERSION = 24;
 
 export function makeStopRecurringFormSchema(
   today: ISODate,
@@ -272,13 +272,12 @@ export const BUDGET_CATEGORIES = [
   'Other',
   ...investmentBudgetCategories,
 ] as const;
-const earnedIncomeCategories = EARNED_INCOME_CATEGORIES;
 const budgetItemFrequencySchema = z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly', 'once']).optional();
 const budgetFirstDueMonthSchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional();
 const budgetIncomeSchema = z.object({
   id: idSchema,
   name: z.string().min(1).max(40),
-  category: z.enum(earnedIncomeCategories),
+  category: z.string().trim().min(1).max(60),
   amount: moneySchema.positive().max(1_000_000_000),
   day: z.number().int().min(1).max(31).optional(),
   frequency: budgetItemFrequencySchema,
@@ -530,6 +529,7 @@ export const TRANSACTION_CATEGORIES = {
 export const INVESTMENT_FORM_CATEGORIES = TRANSACTION_CATEGORIES.invest
   .filter((category) => category !== 'Other');
 export const CUSTOM_EXPENSE_CATEGORY_SENTINEL = '__custom-expense-category__';
+export const CUSTOM_INCOME_CATEGORY_SENTINEL = '__custom-income-category__';
 
 export { EARNED_INCOME_CATEGORIES };
 export { NON_EARNED_INCOME_CATEGORIES };
@@ -591,7 +591,7 @@ export function makeTransactionFormSchema(
     note: z.string().trim().max(60, 'Keep the note under 60 characters'),
     type: z.enum(['income', 'expense', 'invest']),
     category: z.string(),
-    customCategory: z.string().trim().max(30, 'Keep the category under 30 characters').optional(),
+    customCategory: z.string().trim().max(60, 'Keep the category under 60 characters').optional(),
     instrumentId: z.string().trim().optional().transform((id) => id || undefined),
     linkToPolicy: z.boolean().optional(),
   }).superRefine((value, context) => {
@@ -600,15 +600,19 @@ export function makeTransactionFormSchema(
       ? []
       : options.budgetCategoriesForMonth?.(value.type, value.date) ?? [];
     const customExpense = value.type === 'expense' && value.category === CUSTOM_EXPENSE_CATEGORY_SENTINEL;
-    if (!customExpense && (
+    const customIncome = value.type === 'income' && value.category === CUSTOM_INCOME_CATEGORY_SENTINEL;
+    if (!customExpense && !customIncome && (
       !allowedCategories.includes(value.category) &&
       !legacyCategories[value.type]?.includes(value.category) &&
       !customBudgetCategories.includes(value.category)
     )) {
       context.addIssue({ code: 'custom', path: ['category'], message: 'Choose a category' });
     }
-    if (customExpense && !value.customCategory) {
+    if (customExpense && (!value.customCategory || value.customCategory.length > 30)) {
       context.addIssue({ code: 'custom', path: ['customCategory'], message: 'Enter a category' });
+    }
+    if (customIncome && !value.customCategory) {
+      context.addIssue({ code: 'custom', path: ['customCategory'], message: 'Enter an income category' });
     }
 
     const instrumentId = value.instrumentId;
@@ -657,7 +661,8 @@ export function makeTransactionFormSchema(
     const { customCategory, ...transaction } = value;
     return {
       ...transaction,
-      category: value.type === 'expense' && value.category === CUSTOM_EXPENSE_CATEGORY_SENTINEL
+      category: (value.type === 'expense' && value.category === CUSTOM_EXPENSE_CATEGORY_SENTINEL)
+        || (value.type === 'income' && value.category === CUSTOM_INCOME_CATEGORY_SENTINEL)
         ? customCategory ?? ''
         : value.category,
     };

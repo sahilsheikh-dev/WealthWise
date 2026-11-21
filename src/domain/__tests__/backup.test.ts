@@ -98,6 +98,18 @@ describe('backup validation and serialization', () => {
     });
   });
 
+  it.each([19, 20, 21])('imports a v%s backup through the remaining schema chain', async (schemaVersion) => {
+    const raw = await createBackup(mockAppData, {
+      exportedAt: '2026-10-10T10:00:00.000Z', digest,
+    });
+    const legacy = await reChecksum(raw, (envelope) => { envelope.schemaVersion = schemaVersion; });
+
+    await expect(parseBackup(legacy, migrationOptions)).resolves.toMatchObject({
+      ok: true,
+      data: mockAppData,
+    });
+  });
+
   it('preserves custom earned-income categories through v23 import and plain/encrypted backup round trips', async () => {
     const data = structuredClone(mockAppData);
     const plan = data.budgetPlan;

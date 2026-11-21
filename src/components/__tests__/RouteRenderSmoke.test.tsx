@@ -1802,7 +1802,12 @@ describe('route render smoke audit', () => {
       await act(async () => {
         renderer?.root.findByProps({ accessibilityLabel: 'Income name' }).props.onChangeText('Consulting');
         renderer?.root.findByProps({ accessibilityLabel: 'Income amount' }).props.onChangeText('750');
+      });
+      await act(async () => {
+        if (!renderer) return;
         selectDropdownOption(renderer, 'Income category', 'Custom');
+      });
+      await act(async () => {
         renderer?.root.findByProps({ accessibilityLabel: 'Custom income category' }).props.onChangeText('  Consulting  ');
         await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
       });
