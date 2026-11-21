@@ -2,6 +2,14 @@
 
 | Short SHA | Ledger Ref | Owning Entity | Docs-only? | Subject |
 |---|---|---|---|---|
+| `1c27944` | CR-118 | documentation | Yes (documentation) | docs(memory): record final gate and status updates |
+| `917b313` | CR-118 | documentation | Yes (documentation) | docs(ledger): reconcile remote history |
+| `3c54da3` | CR-118 | documentation | Yes (documentation) | docs(memory): sync status and open items |
+| `cc18b52` | CR-118 | documentation | Yes (documentation) | docs(history): correct generated PR entity mappings |
+| `72c1def` | CR-118 | documentation | Yes (documentation) | docs(history): sync history map to 2026-11-22 |
+| `3097fc3` | CR-118 | documentation | Yes (documentation) | docs(ledger): record owner-run actions log |
+| `9b54d92` | CR-118 | documentation | Yes (documentation) | docs(memory): add R8 owner-run action tracking |
+| `ce911c0` | CR-118 | documentation | No | test(docs): align ledger assertions with integrated tasks |
 | `e5808c4` | CR-118 | documentation | Yes (documentation) | chore(docs): sync documentation with develop |
 | `fc50970` | CR-118 | documentation | No | test(docs): assert owner-run action tracking rule |
 | `d36103e` | P20-S-R1-R1 | P20 (budget) | No | feat(forms): standardize dropdowns and input titles |
