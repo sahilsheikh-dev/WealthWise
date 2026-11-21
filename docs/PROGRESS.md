@@ -695,6 +695,15 @@ persisted migration chain and backup importer cover v1 through v22.
 
 Store test assertion correction: the initial erase check expected the AppData key to be absent. Existing erase behavior persists a fresh default AppData; the replacement asserts that the Emergency Fund target is reset to Rs 3,00,000 in both memory and persisted state. This verifies that the edited target was erased without changing established erase semantics.
 
+Other P21-F assertion updates: the newly added salary-fallback check first
+expected western-grouped `₹120,000`; it now expects `₹1,20,000`, matching the
+app's existing Indian amount grouping. The demo Emergency Fund assertion
+previously expected 80% progress for the old Rs 25 lakh target; with the
+demonstration edit to Rs 24 lakh it now asserts the unchanged Rs 20 lakh saved
+amount and the recalculated 83.33% progress, still below the 87% ceiling. The
+demo allocation assertion checks the Cash, Bank and FD/RD target amounts while
+allowing `allocateAmounts`' existing zero-value entries for other buckets.
+
 Final attempted gate sequence on `task/P21-F-emergency-fund-target-editing`:
 
 | Gate | Command | Exit | Result |
