@@ -103,6 +103,7 @@ version, and tester fields remain blank.
 | O70 | Verify the expense Budget category picker, derived section context, searchable Custom option and custom category entry on iOS and Android. | Not run | P20-W D2; physical-device check required. |
 | O71 | Verify custom earned-income type entry and persistence after D3 schema work is approved and implemented. | Not run | P20-W D3; pending schema-version decision. |
 | O72 | Verify Transaction form scrolling, validation, category picker and custom category entry at font scales 1.3 and 2.0 on iOS and Android. | Not run | P20-W; physical-device check required. |
+| O73 | On a physical device, use Spend, Invest and Income items, including one-time and recurring items where applicable. Edit name, value/amount, start month, frequency and due day; verify both single-month and this-and-following edits. Delete with each scope, restart after each flow, and confirm the changed values and deletions persist. | Not run | P20-U-R1; device check required. |
 | O74 | On a physical device, create a linked one-time savings Budget item, then mark it Paid from Transactions with a different viewed month and after a month-only edit; verify one holding Deposit, one linked transaction, correct Budget actual, one-write persistence and one-step Undo. | Not run | P20-A-R3; owner’s exact triggering data and steps remain unknown. |
 
 The owner reports O45-O60 passed on 2026-11-11. Device model, Android

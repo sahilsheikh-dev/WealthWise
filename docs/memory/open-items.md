@@ -17,22 +17,28 @@
   polite result-count announcements, clear-button tap target and font scales
   1.3/2.0. Track these as O61–O64 in the release device checklist.
 
-## Budget item/schedule edit and delete bug (P20-U-R1, Planned)
+## P20-U-R1 Budget edit/delete defect (automated implementation complete; device check open)
 
-- **P20-U-R1 (Planned; not started):** owner-reported defect in Budget route form
-  updating and deletion. Owner report (verbatim):
-  > "In budget while updating any item/value/amount/start-month/frequency/due-day/etc it is not updating also while trying to delete it is not even deleting, not for single month and this and following months."
-  Owner instruction: "Don't start working on this."
-  Affected fields: item, value, amount, start-month, frequency, due-day, etc.
-  Delete cases: single month and this and following months.
-  Open questions (as questions, not assumptions):
-  - Which Budget screens and sections (spend, invest, income schedules, one-time vs recurring)?
-  - Whether the bug is UI, store, or persistence?
-  - App/schema version and whether it began after a specific release or CR?
-  - Exact reproduction steps and expected behavior?
-  - Whether data on device persists after restart?
-  Dependencies: report-first investigation with a red regression test before any fix (R1), then a fix with all six ordered gates; physical-device check likely required (planned process, not authorized work).
-  Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and touched files; related P20-U; reason: defect in completed budget route form item/schedule updating and deletion.
+- CONT3 completed the owner-report matrix on the existing P20-U-R1 branch.
+  Confirmed root causes: Income plan/snapshot schedule mismatch fixed by
+  `2dc72b5`; optional-field item edit overwrite fixed by `a292f33`; and
+  category-line holding-link loss in both scopes fixed by `e4accf5`.
+- Automated form/store coverage includes item name, amount/value, start month,
+  frequency and due day; Spend, Invest and Income; one-time and recurring cases
+  where applicable; month-only and following edits/deletes; non-current viewed
+  month; backup restore and demo-data origin. Persistence and rehydration pass.
+  H1/H2/H5 are refuted for tested scenarios; H3 was not reproduced in tested
+  Budget routes (Alert/reminder entry points not exercised); H4 was confirmed
+  and fixed. Details and six gate results are in `docs/PROGRESS.md`.
+- O73 remains Not run: on a physical device, restart after edits/deletions and
+  verify persistence for Spend, Invest and Income, one-time/recurring items,
+  all fields, and both scopes.
+- Local-only PR preparation is complete at task commit
+  `becbd83c0b18051bf54a00904c6463bd2232f5b3`, after syncing
+  `phase/20-budget` with the locally available `develop` commit
+  `cb363423384923ef19f00399cd380baba01e9e59`. Gates 1–3 and 5–6 pass; Gate 4
+  could not resolve `expo-doctor` (`ENOTFOUND registry.npmjs.org`). No push or
+  PR was created; owner-side push/PR/merge remains pending. O73 is still Not run.
 
 ## CR-114 independent entities, empty slots and R7 (2026-11-12)
 

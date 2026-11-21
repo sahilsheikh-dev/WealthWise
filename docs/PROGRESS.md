@@ -74,7 +74,7 @@ parts count in the numerator and denominator. P1–P14 count as one part
 each.
 
 ```text
-Overall progress ████████░░ 78% (148/190)
+Overall progress ████████░░ 78% (149/190)
 P1          ██████████ 100% (1/1)
 P2          ██████████ 100% (1/1)
 P3          ██████████ 100% (1/1)
@@ -93,7 +93,7 @@ P16         ██████████ 100% (3/3)
 P17         ██████████ 100% (3/3)
 P18         ██████████ 100% (9/9)
 P19         ██████████ 100% (3/3)
-P20         █████████░ 92% (34/37)
+P20         █████████░ 95% (35/37)
 P21         ██████████ 100% (8/8)
 P22         ██████████ 100% (2/2)
 P23         ██████████ 100% (4/4)
@@ -185,7 +185,7 @@ P44         ░░░░░░░░░░ 0% (0/4)
 | P20-S-R1-R1 | — | Done | Add the owner-requested rule to ask before reverting or overwriting owner edits made after agent changes. Documented in root `AGENTS.md` as R5; task-to-phase PR #44 merged, phase-to-develop PR #45. | 2026-11-09 |
 | P20-T | `e432034` | Done | CR-76–CR-77: one shared FormShell header/body/footer core for full-screen and sheet forms; all data-entry forms converted with route-param coverage. Six gates pass; native keyboard/font-scale behavior remains unverified. | 2026-10-19 |
 | P20-U | `02bfbb1` | Done; Revised by P20-U-R1 | CR-86–CR-87: replace BudgetManagementSheet with section, item and income FormScreen routes; scoped save/delete Undo and route coverage. Focused suites pass; final gates and device limitations recorded below. | 2026-10-21 |
-| P20-U-R1 | P20-U | Planned | not started; owner said not to start. Owner report (verbatim): "In budget while updating any item/value/amount/start-month/frequency/due-day/etc it is not updating also while trying to delete it is not even deleting, not for single month and this and following months." Affected fields: item, value, amount, start-month, frequency, due-day, etc. Delete cases: single month and this and following months. Open questions: which Budget screens and sections (spend, invest, income schedules, one-time vs recurring); whether the bug is UI, store, or persistence; app/schema version and whether it began after a specific release or CR; exact reproduction steps and expected behavior; whether data on device persists after restart. Dependencies: report-first investigation with a red regression test before any fix (R1), then a fix with all six ordered gates; physical-device check likely required (planned process, not authorized work). Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and touched files; related P20-U; reason: defect in completed budget route form item/schedule updating and deletion. | not started |
+| P20-U-R1 | P20-U | Done | Owner authorization on 2026-11-21 superseded CR-115’s earlier hold. CONT3 completed the real-form/store/persistence matrix across Spend, Invest and Income, recurring and one-time kinds where applicable, edit fields and both scopes; delete coverage passes for both scopes across each section/kind. The original store matrix reproduced four following-scope Income schedule snapshot defects (one-time/recurring × frequency/start-month), fixed by `2dc72b5`. Real-form edit reproduced amount loss when optional fields were cleared, fixed by `a292f33`; the legacy category-line action also dropped `holdingId` in both scopes, fixed by `e4accf5`. Name, amount/value, start month, frequency, due day and other tested cells pass. Backup restore, demo origin, non-current viewed month, and H1–H5 findings are recorded in CONT3. Tests: `936ff8f`, `3866bf3`, `10a8f6f`, `8ceecb5`, `4f02446`, `88693ab`, `51a907c`, `7074b25`, `c3d0cc7`, `421d080`, `a5ea806`; harness typing `cc0b3c6`; fixes: `2dc72b5`, `a292f33`, `e4accf5`. Six-gate results below. Schema v23; no migration, dependency or protected-file change. O73 physical-device check remains Not run. Placement: initial work rule 2; continuations rule 3; searched dashboard, register, phase history, roadmap, memory and touched Budget forms/domain/store; related P20-U-R1; reason: complete the widened owner-report scope in place. | 2026-11-21 |
 | P20-V | `6d3feab`, `82793e8`, `1afac16`, `139230d` | Done | CR-88/CR-89: schema v13 and migration, recurrence-aware Budget planning/dues, route form, row display, demo and tests. All six automated gates pass; native-device checks remain unverified. | 2026-10-21 |
 | P20-W | — | In progress; Revised by P20-W-R1 | Previously: P43-D. D1/D2 schema-free scope: both implemented. D1: no investment category before holding selection; selected holding derives via `investCategoryFor`; missing holding blocks Save. D2: the picker groups Budget-defined/effective-month expense categories plus a Custom entry, shows the derived Budget section, and retains removed-item transaction categories. Custom names save as transaction category strings only; no new persisted field. Focused TransactionForm/schema tests pass (68 tests). Post-sync Gate 1 exit 0 (102 suites, 1,368 passed, 1 skipped; coverage 95.96/92.14/98.03/97.63%); Gate 2 exit 0; Gate 3 exit 0; local Gate 4 attempt exit 1 (`ENOTFOUND registry.npmjs.org`); owner-supplied Gate 4 exit 1 (20/21 checks, six SDK 57 patch mismatches; owner-approved cleanup exception); Gates 5–6 exit 0. Task PR #174 merged into `phase/20-budget` at `419a37b07e6853b3c683d22ec243ea58223514c1`; phase PR #175 merged into `develop` at `9e47856f20848e03ac6a4b8e699f47c387d08161`; CM-2 synchronized local `develop`. D3 remains Planned pending the owner schema-version decision; P20-W-R1 records integration evidence. Placement: rule 4; searched dashboard, register, P20-O/P, P3 history, roadmap, memory and transaction form modules; related P20-O and P20-P; reason Budget category and transaction-form behavior belongs to the existing P20 feature area. | 2026-11-21 |
 | P20-W-R1 | — | Done | Record P20-W task PR #174 merge `419a37b07e6853b3c683d22ec243ea58223514c1` and phase PR #175 merge `9e47856f20848e03ac6a4b8e699f47c387d08161`; local `develop` was synchronized by CM-2. No application behavior changed; D3 remains Planned and O69–O72 remain Not run. Test-first commit `6f31775`. Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and P20-W records; related P20-W and CM-2; reason: record verified task/phase integration as the next P20-W revision required by the integration workflow. | 2026-11-21 |
@@ -3312,7 +3312,7 @@ evidence present in exports/checkpoints.
 
 | ID | Phase | Legacy ID | Session | Date | Purpose | Outcome | Commits (Git only) | Agent mistakes / review findings | Text |
 |---|---|---|---:|---|---|---|---|---|---|
-| CR-115 | documentation | — | current | 2026-11-13 | Record owner-reported Budget update and delete failure across single month and following months as Planned under P20-U-R1; owner instructed not to start work. | Done (documentation and ledger recording); product bug work Planned under P20-U-R1 | Documentation commit. | None. | current request |
+| CR-115 | documentation | — | complete | 2026-11-13 | Record the owner-reported Budget edit/delete defect under P20-U-R1. | Recording is Done; the original “Don’t start working on this” instruction was superseded by the owner’s explicit 2026-11-21 authorization. Product work completed under P20-U-R1. | Original documentation commit; implementation evidence is recorded in P20-U-R1. | No owner edits were overwritten; source and current schema v23 were inspected. | current request |
 | CR-116 | P20 | — | current | 2026-11-21 | Add searchable filtering and stable relevance ranking to the shared Dropdown sheet across the app. | Done as P20-S-R2; task PR #164 and phase PR #165 are merged and verified by P20-S-R2-R1. Six ordered gates completed with the documented Gate 4 SDK patch exception. | Test-first ledger `36e8ba4`; implementation commits through `d69c5cf`; task merge `185a5ea125f64ac104344f00ad013d68cdb7a946`; phase merge `6b50a1dbd36b401352776e71028fc07071c11991`. | Assumed and confirmed: no schema, domain, demo-data or dependency changes. O61–O64 remain Not run on physical devices. | current request |
 | P20-W | P20 | P43-D | current | 2026-11-21 | Implement D1/D2 schema-free transaction form behavior; investigate custom Income D3 and resolve its schema-version STOP GATE. | In progress; Revised by P20-W-R1. D1/D2 implemented; focused TransactionForm/schema suites pass (68 tests). Pre-sync Gate 1 exit 0 (102 suites, 1,347 passed, 1 skipped); Gate 2 initially exited 2, corrected and rerun exit 0; Gate 3 exit 0; Gate 4 and retry exit 1 with `ENOTFOUND registry.npmjs.org`; Gates 5–6 not run. Synced Gate 1 exit 0 (102 suites, 1,368 passed, 1 skipped; 95.96/92.14/98.03/97.63%); Gates 2–3 exit 0; local Gate 4 attempt exit 1 (`ENOTFOUND registry.npmjs.org`); owner-supplied Gate 4 exit 1 (20/21, six SDK 57 patch mismatches; owner-approved cleanup exception); Gates 5–6 exit 0. Task PR #174 merged at `419a37b07e6853b3c683d22ec243ea58223514c1`; phase PR #175 merged at `9e47856f20848e03ac6a4b8e699f47c387d08161`; CM-2 synchronized `develop`. D3 remains Planned pending owner choice between P20-W v24 and P36 v24. | Phase sync `e44ce6f0dc4614339f766ac91d73f0df0d428363`; ledger red `c1eb54d`; D1 red/green `3ad0dd8`/`3683793`; D2 red tests `0986632`, `0deda30`; implementation `6074155`; null-safe fixture `2c90215`. | D1/D2 use existing persisted Budget items/transaction category strings; Custom text is only the transaction category. No schema field or migration is required. D3 remains gated because of the v24 collision. | current request |
 | P20-W-R1 | P20 | P20-W | current | 2026-11-21 | Record verified P20-W task and phase PR integration while retaining D3 as Planned. | Done; P20-W remains In progress because D3 is gated on the P36 schema v24 decision. Task PR #174 merged into `phase/20-budget` at `419a37b07e6853b3c683d22ec243ea58223514c1`; phase PR #175 merged into `develop` at `9e47856f20848e03ac6a4b8e699f47c387d08161`; CM-2 synchronized local `develop`. O69–O72 remain Not run. | Test-first commit `6f31775`; task integration commit `8d04514ff0fd057365506433f2a9f0a0fbb7b32e`. | No application behavior changed. Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and P20-W records; related P20-W and CM-2; reason: record verified task/phase integration as the next P20-W revision required by the integration workflow. | current request |
@@ -3321,7 +3321,7 @@ evidence present in exports/checkpoints.
 | P20-S-R2 | P20 | P20-S | current | 2026-11-21 | Add a default-visible, accessible Search field to shared Dropdown, with normalized multiword matching, stable ranking, grouping, Custom pinning and no-match feedback. | Done; Revised by P20-S-R2-R1 and P20-S-R2-R2. Gate 1 `npm test -- --coverage` exit 0 (102 suites, 1,342 passed, 1 skipped); Gates 2–3 exit 0; Gate 4 `npx expo-doctor` exit 1 on the required SDK 57 patch mismatch (20/21 checks; DNS attempt and one retry recorded below); Gates 5–6 exit 0. Device checks O61–O64 remain Not run. | Test-first ledger `36e8ba4`; helper tests `a959353`, Custom-order regression `81a4d31`; helper `41bb704`, `f340fca`; component tests `f169bd6`, `3a29c94`; component `70eb82a`; route-mock fix and verification `d69c5cf`; PRs #164/#165 and exact merge SHAs in P20-S-R2-R1. | Assumed: no schema, domain, demo-data or dependency changes; confirmed. Old sheet text assertion listed only group/option labels. New assertion adds Search and the 3-result announcement while preserving those labels. Reason: the sheet now exposes search and result-count feedback. Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and Dropdown source/tests; related P20-S; reason this revises completed shared Dropdown behavior from CR-70. | current request |
 | P20-S-R2-R1 | P20 | P20-S-R2 | current | 2026-11-21 | Record verified integration evidence for the searchable shared Dropdown. | Done; task PR #164 merged into `phase/20-budget` at `185a5ea125f64ac104344f00ad013d68cdb7a946`; phase PR #165 merged into `develop` at `6b50a1dbd36b401352776e71028fc07071c11991`. Focused ledger and memory tests pass; O61–O64 remain Not run. | Test-first commit `cf90f78`; PR merge evidence recorded here. | Old: the task row and memory showed PR integration as pending. New: exact task and phase PRs and merge SHAs are recorded, and local `develop` is synchronized. Reason: make the integrated state auditable. Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and touched records; related P20-S-R2 and CM-2; reason this is the next sequential revision of completed P20-S-R2. | current request |
 | P20-S-R2-R2 | P20 | P20-S-R2 | current | 2026-11-21 | Preserve the P20-S-R2 entry in its parent revision chain after recording integration evidence. | Done; parent dashboard and prompt-log rows retain P20-S-R2 and list P20-S-R2-R1 and P20-S-R2-R2. No app behavior changed. | Test-first commit `0375e55`; focused ledger/memory verification recorded below. | Old: P20-S omitted its direct P20-S-R2 revision while listing P20-S-R2-R1. New: the full chain is preserved. Reason: keep history and R2 revision links accurate. Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and touched records; related P20-S-R2 and P20-S-R2-R1; reason: correct revision-chain bookkeeping for the completed Dropdown part. | current request |
-| P20-U-R1 | P20 | P20-U | current | 2026-11-13 | Record owner-reported Budget update and delete failure across single month and following months as Planned. Owner instruction: "Don't start working on this." | Planned; not started; owner said not to start. Owner report (verbatim): "In budget while updating any item/value/amount/start-month/frequency/due-day/etc it is not updating also while trying to delete it is not even deleting, not for single month and this and following months." Affected fields: item, value, amount, start-month, frequency, due-day, etc. Delete cases: single month and this and following months. Open questions: which Budget screens and sections (spend, invest, income schedules, one-time vs recurring); whether the bug is UI, store, or persistence; app/schema version and whether it began after a specific release or CR; exact reproduction steps and expected behavior; whether data on device persists after restart. Dependencies: report-first investigation with a red regression test before any fix (R1), then a fix with all six ordered gates; physical-device check likely required (planned process, not authorized work). Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and touched files; related P20-U; reason: defect in completed budget route form item/schedule updating and deletion. | No implementation commit; planned only. | None. | current request |
+| P20-U-R1 | P20 | P20-U | done | 2026-11-21 | Complete the owner-reported Budget edit/delete matrix across form fields, sections, kinds and scopes; fix confirmed plan/snapshot and link-preservation failures. | Done. Store-only matrix reproduced four Income following-scope schedule defects; real form repros confirmed item edit overwrite and category-line holding-link loss. Each root cause has a test-first regression and targeted fix. Real form roundtrips cover name, amount/value, start month, frequency, due day, Spend/Invest/Income, one-time/recurring where applicable, both edit scopes, both delete scopes, non-current month, backup restore, demo data, one-write persistence and rehydration. H1 refuted for tested reopen path; H2 refuted for live-update selected-ID delete; H3 not reproduced in tested Budget routes (Alert/reminder entry points untested); H4 confirmed/fixed for optional-field item edits and linked-line edits; H5 refuted for synchronous test storage across immediate writes. O73 remains Not run. | Red tests `936ff8f`, `10a8f6f`; coverage `3866bf3`, `8ceecb5`, `4f02446`, `88693ab`, `51a907c`, `7074b25`, `c3d0cc7`; fixes `2dc72b5`, `a292f33`, `e4accf5`. | No schema change: source is v23; no migration, dependency, demo fixture implementation or protected file changed. Device restart remains unverified under O73. | current request |
 | CR-114 | documentation | — | current | 2026-11-12 | Restructure work tracking using independent entities, empty slots and R7 slot-filling rules. | Done; PR #161 merged into `develop` as `9058386`. Preflight gates 1–3, 5, 6 passed; Gate 4 exit 1 owner-approved exception (upstream Expo SDK 57 patch advisory). | Test-first commits `f99fa67`, `83689f2`; PR #161 merge `9058386`. | None. | current request |
 | CR-110 | — | — | current | 2026-11-12 | Plan standalone cleanup/QA lifecycle tracking and deferred Emergency Fund and transaction improvements. | Planned; Revised by CR-110-R1. Original planned-only scope retained; CR-110-R1 adds detailed dependencies, approval gates, issue strategy and validation plan. | No implementation commit; revised in CR-110-R1. | Original: execution was deferred and no implementation or remote actions were authorized. New: details are tracked as separate Planned items; no implementation or remote action is authorized by the plan. Reason: preserve the original request record while making future work actionable. | current request |
 | CR-110-R1 | P43 | CR-110 | current | 2026-11-12 | Refine CR-110 into a dependency-aware plan for lifecycle tracking, tags, Emergency Fund editing, transaction forms and GitHub issue strategy. | Planned only; P43-A–P43-E all remain Planned with `Evidence: not started`. No app behavior, tag cleanup, issue creation or history rewrite is included. | Test-first commit `e5114e01f363d6de5a12acb61886039469d4a86f`; docs commit `183b18e0af473195ee62fcb4622a3b7e834d2d13`; task PR #146 merged into P43 as `e4d950adf0344dbe12e2e0d085e83d60538ede68`; phase PR #147 merged into `develop` as `a93feaecfbd591c1b6f27bac15b5839c68d10709`. | Old: CR-110 grouped the requests but omitted specific dependencies, schema/backup constraints, exact approval gates, issue batching risks and dashboard/branch-index requirements. New: five independently trackable Planned items preserve owner gates and evidence status. Reason: make future work actionable without beginning implementation. | current request |
@@ -3755,7 +3755,8 @@ verification.
 | CR-112 | Classify Planned work, separate ongoing lifecycle tracking, add R6 and activate CM-2. | Done | Local commits: tests `e2f0263`, `d24acd9`, `e7c134a`, `770393d`, `bdbe159`, `b8b90b1`; rules/guide `7dab04b`; placement audit `5841373`; gate/rename evidence `6ed0e39`. Gate 4's initial `npx expo-doctor` attempt exited 1 (`ENOTFOUND registry.npmjs.org`); network retry exited 0 (21/21), then the complete ordered rerun passed: 1 `npm test -- --coverage --watchman=false` exit 0 (101 suites, 1,324 passed, 1 skipped; coverage 95.96/92.15/98.02/97.62% statements/branches/functions/lines); 2 `npx tsc --noEmit` exit 0; 3 `npx expo lint` exit 0; 4 `npx expo-doctor` exit 0 (21/21); 5 `npx expo export --platform android` exit 0; 6 `npx expo export --platform ios` exit 0. Watchman was disabled for Gate 1 after its normal startup was denied by the sandbox. No physical-device verification was performed. P43-A lifecycle ref rename is complete and verified; P43-F PR #153/#154 integration is complete with merge commits recorded. P43-B/E and planned product work remain open. |
 | CR-113 | Record explicit owner approvals and placement decisions for Planned/Pending tasks without starting their work. | Done | All affected feature work remains Planned. Six ordered gates and task/phase PR evidence are recorded in Section 11. No research, implementation, tag deletion or issue creation was performed. Owner approvals cover P21-F, P33-B/C, P34-A–C, P35-B/C, P43-B/E, P44-A and P39/P40 placement; the exact proposed tag list and P43-E inventory remain prerequisites. |
 | CR-114 | Restructure how the project tracks work using independent entities (cleanup, qa-and-release, schema-migration, documentation), empty slots (P7, P27, P28, P32) and R7 slot-filling rule. | Done | PR #161 merged to develop as `9058386`; Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 owner-approved exception for upstream SDK 57 patch advisory; tests updated test-first; remote branches and local refs verified. |
-| CR-115 | Record owner-reported Budget item/schedule update and delete failure across single month and following months as Planned under P20-U-R1; owner instructed not to start work. | Done (recording); product work Planned | Documented in dashboard, register, prompt log, roadmap, and memory; no app/schema/dependency changes. |
+| P20-U-R1 | Investigate and fix the owner-reported Budget edit/delete defect across form fields, scopes, and sections. | Done; O73 physical-device check remains open. | CONT3 completed the edit/delete and data-origin matrix. Findings: the original four Income schedule failures are fixed by `2dc72b5`; the real-form optional-field overwrite is fixed by `a292f33`; category-line edits now preserve `holdingId` in month and following scopes via `e4accf5`. All required automated route/store cases pass; see `### P20-U-R1 CONT3 — Full edit/delete matrix and root-cause audit` below. The physical-device restart check O73 is Not run. Test-first commits `10a8f6f`, `936ff8f`, `421d080`; targeted fixes `2dc72b5`, `a292f33`, `e4accf5`. |
+| CR-115 | Record the owner-reported Budget edit/delete failure and place it under P20-U-R1. | Done; original hold superseded by explicit owner authorization on 2026-11-21; P20-U-R1 implementation is Done, with O73 device verification still open. | Store-only Income schedule defects, real-form optional-field overwrite, and category-line holding-link loss were reproduced and fixed under P20-U-R1; the complete automated matrix is recorded in CONT3. |
 | P20-W-R1 | Record verified P20-W task and phase PR integration while retaining D3 as Planned. | Done | Test-first commit `6f31775`; task PR #174 merge `419a37b07e6853b3c683d22ec243ea58223514c1`; phase PR #175 merge `9e47856f20848e03ac6a4b8e699f47c387d08161`; CM-2 synchronized local `develop`. P20-W remains In progress because D3 is gated on the P36 v24 ownership decision. O69–O72 remain Not run. Process deviation: phase sync commit `206f116` was created directly by `git merge` before a separate staged diff-stat display, contrary to R1; it changed no files. Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and P20-W records; related P20-W and CM-2; reason: record verified task/phase integration as the next P20-W revision required by the integration workflow. |
 | CR-116 | Add searchable filtering and stable relevance ranking to shared Dropdown options across the app. | Done as P20-S-R2; PR integration recorded by P20-S-R2-R1 | Helper coverage is 100% lines/branches; focused component and route/form suites pass. Six ordered gates: 1 exit 0 (102 suites, 1,342 passed, 1 skipped); 2 exit 0; 3 exit 0; 4 exit 1 (known Expo SDK 57 patch mismatch after one DNS retry); 5 exit 0; 6 exit 0. Task PR #164 and phase PR #165 merge SHAs are recorded in the revision row. No caller edits, schema/domain/demo-data changes or new dependencies. O61–O64 physical checks remain Not run. |
 | P20-W | Implement transaction form D1/D2 category behavior; leave custom Income D3 behind its schema STOP GATE. | In progress; Revised by P20-W-R1 | Pre-sync Gate 1 exit 0 (102 suites, 1,347 passed, 1 skipped); Gate 2 initially exited 2, corrected and rerun exit 0; Gate 3 exit 0; Gate 4 and retry exit 1 with `ENOTFOUND registry.npmjs.org`; Gates 5–6 not run. Synced Gate 1 exit 0 (102 suites, 1,368 passed, 1 skipped; 95.96/92.14/98.03/97.63%); Gates 2–3 exit 0; local Gate 4 attempt exit 1 (`ENOTFOUND registry.npmjs.org`); owner-supplied Gate 4 exit 1 (20/21, six SDK 57 patch mismatches; owner-approved cleanup exception); Gates 5–6 exit 0. Task PR #174 merged at `419a37b07e6853b3c683d22ec243ea58223514c1`; phase PR #175 merged at `9e47856f20848e03ac6a4b8e699f47c387d08161`; CM-2 synchronized `develop`. D3 remains Planned pending owner choice between P20-W v24 and P36 v24. |
@@ -3763,7 +3764,6 @@ verification.
 | P21-F-R1 | Record P21-F task PR #170 merge `c877f6d19e35c0b9fbcba90e9722da7531948c8e` and phase PR #171 merge `2e5e18a7a2be207387a7462b039547f51b0e4631`; local `develop` was synchronized by CM-2. No application behavior changed. Focused ledger and memory tests pass; O65–O68 remain Not run on physical devices. Test-first commit `647a0c9`. Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and touched P21-F records; related P21-F and CM-2; reason: record verified PR integration as the next sequential revision of completed P21-F. | current request |
 | P20-S-R2-R1 | Record the task/phase integration evidence for CR-116. | Done | Task PR #164 merged into `phase/20-budget` at `185a5ea125f64ac104344f00ad013d68cdb7a946`; phase PR #165 merged into `develop` at `6b50a1dbd36b401352776e71028fc07071c11991`. Test-first commit `cf90f78`; focused ledger and memory tests pass; CM-2 synchronized `develop`. No app behavior changed. O61–O64 remain Not run. Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and touched records; related P20-S-R2 and CM-2; reason: record integration evidence as the next sequential revision. |
 | P20-S-R2-R2 | Preserve the original P20-S-R2 revision in its parent chain. | Done | Test-first ledger assertion `0375e55` preserves P20-S-R2 in the parent status alongside P20-S-R2-R1 and P20-S-R2-R2. No app behavior changed; O61–O64 remain Not run. Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and touched records; related P20-S-R2 and P20-S-R2-R1; reason: correct bookkeeping while preserving completed-work history. |
-
 ## 8. Known issues and risks
 
 On 2026-10-15 the user confirmed that every item previously marked user-reported, unverified is done, available in the app and working. Items that were never labelled that way keep their own device-check lists.
@@ -3958,7 +3958,7 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
    P19-C header icons, user-owned inputs and balance card (CR-17–CR-19).
 2. **P20 — Pending items, Home, navigation and Budget management**
    (P20-A through P20-V Done; P20-A-R1/R2 and P20-S-R1-R1/P20-S-R2/P20-S-R2-R1/P20-S-R2-R2 revisions Done;
-   P20-A-R3 implementation/tests complete with Gate 4 blocked; P20-W and P20-U-R1 Planned):
+   P20-U-R1 Done; P20-A-R3 In progress; P20-W In progress):
    P20-A pending
    Transactions with Pay/Clear due (CR-6), P20-B Home due actions and collapsed
    spending plan (CR-7, CR-10), P20-C main-screen-only tabs (CR-11), P20-E
@@ -3984,7 +3984,7 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
    searched dashboard, register, P20-O/P, P3
    history, roadmap, memory and transaction form modules; related P20-O and
    P20-P; reason: the work extends existing Budget/category forms.
-   P20-U-R1 — Budget item and schedule update and delete failure (Planned): owner-reported defect in Budget route form editing and deletion. Owner report (verbatim): "In budget while updating any item/value/amount/start-month/frequency/due-day/etc it is not updating also while trying to delete it is not even deleting, not for single month and this and following months." Owner instruction: "Don't start working on this." Affected fields: item, value, amount, start-month, frequency, due-day, etc. Delete cases: single month and this and following months. Open questions: which Budget screens and sections (spend, invest, income schedules, one-time vs recurring); whether the bug is UI, store, or persistence; app/schema version and whether it began after a specific release or CR; exact reproduction steps and expected behavior; whether data on device persists after restart. Dependencies: report-first investigation with a red regression test before any fix (R1), then a fix with all six ordered gates; physical-device check likely required (planned process, not authorized work). Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and touched files; related P20-U; reason: defect in completed budget route form item/schedule updating and deletion.
+   P20-U-R1 — Budget edit/delete defect (Done; O73 device check open): CONT3 completed the field, section, kind, scope, viewed-month, backup and demo-origin matrix. Confirmed roots and fixes: following-scope Income snapshot schedule mismatch (`2dc72b5`), optional-field item edit overwrite (`a292f33`), and holding-link loss in category-line edits (`e4accf5`). H1 refuted for tested reopen; H2 refuted for live store update plus selected-ID delete; H3 not reproduced in tested routes (Alert/reminder entry points untested); H4 confirmed/fixed; H5 refuted for synchronous storage. O73 remains Not run. Six-gate results are in CONT3.
    P20-S-R2 — searchable shared Dropdowns (Done): add default-visible search with accessible clear/result feedback, Unicode-normalized case/diacritic-insensitive AND matching, exact/prefix/word-start/contains ranking, group preservation, selected-state behavior, Custom pinning, no-match feedback and query reset. All six gates completed; Gate 4 remains the known SDK 57 patch mismatch. No caller edits or schema/domain/demo-data/dependency changes. O61–O64 device checks remain open. Task PR #164 merged into the phase at `185a5ea`; phase PR #165 merged into `develop` at `6b50a1d`; P20-S-R2-R1 records the evidence. P20-S-R2-R2 preserves the complete revision chain. Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and Dropdown source/tests; related P20-S; reason: adjusts completed shared Dropdown behavior. Assumed: no schema, domain, demo-data or dependency changes were required; confirmed.
 3. **P21 — Emergency fund as a goal-linked model** (P21-A–F Done; P21-F-R1 Done): P21-A links,
    entries and net-worth/schema v7 changes (CR-8, CR-13); P21-B cover and
@@ -4287,6 +4287,156 @@ work remain in their original phase and use `<ID>-R<n>` (for example,
 An item is `Done` only when its named source and test evidence are available.
 Paths below are repository-relative. Baseline results are not completion
 evidence for the fixes.
+
+### 2026-11-21 — P20-U-R1 Budget edit/delete revision
+
+- The owner explicitly authorized work, superseding CR-115's earlier hold.
+- Matrix: 60 edits and 12 deletes across Spend, Invest and Income, one-time/
+  recurring entries, all applicable fields and both scopes. Four stale Income
+  schedule cases reproduced (following-scope frequency/start month for one-time
+  and recurring entries). Other tested edits and all deletes updated state,
+  serialized data and rehydrated state.
+- Root cause: following-scope schedule changes updated `budgetPlan` but kept
+  the old month snapshot; the Income editor reads that snapshot. The fix updates
+  both representations in one domain result and store write. Schema v23,
+  migration and backup formats are unchanged.
+- Test-first commits: `c7ff3a6` and `db4c338`; fix commit: `2dc72b5`.
+  Focused Budget/domain/store/route suites pass (4 suites, 358 tests).
+- Replaced assertion (not weakened): old `createAppStore` assertion expected a
+  changed following-scope schedule to leave the stored month snapshot frozen.
+  New assertion requires the selected month row to contain the edited amount,
+  frequency and first due month. Reason: “this and following months” must
+  persist the schedule in the selected month as well as the future plan.
+- **Assumed:** no schema, demo-data or dependency change is needed; verified by
+  the source and diff. `SCHEMA_VERSION` is 23; AGENTS.md's schema 22 statement
+  is stale, while current memory/status already says v23.
+
+### P20-U-R1 CONT2 — Real Budget form/store/persistence roundtrip
+
+- Placement: rule 3; searched dashboard, register, phase history, roadmap,
+  memory and touched Budget forms/domain/store; related P20-U-R1; reason: widen
+  the still-open owner-report scope in place. Commit `2dc72b5` is present only
+  on the existing P20-U-R1 task branch, not in `phase/20-budget` or `develop`,
+  so no new revision ID was allocated.
+- The first real route-form → `createAppStore` → in-memory storage test failed
+  test-first: Save and “This and following months” ran, but the item stayed at
+  300 instead of 450. Root cause: `editItem` applied the original item spread
+  after changed fields when removing optional `dueDay`/`holdingId`, overwriting
+  the edits. The fix first removes optional properties from the base item, then
+  applies requested values and schedule fields. No `app/` protected file,
+  schema, migration or backup shape changed.
+- Commits: failing harness `936ff8f`; persisted plan/snapshot, rehydration and
+  one-write assertions `3866bf3`; domain fix `a292f33`; current progress-count
+  ledger test `9a09a55`; test-only removal of TypeScript assertions from the
+  component harness `19d8c47`. Focused command
+  `npx jest src/components/__tests__/budgetFormRoundtrip.test.tsx
+  src/data/__tests__/createAppStore.test.ts src/domain/__tests__/budget.test.ts
+  --runInBand --watchman=false` exited 0 (3 suites, 177 tests). The route/store
+  harness also passed alone after the fix. It verifies amount/following edit,
+  exact serialized plan and month snapshot, fresh-store hydration, Budget
+  screen display/reopen, single-month and following-scope delete, persisted
+  state, and exactly one in-memory storage write per action.
+- H4 is confirmed for item edits that clear optional due-day/holding-ID values.
+  H1, H2 and H5 are not run. H3 did not reproduce for the tested item ID/month/
+  scope paths; its broader and Alert/reminder callback dimensions are not run.
+  The requested Stage 3 field/section/kind/viewed-month/data-origin matrix is
+  incomplete: only an amount edit on a recurring Spend item in the current
+  month was exercised end to end; other field, Invest/Income, one-time,
+  month-only edit, different-month and restored-backup cases remain unrun.
+  O73 remains Not run on device.
+- Assertion replacement: previous status `Done` and “all other store-matrix
+  fields/sections passed” now become `In progress` with the confirmed route-
+  to-persistence item-edit failure and the still-unrun dimensions listed.
+  Reason: the store-only matrix did not cover the complete UI-to-persistence
+  chain, and the integrated form exposed a separate confirmed defect. Existing
+  amount, scope and delete assertions were retained.
+- Final ordered gates on `19d8c47`: 1 `npm test -- --coverage --watchman=false` exit 0 (104 suites, 1,375 passed, 1 skipped); 2 `npx tsc --noEmit` exit 0; 3 `npx expo lint` exit 0; 4 `npx expo-doctor` exit 1 (`ENOTFOUND registry.npmjs.org`; run once, no retry); 5 `npx expo export --platform android` exit 0; 6 `npx expo export --platform ios` exit 0. Expo Doctor could not reach `https://registry.npmjs.org/expo-doctor` because DNS returned `ENOTFOUND`; task instructions say continue without retry. Protected Git blob hashes verified unchanged: Home `d3d1e465fe9f5d238d338afeb033e2a54889ddc6`, Budget `ddc1369da3a9b982e6b377990234c29f4ff051c9`, SortChip `837a675af94dd056532bc63fc4697efc905a5af3`, sorting `7491663f0987d83d03f3ed72b01de5b376e3572d`, frozen manifest `476418c7084f0774f1b6fb86ddfe08c7a265fc40`, frozen test `44e6f7e1592dabf9de95d2ed09cbe65af7968d1c`.
+- O73 device verification remains Not run.
+
+### P20-U-R1 CONT3 — Full edit/delete matrix and root-cause audit
+
+- Placement: rule 3; searched the dashboard, register, phase history, roadmap,
+  memory and touched Budget forms/domain/store; related P20-U-R1; reason: finish
+  the widened owner-report scope on its existing task branch. No new ID.
+- Stage 2 audit found two root causes beyond the original Income schedule bug:
+  `editItem` applied cleared optional fields in an order that restored old item
+  values (`a292f33`), and the legacy category-line month/following constructors
+  omitted `holdingId` (`e4accf5`). Other Budget update spread paths reviewed did
+  not place stale original values after changes. No schema change is required;
+  source schema is v23.
+- Optional-field audit: Budget spend/invest items support `dueDay`,
+  `firstDueMonth` and the holding link (`holdingId`); Budget income supports
+  `day` and `firstDueMonth`. These optional values are preserved, cleared or
+  normalized explicitly in the reviewed edit actions. Budget item/income types
+  have no `endMonth` or `note` field, so those requested optional-field cases
+  do not apply to Budget edits.
+- The real-form harness covers name, amount/value, start month, frequency and
+  due day in following scope; name, amount/value, due day and frequency in
+  month-only scope, plus start month month-only while viewing a non-current
+  virtual month. Spend, Invest and Income are covered, including one-time and
+  recurring forms where applicable. Deletes are covered in both scopes for
+  Spend, Invest and Income, including one-time and recurring entries. Persisted
+  storage, single writes, Undo/store outcomes and rehydration are asserted in
+  applicable cases. Plain backup parse/restore and demo data use the real
+  `replaceAllData` path; non-current viewed-month edits do not create unrelated
+  snapshots.
+- Owner-report outcome by dimension:
+
+  | Reported item | Result | Evidence commits |
+  |---|---|---|
+  | Item name | Not reproduced after the fixes; following and month-only form edits persist. | `8ceecb5`, `88693ab` |
+  | Value/amount | Reproduced and fixed: the real-form amount edit was overwritten when optional fields were cleared. | `936ff8f`, `3866bf3`, `a292f33` |
+  | Start month | Reproduced and fixed for one-time and recurring Income following-scope schedule edits; Spend form start-month edits pass in both scopes. | `2dc72b5`, `8ceecb5`, `c3d0cc7` |
+  | Frequency | Reproduced and fixed for one-time and recurring Income following-scope schedule edits; Spend form frequency edits pass in both scopes. | `2dc72b5`, `8ceecb5`, `88693ab` |
+  | Due day | Not reproduced in tested real-form edits across both scopes. | `8ceecb5`, `88693ab` |
+  | Linked holding/optional link | Reproduced and fixed: category-line edit dropped `holdingId` in both scopes. | `10a8f6f`, `e4accf5` |
+  | Spend section | Not reproduced for tested recurring and one-time edits/deletes. | `8ceecb5`, `88693ab`, `51a907c` |
+  | Invest section | Not reproduced for tested monthly and one-time edits/deletes. | `4f02446`, `88693ab` |
+  | Income section | Following-scope schedule mismatch reproduced and fixed; tested monthly/one-time amount edits and deletions otherwise pass. | `2dc72b5`, `4f02446`, `88693ab` |
+  | One-time entries | Spend, Invest and Income form paths covered where applicable; no additional failure reproduced after fixes. | `4f02446`, `88693ab` |
+  | Recurring entries | Spend, Invest and Income form paths covered where applicable; Income frequency/start-month following-scope failures reproduced and fixed. | `4f02446`, `2dc72b5`, `88693ab` |
+  | This-month-only edit | Not reproduced; plan is retained and only the viewed snapshot changes. | `88693ab`, `c3d0cc7` |
+  | This-and-following edit | Income schedule and item optional-field failures reproduced and fixed; remaining tested fields pass. | `936ff8f`, `3866bf3`, `2dc72b5`, `a292f33` |
+  | This-month-only delete | Not reproduced across Spend, Invest and Income, including one-time entries. | `88693ab` |
+  | This-and-following delete | Not reproduced across Spend, Invest and Income, including one-time entries. | `88693ab` |
+
+- Stage 3 hypotheses: H1 refuted for the tested save/navigate/reopen amount
+  path; H2 refuted for a mounted form receiving a live store update before
+  selected-ID deletion; H3 not reproduced across tested Budget edit/delete
+  route IDs, viewed months and scopes, while Alert/reminder entry points remain
+  untested; H4 confirmed and fixed for optional-field edits and link retention;
+  H5 refuted for synchronous storage across an immediate form edit/navigation
+  and a subsequent store edit, with both writes surviving fresh hydration.
+  UI harness checks are simulated; O73 remains Not run on device.
+- Test/fix commits: `10a8f6f` / `e4accf5` for line-link retention; `936ff8f`,
+  `3866bf3`, `8ceecb5`, `4f02446`, `88693ab`, `51a907c`, `7074b25` and
+  `c3d0cc7` for form, scope, origin and hypothesis coverage; earlier fixes
+  `a292f33` and `2dc72b5`. Ledger closeout test commit `421d080` updates the
+  status/count expectations.
+- Assertion replacement: old dashboard status `In progress` and “expanded
+  matrix remains unrun” are replaced by `Done`, root-cause outcomes and matrix
+  evidence, with O73 explicitly `Not run`. Reason: all owner-reported automated
+  edit/delete dimensions are covered; native-device restart verification stays
+  separate. No behavioral assertion was weakened.
+- Ordered gates (Node v26.10.0):
+
+  | Gate | Command | Result |
+  |---:|---|---|
+  | 1 | `npm test -- --coverage` / `npm test -- --coverage --watchman=false` | Both exit 0; 104 suites, 1,406 passed, 1 skipped (1,407 total). The final-tree coverage rerun followed the Gate 2 test-harness typing fixes. |
+  | 2 | `npx tsc --noEmit` | Initial exit 2 exposed test-harness typing/fixture errors; after test-only fixes in `cc0b3c6`, rerun exit 0. |
+  | 3 | `npx expo lint` | Exit 0. |
+  | 4 | `npx expo-doctor` | Exit 1 once: `ENOTFOUND registry.npmjs.org`; no retry, per task instruction. |
+  | 5 | `npx expo export --platform android` | Exit 0; Android bundle exported. |
+  | 6 | `npx expo export --platform ios` | Exit 0; iOS bundle exported. |
+
+- Protected Git blob hashes verified unchanged: Home
+  `d3d1e465fe9f5d238d338afeb033e2a54889ddc6`, Budget
+  `ddc1369da3a9b982e6b377990234c29f4ff051c9`, SortChip
+  `837a675af94dd056532bc63fc4697efc905a5af3`, sorting
+  `7491663f0987d83d03f3ed72b01de5b376e3572d`, frozen manifest
+  `476418c7084f0774f1b6fb86ddfe08c7a265fc40`, frozen test
+  `44e6f7e1592dabf9de95d2ed09cbe65af7968d1c`. No protected application file
+  was edited.
 
 ### 2026-11-21 — P20-S-R2 searchable shared Dropdown
 
@@ -10522,6 +10672,31 @@ Gradle build, version bump, or release preparation was performed.
 
 ## 11. Session and release log
 
+### P20-U-R1 — Budget edit/delete defect (2026-11-21)
+
+- The explicit owner authorization supersedes CR-115's earlier “Don't start
+  working on this” instruction. Work stays in P20 as the next revision of
+  completed P20-U (R2).
+- Read-only matrix: 60 edit and 12 delete cells covered Spend, Invest and
+  Income; one-time and recurring entries; name/value/amount/start month/
+  frequency/due day; and month/following scopes. Four following-scope Income
+  schedule cases reproduced: start month and frequency changes for one-time
+  and recurring income. The plan changed and persisted, while the selected
+  month snapshot and form stayed stale. No delete failure reproduced.
+- Root cause is the `scheduleChanged` branch in `src/domain/budget.ts`, which
+  returned the old month row; `app/budget-income-form.tsx` reads that row via
+  `effectiveMonthBudget`. The fix updates the matching income in both the plan
+  and selected month. No schema change; code says v23, despite AGENTS.md's v22
+  statement.
+- Red test commit `c7ff3a6` (four store cells plus route form); fix commit
+  `2dc72b5`; ledger test commit `db4c338`. Focused Budget/domain/store/route
+  suites pass (4 suites, 358 tests). The old frozen-snapshot assertion was
+  replaced with an assertion requiring the schedule to update in the selected
+  month; this is documented in the verification matrix above.
+- Ordered gates: 1 `npm test -- --coverage --watchman=false` exit 0 (103 suites, 1,374 passed, 1 skipped); 2 `npx tsc --noEmit` exit 0; 3 `npx expo lint` exit 0; 4 `npx expo-doctor` exit 1 (`ENOTFOUND registry.npmjs.org`; no retry); 5 Android export exit 0; 6 iOS export exit 0. Coverage: domain 98.32% lines/92.99% branches; pure src/lib 100%/100%; src/data 94.20%/87.47%.
+- O73 was added for physical-device edit/delete and restart persistence and is
+  Not run.
+
 ### P20-A-R3 reproduction checkpoint (2026-11-21)
 
 - Reviewed the Transactions pending-row path, shared `PendingItemActions`,
@@ -10596,6 +10771,30 @@ Gradle build, version bump, or release preparation was performed.
   update `1774ad1`. Documentation close-out and final git evidence follow in
   this same task commit. Task/phase PR integration remains pending until Gate 4
   succeeds. The exact PR and `--no-ff` merge commands are in the final report.
+
+### INTEGRATE-LOCAL-P20-U-R1 — local phase sync and task merge preparation (2026-11-22)
+
+- Synced `phase/20-budget` with the local `develop` tip using no-ff merge
+  `cb363423384923ef19f00399cd380baba01e9e59` (`chore(P20): sync
+  phase/20-budget with develop`). The local develop commit was PR #179; no
+  remote fetch, push, PR, or remote merge was performed in this task.
+- Merged the phase into `task/P20-U-R1-budget-edit-delete`. Text conflicts in
+  this ledger, `docs/memory/status.md`, and the device checklist retain both
+  P20-U-R1 and P20-A-R3 findings/status; O73 and O74 remain unique and Not run.
+  `docs/memory/open-items.md`, project summary and ledger/memory tests merged
+  automatically. No source-code conflict occurred, and no protected file or
+  `app/(tabs)/index.tsx` was changed. The combined dashboard remains 149/190
+  overall and P20 35/37; P20-U-R1 is Done and P20-A-R3 remains In progress
+  pending Gate 4 evidence. Focused verification exited 0 (12 suites, 364
+  tests). Ordered gates on task HEAD `becbd83c0b18051bf54a00904c6463bd2232f5b3`:
+  Gate 1 `npm test -- --coverage --watchman=false` exit 0 (105 suites,
+  1,424 passed, 1 skipped; 96.07/92.35/98.22/97.70% statements/branches/
+  functions/lines); Gate 2 `npx tsc --noEmit` exit 0; Gate 3 `npx expo lint`
+  exit 0; Gate 4 `npx expo-doctor` exit 1 (`npx` could not resolve
+  `expo-doctor` from `registry.npmjs.org`, `ENOTFOUND`); Gate 5 Android export
+  exit 0; Gate 6 iOS export exit 0. No Gate 4 retry. Protected-file hashes
+  match `docs/memory/rules.md`. O73 and O74 remain Not run.
+
 
 ### P20-W — Transaction form/category investigation (2026-11-21)
 
