@@ -55,10 +55,10 @@ runtime synchronization.
   pure utilities and platform helpers in `src/lib/`; demo data in `src/mock/`.
 - Other source groups: `src/hooks/`, `src/theme/`, `src/constants/`, `assets/`
   and `scripts/`.
-- Test counts: 103 suites, 1388 tests (1,387 passed; one skipped) on
-  2026-11-21. The full coverage run was 96.00/92.23/98.09/97.66% statements/
-  branches/functions/lines; final route-assertion additions were focused-tested.
-  See [status.md](status.md) for exact ordered-gate exits and the Gate 4 blocker.
+- Test counts: 105 suites, 1425 tests (1,424 passed; one skipped) on
+  2026-11-22. The full coverage run was 96.07/92.35/98.22/97.70% statements/
+  branches/functions/lines on the local P20-U-R1 integration task tree. See
+  [status.md](status.md) for exact ordered-gate exits and the Gate 4 blocker.
 - Latest synced P20-W Gate 1: 102 suites, 1369 tests (1,368 passed; one
   skipped), coverage 95.96/92.14/98.03/97.63% statements/branches/functions/
   lines. Gates 1–3 and 5–6 exited 0. Local Gate 4 attempt exited 1 with

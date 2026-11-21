@@ -45,7 +45,7 @@ import { Dropdown } from '../Dropdown';
 import { DueActions } from '../DueActions';
 import { IconButton } from '../IconButton';
 import { addDays, monthKey, shiftMonth } from '../../domain/dates';
-import { addIncomeItem, applyBudgetPlanToMonth } from '../../domain/budget';
+import { addIncomeItem, applyBudgetPlanToMonth, editBudgetIncome as editBudgetIncomeData } from '../../domain/budget';
 import { pendingItems } from '../../domain/pending';
 import { clearDue as clearDueDomain, duesThroughPreview, undoClearDue as undoClearDueDomain } from '../../domain/dues';
 import { liabilitySchedule, planSchedule } from '../../domain/schedule';
@@ -753,6 +753,57 @@ function openDropdown(
 }
 
 describe('route render smoke audit', () => {
+  it('reopens a following-scope income edit with its updated schedule', () => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const storeState = useAppStore((state) => state);
+    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+    const previousRouteData = { ...routeData };
+    const previousStoreData = storeState.data;
+    const previousParams = routeParams();
+    const month = monthKey(todayISO());
+    const updatedFirstDueMonth = shiftMonth(month, 2);
+    const income = {
+      id: 'contract-income', name: 'Contract work', category: 'Freelance' as const,
+      amount: 12_000, day: 5, frequency: 'quarterly' as const, firstDueMonth: month,
+    };
+    const plan = budgetPlanFromLines([], {
+      incomes: [income], repeatMonthly: true, repeatFrom: month,
+    });
+    const snapshot = monthBudgetFromLines(month, [], {
+      source: 'plan', incomes: [income], sections: plan.sections,
+    });
+    const data = { ...emptyAppData(todayISO()), budgetPlan: plan, monthBudgets: [snapshot] };
+    const updated = editBudgetIncomeData(data, month, {
+      incomeId: income.id,
+      values: {
+        name: income.name,
+        category: income.category,
+        amount: income.amount,
+        day: income.day,
+        frequency: 'yearly',
+        firstDueMonth: updatedFirstDueMonth,
+      },
+    }, 'following', todayISO());
+    Object.assign(routeData, updated);
+    storeState.data = updated;
+    routeParams.mockReturnValue({ month, incomeId: income.id, scope: 'following' });
+
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      renderer = renderScreen(React.createElement(BudgetIncomeFormScreen));
+      const frequency = renderer.root.findAllByType(Dropdown)
+        .find((node) => node.props.label === 'Frequency');
+      expect(frequency?.props.value).toBe('yearly');
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Income first due month' }).props.value)
+        .toBe(updatedFirstDueMonth);
+    } finally {
+      if (renderer) act(() => renderer?.unmount());
+      Object.assign(routeData, previousRouteData);
+      storeState.data = previousStoreData;
+      routeParams.mockReturnValue(previousParams);
+    }
+  });
+
   const screens: [string, React.ReactElement][] = [
     ['Security', React.createElement(SecurityScreen)],
     ['Reminders', React.createElement(RemindersScreen)],
