@@ -55,23 +55,22 @@ runtime synchronization.
   pure utilities and platform helpers in `src/lib/`; demo data in `src/mock/`.
 - Other source groups: `src/hooks/`, `src/theme/`, `src/constants/`, `assets/`
   and `scripts/`.
-- Test counts: 102 suites, 1369 tests (1,368 passed; one skipped) on
+- Test counts: 102 suites, 1382 tests (1,381 passed; one skipped) on
   2026-11-21.
-- Latest synced P20-W Gate 1: 102 suites, 1369 tests (1,368 passed; one
-  skipped), coverage 95.96/92.14/98.03/97.63% statements/branches/functions/
-  lines. Gates 1–3 and 5–6 exited 0. Local Gate 4 attempt exited 1 with
-  `ENOTFOUND registry.npmjs.org`; owner-supplied Gate 4 exited 1 at 20/21 on
-  the six known SDK 57 patch mismatches (owner-approved cleanup exception).
-  Dependencies and app config did not change since the owner run. D3 is
-  authorized to use v24 by DEC-P20W-D3-SCHEMA24; P36-A/B are replanned to v25.
-  O69–O72 remain Not run. P20-W gate evidence is recorded
+- Latest P20-W-D3 Gate 1: 102 suites, 1382 tests (1,381 passed; one
+  skipped), coverage 95.97/92.15/98.03/97.64% statements/branches/functions/
+  lines; `src/data` 91.12/87.51/94.53/94.21%, `src/domain`
+  96.93/92.97/98.81/98.32%, and pure `src/lib` 100% in all measures. Gates
+  2–3 and 5–6 exited 0. Gate 4 exited 1 with `ENOTFOUND registry.npmjs.org`
+  on its single attempt. O69–O72 remain Not run. P20-W gate evidence is recorded
   in [status.md](status.md) and the [progress ledger](../PROGRESS.md).
 - P20-W integration: task PR #174 merged into `phase/20-budget` at
   `419a37b07e6853b3c683d22ec243ea58223514c1`; phase PR #175 merged into `develop` at `9e47856f20848e03ac6a4b8e699f47c387d08161`.
   CM-2 synchronized local `develop`. P20-W-R1 records the merge evidence.
   D1/D2 are integrated. D3 implementation commit `f2541fd` widens earned-income
   categories under v24 and P36-A/B are replanned to v25; focused suites passed
-  (8 suites / 524 tests). Final gates and PR integration are pending.
+  (8 suites / 524 tests). Gates 1–3 and 5–6 passed; Gate 4 failed with the
+  documented DNS error. Task/phase PR integration is pending.
   Device checks O69–O72 remain Not run.
 - P21-F synced Gate 1 was 102 suites, 1,366 tests (1,365 passed; one skipped),
   coverage 95.96/92.14/98.03/97.63%. Gates 1–3 and 5–6 exited 0. Gate 4

@@ -16,7 +16,10 @@
   owner run. DEC-P20W-D3-SCHEMA24 resolves schema ownership: P20-W takes v24
   and P36-A/B are replanned to v25. D3 commit `f2541fd` adds custom income schemas/forms, identity
   v23→v24 migration, archive cleanup and backup compatibility. Focused checks
-  pass (8 suites / 524 tests); final gates and PR integration remain pending.
+  pass (8 suites / 524 tests). D3 gates: Gate 1 exit 0 (102 suites, 1,381
+  passed, one skipped; coverage 95.97/92.15/98.03/97.64%); Gates 2–3 and 5–6
+  exit 0; Gate 4 exit 1 (`ENOTFOUND registry.npmjs.org`) on its single attempt.
+  Task/phase PR integration remains pending.
   Physical checks O69–O72 remain Not run; O65–O68 belong to P21-F. Task PR #174 merged at `419a37b07e6853b3c683d22ec243ea58223514c1`; phase
   PR #175 merged at `9e47856f20848e03ac6a4b8e699f47c387d08161`; CM-2 synchronized local `develop`.
   P20-W-R1 records task PR #174 and phase PR #175; D3 schema ownership is
@@ -643,13 +646,14 @@
   historical records in [PROGRESS.md](../PROGRESS.md).
 - CR-108 baseline: 101 suites, 1317 tests (1316 passed, 1 skipped) on
   2026-11-11; all six CR-108 gates exited 0.
-- Test counts: 102 suites, 1369 tests (1,368 passed, 1 skipped) on
+- Test counts: 102 suites, 1382 tests (1,381 passed, 1 skipped) on
   2026-11-21.
-- Latest validated run: 102 suites, 1369 tests (1,368 passed, 1 skipped) on
-  2026-11-21 on the synced P20-W task tree; Gate 1 coverage was
-  95.96/92.14/98.03/97.63% statements/branches/functions/lines; Gates 1–3 and
-  5–6 exited 0. Gate 4 exited 1 with `ENOTFOUND registry.npmjs.org`. D3 is
-  authorized under v24; P36-A/B are replanned to v25. O69–O72 remain Not run.
+- Latest validated run: 102 suites, 1382 tests (1,381 passed, 1 skipped) on
+  2026-11-21 on the P20-W-D3 task tree; Gate 1 coverage was
+  95.97/92.15/98.03/97.64% statements/branches/functions/lines; Gates 1–3 and
+  5–6 exited 0. Gate 4 exited 1 with `ENOTFOUND registry.npmjs.org` on its
+  single attempt. D3 uses v24; P36-A/B are replanned to v25. O69–O72 remain
+  Not run.
   Coverage and exact commands are recorded in [PROGRESS.md](../PROGRESS.md).
 - All six P29-L gates exit 0: Jest coverage, TypeScript, Expo lint with zero
   warnings, Expo Doctor 21/21, Android export and iOS export. Exact commands

@@ -179,8 +179,9 @@ the phase branch is retained. Phase PR #147 merged into `develop` at
   trips. `.premigration.v23` is archived and removed by erase-all. Custom
   earned-income entry is available in the Budget income and Transaction forms;
   labels, filtering, and a deterministic demo override preserve the custom
-  value. Focused verification passed (8 suites / 524 tests); the six final
-  gates and PR integration are pending. O69–O72 remain Not run; O71 now checks
+  value. Focused verification passed (8 suites / 524 tests). Gates 1–3 and 5–6
+  passed; Gate 4 exited 1 with `ENOTFOUND registry.npmjs.org`. Task/phase PR
+  integration is pending. O69–O72 remain Not run; O71 now checks
   custom income persistence and reopening on device. **STOP GATE RESOLVED (DEC-P20W-D3-SCHEMA24,
   2026-11-21):** P20-W owns v24 and P36-A/B remain on v25.
   Placement: rule 3; searched dashboard, register, phase history, roadmap,
