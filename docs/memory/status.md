@@ -1,15 +1,24 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-21 | Updates: owner and AI agents -->
 
 # Status
-- **P20-U-R1 (2026-11-21) — Budget edit/delete defect fixed; device check open.**
+- **P20-U-R1 (2026-11-21) — In progress; route-to-persistence fix verified, expanded matrix and device check open.**
   The owner's explicit authorization superseded the earlier CR-115 hold. A
   60-edit/12-delete createAppStore matrix reproduced four following-scope
   Income schedule cases: changing start month or frequency for one-time or
   recurring income updated the plan but retained an old selected-month
   snapshot, which the form then read. Other tested edits and all deletes
-  persisted and rehydrated. The domain action now updates both plan and month.
-  Focused Budget/domain/store/route suites pass (4 suites, 358 tests). Six gates: 1 exit 0 (103 suites, 1,374 passed, 1 skipped); 2 exit 0; 3 exit 0; 4 exit 1 (`ENOTFOUND registry.npmjs.org`, no retry); 5–6 exit 0. Coverage: domain 98.32% lines/92.99% branches, pure src/lib 100%/100%, data 94.20%/87.47%. Schema remains v23. Test-first commits are `c7ff3a6` and `db4c338`; fix commit is
-  `2dc72b5`. O73 physical-device edit/delete/restart verification is Not run.
+  persisted and rehydrated in those store-only cases. A real Budget form to
+  store to persistence roundtrip then reproduced another item-edit failure:
+  clearing optional due-day/holding-ID fields spread the old item after the
+  changed values. `a292f33` fixes the ordering. The integrated harness passes
+  the amount/following edit, persisted plan/snapshot, rehydration, Budget
+  display/reopen, single-month and following deletion checks, and one-write
+  assertions. Remaining item fields, sections, kinds, viewed months, data
+  origins and H1/H2/H3/H5 checks are not yet run. The original income schedule
+  fix is `2dc72b5`; regression/fix for the new failure are `936ff8f` and
+  `a292f33`. Current six gates: 1 exit 0 (104 suites, 1,375 passed, 1
+  skipped); 2 exit 0; 3 exit 0; 4 exit 1 (`ENOTFOUND registry.npmjs.org`,
+  run once); 5–6 exit 0. O73 remains Not run. Schema remains v23.
   The AGENTS.md schema-v22 statement conflicts with code; `SCHEMA_VERSION` is
   23 and current memory is v23.
 - **P20-W (2026-11-21) — Transaction form D1/D2 in progress; D3 schema gate open.**
@@ -71,8 +80,8 @@
   it is not updating also while trying to delete it is not even deleting, not for
   single month and this and following months." The original "Don't start
   working on this" instruction was superseded by explicit owner authorization
-  on 2026-11-21. The P20-U-R1 investigation and schema-free fix are complete;
-  physical-device verification O73 remains open.
+  on 2026-11-21. P20-U-R1 remains In progress while the expanded owner-report
+  matrix is completed; physical-device verification O73 remains open.
 - **CR-114 (2026-11-12) — independent entities, empty slots and R7 merged into develop.**
   Work tracking restructured: `cleanup`, `qa-and-release`, `schema-migration`
   and `documentation` operate as independent lifecycle entities with dedicated
