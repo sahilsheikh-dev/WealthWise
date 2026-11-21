@@ -151,7 +151,7 @@ describe('permanent progress ledger', () => {
     expect(emergencyFund).toContain('three-month minimum floor');
     expect(emergencyFund).toContain('font-scale tests at 1.0/1.3/2.0');
     const transactionForm = dashboard.split('\n').find((line) => line.startsWith('| P20-W |')) ?? '';
-    expect(transactionForm).toContain('| In progress |');
+    expect(transactionForm).toContain('| In progress; Revised by P20-W-R1 |');
     expect(transactionForm).toContain('D1/D2 schema-free scope');
     expect(transactionForm).toContain('D3 remains Planned pending the owner schema-version decision');
     expect(emergencyFund).toContain('font-scale tests at 1.0/1.3/2.0');
@@ -242,7 +242,7 @@ describe('permanent progress ledger', () => {
     expect(register).toContain('| CR-117 |');
     expect(promptLog.split('\n').filter((line) => line.startsWith('| P20-U-R1 |'))).toHaveLength(1);
     expect(roadmap).toContain('P20-U-R1');
-    expect(branchIndex).toContain('| P20 | `phase/20-budget` | `phase-20-complete` | `eed40750f68bebc9168907f79f74a67c1f301b83` | 36 |');
+    expect(branchIndex).toContain('| P20 | `phase/20-budget` | `phase-20-complete` | `eed40750f68bebc9168907f79f74a67c1f301b83` | 37 |');
 
     // Entity checks: CR-115 belongs in documentation entity under Section 13
     expect(independentEntities).toContain('| CR-115 |');
@@ -337,7 +337,7 @@ describe('permanent progress ledger', () => {
     expect(placementMoves).toContain('P31-E');
     // Placement cutoff: CR-112. Earlier part rows are grandfathered; each
     // new or moved row introduced by this task is checked below.
-    for (const id of ['P21-F', 'P20-W', 'P43-F', 'P43-F-R1']) {
+    for (const id of ['P21-F', 'P20-W', 'P20-W-R1', 'P43-F', 'P43-F-R1']) {
       const rows = dashboard.split('\n').filter((line) => line.startsWith(`| ${id} |`));
       expect(rows).toHaveLength(1);
       expect(rows[0]).toMatch(/Placement: rule [1-5]; searched .+; related .+; reason:?.+/);
@@ -424,7 +424,7 @@ describe('permanent progress ledger', () => {
       'P18-R0', 'P18-R1', 'P18-R2', 'P18-R3', 'P18-R4', 'P18-R5',
       'P18-R6', 'P18-LEDGER', 'P18-R7',
       'P19-A', 'P19-B', 'P20-A', 'P20-A-R1', 'P20-A-R2', 'P20-A-R2-R1', 'P20-A-R3', 'P20-B', 'P20-C', 'P20-D', 'P20-E', 'P20-F',
-      'P20-G', 'P20-H', 'P20-I', 'P20-J', 'P20-K', 'P20-L', 'P20-M', 'P20-N', 'P20-N-R1', 'P20-N-R2', 'P20-O', 'P20-P', 'P20-Q', 'P20-R', 'P20-S', 'P20-S-R1', 'P20-S-R1-R1', 'P20-S-R2', 'P20-T', 'P20-U', 'P20-U-R1', 'P20-W', 'P21-A', 'P21-B', 'P21-C', 'P21-C1', 'P21-D', 'P21-F', 'P22-A', 'P23-A', 'P23-B', 'P24-A', 'P25-A', 'P25-B', 'P25-C', 'P25-D', 'P25-E', 'P26-A', 'P27-A',
+      'P20-G', 'P20-H', 'P20-I', 'P20-J', 'P20-K', 'P20-L', 'P20-M', 'P20-N', 'P20-N-R1', 'P20-N-R2', 'P20-O', 'P20-P', 'P20-Q', 'P20-R', 'P20-S', 'P20-S-R1', 'P20-S-R1-R1', 'P20-S-R2', 'P20-T', 'P20-U', 'P20-U-R1', 'P20-W', 'P20-W-R1', 'P21-A', 'P21-B', 'P21-C', 'P21-C1', 'P21-D', 'P21-F', 'P22-A', 'P23-A', 'P23-B', 'P24-A', 'P25-A', 'P25-B', 'P25-C', 'P25-D', 'P25-E', 'P26-A', 'P27-A',
       'P23-C', 'P23-D', 'P25-F',
       'P28-A', 'P28-A-R1', 'P28-B', 'P28-C', 'P28-C-R1', 'P28-C-R2', 'P28-C-R3', 'P28-C-R4', 'P28-D', 'P28-E', 'P28-E-R1', 'P28-E-R2', 'P28-E-R3', 'P28-E-R4', 'P28-E-R5', 'P28-E-R5-R1', 'P28-F', 'P28-F-R1', 'P28-F-R2', 'P28-F-R2-R1', 'P28-F-R3', 'P28-F-R3-R1', 'P28-F-R3-R2', 'P28-F-R3-R3', 'P28-F-R3-R3-R1', 'P28-F-R4', 'P28-F-R4-R1', 'P28-F-R4-R1-R1', 'P28-F-R4-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1-R1-R1', 'P28-F-R6-R2', 'P28-F-R6-R3', 'P28-F-R6-R3-R1',
       'P29-A', 'P29-B', 'P29-C', 'P29-D', 'P29-E', 'P29-F', 'P29-F2', 'P29-F3', 'P29-F4', 'P29-G', 'P29-H', 'P29-I', 'P29-J', 'P29-K', 'P29-L', 'P29-M', 'P29-N', 'P29-M2', 'P29-O', 'P29-O-R1', 'P29-O1-R1', 'P29-O1-R2', 'P29-O2', 'P29-Q', 'P29-R', 'P29-S', 'P29-T', 'P29-U', 'P29-V', 'P29-W', 'P29-W-R1', 'P29-W-R2', 'P29-X', 'P29-Y', 'P29-Z',
@@ -648,8 +648,8 @@ describe('permanent progress ledger', () => {
       const count = counts.get(phase);
       expect(count?.total).toBeGreaterThan(0);
       if (phase === 20) {
-        expect(count?.done).toBe(33);
-        expect(count?.total).toBe(36);
+        expect(count?.done).toBe(34);
+        expect(count?.total).toBe(37);
         expect(dashboard.split('\n').find((line) => line.startsWith('| P20-A-R2 |')))
           .toContain('Revised by P20-A-R2-R1 and P20-A-R3');
         expect(dashboard.split('\n').find((line) => line.startsWith('| P20-A-R3 |')))
@@ -1086,9 +1086,9 @@ describe('permanent progress ledger', () => {
     expect(revisionRow).toContain('phase PR #165');
     expect(registerRow).toContain('185a5ea125f64ac104344f00ad013d68cdb7a946');
     expect(registerRow).toContain('6b50a1d');
-    expect(phaseRow).toContain('| 36 |');
-    expect(ledger).toContain('Overall progress ████████░░ 78% (147/189)');
-    expect(ledger).toContain('P20         █████████░ 92% (33/36)');
+    expect(phaseRow).toContain('| 37 |');
+    expect(ledger).toContain('Overall progress ████████░░ 78% (148/190)');
+    expect(ledger).toContain('P20         █████████░ 92% (34/37)');
     expect(status).toContain('P20-S-R2-R1 records the verified');
   });
 
@@ -1106,6 +1106,8 @@ describe('permanent progress ledger', () => {
 
     expect(originalRow).toContain('In progress; Revised by P20-W-R1');
     expect(originalRow).toContain('D3 remains Planned pending the owner schema-version decision');
+    expect(originalRow).toContain('local Gate 4 attempt exit 1 (`ENOTFOUND registry.npmjs.org`)');
+    expect(originalRow).toContain('owner-supplied Gate 4 exit 1 (20/21 checks, six SDK 57 patch mismatches; owner-approved cleanup exception)');
     expect(revisionRow).toContain('| Done |');
     expect(revisionRow).toContain('task PR #174');
     expect(revisionRow).toContain('419a37b07e6853b3c683d22ec243ea58223514c1');

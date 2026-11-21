@@ -8,11 +8,21 @@
   TransactionForm/schema suites pass (68 tests). On the synced task tree,
   Gate 1 exited 0 (102 suites, 1,368 passed, 1 skipped; coverage
   95.96/92.14/98.03/97.63% statements/branches/functions/lines); Gates 2–3
-  exited 0; Gate 4 exited 1 with `ENOTFOUND registry.npmjs.org`; Gates 5–6
-  exited 0. D3 custom earned-income types still require changing validation,
+  exited 0; local Gate 4 attempt exited 1 with
+  `ENOTFOUND registry.npmjs.org`; owner-supplied Gate 4 exited 1 at 20/21 on
+  the six known SDK 57 patch mismatches (owner-approved cleanup exception);
+  Gates 5–6 exited 0. Dependencies and app config did not change since the
+  owner run. D3 custom earned-income types still require changing validation,
   backup and migration/archive behavior. It remains Planned pending the owner’s
   v24 ownership decision against P36-A/B. Physical checks O69–O72 remain Not
-  run; O65–O68 belong to P21-F. No PRs have been opened yet.
+  run; O65–O68 belong to P21-F. Task PR #174 merged at `419a37b07e6853b3c683d22ec243ea58223514c1`; phase
+  PR #175 merged at `9e47856f20848e03ac6a4b8e699f47c387d08161`; CM-2 synchronized local `develop`.
+  P20-W-R1 records task PR #174 and phase PR #175; D3 remains Planned.
+- **P20-W-R1 (2026-11-21) — integration evidence recorded; P20-W remains open for D3.**
+  Task PR #174 merged into `phase/20-budget` at `419a37b07e6853b3c683d22ec243ea58223514c1`; phase PR #175
+  merged into `develop` at `9e47856f20848e03ac6a4b8e699f47c387d08161`. CM-2 synchronized local `develop`.
+  D1/D2 are integrated. D3 remains Planned pending the P36 v24 schema-owner
+  decision; device checks O69–O72 remain Not run.
 - **P21-F / CR-117 (2026-11-21) — Emergency Fund target editing merged; P21-F-R1 records integration.**
   Read-only investigation confirms the existing persisted `Goal.target` is used;
   schema v23 and backup shape remain unchanged. DEC-P21F-FLOOR keeps the

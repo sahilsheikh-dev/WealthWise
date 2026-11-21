@@ -161,8 +161,15 @@ the phase branch is retained. Phase PR #147 merged into `develop` at
   Gates 2–3 exit 0 after fixture correction; Gate 4 and retry exit 1 with
   `ENOTFOUND registry.npmjs.org`; Gates 5–6 were not run. Synced-tree gates:
   Gate 1 exit 0 (102 suites, 1,368 passed, 1 skipped; coverage
-  95.96/92.14/98.03/97.63%); Gates 2–3 exit 0; Gate 4 exit 1 with the same
-  DNS error; Gates 5–6 exit 0. No PRs have been opened.
+  95.96/92.14/98.03/97.63%); Gates 2–3 exit 0; local Gate 4 attempt exit 1
+  (`ENOTFOUND registry.npmjs.org`); owner-supplied Gate 4 exit 1 (20/21, six
+  known SDK 57 patch mismatches; owner-approved cleanup exception); Gates 5–6
+  exit 0. Dependencies and app config did not change since the owner run. Task PR #174 merged at `419a37b07e6853b3c683d22ec243ea58223514c1`; phase
+  PR #175 merged at `9e47856f20848e03ac6a4b8e699f47c387d08161`; CM-2 synchronized local `develop`. P20-W
+  remains open for D3; O69–O72 remain Not run.
+
+  Integration evidence: P20-W-R1 records task PR #174 merge `419a37b07e6853b3c683d22ec243ea58223514c1` and
+  phase PR #175 merge `9e47856f20848e03ac6a4b8e699f47c387d08161`. D1/D2 are integrated; P20-W remains open for D3. O69–O72 remain Not run.
 
   D3 custom Income remains gated. Transaction `category` is already a bounded
   string, but scheduled earned-income `BudgetIncomeItem.category` is the fixed
