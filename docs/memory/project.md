@@ -1,4 +1,4 @@
-<!-- Purpose: Stable product and repository facts for AI contributors. | Last updated: 2026-11-11 | Updates: owner and AI agents -->
+<!-- Purpose: Stable product and repository facts for AI contributors. | Last updated: 2026-11-21 | Updates: owner and AI agents -->
 
 # Project
 
@@ -55,10 +55,12 @@ runtime synchronization.
   pure utilities and platform helpers in `src/lib/`; demo data in `src/mock/`.
 - Other source groups: `src/hooks/`, `src/theme/`, `src/constants/`, `assets/`
   and `scripts/`.
-- Test counts: 102 suites, 1343 tests (1342 passed; one skipped) on
-  2026-11-21 for P20-S-R2. Its task PR #164 and phase PR #165 are merged into
-  `develop` at `6b50a1d`; Gate 4 exited 1 on the documented Expo SDK 57 patch
-  mismatch after the required DNS retry; the other five gates exited 0. The
+- Test counts: 102 suites, 1365 tests (1364 passed; one skipped) on
+  2026-11-21 for P21-F. Gates 1–3 passed on the task branch; Expo Doctor and
+  its retry exited 1 with `ENOTFOUND registry.npmjs.org`, so Gates 5–6 were not
+  run. P20-S-R2's task PR #164 and phase PR #165 are merged into `develop` at
+  `6b50a1d`; its Gate 4 exited 1 on the documented Expo SDK 57 patch mismatch
+  after the required DNS retry; its other five gates exited 0. The
   prior CR-112 task-tree run had 101 suites, 1325 tests (1324 passed; one skipped) on
   2026-11-12. The prior CR-111 task-tree run had
   101 suites, 1,323 tests (1,322 passed; one skipped). The prior P42-A full

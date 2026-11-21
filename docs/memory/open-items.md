@@ -1,4 +1,4 @@
-<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-13 | Updates: owner and AI agents -->
+<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-21 | Updates: owner and AI agents -->
 
 # Open items
 
@@ -126,11 +126,12 @@ the phase branch is retained. Phase PR #147 merged into `develop` at
   the existing persisted Goal.target is reused; schema v23 and backup formats
   remain unchanged. DEC-P21F-FLOOR keeps the effective max(stored target,
   three-month floor) and rejects below-floor input with the existing typed
-  validation; the form will explain the floor. The Emergency Fund header action,
-  target form, single domain action/store write, Undo, target/bucket downstream
-  updates, demo data and v23 backup round-trips remain under implementation and
-  verification. Home source is still untouched; CR-113 authorizes an edit only
-  if a failing test proves it necessary. Device checks O65–O68 are Not run.
+  validation. Header action, shared target form, one domain/store write, Undo,
+  target/bucket reflection, demo fixture and v23 backup round-trip tests are
+  committed. Gates 1–3 passed; Expo Doctor and its retry exited 1 with
+  `ENOTFOUND registry.npmjs.org`. Per the stop rule, Android/iOS exports and PR
+  integration remain pending. Home source is untouched. Device checks O65–O68
+  are Not run.
   Placement: rule 4; searched dashboard, register, P21-A–E, phase history,
   roadmap, memory and Emergency Fund/Home/Goals modules; related P21-A–E;
   reason this extends the existing Emergency Fund feature area.
