@@ -1,6 +1,16 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-13 | Updates: owner and AI agents -->
 
 # Status
+- **P20-S-R2 / CR-116 (2026-11-21) — searchable Dropdown implementation complete.**
+  Task branch `task/P20-S-R2-dropdown-search` is based on `phase/20-budget`,
+  which includes the current `origin/develop` merge at `2e3e5ff`. Six ordered
+  gates completed: 1 exit 0 (102 suites, 1,342 passed, 1 skipped); 2 exit 0;
+  3 exit 0; 4 exit 1 (known SDK 57 patch mismatch after one DNS retry); 5 exit
+  0; 6 exit 0. The test-first ledger expectation is `36e8ba4`; helper,
+  component and focused route checks pass. **Assumed:** no schema, domain,
+  demo-data or dependency changes were needed; confirmed. Native keyboard,
+  result-count announcement, clear tap target and real-device 1.3/2.0 font
+  scale checks remain unverified (O61–O64). PR evidence follow-up remains.
 - **CR-115 (2026-11-13) — Budget edit and delete bug recorded as Planned (P20-U-R1).**
   Owner reported: "In budget while updating any item/value/amount/start-month/frequency/due-day/etc
   it is not updating also while trying to delete it is not even deleting, not for
@@ -586,10 +596,11 @@
   historical records in [PROGRESS.md](../PROGRESS.md).
 - CR-108 baseline: 101 suites, 1317 tests (1316 passed, 1 skipped) on
   2026-11-11; all six CR-108 gates exited 0.
-- Test counts: 101 suites, 1325 tests (1324 passed, 1 skipped) on
-  2026-11-12.
-- Latest validated run: 101 suites, 1325 tests (1324 passed, 1 skipped) on
-  2026-11-12 on the CR-112 task tree; all six ordered gates exited 0.
+- Test counts: 102 suites, 1343 tests (1342 passed, 1 skipped) on
+  2026-11-21.
+- Latest validated run: 102 suites, 1343 tests (1342 passed, 1 skipped) on
+  2026-11-21 on the P20-S-R2 task tree; gates 1–3, 5–6 exited 0 and Gate 4
+  exited 1 on the known Expo SDK 57 patch mismatch after one DNS retry.
   Coverage and exact commands are recorded in [PROGRESS.md](../PROGRESS.md).
 - All six P29-L gates exit 0: Jest coverage, TypeScript, Expo lint with zero
   warnings, Expo Doctor 21/21, Android export and iOS export. Exact commands

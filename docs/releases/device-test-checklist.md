@@ -91,6 +91,10 @@ version, and tester fields remain blank.
 | O58 | Verify financial flows on device: holding entries/valuations, linked transaction/goal/Emergency Fund updates and Undo, recurring-plan stop/resume, and liability closure/foreclosure. | Pass | Owner-reported, 2026-11-11. |
 | O59 | Verify backup/restore on device: encrypted export/import, wrong-passphrase handling, native file picker/share sheet, and erase-all. | Pass | Owner-reported, 2026-11-11. |
 | O60 | Verify Budget/list layouts: recurring holding/liability summaries, completed/pending counts and date ordering at larger font scales. | Pass | Owner-reported, 2026-11-11. |
+| O61 | Verify the searchable Dropdown keyboard remains usable and the sheet stays keyboard-safe on iOS and Android. | Not run | P20-S-R2; physical-device check required. |
+| O62 | Verify screen readers announce the filtered-result count politely on iOS and Android. | Not run | P20-S-R2; physical-device check required. |
+| O63 | Verify the Dropdown clear-search control meets the 44x44 pt tap target on iOS and Android. | Not run | P20-S-R2; physical-device check required. |
+| O64 | Verify searchable Dropdown row layout and operation at real-device font scales 1.3 and 2.0 on iOS and Android. | Not run | P20-S-R2; physical-device check required. |
 
 The owner reports O45-O60 passed on 2026-11-11. Device model, Android
 version, and tester fields were not supplied and remain blank.
