@@ -4,6 +4,7 @@ import TestRenderer, { act } from 'react-test-renderer';
 
 import EfAllocationFormScreen from '../../../app/ef-allocation-form';
 import EfBucketFormScreen from '../../../app/ef-bucket-form';
+import { emptyAppData } from '../../domain/actions';
 import { SUGGESTED_EF_ALLOCATION, type EfAllocation } from '../../domain/efAllocation';
 import { mockAppData } from '../../mock/data';
 import type { AppData } from '../../domain/types';
@@ -21,12 +22,16 @@ const mockSaveEfPlan = jest.fn((plan: {
   customBuckets: AppData['efCustomBuckets'];
   allocation: EfAllocation;
   links: AppData['efBucketLinks'];
+  target?: number;
 }) => {
   mockState.data = {
     ...mockState.data,
     efCustomBuckets: plan.customBuckets,
     efAllocation: plan.allocation,
     efBucketLinks: plan.links,
+    goals: plan.target === undefined
+      ? mockState.data.goals
+      : mockState.data.goals.map((goal) => goal.auto === 'ef' ? { ...goal, target: plan.target ?? goal.target } : goal),
   };
   mockState.writes += 1;
 });
@@ -261,7 +266,7 @@ describe('emergency-fund allocation form', () => {
       await Promise.resolve();
     });
     await act(async () => {
-      renderer.root.findByProps({ label: 'Save allocation' }).props.onPress();
+      renderer.root.findByProps({ label: 'Save changes' }).props.onPress();
       await Promise.resolve();
     });
 
@@ -285,6 +290,57 @@ describe('emergency-fund allocation form', () => {
     });
     const cashPercent = renderer.root.findByProps({ accessibilityLabel: 'Cash allocation percentage' });
     expect(cashPercent.props.size).toBe('compact');
+  });
+
+  it('edits the Emergency Fund target and allocation in one form and saves them together once', async () => {
+    const renderer = renderForm();
+    expect(renderer.root.findByType('form').props.title).toBe('Edit Emergency Fund');
+    const targetField = renderer.root.findByProps({ accessibilityLabel: 'Emergency fund target' });
+    const cashPercent = renderer.root.findByProps({ accessibilityLabel: 'Cash allocation percentage' });
+
+    await act(async () => {
+      targetField.props.onChangeText('480000');
+      cashPercent.props.onChangeText('25');
+      await Promise.resolve();
+    });
+    const bankPercent = renderer.root.findByProps({ accessibilityLabel: 'Bank account allocation percentage' });
+    await act(async () => {
+      bankPercent.props.onChangeText('25');
+      await Promise.resolve();
+    });
+    await act(async () => {
+      renderer.root.findByProps({ label: 'Save changes' }).props.onPress();
+      await Promise.resolve();
+    });
+
+    expect(mockSaveEfPlan).toHaveBeenCalledTimes(1);
+    expect(mockSaveEfPlan).toHaveBeenCalledWith(expect.objectContaining({
+      target: 480_000,
+      allocation: expect.objectContaining({ cash: 25, bank: 25 }),
+    }));
+    expect(mockState.data.goals.find((goal) => goal.auto === 'ef')?.target).toBe(480_000);
+    expect(mockState.writes).toBe(1);
+    expect(mockBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects a combined target below the three-month floor before saving the allocation', async () => {
+    const data = emptyAppData('2026-10-10');
+    data.settings.monthlySalary = 40_000;
+    data.goals[0] = { ...data.goals[0]!, target: 120_000 };
+    data.efAllocation = { ...SUGGESTED_EF_ALLOCATION };
+    mockState.data = data;
+    const renderer = renderForm();
+    const targetField = renderer.root.findByProps({ accessibilityLabel: 'Emergency fund target' });
+
+    await act(async () => {
+      targetField.props.onChangeText('100000');
+      targetField.props.onBlur();
+      await Promise.resolve();
+    });
+
+    expect(renderer.root.findByProps({ label: 'Save changes' }).props.disabled).toBe(true);
+    expect(mockSaveEfPlan).not.toHaveBeenCalled();
+    expect(mockState.writes).toBe(0);
   });
 
   it('shows only the three requested default items when no allocation is saved', () => {
@@ -313,11 +369,11 @@ describe('emergency-fund allocation form', () => {
       await Promise.resolve();
     });
 
-    expect(renderer.root.findByProps({ label: 'Save allocation' }).props.disabled).toBe(true);
+    expect(renderer.root.findByProps({ label: 'Save changes' }).props.disabled).toBe(true);
     expect(renderer.root.findAllByType('text').map((node) => node.children.join('')).join(' '))
       .toContain('Total: 99.99%');
     await act(async () => {
-      renderer.root.findByProps({ label: 'Save allocation' }).props.onPress();
+      renderer.root.findByProps({ label: 'Save changes' }).props.onPress();
       await Promise.resolve();
     });
     expect(mockSaveEfPlan).not.toHaveBeenCalled();

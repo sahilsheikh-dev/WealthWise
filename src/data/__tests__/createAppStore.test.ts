@@ -747,6 +747,47 @@ describe('createAppStore persistence', () => {
     expect(storage.setItemCalls - writes).toBe(0);
   });
 
+  it('saves the Emergency Fund target and allocation together in one write with exact one-step Undo', async () => {
+    const storage = new MemoryStorage();
+    const data = emptyAppData('2026-10-10');
+    data.transactions = [
+      { id: 'expense-jul', type: 'expense', amount: 20_000, category: 'Food', note: '', date: '2026-07-01' },
+      { id: 'expense-aug', type: 'expense', amount: 20_000, category: 'Food', note: '', date: '2026-08-01' },
+      { id: 'expense-sep', type: 'expense', amount: 20_000, category: 'Food', note: '', date: '2026-09-01' },
+    ];
+    data.goals[0] = { ...data.goals[0]!, target: 60_000 };
+    data.efAllocation = { ...SUGGESTED_EF_ALLOCATION, cash: 20, bank: 30 };
+    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data }, version: 23 }));
+    const store = makeStore(storage, { isDev: false });
+    await waitForHydration(store);
+    useUIStore.getState().setActionToast(null);
+    const before = store.getState().data;
+    const writes = storage.setItemCalls;
+
+    store.getState().actions.saveEfPlan({
+      customBuckets: before.efCustomBuckets,
+      allocation: { ...SUGGESTED_EF_ALLOCATION, cash: 10, bank: 40 },
+      links: before.efBucketLinks,
+      target: 90_000,
+    });
+
+    expect(storage.setItemCalls - writes).toBe(1);
+    expect(store.getState().data.goals.find((goal) => goal.auto === 'ef')?.target).toBe(90_000);
+    expect(store.getState().data.efAllocation).toMatchObject({ cash: 10, bank: 40 });
+    expect(useUIStore.getState().actionToast).toMatchObject({
+      message: 'Emergency fund updated',
+      actionLabel: 'Undo',
+      onAction: expect.any(Function),
+    });
+
+    const undo = useUIStore.getState().actionToast?.onAction;
+    if (!undo) throw new Error('Combined Emergency Fund edit Undo was not set.');
+    const beforeUndoWrites = storage.setItemCalls;
+    undo();
+    expect(storage.setItemCalls - beforeUndoWrites).toBe(1);
+    expect(store.getState().data).toEqual(before);
+  });
+
   it('erases the edited Emergency Fund target along with financial data', async () => {
     const storage = new MemoryStorage();
     const data = emptyAppData('2026-10-10');

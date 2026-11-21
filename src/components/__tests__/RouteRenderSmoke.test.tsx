@@ -13,7 +13,6 @@ import BudgetSectionFormScreen from '../../../app/budget-section-form';
 import ClearDuesScreen from '../../../app/clear-dues';
 import EfAllocationFormScreen from '../../../app/ef-allocation-form';
 import EfBucketFormScreen from '../../../app/ef-bucket-form';
-import EmergencyFundTargetFormScreen from '../../../app/ef-target-form';
 import EmergencyFundScreen from '../../../app/emergency-fund';
 import EraseDataScreen from '../../../app/erase-data';
 import GoalFormScreen from '../../../app/goal-form';
@@ -773,7 +772,6 @@ describe('route render smoke audit', () => {
     ['Insurance', React.createElement(InsuranceScreen)],
     ['Emergency fund allocation form', React.createElement(EfAllocationFormScreen)],
     ['Emergency fund allocation item form', React.createElement(EfBucketFormScreen)],
-    ['Emergency fund target form', React.createElement(EmergencyFundTargetFormScreen)],
     ['Erase data', React.createElement(EraseDataScreen)],
     ['Theme', React.createElement(ThemeScreen)],
     ['Link missing', React.createElement(LinkMissingScreen)],
@@ -818,52 +816,22 @@ describe('route render smoke audit', () => {
     mockFontScale = 1;
   });
 
-  it.each([1, 1.3, 2])('renders the Emergency Fund target form shell and Save at font scale %s', async (fontScale) => {
+  it.each([1, 1.3, 2])('renders the combined Emergency Fund editor at font scale %s', async (fontScale) => {
     mockFontScale = fontScale;
     let renderer: TestRenderer.ReactTestRenderer | undefined;
     await act(async () => {
-      renderer = renderScreen(React.createElement(EmergencyFundTargetFormScreen));
+      renderer = renderScreen(React.createElement(EfAllocationFormScreen));
       await Promise.resolve();
     });
-    if (!renderer) throw new Error(`Emergency Fund target form did not render at ${fontScale}x.`);
-    expect(visibleText(renderer)).toContain('Emergency fund target');
-    expect(findPressable(renderer, 'Save')).toBeDefined();
+    if (!renderer) throw new Error(`Combined Emergency Fund editor did not render at ${fontScale}x.`);
+    expect(visibleText(renderer)).toContain('Edit Emergency Fund');
+    expect(findPressable(renderer, 'Save changes')).toBeDefined();
     expect(renderer.root.findByProps({ accessibilityLabel: 'Emergency fund target' })).toBeDefined();
     expect(visibleText(renderer)).toContain('3 months of cover');
+    expect(renderer.root.findByProps({ accessibilityLabel: 'Cash allocation percentage' })).toBeDefined();
     act(() => renderer?.unmount());
     mockFontScale = 1;
     jest.clearAllMocks();
-  });
-
-  it('validates the target against its floor and saves the entered amount', async () => {
-    const storeState = useAppStore((state) => state);
-    jest.clearAllMocks();
-    mockFontScale = 1;
-    const renderer = renderScreen(React.createElement(EmergencyFundTargetFormScreen));
-    const targetField = renderer.root.findByProps({ accessibilityLabel: 'Emergency fund target' });
-    const save = findPressable(renderer, 'Save');
-
-    await act(async () => {
-      targetField.props.onChangeText('100000');
-      targetField.props.onBlur();
-      await Promise.resolve();
-    });
-    expect(save.props.disabled).toBe(true);
-    expect(targetField.props.error).toContain('at least 3 months of cover');
-    expect(storeState.actions.setEmergencyFundTarget).not.toHaveBeenCalled();
-
-    await act(async () => {
-      targetField.props.onChangeText('130000');
-      await Promise.resolve();
-    });
-    const validSave = findPressable(renderer, 'Save');
-    expect(validSave.props.disabled).toBe(false);
-    await act(async () => {
-      await validSave.props.onPress();
-      await Promise.resolve();
-    });
-    expect(storeState.actions.setEmergencyFundTarget).toHaveBeenCalledWith(130_000);
-    act(() => renderer.unmount());
   });
 
   it.each(screens)('%s renders without verb text', async (name, screen) => {
