@@ -8,6 +8,7 @@ import {
 import { emptyAppData } from '../actions';
 import { deleteHolding } from '../holdingActions';
 import { setGoalLinks } from '../goalLinks';
+import { GoalTargetBelowMinimumError } from '../goalActions';
 import { validateIntegrity } from '../links';
 import type { EfAllocation } from '../types';
 
@@ -20,6 +21,32 @@ const custom = (id: string, name = 'Safe box') => ({
 });
 
 describe('custom emergency-fund options', () => {
+  it('saves target and allocation as one immutable plan action while enforcing the floor', () => {
+    const data = {
+      ...empty(),
+      transactions: [
+        { id: 'expense-jul', type: 'expense' as const, amount: 20_000, category: 'Food', note: '', date: '2026-07-01' },
+        { id: 'expense-aug', type: 'expense' as const, amount: 20_000, category: 'Food', note: '', date: '2026-08-01' },
+        { id: 'expense-sep', type: 'expense' as const, amount: 20_000, category: 'Food', note: '', date: '2026-09-01' },
+      ],
+    };
+    const plan = {
+      customBuckets: [],
+      allocation: { cash: 10, bank: 40, 'fd-rd': 50 },
+      links: {},
+      target: 90_000,
+    };
+    const saved = saveEfPlan(data, plan, () => 'unused', { expenseBaseline: 20_000 });
+    expect(saved).not.toBe(data);
+    expect(saved.goals.find((goal) => goal.auto === 'ef')?.target).toBe(90_000);
+    expect(saved.efAllocation).toEqual(plan.allocation);
+    expect(data.goals.find((goal) => goal.auto === 'ef')?.target).toBe(300_000);
+
+    expect(() => saveEfPlan(data, { ...plan, target: 59_999 }, () => 'unused', { expenseBaseline: 20_000 }))
+      .toThrow(new GoalTargetBelowMinimumError(60_000));
+    expect(data.goals.find((goal) => goal.auto === 'ef')?.target).toBe(300_000);
+  });
+
   it('adds and edits custom item metadata through the saved-plan action at zero allocation', () => {
     const data = {
       ...empty(),
