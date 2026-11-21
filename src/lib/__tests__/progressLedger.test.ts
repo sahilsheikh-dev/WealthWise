@@ -1092,6 +1092,35 @@ describe('permanent progress ledger', () => {
     expect(status).toContain('P20-S-R2-R1 records the verified');
   });
 
+  it('records P20-W task and phase PR integration without closing D3', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const branchIndex = ledger.split('## 12. Phase branch index')[1]?.split('## 13. Independent entities')[0] ?? '';
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const originalRow = dashboard.split('\n').find((line) => line.startsWith('| P20-W |'));
+    const revisionRow = dashboard.split('\n').find((line) => line.startsWith('| P20-W-R1 |'));
+    const registerRow = register.split('\n').find((line) => line.startsWith('| P20-W-R1 |'));
+    const phaseRow = branchIndex.split('\n').find((line) => line.startsWith('| P20 |'));
+
+    expect(originalRow).toContain('In progress; Revised by P20-W-R1');
+    expect(originalRow).toContain('D3 remains Planned pending the owner schema-version decision');
+    expect(revisionRow).toContain('| Done |');
+    expect(revisionRow).toContain('task PR #174');
+    expect(revisionRow).toContain('419a37b07e6853b3c683d22ec243ea58223514c1');
+    expect(revisionRow).toContain('phase PR #175');
+    expect(revisionRow).toContain('9e47856f20848e03ac6a4b8e699f47c387d08161');
+    expect(registerRow).toContain('CM-2 synchronized local `develop`');
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| P20-W-R1 |'))).toHaveLength(1);
+    expect(phaseRow).toContain('| 37 |');
+    expect(ledger).toContain('Overall progress ████████░░ 78% (148/190)');
+    expect(ledger).toContain('P20         █████████░ 92% (34/37)');
+    expect(status).toContain('P20-W-R1 records task PR #174 and phase PR #175');
+    expect(openItems).toContain('P20-W remains open for D3');
+    expect(openItems).toContain('O69–O72 remain Not run');
+  });
+
   it('preserves every P20-S revision in its parent and adds the next correction row', () => {
     const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
     const originalRow = dashboard.split('\n').find((line) => line.startsWith('| P20-S |'));
