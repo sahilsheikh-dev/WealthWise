@@ -9,6 +9,7 @@ import {
   BUDGET_CATEGORIES,
   INVESTMENT_FORM_CATEGORIES,
   makeGoalFormSchema,
+  makeEmergencyFundTargetFormSchema,
   makeHoldingFormSchema,
   makeLiabilityFormSchema,
   makeLiabilityPaymentFormSchema,
@@ -581,6 +582,17 @@ describe('appDataSchema', () => {
       ...mockAppData,
       settings: { ...mockAppData.settings, theme: 'unknown' },
     }).success).toBe(false);
+  });
+});
+
+describe('Emergency Fund target form schema', () => {
+  it('requires a finite positive cent-precision target within the goal bound and above the three-month floor', () => {
+    const schema = makeEmergencyFundTargetFormSchema(60_000);
+    expect(schema.parse({ target: '60000.25' }).target).toBe(60_000.25);
+    expect(schema.safeParse({ target: '59999.99' }).success).toBe(false);
+    expect(schema.safeParse({ target: '0' }).success).toBe(false);
+    expect(schema.safeParse({ target: '12.345' }).success).toBe(false);
+    expect(schema.safeParse({ target: '10000000000.01' }).success).toBe(false);
   });
 });
 
