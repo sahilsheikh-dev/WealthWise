@@ -960,18 +960,14 @@ export function editBudgetIncome(
       : [...plan.incomes, updatedIncome],
   };
   if (!stored) return { ...data, budgetPlan: updatedPlan };
-  const scheduleChanged = (currentIncome.frequency ?? 'monthly') !== (updatedIncome.frequency ?? 'monthly')
-    || currentIncome.firstDueMonth !== updatedIncome.firstDueMonth;
   return {
     ...data,
     budgetPlan: updatedPlan,
     monthBudgets: monthRows(data).map((row) => row.month === month
-      ? scheduleChanged
-        ? row
-        : {
-          ...row,
-          incomes: row.incomes.map((income) => income.id === input.incomeId ? updatedIncome : income),
-        }
+      ? {
+        ...row,
+        incomes: row.incomes.map((income) => income.id === input.incomeId ? updatedIncome : income),
+      }
       : row),
   };
 }
