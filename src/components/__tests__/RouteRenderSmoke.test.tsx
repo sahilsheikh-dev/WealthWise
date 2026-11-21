@@ -815,6 +815,24 @@ describe('route render smoke audit', () => {
     mockFontScale = 1;
   });
 
+  it.each([1, 1.3, 2])('renders the combined Emergency Fund editor at font scale %s', async (fontScale) => {
+    mockFontScale = fontScale;
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    await act(async () => {
+      renderer = renderScreen(React.createElement(EfAllocationFormScreen));
+      await Promise.resolve();
+    });
+    if (!renderer) throw new Error(`Combined Emergency Fund editor did not render at ${fontScale}x.`);
+    expect(visibleText(renderer)).toContain('Edit Emergency Fund');
+    expect(findPressable(renderer, 'Save changes')).toBeDefined();
+    expect(renderer.root.findByProps({ accessibilityLabel: 'Emergency fund target' })).toBeDefined();
+    expect(visibleText(renderer)).toContain('3 months of cover');
+    expect(renderer.root.findByProps({ accessibilityLabel: 'Cash allocation percentage' })).toBeDefined();
+    act(() => renderer?.unmount());
+    mockFontScale = 1;
+    jest.clearAllMocks();
+  });
+
   it.each(screens)('%s renders without verb text', async (name, screen) => {
     let renderer: TestRenderer.ReactTestRenderer | undefined;
     await act(async () => {

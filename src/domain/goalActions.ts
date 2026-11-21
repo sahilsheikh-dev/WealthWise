@@ -18,6 +18,13 @@ export class GoalTargetBelowMinimumError extends Error {
   }
 }
 
+export class InvalidEmergencyFundTargetError extends Error {
+  constructor() {
+    super('Enter a positive Emergency Fund target with at most two decimal places, up to ₹10,000,000,000.');
+    this.name = 'InvalidEmergencyFundTargetError';
+  }
+}
+
 export type AddGoalInput = Omit<Goal, 'id' | 'auto' | 'links'> & { links?: Goal['links'] };
 export type GoalPatch = Partial<Pick<Goal, 'name' | 'target' | 'saved' | 'year' | 'auto' | 'links'>>;
 
@@ -47,6 +54,25 @@ export function updateGoal(
   const result = { ...data, goals: data.goals.map((goal) => goal.id === id ? { ...goal, ...patch } : goal) };
   if (patch.links !== undefined) validateGoalLinks(result, id, patch.links);
   return result;
+}
+
+export function updateEmergencyFundTarget(
+  data: AppData,
+  target: number,
+  options: { expenseBaseline: number },
+): AppData {
+  const targetInPaise = target * 100;
+  if (
+    !Number.isFinite(target)
+    || target <= 0
+    || target > 10_000_000_000
+    || Math.abs(targetInPaise - Math.round(targetInPaise)) > 0.00001
+  ) {
+    throw new InvalidEmergencyFundTargetError();
+  }
+  const goal = data.goals.find((item) => item.auto === 'ef');
+  if (!goal) throw new NotFoundError('Emergency fund goal', 'ef');
+  return updateGoal(data, goal.id, { target }, options);
 }
 
 export function deleteGoal(data: AppData, id: string): AppData {

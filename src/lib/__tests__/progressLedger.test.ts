@@ -146,8 +146,13 @@ describe('permanent progress ledger', () => {
     expect(roadmap).toMatch(/Documentation\s+reordering only; Git chronology remains unchanged/);
     expect(roadmap).toContain('list has not yet been supplied or approved');
     const emergencyFund = dashboard.split('\n').find((line) => line.startsWith('| P21-F |')) ?? '';
+    expect(emergencyFund).toContain('| In progress |');
+    expect(emergencyFund).toContain('effective target = max(stored target, three-month floor)');
     expect(emergencyFund).toContain('three-month minimum floor');
-    expect(emergencyFund).toContain('font-scale tests at 1.3/2.0');
+    expect(emergencyFund).toContain('font-scale tests at 1.0/1.3/2.0');
+    expect(emergencyFund).toContain('owner-supplied Gate 4 exit 1 (20/21; six SDK 57 patch mismatches)');
+    expect(emergencyFund).toContain('local Gate 4 attempt exit 1 (`ENOTFOUND registry.npmjs.org`)');
+    expect(emergencyFund).toContain('Gates 5–6 exit 0');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-W |')))
       .toContain('resolve schema/backup impact before any implementation');
     expect(roadmap).toContain('one issue per ledger part or CR');
@@ -214,6 +219,7 @@ describe('permanent progress ledger', () => {
     // Register and prompt log checks
     expect(register).toContain('| CR-115 |');
     expect(register).toContain('| CR-116 |');
+    expect(register).toContain('| CR-117 |');
     expect(promptLog.split('\n').filter((line) => line.startsWith('| P20-U-R1 |'))).toHaveLength(1);
     expect(roadmap).toContain('P20-U-R1');
     expect(branchIndex).toContain('| P20 | `phase/20-budget` | `phase-20-complete` | `eed40750f68bebc9168907f79f74a67c1f301b83` | 36 |');
@@ -222,7 +228,7 @@ describe('permanent progress ledger', () => {
     expect(independentEntities).toContain('| CR-115 |');
   });
 
-  it('records CR-113 owner approvals while keeping implementation Planned', () => {
+  it('records CR-113 owner approvals while P21-F proceeds under that authorization', () => {
     const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
     const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
     const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
