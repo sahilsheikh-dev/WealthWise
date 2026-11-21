@@ -17,22 +17,28 @@
   polite result-count announcements, clear-button tap target and font scales
   1.3/2.0. Track these as O61–O64 in the release device checklist.
 
-## Budget item/schedule edit and delete bug (P20-U-R1, Planned)
+## P20-U-R1 Budget edit/delete defect (automated implementation complete; device check open)
 
-- **P20-U-R1 (Planned; not started):** owner-reported defect in Budget route form
-  updating and deletion. Owner report (verbatim):
-  > "In budget while updating any item/value/amount/start-month/frequency/due-day/etc it is not updating also while trying to delete it is not even deleting, not for single month and this and following months."
-  Owner instruction: "Don't start working on this."
-  Affected fields: item, value, amount, start-month, frequency, due-day, etc.
-  Delete cases: single month and this and following months.
-  Open questions (as questions, not assumptions):
-  - Which Budget screens and sections (spend, invest, income schedules, one-time vs recurring)?
-  - Whether the bug is UI, store, or persistence?
-  - App/schema version and whether it began after a specific release or CR?
-  - Exact reproduction steps and expected behavior?
-  - Whether data on device persists after restart?
-  Dependencies: report-first investigation with a red regression test before any fix (R1), then a fix with all six ordered gates; physical-device check likely required (planned process, not authorized work).
-  Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and touched files; related P20-U; reason: defect in completed budget route form item/schedule updating and deletion.
+- CONT3 completed the owner-report matrix on the existing P20-U-R1 branch.
+  Confirmed root causes: Income plan/snapshot schedule mismatch fixed by
+  `2dc72b5`; optional-field item edit overwrite fixed by `a292f33`; and
+  category-line holding-link loss in both scopes fixed by `e4accf5`.
+- Automated form/store coverage includes item name, amount/value, start month,
+  frequency and due day; Spend, Invest and Income; one-time and recurring cases
+  where applicable; month-only and following edits/deletes; non-current viewed
+  month; backup restore and demo-data origin. Persistence and rehydration pass.
+  H1/H2/H5 are refuted for tested scenarios; H3 was not reproduced in tested
+  Budget routes (Alert/reminder entry points not exercised); H4 was confirmed
+  and fixed. Details and six gate results are in `docs/PROGRESS.md`.
+- O73 remains Not run: on a physical device, restart after edits/deletions and
+  verify persistence for Spend, Invest and Income, one-time/recurring items,
+  all fields, and both scopes.
+- Local-only PR preparation is complete at task commit
+  `becbd83c0b18051bf54a00904c6463bd2232f5b3`, after syncing
+  `phase/20-budget` with the locally available `develop` commit
+  `cb363423384923ef19f00399cd380baba01e9e59`. Gates 1–3 and 5–6 pass; Gate 4
+  could not resolve `expo-doctor` (`ENOTFOUND registry.npmjs.org`). No push or
+  PR was created; owner-side push/PR/merge remains pending. O73 is still Not run.
 
 ## CR-114 independent entities, empty slots and R7 (2026-11-12)
 
@@ -188,6 +194,12 @@ the phase branch is retained. Phase PR #147 merged into `develop` at
   memory, P20-W/P20-O/P20-P records and income/transaction form modules;
   related P20-W D1/D2 and P36-A/B; reason this widens the existing open
   Budget/category behavior after the owner resolved schema ownership.
+- Local D3 merge preparation is in progress on
+  `task/P20-W-D3-custom-earned-income`. PRs #178–#181 and their merge commits
+  are present in local refs; `phase/20-budget` is synced through
+  `b5f8c52477ba88dce1c376904c36dee72b84a092`. Gate reruns on the merged task
+  tree and owner-side PR integration remain pending. O71 is implemented but
+  Not run; O73 and O74 are unchanged and Not run.
 - **P43-E — GitHub issue strategy (plan only):** one issue per ledger part
   or CR; phase/type/status labels; release milestones; pending issues open;
   completed issues retrospective and closed; verified commits, PRs, merge
@@ -210,30 +222,36 @@ the phase branch is retained. Phase PR #147 merged into `develop` at
 
 ## CR-111 planned work
 
-CR-111's product work remains planning-only. P20-A-R3 is a revision to
-completed P20-A-R2; P44 is a new development phase; CM-2 is now Active and
-enforced outside the dashboard. Planned product rows retain dependencies and
-`Evidence: not started`.
-P20-A-R3 is integrated through task PR #149 (`7a5fed6c4a98d8394652e0dbb499b9aa810bae29`)
-and phase PR #150 (`4170545cbaa8a4f37d4583b5c29c909c0c99a015`).
+CR-111 includes P20-A-R3 implementation/tests (complete locally; PR integration
+blocked on Gate 4 network access), Planned P44-A–P44-D feature work, and active
+CM-2 repository procedure. P20-A-R3 revises completed P20-A-R2 and remains
+in progress until `npx expo-doctor` passes and task/phase PR integration can
+proceed. See [PROGRESS.md](../PROGRESS.md) for commits, actual gate exits and
+merge commands.
 
-- **P20-A-R3 — Linked one-time savings Paid from Transactions:** the
-  owner-reported behavior is not yet reproduced. Treat all causes as
-  hypotheses, not conclusions: the Transactions pending row may lack the
-  holding ID or viewed month and fall through to generic `addTransaction`;
-  a generated `Other investments` transaction may not match the Budget item
-  and create an unbudgeted actual; or a recurring item linked to a one-time
-  holding may generate a plan-style due unlinked to the manual holding.
-  Dependencies: none. Before any implementation, reproduce with a real
-  `createAppStore` store-level regression and a component test for each entry
-  point: Transactions, Budget, Home, `/payment-confirm` and reminders.
-  Expected: one Deposit on the holding, one linked invest transaction, the
-  same Budget item actual equals the paid amount, no new Budget row or
-  unbudgeted row, one persisted write and one-step Undo. Cover exact, lower
-  and higher amounts; Cash, Savings and Other holdings; exclude Fixed
-  deposit. No schema change is Assumed and must be verified during
-  implementation. Reserve the next free N checklist number for a future
-  physical-device check; none is claimed now.
+- **P20-A-R3 — Linked one-time savings Paid from Transactions:** real-store
+  regressions reproduced two storage-placement failures: a plan-only link was
+  absent from the displayed month snapshot and the pending row lost its
+  holding ID; a snapshot-only link in another month did not attribute a
+  holding-entry actual to the Budget line. The shared domain fix resolves the
+  holding link from the plan and retains actual attribution across stored
+  snapshots. H1 is confirmed for plan-only links; the H2 symptom is reproduced as
+  cross-month snapshot-link attribution, but the generic `Other investments`
+  transaction category alone is not the cause when the holding link is resolved.
+  H3 is refuted for a recurring Budget row linked to a manual one-time
+  holding. Tests cover real store-action creation and persistence rehydration,
+  current and different viewed months, plan-only/snapshot-only/both/neither
+  locations, following-scope creation then month-only edit, v20–v23 plain
+  backup import/migration, demo data, the real Transactions pending row,
+  `/payment-confirm`, and a cold-start reminder tap. Exact/lower/higher ×
+  Savings/Cash/Other cases and Fixed Deposit rejection remain covered. Home
+  lists only `kind === 'due'`; Budget shows counts for Budget pending items but
+  has no Paid action, so neither exposes the Budget-row Paid flow. The owner's
+  exact data origin and reproduction steps remain unknown. Gate 4 exited 1
+  (`ENOTFOUND registry.npmjs.org`); other ordered gates passed, with final
+  focused route tests, TypeScript and lint rerun after assertion strengthening.
+  Physical-device check O74 is Not run. No schema bump, dependency change or
+  protected-file edit.
 - **P44-A — Design:** owner approved a stack route opened by a Transactions
   header action; include all inflows as Income with a toggle to exclude
   non-earned inflows, and count linked investment transactions only as

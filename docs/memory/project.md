@@ -55,14 +55,19 @@ runtime synchronization.
   pure utilities and platform helpers in `src/lib/`; demo data in `src/mock/`.
 - Other source groups: `src/hooks/`, `src/theme/`, `src/constants/`, `assets/`
   and `scripts/`.
-- Test counts: 102 suites, 1382 tests (1,381 passed; one skipped) on
-  2026-11-21.
-- Latest P20-W-D3 Gate 1: 102 suites, 1382 tests (1,381 passed; one
+- Test counts: 105 suites, 1425 tests (1,424 passed; one skipped) on
+- Test counts record the most recent full run: 105 suites, 1425 tests
+  (1,424 passed; one skipped) on 2026-11-22, with coverage
+  96.07/92.35/98.22/97.70% statements/branches/functions/lines on the local
+  P20-U-R1 integration tree before D3 was merged. The merged D3 tree still
+  requires full ordered gates.
+- P20-W-D3's pre-merge Gate 1 was 102 suites, 1382 tests (1,381 passed; one
   skipped), coverage 95.97/92.15/98.03/97.64% statements/branches/functions/
   lines; `src/data` 91.12/87.51/94.53/94.21%, `src/domain`
   96.93/92.97/98.81/98.32%, and pure `src/lib` 100% in all measures. Gates
   2–3 and 5–6 exited 0. Gate 4 exited 1 with `ENOTFOUND registry.npmjs.org`
-  on its single attempt. O69–O72 remain Not run. P20-W gate evidence is recorded
+  on its single attempt. D3 uses schema v24; P36-A/B are replanned to v25.
+  O69–O72 remain Not run. P20-W gate evidence is recorded
   in [status.md](status.md) and the [progress ledger](../PROGRESS.md).
 - P20-W integration: task PR #174 merged into `phase/20-budget` at
   `419a37b07e6853b3c683d22ec243ea58223514c1`; phase PR #175 merged into `develop` at `9e47856f20848e03ac6a4b8e699f47c387d08161`.

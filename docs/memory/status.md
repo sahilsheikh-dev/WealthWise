@@ -1,8 +1,40 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-21 | Updates: owner and AI agents -->
 
 # Status
-- **P20-W (2026-11-21) — D1/D2 integrated; D3 implemented under schema v24.**
-  Schema version: v24.
+- **P20-U-R1 (2026-11-21) — Done; O73 physical-device restart check remains open.**
+  CONT3 completed the form/store/persistence matrix for reported fields,
+  sections, kinds and both scopes, plus non-current viewed months, plain-backup
+  restore, demo origin and H1–H5. Confirmed fixes: Income plan/snapshot
+  schedule mismatch (`2dc72b5`), optional-field item edit overwrite
+  (`a292f33`), and category-line holding-link loss (`e4accf5`). Name,
+  amount/value, start month, frequency and due day are covered; Spend, Invest
+  and Income include one-time/recurring cases where applicable. H1 is refuted
+  for the tested reopen flow; H2 for live update followed by selected-ID
+  deletion; H3 was not reproduced in tested Budget routes (Alert/reminder
+  entry points were not exercised); H4 is confirmed/fixed; H5 is refuted for
+  the synchronous test-storage path. O73 remains Not run. At P20-U-R1 closeout
+  the schema was v23; P20-W-D3 later advanced it to v24. U-R1 made no migration
+  or protected-file change. Final gates: 1 exit 0 (104 suites,
+  1,406 passed, 1 skipped); 2 exit 0 after test-only harness typing fixes;
+  3 exit 0; 4 exit 1 once (`ENOTFOUND registry.npmjs.org`); 5–6 exit 0.
+  Protected-file hashes match `docs/memory/rules.md`. O73 remains Not run.
+- **P20-U-R1 local integration prep (2026-11-22):** phase sync commit
+  `cb363423384923ef19f00399cd380baba01e9e59` incorporates local `develop`;
+  task branch `task/P20-U-R1-budget-edit-delete` includes the phase at merge
+  commit `becbd83c0b18051bf54a00904c6463bd2232f5b3`. Conflict resolution kept
+  both U-R1/A-R3 records and unique O73/O74 rows. Focused suites passed (12/364).
+  Gates 1–3 and 5–6 exited 0; Gate 4 exited 1 because `npx` could not resolve
+  `expo-doctor` from `registry.npmjs.org` (`ENOTFOUND`); it was not retried.
+  No remote fetch, push, PR or remote merge was performed. O73 remains Not run.
+- **P20-A-R3 linked savings Paid fix (2026-11-21) — implementation complete; Gate 4 blocks PR integration.** Real-store placement regressions reproduced a plan-only holding link being lost from a viewed month snapshot and a snapshot-only link failing to attribute a holding-entry transaction to the Budget item from another month. `pendingItems` now resolves a snapshot's link from its plan item; linked Budget actuals include stored month-snapshot links. Focused real Transactions and `/payment-confirm` route tests, reminder cold-start routing, real-store create/rehydration, v20–v23 plain-backup import/migration path, scope history and demo data pass. Exact/lower/higher × Savings/Cash/Other tests pass; Fixed deposit remains rejected. Home's due list filters to `kind === 'due'`; Budget has no Paid action for pending items. The owner-provided exact data origin and steps remain blank, so the synthetic failure shape is established but the exact device reproduction is still unknown. Six gates: Gate 1 exit 0 (103 suites, 1,387 passed, 1 skipped; coverage 96.00/92.23/98.09/97.66% statements/branches/functions/lines); Gate 2 exit 0; Gate 3 first exit 1 for test-harness lint, then exit 0 after correction; Gate 4 exit 1 (`ENOTFOUND registry.npmjs.org`); Gates 5–6 exit 0. After strengthening route Undo assertions, the focused 18-test suite, TypeScript and lint were rerun successfully. O74 is Not run. No schema, dependency or protected-file change. See the task row and final evidence in [PROGRESS.md](../PROGRESS.md).
+- **P20-W (2026-11-22) — D1/D2 integrated; D3 implemented under schema v24, local task merge prepared.**
+  Schema version is v24; D3 uses the existing custom earned-income category
+  field with its v23→v24 migration and backup compatibility. The merged task
+  tree's ordered gates remain to be run. Phase sync is
+  `b5f8c52477ba88dce1c376904c36dee72b84a092`; text conflicts in this file and
+  `project.md` retained both branches' records. O71 is Not run and covers
+  custom earned-income entry, persistence and reopening. P36-A/B are replanned
+  to v25.
   P20-S-R2 merge `6b50a1d` is on `develop`; phase `phase/20-budget` was
   synced from current `origin/develop`, and the task tree now includes that
   phase history. D1/D2 remain schema-free and implemented; focused
@@ -61,12 +93,13 @@
   result-count announcement, clear tap target and real-device 1.3/2.0 font
   scale checks remain unverified (O61–O64). P20-S-R2-R1 records the verified
   integration evidence; P20-S-R2-R2 preserves the complete revision chain.
-- **CR-115 (2026-11-13) — Budget edit and delete bug recorded as Planned (P20-U-R1).**
+- **CR-115 (2026-11-13) — Budget edit/delete report recorded under P20-U-R1.**
   Owner reported: "In budget while updating any item/value/amount/start-month/frequency/due-day/etc
   it is not updating also while trying to delete it is not even deleting, not for
-  single month and this and following months." Owner instruction: "Don't start working on this."
-  The defect is placed in P20 as Planned revision P20-U-R1 (rule 2, completed work revision of P20-U).
-  No investigation, reproduction, app code, schema, demo data or dependency changes were made; work on the bug is unstarted.
+  single month and this and following months." The original "Don't start
+  working on this" instruction was superseded by explicit owner authorization
+  on 2026-11-21. P20-U-R1 is Done after the complete automated owner-report
+  matrix; physical-device restart verification O73 remains open and Not run.
 - **CR-114 (2026-11-12) — independent entities, empty slots and R7 merged into develop.**
   Work tracking restructured: `cleanup`, `qa-and-release`, `schema-migration`
   and `documentation` operate as independent lifecycle entities with dedicated
@@ -93,17 +126,13 @@
   P43-G task PR #157 and phase PR #158 are merged; their exact merge commits
   are recorded in [PROGRESS.md](../PROGRESS.md).
   See [open-items.md](open-items.md) and [PROGRESS.md](../PROGRESS.md).
-- **CR-111 (2026-11-12) has Planned product work:** P20-A-R3 revises completed
-  P20-A-R2; new P44-A–P44-D plan a spending heat map. CM-2 is Active and
-  enforced as a repository rule, not a phase part. Planned product items keep
-  their dependencies and `Evidence: not started`. P20-A-R3 remains unimplemented and its
-  owner-reported behavior is not yet reproduced. P20 task PR #149 merged into
-  `phase/20-budget` at `7a5fed6c4a98d8394652e0dbb499b9aa810bae29`; phase PR
-  #150 merged into `develop` at
-  `4170545cbaa8a4f37d4583b5c29c909c0c99a015`. No app/schema/demo changes,
-  issue creation, tag operations or history rewrites. All six ordered gates
-  passed on the CR-111 task tree; Gate 1 had 101 suites, 1322 passed and
-  1 skipped. See [open-items.md](open-items.md) and [PROGRESS.md](../PROGRESS.md).
+- **CR-111 (2026-11-12):** P20-A-R3 implementation/tests are complete locally,
+  but Gate 4 network failure blocks task/phase PR integration. P44-A–P44-D
+  remain Planned; CM-2 is Active and enforced as a repository rule, not a phase
+  part. The earlier P20 planning PRs #149/#150 remain historical integrations.
+  Current P20-A-R3 work has no schema or demo-data changes; no issue creation,
+  tag operation or history rewrite occurred. See [open-items.md](open-items.md)
+  and [PROGRESS.md](../PROGRESS.md).
 - **CR-112 (2026-11-12) is complete:** R6, the indexed placement guide,
   ledger relocations, tests and CM-2 are complete on
   `task/P43-F-work-placement-rules`. Test-first commits include `e2f0263`,
@@ -507,7 +536,9 @@
   remote tag alignment are verified in P28-C-R3. The GitHub release body's
   stored `targetCommitish` still shows the original target because no release
   edit was made.
-- Schema version: v23 (`SCHEMA_VERSION` in `src/domain/schemas.ts`).
+- Current schema version: v24 (`SCHEMA_VERSION` in `src/domain/schemas.ts`);
+  P20-W-D3 added the v23→v24 migration. Earlier P29-AB work described below
+  introduced schema v22.
 - P29-AB is complete. Budget income recurrence supports monthly, quarterly,
   half-yearly and yearly frequencies, with a required first-due month for
   non-monthly items. Migration v21-to-v22 defaults existing income monthly
@@ -646,14 +677,14 @@
   historical records in [PROGRESS.md](../PROGRESS.md).
 - CR-108 baseline: 101 suites, 1317 tests (1316 passed, 1 skipped) on
   2026-11-11; all six CR-108 gates exited 0.
-- Test counts: 102 suites, 1382 tests (1,381 passed, 1 skipped) on
-  2026-11-21.
-- Latest validated run: 102 suites, 1382 tests (1,381 passed, 1 skipped) on
-  2026-11-21 on the P20-W-D3 task tree; Gate 1 coverage was
-  95.97/92.15/98.03/97.64% statements/branches/functions/lines; Gates 1–3 and
-  5–6 exited 0. Gate 4 exited 1 with `ENOTFOUND registry.npmjs.org` on its
-  single attempt. D3 uses v24; P36-A/B are replanned to v25. O69–O72 remain
-  Not run.
+- Test counts: 105 suites, 1425 tests (1,424 passed, 1 skipped) on
+- Latest full validated run before the D3 merge: 105 suites, 1425 tests
+  (1,424 passed, 1 skipped) on 2026-11-22; Gate 1 coverage was
+  96.07/92.35/98.22/97.70% statements/branches/functions/lines on the local
+  P20-U-R1 integration tree. Gates 1–3 and 5–6 exited 0; Gate 4 exited 1
+  because `npx` could not resolve `expo-doctor` from `registry.npmjs.org`
+  (`ENOTFOUND`). The merged D3 task tree still requires its ordered gates.
+  D3 uses v24; P36-A/B are replanned to v25. O69–O74 remain Not run.
   Coverage and exact commands are recorded in [PROGRESS.md](../PROGRESS.md).
 - All six P29-L gates exit 0: Jest coverage, TypeScript, Expo lint with zero
   warnings, Expo Doctor 21/21, Android export and iOS export. Exact commands
