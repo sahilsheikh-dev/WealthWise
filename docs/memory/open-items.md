@@ -9,7 +9,8 @@
   demo-data or dependency changes were needed. Existing callers need no edits.
 - Full six-gate run is complete. Gates 1–3 and 5–6 exited 0. Gate 4 exited 1
   after one DNS retry on the same known Expo SDK 57 patch mismatch (20/21
-  checks); dependencies were not changed. PR integration evidence remains.
+  checks); dependencies were not changed. Task PR #164 and phase PR #165 are
+  merged and recorded under P20-S-R2-R1; local `develop` was synchronized.
 - Physical-device checks are not run: keyboard behavior on iOS/Android,
   polite result-count announcements, clear-button tap target and font scales
   1.3/2.0. Track these as O61–O64 in the release device checklist.

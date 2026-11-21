@@ -56,7 +56,8 @@ runtime synchronization.
 - Other source groups: `src/hooks/`, `src/theme/`, `src/constants/`, `assets/`
   and `scripts/`.
 - Test counts: 102 suites, 1343 tests (1342 passed; one skipped) on
-  2026-11-21 for P20-S-R2. Gate 4 exited 1 on the documented Expo SDK 57 patch
+  2026-11-21 for P20-S-R2. Its task PR #164 and phase PR #165 are merged into
+  `develop` at `6b50a1d`; Gate 4 exited 1 on the documented Expo SDK 57 patch
   mismatch after the required DNS retry; the other five gates exited 0. The
   prior CR-112 task-tree run had 101 suites, 1325 tests (1324 passed; one skipped) on
   2026-11-12. The prior CR-111 task-tree run had

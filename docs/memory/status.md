@@ -2,15 +2,18 @@
 
 # Status
 - **P20-S-R2 / CR-116 (2026-11-21) — searchable Dropdown implementation complete.**
-  Task branch `task/P20-S-R2-dropdown-search` is based on `phase/20-budget`,
-  which includes the current `origin/develop` merge at `2e3e5ff`. Six ordered
+  Task branch `task/P20-S-R2-dropdown-search` merged into `phase/20-budget`
+  through PR #164 at `185a5ea125f64ac104344f00ad013d68cdb7a946`; phase PR #165
+  merged into `develop` at `6b50a1dbd36b401352776e71028fc07071c11991`.
+  CM-2 fast-forwarded local `develop` to that remote tip. Six ordered
   gates completed: 1 exit 0 (102 suites, 1,342 passed, 1 skipped); 2 exit 0;
   3 exit 0; 4 exit 1 (known SDK 57 patch mismatch after one DNS retry); 5 exit
   0; 6 exit 0. The test-first ledger expectation is `36e8ba4`; helper,
   component and focused route checks pass. **Assumed:** no schema, domain,
   demo-data or dependency changes were needed; confirmed. Native keyboard,
   result-count announcement, clear tap target and real-device 1.3/2.0 font
-  scale checks remain unverified (O61–O64). PR evidence follow-up remains.
+  scale checks remain unverified (O61–O64). P20-S-R2-R1 records the verified
+  integration evidence.
 - **CR-115 (2026-11-13) — Budget edit and delete bug recorded as Planned (P20-U-R1).**
   Owner reported: "In budget while updating any item/value/amount/start-month/frequency/due-day/etc
   it is not updating also while trying to delete it is not even deleting, not for
