@@ -154,9 +154,11 @@ export default function TransactionFormScreen() {
             ...(initialType === 'invest' ? INVESTMENT_FORM_CATEGORIES : TRANSACTION_CATEGORIES.expense),
             ...budgetItemCategoriesForTransaction(data, monthKey(initialDate), today, initialType),
           ];
-        return requestedCategoryParam && categories.some((category) => category === requestedCategoryParam)
-          ? requestedCategoryParam
-          : categories[0] ?? '';
+        if (initialType === 'invest') return '';
+        if (requestedCategoryParam && categories.some((category) => category === requestedCategoryParam)) {
+          return requestedCategoryParam;
+        }
+        return categories[0] ?? '';
       })(),
       instrumentId: undefined,
       linkToPolicy: false,
@@ -413,8 +415,10 @@ export default function TransactionFormScreen() {
                       field.onChange(type);
                       if (type !== 'invest') setValue('instrumentId', undefined, { shouldDirty: true, shouldValidate: true });
                       const categories = type === 'invest' ? INVESTMENT_FORM_CATEGORIES : TRANSACTION_CATEGORIES[type];
-                      if (!categories.some((value) => value === category)) {
-                        setValue('category', categories[0], { shouldDirty: true, shouldValidate: true });
+                      if (type === 'invest') {
+                        setValue('category', '', { shouldDirty: true, shouldValidate: true });
+                      } else if (!categories.some((value) => value === category)) {
+                        setValue('category', categories[0] ?? '', { shouldDirty: true, shouldValidate: true });
                       }
                     }}
                   />

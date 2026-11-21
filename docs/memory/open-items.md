@@ -134,10 +134,11 @@ the phase branch is retained. Phase PR #147 merged into `develop` at
 - **P20-W (Previously: P43-D) — Transaction form (D1/D2 In progress; D3 Planned):**
   P20-S-R2 is confirmed on `develop` at merge `6b50a1d`; phase sync commit
   `e44ce6f` and task branch `task/P20-W-transaction-form-categories` are ready.
-  D1 has no persisted-schema need: avoid defaulting an unselected investment to
-  “Mutual fund / SIP”; show a neutral category until a holding is selected,
-  derive with `investCategoryFor`, and block Save with the existing clear missing
-  holding message. D2 has no persisted-schema need: group effective-month
+  D1 is implemented without a persisted-schema change: a new Invest form starts
+  with a neutral category until a holding is selected, derives with
+  `investCategoryFor`, and blocks Save with the existing missing-holding
+  message. The focused TransactionForm suite passes (26 tests). D2 has no
+  persisted-schema need: group effective-month
   Budget expense items by section, show the selected item’s section as derived
   read-only context, and preserve transaction category strings when Budget
   items are deleted. Existing transactions store the item/category string, and

@@ -8,8 +8,9 @@
   found D1/D2 require no persisted schema change. D3 custom earned-income types
   require widening the existing BudgetIncomeItem category enum and the
   validation/backup/migration/archive chain. D3 remains Planned pending owner
-  choice of schema v24 ownership against P36-A/B. No app implementation has
-  started yet.
+  choice of schema v24 ownership against P36-A/B. D1 implementation is complete
+  and its focused TransactionForm suite passes (26 tests); D2 implementation
+  remains in progress.
 - **P20-S-R2 / CR-116 (2026-11-21) — searchable Dropdown implementation complete.**
   Task branch `task/P20-S-R2-dropdown-search` merged into `phase/20-budget`
   through PR #164 at `185a5ea125f64ac104344f00ad013d68cdb7a946`; phase PR #165
