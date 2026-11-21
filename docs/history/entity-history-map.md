@@ -2,6 +2,8 @@
 
 | Short SHA | Ledger Ref | Owning Entity | Docs-only? | Subject |
 |---|---|---|---|---|
+| `e5808c4` | CR-118 | documentation | Yes (documentation) | chore(docs): sync documentation with develop |
+| `fc50970` | CR-118 | documentation | No | test(docs): assert owner-run action tracking rule |
 | `d36103e` | P20-S-R1-R1 | P20 (budget) | No | feat(forms): standardize dropdowns and input titles |
 | `a2fa24f` | P43-A | P43 (lifecycle setup) | No | cleanup: remove P27-A Cleanup Audit Report |
 | `5cb4957` | CR-108 | documentation | Yes (documentation) | Merge pull request #109 from sahilsheikh-dev/phase/41-types-frequency-completion |
@@ -279,7 +281,169 @@
 | `5a2572e` | CR-96 | unknown | No | feat: apply Budget scope choices immediately |
 
 
+| `1fce4dd` | not recorded locally | documentation | Yes (documentation) | Merge pull request #8 from sahilsheikh-dev/release/v1.1.0 |
+| `da11170` | not recorded locally | documentation | Yes (documentation) | Merge pull request #9 from sahilsheikh-dev/release/v1.1.0 |
+| `5451692` | main | documentation | Yes (documentation) | Merge pull request #10 from sahilsheikh-dev/main |
+| `0120604` | P28-F-R3-R1-PR-INTEGRATION-RECORD | P28-F-R3-R1-PR-INTEGRATION-RECORD | No | Merge pull request #16 from sahilsheikh-dev/task/P28-F-R3-R1-pr-integration-record |
+| `74a9f16` | phase/28-qa-and-release | 28-qa-and-release | No | Merge pull request #17 from sahilsheikh-dev/phase/28-qa-and-release |
+| `ed9b9c7` | develop | develop | No | Merge pull request #18 from sahilsheikh-dev/develop |
+| `c4fe7fd` | not recorded locally | not recorded locally | No | Merge pull request #19 from sahilsheikh-dev/release/v1.1.0 |
+| `e898737` | main | main | Yes (documentation) | Merge pull request #20 from sahilsheikh-dev/main |
+| `bd6b5ef` | P28-F-R3-R3-R1-GITHUB-INTEGRATION-RECORD | documentation | Yes (documentation) | Merge pull request #26 from sahilsheikh-dev/task/P28-F-R3-R3-R1-github-integration-record |
+| `e2f8823` | phase/28-qa-and-release | documentation | Yes (documentation) | Merge pull request #27 from sahilsheikh-dev/phase/28-qa-and-release |
+| `f1cff7b` | develop | documentation | Yes (documentation) | Merge pull request #28 from sahilsheikh-dev/develop |
+| `eeaabd4` | not recorded locally | documentation | Yes (documentation) | Merge pull request #29 from sahilsheikh-dev/release/v1.1.0 |
+| `2f4e706` | main | main | Yes (documentation) | Merge pull request #30 from sahilsheikh-dev/main |
+| `7af7698` | phase/29-income-recurrence | 29-income-recurrence | No | Merge pull request #36 from sahilsheikh-dev/phase/29-income-recurrence |
+| `5aa3b03` | develop | develop | No | Merge pull request #37 from sahilsheikh-dev/develop |
+| `7bea8e6` | not recorded locally | not recorded locally | No | Merge pull request #38 from sahilsheikh-dev/release/v1.1.0 |
+| `67c5b01` | P20-A-R2-LINKED-MANUAL-SAVINGS | P20-A-R2-LINKED-MANUAL-SAVINGS | No | Merge pull request #40 from sahilsheikh-dev/task/P20-A-R2-linked-manual-savings |
+| `3433ead` | phase/20-budget | 20-budget | No | Merge pull request #41 from sahilsheikh-dev/phase/20-budget |
+| `b5065ce` | phase/28-qa-and-release | 28-qa-and-release | No | Merge pull request #51 from sahilsheikh-dev/phase/28-qa-and-release |
+| `ee6deae` | P28-E-R5-R1-RECORD-DEVELOP-MERGE | P28-E-R5-R1-RECORD-DEVELOP-MERGE | No | Merge pull request #54 from sahilsheikh-dev/task/P28-E-R5-R1-record-develop-merge |
+| `c939458` | phase/28-qa-and-release | 28-qa-and-release | No | Merge pull request #55 from sahilsheikh-dev/phase/28-qa-and-release |
+| `8bd1caf` | P28-F-R4-R1-R1-R1-R1-INTEGRATION-RECORD | documentation | Yes (documentation) | Merge pull request #62 from sahilsheikh-dev/task/P28-F-R4-R1-R1-R1-R1-integration-record |
+| `b534de4` | phase/28-qa-and-release | documentation | Yes (documentation) | Merge pull request #63 from sahilsheikh-dev/phase/28-qa-and-release |
+| `b5d9d1c` | P28-F-R4-R1-R1-R1-R1-R1-INTEGRATION-RECORD | P28-F-R4-R1-R1-R1-R1-R1-INTEGRATION-RECORD | No | Merge pull request #66 from sahilsheikh-dev/task/P28-F-R4-R1-R1-R1-R1-R1-integration-record |
+| `49199ee` | P28-F-R4-R1-R1-R1-R1-R1-R1-RELEASE-AND-METADATA | P28-F-R4-R1-R1-R1-R1-R1-R1-RELEASE-AND-METADATA | No | Merge pull request #67 from sahilsheikh-dev/task/P28-F-R4-R1-R1-R1-R1-R1-R1-release-and-metadata |
+| `8ab1e18` | phase/28-qa-and-release | 28-qa-and-release | No | Merge pull request #68 from sahilsheikh-dev/phase/28-qa-and-release |
+| `7c9d2c0` | P28-F-R4-R1-R1-R1-R1-R1-R1-R1-RELEASE-FINALIZATION | P28-F-R4-R1-R1-R1-R1-R1-R1-R1-RELEASE-FINALIZATION | No | Merge pull request #71 from sahilsheikh-dev/task/P28-F-R4-R1-R1-R1-R1-R1-R1-R1-release-finalization |
+| `f6e8bc7` | phase/28-qa-and-release | 28-qa-and-release | No | Merge pull request #72 from sahilsheikh-dev/phase/28-qa-and-release |
+| `9c6122f` | not recorded locally | not recorded locally | No | Merge pull request #73 from sahilsheikh-dev/release/v1.1.1 |
+| `6b05698` | main | main | Yes (documentation) | Merge pull request #74 from sahilsheikh-dev/main |
+| `c09eb74` | CR-104-REMOTE-BRANCH-AUDIT | documentation | Yes (documentation) | Merge pull request #75 from sahilsheikh-dev/task/CR-104-remote-branch-audit |
+| `5e43430` | phase/28-qa-and-release | documentation | Yes (documentation) | Merge pull request #76 from sahilsheikh-dev/phase/28-qa-and-release |
+| `15549f5` | not recorded locally | documentation | Yes (documentation) | Merge pull request #77 from sahilsheikh-dev/release/v1.1.1 |
+| `e43976b` | main | main | Yes (documentation) | Merge pull request #78 from sahilsheikh-dev/main |
+| `6f1f3ac` | CR-105-EXPLICIT-AGENT-APK-HANDOFF | CR-105-EXPLICIT-AGENT-APK-HANDOFF | No | Merge pull request #79 from sahilsheikh-dev/task/CR-105-explicit-agent-apk-handoff |
+| `330b331` | phase/28-qa-and-release | 28-qa-and-release | No | Merge pull request #80 from sahilsheikh-dev/phase/28-qa-and-release |
+| `c9713a9` | CR-106-ROADMAP-EXTERNAL-GUIDES | CR-106-ROADMAP-EXTERNAL-GUIDES | No | Merge pull request #81 from sahilsheikh-dev/task/CR-106-roadmap-external-guides |
+| `43ccf79` | phase/28-qa-and-release | 28-qa-and-release | No | Merge pull request #82 from sahilsheikh-dev/phase/28-qa-and-release |
+| `d6cc568` | phase/28-qa-and-release | 28-qa-and-release | No | Merge pull request #86 from sahilsheikh-dev/phase/28-qa-and-release |
+| `c8a58ab` | develop | develop | No | Merge pull request #87 from sahilsheikh-dev/develop |
+| `8da39bd` | main | main | Yes (documentation) | Merge pull request #88 from sahilsheikh-dev/main |
+| `a51127a` | CR-107-FINAL-EVIDENCE | CR-107-FINAL-EVIDENCE | No | Merge pull request #89 from sahilsheikh-dev/task/CR-107-final-evidence |
+| `b8324b7` | phase/28-qa-and-release | 28-qa-and-release | No | Merge pull request #90 from sahilsheikh-dev/phase/28-qa-and-release |
+| `66c365c` | develop | develop | No | Merge pull request #91 from sahilsheikh-dev/develop |
+| `712aadd` | main | main | Yes (documentation) | Merge pull request #92 from sahilsheikh-dev/main |
+| `14c079a` | P41-B-R1-FINAL-EVIDENCE | P41-B-R1-FINAL-EVIDENCE | No | Merge pull request #110 from sahilsheikh-dev/task/P41-B-R1-final-evidence |
+| `31df9ea` | phase/41-types-frequency-completion | 41-types-frequency-completion | No | Merge pull request #111 from sahilsheikh-dev/phase/41-types-frequency-completion |
+| `0c427c2` | phase/28-qa-and-release | 28-qa-and-release | No | Merge pull request #135 from sahilsheikh-dev/phase/28-qa-and-release |
+| `8abfc9c` | develop | develop | No | Merge pull request #136 from sahilsheikh-dev/develop |
+| `6a7c248` | main | main | Yes (documentation) | Merge pull request #137 from sahilsheikh-dev/main |
+| `9d91463` | P28-F-R6-R3-R1-RECORD-DEVELOP-MERGE | P28-F-R6-R3-R1-RECORD-DEVELOP-MERGE | No | Merge pull request #140 from sahilsheikh-dev/task/P28-F-R6-R3-R1-record-develop-merge |
+| `f252a6d` | phase/28-qa-and-release | 28-qa-and-release | No | Merge pull request #141 from sahilsheikh-dev/phase/28-qa-and-release |
+| `3ff05e0` | P42-A-R1-INTEGRATION-EVIDENCE | P42-A-R1-INTEGRATION-EVIDENCE | No | Merge pull request #144 from sahilsheikh-dev/task/P42-A-R1-integration-evidence |
+| `7342c20` | phase/42-owner-decision-reconciliation | 42-owner-decision-reconciliation | No | Merge pull request #145 from sahilsheikh-dev/phase/42-owner-decision-reconciliation |
+| `1229cc3` | phase/43-lifecycle-and-transaction-planning | documentation | Yes (documentation) | Merge pull request #148 from sahilsheikh-dev/phase/43-lifecycle-and-transaction-planning |
+| `8ed8362` | P43-F-R1-RECORD-MERGE-EVIDENCE | P43-F-R1-RECORD-MERGE-EVIDENCE | No | Merge pull request #155 from sahilsheikh-dev/task/P43-F-R1-record-merge-evidence |
+| `4a8961e` | phase/43-lifecycle-and-transaction-planning | 43-lifecycle-and-transaction-planning | No | Merge pull request #156 from sahilsheikh-dev/phase/43-lifecycle-and-transaction-planning |
+| `9058386` | documentation | documentation | No | Merge pull request #161 from sahilsheikh-dev/documentation |
+| `a6a980e` | documentation | documentation | Yes (documentation) | Merge pull request #162 from sahilsheikh-dev/documentation |
+| `bfe86c5` | documentation | documentation | No | Merge pull request #163 from sahilsheikh-dev/documentation |
+| `185a5ea` | P20-S-R2-DROPDOWN-SEARCH | P20-S-R2-DROPDOWN-SEARCH | No | Merge pull request #164 from sahilsheikh-dev/task/P20-S-R2-dropdown-search |
+| `6b50a1d` | phase/20-budget | 20-budget | No | Merge pull request #165 from sahilsheikh-dev/phase/20-budget |
+| `c01add0` | P20-S-R2-R1-INTEGRATION-EVIDENCE | P20-S-R2-R1-INTEGRATION-EVIDENCE | No | Merge pull request #166 from sahilsheikh-dev/task/P20-S-R2-R1-integration-evidence |
+| `3a1cf8e` | phase/20-budget | 20-budget | No | Merge pull request #167 from sahilsheikh-dev/phase/20-budget |
+| `1ba5a76` | P20-S-R2-R2-RETAIN-REVISION-HISTORY | P20-S-R2-R2-RETAIN-REVISION-HISTORY | No | Merge pull request #168 from sahilsheikh-dev/task/P20-S-R2-R2-retain-revision-history |
+| `3473c61` | phase/20-budget | 20-budget | No | Merge pull request #169 from sahilsheikh-dev/phase/20-budget |
+| `c877f6d` | P21-F-EMERGENCY-FUND-TARGET-EDITING | P21-F-EMERGENCY-FUND-TARGET-EDITING | No | Merge pull request #170 from sahilsheikh-dev/task/P21-F-emergency-fund-target-editing |
+| `2e5e18a` | phase/21-emergency-fund | 21-emergency-fund | No | Merge pull request #171 from sahilsheikh-dev/phase/21-emergency-fund |
+| `f12b7c4` | P21-F-R1-RECORD-MERGE-EVIDENCE | P21-F-R1-RECORD-MERGE-EVIDENCE | No | Merge pull request #172 from sahilsheikh-dev/task/P21-F-R1-record-merge-evidence |
+| `aab0131` | phase/21-emergency-fund | 21-emergency-fund | No | Merge pull request #173 from sahilsheikh-dev/phase/21-emergency-fund |
+| `419a37b` | P20-W-TRANSACTION-FORM-CATEGORIES | P20-W-TRANSACTION-FORM-CATEGORIES | No | Merge pull request #174 from sahilsheikh-dev/task/P20-W-transaction-form-categories |
+| `9e47856` | phase/20-budget | 20-budget | No | Merge pull request #175 from sahilsheikh-dev/phase/20-budget |
+| `4084fa4` | P20-W-R1-RECORD-MERGE-EVIDENCE | P20-W-R1-RECORD-MERGE-EVIDENCE | No | Merge pull request #176 from sahilsheikh-dev/task/P20-W-R1-record-merge-evidence |
+| `4c51f6d` | phase/20-budget | 20-budget | No | Merge pull request #177 from sahilsheikh-dev/phase/20-budget |
+| `e1e2fc9` | P20-A-R3-LINKED-SAVINGS-PAID-TRANSACTIONS | P20-A-R3-LINKED-SAVINGS-PAID-TRANSACTIONS | No | Merge pull request #178 from sahilsheikh-dev/task/P20-A-R3-linked-savings-paid-transactions |
+| `f7d40f4` | phase/20-budget | 20-budget | No | Merge pull request #179 from sahilsheikh-dev/phase/20-budget |
+| `5cf3360` | P20-U-R1-BUDGET-EDIT-DELETE | P20-U-R1-BUDGET-EDIT-DELETE | No | Merge pull request #180 from sahilsheikh-dev/task/P20-U-R1-budget-edit-delete |
+| `22f332f` | phase/20-budget | 20-budget | No | Merge pull request #181 from sahilsheikh-dev/phase/20-budget |
+| `4ee154b` | P20-W-D3-CUSTOM-EARNED-INCOME | P20-W-D3-CUSTOM-EARNED-INCOME | No | Merge pull request #182 from sahilsheikh-dev/task/P20-W-D3-custom-earned-income |
+| `b3fa175` | phase/20-budget | 20-budget | No | Merge pull request #183 from sahilsheikh-dev/phase/20-budget |
+
 ## PR Mapping
+| #8 | not recorded locally |
+| #9 | not recorded locally |
+| #10 | main |
+| #16 | P28-F-R3-R1-PR-INTEGRATION-RECORD |
+| #17 | phase/28-qa-and-release |
+| #18 | develop |
+| #19 | not recorded locally |
+| #20 | main |
+| #26 | P28-F-R3-R3-R1-GITHUB-INTEGRATION-RECORD |
+| #27 | phase/28-qa-and-release |
+| #28 | develop |
+| #29 | not recorded locally |
+| #30 | main |
+| #36 | phase/29-income-recurrence |
+| #37 | develop |
+| #38 | not recorded locally |
+| #40 | P20-A-R2-LINKED-MANUAL-SAVINGS |
+| #41 | phase/20-budget |
+| #51 | phase/28-qa-and-release |
+| #54 | P28-E-R5-R1-RECORD-DEVELOP-MERGE |
+| #55 | phase/28-qa-and-release |
+| #62 | P28-F-R4-R1-R1-R1-R1-INTEGRATION-RECORD |
+| #63 | phase/28-qa-and-release |
+| #66 | P28-F-R4-R1-R1-R1-R1-R1-INTEGRATION-RECORD |
+| #67 | P28-F-R4-R1-R1-R1-R1-R1-R1-RELEASE-AND-METADATA |
+| #68 | phase/28-qa-and-release |
+| #71 | P28-F-R4-R1-R1-R1-R1-R1-R1-R1-RELEASE-FINALIZATION |
+| #72 | phase/28-qa-and-release |
+| #73 | not recorded locally |
+| #74 | main |
+| #75 | CR-104-REMOTE-BRANCH-AUDIT |
+| #76 | phase/28-qa-and-release |
+| #77 | not recorded locally |
+| #78 | main |
+| #79 | CR-105-EXPLICIT-AGENT-APK-HANDOFF |
+| #80 | phase/28-qa-and-release |
+| #81 | CR-106-ROADMAP-EXTERNAL-GUIDES |
+| #82 | phase/28-qa-and-release |
+| #86 | phase/28-qa-and-release |
+| #87 | develop |
+| #88 | main |
+| #89 | CR-107-FINAL-EVIDENCE |
+| #90 | phase/28-qa-and-release |
+| #91 | develop |
+| #92 | main |
+| #110 | P41-B-R1-FINAL-EVIDENCE |
+| #111 | phase/41-types-frequency-completion |
+| #135 | phase/28-qa-and-release |
+| #136 | develop |
+| #137 | main |
+| #140 | P28-F-R6-R3-R1-RECORD-DEVELOP-MERGE |
+| #141 | phase/28-qa-and-release |
+| #144 | P42-A-R1-INTEGRATION-EVIDENCE |
+| #145 | phase/42-owner-decision-reconciliation |
+| #148 | phase/43-lifecycle-and-transaction-planning |
+| #155 | P43-F-R1-RECORD-MERGE-EVIDENCE |
+| #156 | phase/43-lifecycle-and-transaction-planning |
+| #161 | documentation |
+| #162 | documentation |
+| #163 | documentation |
+| #164 | P20-S-R2-DROPDOWN-SEARCH |
+| #165 | phase/20-budget |
+| #166 | P20-S-R2-R1-INTEGRATION-EVIDENCE |
+| #167 | phase/20-budget |
+| #168 | P20-S-R2-R2-RETAIN-REVISION-HISTORY |
+| #169 | phase/20-budget |
+| #170 | P21-F-EMERGENCY-FUND-TARGET-EDITING |
+| #171 | phase/21-emergency-fund |
+| #172 | P21-F-R1-RECORD-MERGE-EVIDENCE |
+| #173 | phase/21-emergency-fund |
+| #174 | P20-W-TRANSACTION-FORM-CATEGORIES |
+| #175 | phase/20-budget |
+| #176 | P20-W-R1-RECORD-MERGE-EVIDENCE |
+| #177 | phase/20-budget |
+| #178 | P20-A-R3-LINKED-SAVINGS-PAID-TRANSACTIONS |
+| #179 | phase/20-budget |
+| #180 | P20-U-R1-BUDGET-EDIT-DELETE |
+| #181 | phase/20-budget |
+| #182 | P20-W-D3-CUSTOM-EARNED-INCOME |
+| #183 | phase/20-budget |
+
 
 | PR # | Ledger Ref |
 |---|---|
@@ -378,3 +542,15 @@
 | #154 | CR-112, P43-A, P43-F, P43-F-R1 |
 | #157 | CR-113, P43-G, P43-G-R1 |
 | #158 | CR-113, P43-G, P43-G-R1 |
+
+### Numbers without a merged PR
+
+The owner snapshot's `prs.json` and per-PR details were not supplied, so open,
+closed-unmerged, and never-created PR numbers cannot be enumerated. Local Git
+contains 167 distinct PR merge subjects; 95 PR numbers were listed before this
+run and 80 local merge PRs not previously listed are mapped above. The union is
+175 mappings because eight historical mapped numbers lack local merge subjects.
+Eight previously mapped PR numbers
+(93–94 and 149–152, 157–158) have no matching merge subject in the available
+local refs; their historical mapping is preserved, but current remote status is
+not recorded. This is not an exhaustive list of non-merged PRs.
