@@ -905,3 +905,11 @@ Not adopted in CR-106:
   messages with descriptions of release-draft preparation and publication
   documentation. The changes are local and unpushed; see the verified
   old-to-new commit mapping in [PROGRESS.md](../PROGRESS.md).
+
+
+## Pending owner actions (2026-11-22 reconciliation)
+
+- **Remote evidence:** supply the missing `refs.txt`, first-parent logs, `all-merges.txt`, `prs.json`, PR detail files (including #181), `releases.txt`, `issues.json`, `remote-branches.txt`, and `exported-at.txt`. Supplied owner-terminal files contain only `pbpaste` redirection commands; failed PR-create output and #181 description/comment correction are therefore not verified.
+- **Device checks:** O61–O74 remain Not run (P20-S-R2 O61–O64; P21-F O65–O68; P20-W O69–O72; P20-U-R1 O73; P20-A-R3 O74).
+- **Documentation PR flow:** owner to push `documentation` and `task/docs-remote-sync-2026-11-22`, open the task PR, merge it into documentation, then PR documentation to develop and run CM-2. No network action was performed in this run.
+- **Resolved integration items:** P20-A-R3, P20-U-R1 and P20-W-D3 merge commits are present in local Git; their previous pending-integration statements are historical and corrected in the dated ledger entry.

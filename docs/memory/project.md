@@ -103,3 +103,8 @@ runtime synchronization.
 
 See the canonical [progress ledger](../PROGRESS.md) for full project history,
 schema migration evidence, feature decisions and test history.
+
+
+## Remote-history reconciliation (2026-11-22)
+
+Local Git records merge commits for P20-A-R3 (#178/#179), P20-U-R1 (#180/#181), and P20-W-D3 (#182/#183). Schema v24 and migration compatibility through v23 are current. The remote snapshot supplied for reconciliation is missing PR/ref/release/issue exports; open PRs/issues, PR text/comments, remote branch deletion and GitHub mergedAt values remain unknown. The latest recorded full gate remains 105 suites / 1,437 tests (1,436 passed; one skipped) on the D3 task tree.

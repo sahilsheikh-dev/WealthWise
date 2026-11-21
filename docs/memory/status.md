@@ -1,4 +1,4 @@
-<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-21 | Updates: owner and AI agents -->
+<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-22 | Updates: owner and AI agents -->
 
 # Status
 - **P20-U-R1 (2026-11-21) — Done; O73 physical-device restart check remains open.**
@@ -754,3 +754,11 @@
   unencrypted; app lock is not encryption. A lost passphrase is unrecoverable.
 - The ledger at [`docs/PROGRESS.md`](../PROGRESS.md) is the source of truth
   for decisions, status, acceptance evidence, gates and device checks.
+
+
+## Current reconciliation (2026-11-22)
+
+- Local `develop` HEAD is `b3fa175b999f3ae62e2b099a412f5a9e9da5f0db` (PR #183 merge); source schema is v24. P20-A-R3 (#178/#179), P20-U-R1 (#180/#181) and P20-W-D3 (#182/#183) have local merge commits. This does not independently establish GitHub mergedAt, PR descriptions/comments, branch deletion or remote branch tips.
+- Gate 4 owner captures: develop and D3 task runs both exit 1, 20/21, with six Expo SDK 57 patch mismatches. P20-A-R3's phase run exit code is not captured. Owner terminal captures contain no command output, despite the addendum reporting two failed PR-create attempts and a PR #181 correction. Those remain unverified pending complete terminal/snapshot exports.
+- Schema v24 includes identity migration v23→v24 and `.premigration.v23` handling; P36-A/B remain planned on v25. Latest recorded full suite is 105 suites / 1,437 tests (1,436 passed, 1 skipped) on the D3 task tree.
+- Device checks O61–O74 are Not run. Pending owner actions: provide complete remote snapshot and terminal evidence; perform O61–O74 device checks; owner push/PR integration of this documentation task remains pending.
