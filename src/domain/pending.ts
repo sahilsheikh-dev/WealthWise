@@ -215,14 +215,17 @@ function pendingItemsWithCache(
       });
     }
     for (const item of budget.items) {
+      const planItem = data.budgetPlan?.items.find((candidate) =>
+        candidate.id === item.id || candidate.name === item.name);
+      const holdingId = item.holdingId ?? planItem?.holdingId;
       const section = budget.sections.find((row) => row.id === item.sectionId);
       const manualInsurance = section?.system === 'insurance';
       if (item.name === 'EMI' || (isInsuranceBudgetCategory(item.name) && !manualInsurance)) continue;
       if (section?.system && !manualInsurance) continue;
       const type = section?.type === 'invest' ? 'invest' : 'expense';
       const category = item.name;
-      const linkedManualHolding = item.holdingId !== undefined
-        && data.holdings.some((holding) => holding.id === item.holdingId && holding.kind === 'manual');
+      const linkedManualHolding = holdingId !== undefined
+        && data.holdings.some((holding) => holding.id === holdingId && holding.kind === 'manual');
       if (!linkedManualHolding
         && (instrumentCategories.has(category) || representedCategories.has(category))) continue;
       const plannedValue = plannedForMonth(
@@ -251,7 +254,7 @@ function pendingItemsWithCache(
           category,
           type,
           month,
-          ...(item.holdingId === undefined ? {} : { holdingId: item.holdingId }),
+          ...(holdingId === undefined ? {} : { holdingId }),
         },
         actionable: true,
       });
