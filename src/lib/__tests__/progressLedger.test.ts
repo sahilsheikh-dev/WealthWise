@@ -1107,7 +1107,7 @@ describe('permanent progress ledger', () => {
     expect(originalRow).toContain('In progress; Revised by P20-W-R1');
     expect(originalRow).toContain('D3 is authorized: widen earned-income category to a trimmed nonempty string up to 60 characters');
     expect(originalRow).toContain('Owner decision DEC-P20W-D3-SCHEMA24 assigns schema v24 to P20-W and replans P36-A/B to v25');
-    expect(originalRow).toContain('Prior six-gate and PR #174/#175 evidence remains recorded');
+    expect(originalRow).toContain('implementation `f2541fd` adds custom earned-income categories');
     expect(originalRow).toContain('owner-supplied Gate 4 exit 1 (20/21 checks, six SDK 57 patch mismatches; owner-approved cleanup exception)');
     expect(revisionRow).toContain('| Done |');
     expect(revisionRow).toContain('task PR #174');
