@@ -122,7 +122,7 @@ the phase branch is retained. Phase PR #147 merged into `develop` at
   previously retained stale phase tags. Prepare the exact proposed deletion
   list for owner review; the list has not yet been supplied or approved, so
   no deletion is authorized. Report the audit in chat or `/tmp`, not Git.
-- **P21-F (Previously: P43-C) — Emergency Fund target editing (In progress):**
+- **P21-F (Previously: P43-C) — Emergency Fund target editing (Done; Revised by P21-F-R1):**
   the existing persisted Goal.target is reused; schema v23 and backup formats
   remain unchanged. DEC-P21F-FLOOR keeps the effective max(stored target,
   three-month floor) and rejects below-floor input with the existing typed
@@ -136,8 +136,11 @@ the phase branch is retained. Phase PR #147 merged into `develop` at
   exited 1 with 20/21 checks and the six documented Expo SDK 57 patch
   mismatches. The latter is the known owner-approved cleanup exception; the
   network failure is not. Dependencies and app config match `origin/develop`.
-  PR integration remains pending. Home source is untouched.
-  Device checks O65–O68 are Not run.
+  P21-F is integrated into `develop` through PR #170 and PR #171. Task PR #170
+  merged at `c877f6d19e35c0b9fbcba90e9722da7531948c8e`; phase
+  PR #171 merged at `2e5e18a7a2be207387a7462b039547f51b0e4631`; CM-2
+  synchronized local `develop`. P21-F-R1 records this evidence. Home source is
+  untouched. Device checks O65–O68 are Not run.
   Placement: rule 4; searched dashboard, register, P21-A–E, phase history,
   roadmap, memory and Emergency Fund/Home/Goals modules; related P21-A–E;
   reason this extends the existing Emergency Fund feature area.

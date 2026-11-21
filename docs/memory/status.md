@@ -1,7 +1,7 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-21 | Updates: owner and AI agents -->
 
 # Status
-- **P21-F / CR-117 (2026-11-21) — Emergency Fund target editing in progress; synced gates recorded.**
+- **P21-F / CR-117 (2026-11-21) — Emergency Fund target editing merged; P21-F-R1 records integration.**
   Read-only investigation confirms the existing persisted `Goal.target` is used;
   schema v23 and backup shape remain unchanged. DEC-P21F-FLOOR keeps the
   max(stored target, three-month floor) effective target and rejects below-floor
@@ -15,7 +15,11 @@
   branches/functions/lines); Gates 2–3 exit 0; this session's Gate 4 attempt
   exit 1 with `ENOTFOUND registry.npmjs.org`; owner-supplied Gate 4 exit 1 at
   20/21 on the known six-package SDK 57 patch mismatch; Gates 5–6 exit 0.
-  PR integration is pending. O65–O68 remain Not run.
+  Task PR #170 merged into `phase/21-emergency-fund` at
+  `c877f6d19e35c0b9fbcba90e9722da7531948c8e`; phase PR #171 merged into
+  `develop` at `2e5e18a7a2be207387a7462b039547f51b0e4631`. CM-2 synchronized
+  local `develop`. P21-F-R1 records task PR #170 and phase PR #171 merge SHAs.
+  O65–O68 remain Not run.
 - **P20-S-R2 / CR-116 (2026-11-21) — searchable Dropdown implementation complete.**
   Task branch `task/P20-S-R2-dropdown-search` merged into `phase/20-budget`
   through PR #164 at `185a5ea125f64ac104344f00ad013d68cdb7a946`; phase PR #165

@@ -61,8 +61,10 @@ runtime synchronization.
   5–6 exited 0. This session's Gate 4 attempt exited 1 with
   `ENOTFOUND registry.npmjs.org`; the owner-supplied Gate 4 result exited 1
   with 20/21 checks on the known six-package Expo SDK 57 patch mismatch.
-  Dependencies and app config match `origin/develop`; PR integration is
-  pending. P20-S-R2's task PR #164 and phase PR #165 are merged into `develop` at
+  Dependencies and app config match `origin/develop`. Task PR #170 merged into
+  P21 at `c877f6d19e35c0b9fbcba90e9722da7531948c8e`; phase PR #171 merged into
+  `develop` at `2e5e18a7a2be207387a7462b039547f51b0e4631`; CM-2 synchronized
+  local `develop`. P21-F-R1 records the evidence. P20-S-R2's task PR #164 and phase PR #165 are merged into `develop` at
   `6b50a1d`; its Gate 4 exited 1 on the documented Expo SDK 57 patch mismatch
   after the required DNS retry; its other five gates exited 0. The
   prior CR-112 task-tree run had 101 suites, 1325 tests (1324 passed; one skipped) on
