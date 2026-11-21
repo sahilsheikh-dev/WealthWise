@@ -180,7 +180,7 @@ describe('permanent progress ledger', () => {
     expect(branchIndex).toContain('| `documentation` | `documentation` | — | — | Active |');
     expect(roadmap).not.toMatch(/^\d+\. \*\*P(?:27|28) —/m);
     expect(roadmap).toContain('P27/P28 remain completed historical milestones');
-    expect(roadmap).toContain('P21-F — Emergency Fund target editing');
+    expect(roadmap).toContain('P21-F (Previously: P43-C) is Done: one Emergency Fund edit action and combined target/allocation form');
     expect(roadmap).toContain('P20-W (Previously: P43-D)');
     expect(roadmap).toContain('P43-E — GitHub issue strategy');
     expect(roadmap).toContain('P43-F — Work placement and CM-2');
