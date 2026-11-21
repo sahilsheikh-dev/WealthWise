@@ -704,6 +704,49 @@ describe('createAppStore persistence', () => {
     expect(undo.ok).toBe(false);
   });
 
+  it('saves an Emergency Fund target in one write and Undo restores exactly the previous target', async () => {
+    const storage = new MemoryStorage();
+    const data = emptyAppData('2026-10-10');
+    data.transactions = [
+      { id: 'expense-jul', type: 'expense', amount: 20_000, category: 'Food', note: '', date: '2026-07-01' },
+      { id: 'expense-aug', type: 'expense', amount: 20_000, category: 'Food', note: '', date: '2026-08-01' },
+      { id: 'expense-sep', type: 'expense', amount: 20_000, category: 'Food', note: '', date: '2026-09-01' },
+    ];
+    data.goals[0] = { ...data.goals[0]!, target: 60_000 };
+    storage.values.set('wealthwise.app.v1', JSON.stringify({ state: { data }, version: 23 }));
+    const store = makeStore(storage, { isDev: false });
+    await waitForHydration(store);
+    useUIStore.getState().setActionToast(null);
+
+    let writes = storage.setItemCalls;
+    store.getState().actions.setEmergencyFundTarget(80_000);
+    expect(storage.setItemCalls - writes).toBe(1);
+    expect(store.getState().data.goals.find((goal) => goal.auto === 'ef')?.target).toBe(80_000);
+    expect(useUIStore.getState().actionToast).toMatchObject({
+      message: 'Emergency fund target updated',
+      actionLabel: 'Undo',
+      onAction: expect.any(Function),
+    });
+
+    writes = storage.setItemCalls;
+    store.getState().actions.setEmergencyFundTarget(90_000);
+    expect(storage.setItemCalls - writes).toBe(1);
+    const undo = useUIStore.getState().actionToast?.onAction;
+    if (!undo) throw new Error('Emergency Fund target Undo was not set.');
+    writes = storage.setItemCalls;
+    undo();
+    expect(storage.setItemCalls - writes).toBe(1);
+    expect(store.getState().data.goals.find((goal) => goal.auto === 'ef')?.target).toBe(80_000);
+    expect(useUIStore.getState().actionToast?.actionLabel).toBe('Undo');
+    useUIStore.getState().setActionToast(null);
+
+    writes = storage.setItemCalls;
+    const hydrated = makeStore(storage, { isDev: false });
+    await waitForHydration(hydrated);
+    expect(hydrated.getState().data.goals.find((goal) => goal.auto === 'ef')?.target).toBe(80_000);
+    expect(storage.setItemCalls - writes).toBe(0);
+  });
+
   it('persists policy add and delete atomically and Undo restores deep-equal data', async () => {
     const storage = new MemoryStorage();
     const store = makeStore(storage, { newId: () => 'created-policy' });
