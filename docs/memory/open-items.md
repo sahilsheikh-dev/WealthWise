@@ -131,18 +131,36 @@ the phase branch is retained. Phase PR #147 merged into `develop` at
   editing it if needed (CR-113). Placement: rule 4; searched dashboard, register, P21-A–E,
   roadmap, memory and Emergency Fund modules; related P21-A–E; reason: the
   work extends the existing Emergency Fund feature area.
-- **P20-W (Previously: P43-D) — Transaction form:** derive investment category with
-  `investCategoryFor` only after a holding is selected; show only
-  user-created/Budget-defined expense categories plus Custom; design category
-  (e.g. Wants/Expenses) versus item (e.g. party/others) hierarchy and
-  persistence; add custom Income type. Schema v23 is current and P36 already
-  claims v24. Schema impact remains undetermined; any bump needs a separate
-  plan, identity-preserving migration, premigration archive and backup import
-  support. Plan test-first regressions, demo-data updates and backup
-  compatibility checks. Placement: rule 4; searched dashboard, register,
-  P20-O/P, P3 history, roadmap, memory and transaction form modules; related
-  P20-O and P20-P; reason: the work extends the existing Budget/category form
-  area.
+- **P20-W (Previously: P43-D) — Transaction form (D1/D2 In progress; D3 Planned):**
+  P20-S-R2 is confirmed on `develop` at merge `6b50a1d`; phase sync commit
+  `e44ce6f` and task branch `task/P20-W-transaction-form-categories` are ready.
+  D1 has no persisted-schema need: avoid defaulting an unselected investment to
+  “Mutual fund / SIP”; show a neutral category until a holding is selected,
+  derive with `investCategoryFor`, and block Save with the existing clear missing
+  holding message. D2 has no persisted-schema need: group effective-month
+  Budget expense items by section, show the selected item’s section as derived
+  read-only context, and preserve transaction category strings when Budget
+  items are deleted. Existing transactions store the item/category string, and
+  Budget sections/items already support the hierarchy.
+
+  D3 custom Income is gated. Transaction `category` is already a bounded
+  string, but scheduled earned-income `BudgetIncomeItem.category` is the fixed
+  `EarnedIncomeCategory` enum. Proposed change: widen that same field to a
+  trimmed, nonempty string up to 60 characters, with no new field; preserve all
+  v23 category strings unchanged in v23-to-v24 migration. Update app and backup
+  schemas, domain income validation, labels/filters, and demo fixtures. Keep
+  backup format v1 and import v1–v23 through the migration chain; test plain
+  and encrypted round trips with custom income. Extend pre-migration archive
+  recognition and erase-all cleanup to include `.premigration.v23`.
+  **STOP GATE:** P36-A/B already claim schema v24. Owner decision required
+  before D3: either P20-W takes v24 and P36 is replanned to v25, or P36 keeps
+  v24 and P20-W is replanned. D1/D2 may proceed independently without schema
+  changes. Physical-device checks for placeholder, derived category/section,
+  searchable category picker, custom income and font scales 1.3/2.0 remain Not
+  run; reserve checklist IDs when implementation is ready. Placement: rule 4;
+  searched dashboard, register, P20-O/P, P3 history, roadmap, memory and
+  transaction form modules; related P20-O and P20-P; reason: the work extends
+  the existing Budget/category form area.
 - **P43-E — GitHub issue strategy (plan only):** one issue per ledger part
   or CR; phase/type/status labels; release milestones; pending issues open;
   completed issues retrospective and closed; verified commits, PRs, merge

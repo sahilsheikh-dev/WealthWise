@@ -1,6 +1,15 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-13 | Updates: owner and AI agents -->
 
 # Status
+- **P20-W (2026-11-21) — Transaction form D1/D2 in progress; D3 schema gate open.**
+  Confirmed P20-S-R2 merge `6b50a1d` is on `develop` at `3473c61`.
+  `phase/20-budget` was synced from `origin/develop` at `e44ce6f`; task branch
+  `task/P20-W-transaction-form-categories` is active. Read-only investigation
+  found D1/D2 require no persisted schema change. D3 custom earned-income types
+  require widening the existing BudgetIncomeItem category enum and the
+  validation/backup/migration/archive chain. D3 remains Planned pending owner
+  choice of schema v24 ownership against P36-A/B. No app implementation has
+  started yet.
 - **P20-S-R2 / CR-116 (2026-11-21) — searchable Dropdown implementation complete.**
   Task branch `task/P20-S-R2-dropdown-search` merged into `phase/20-budget`
   through PR #164 at `185a5ea125f64ac104344f00ad013d68cdb7a946`; phase PR #165
