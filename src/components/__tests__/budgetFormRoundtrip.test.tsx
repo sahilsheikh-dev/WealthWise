@@ -14,9 +14,9 @@ let mockStore: ReturnType<typeof createAppStore> | null = null;
 let mockRouteParams: Record<string, string> = {};
 
 jest.mock('../../data/store', () => {
-  const useAppStore = (selector: (state: unknown) => unknown) => {
+  const useAppStore = (selector: (state: ReturnType<ReturnType<typeof createAppStore>['getState']>) => unknown) => {
     if (!mockStore) throw new Error('Budget roundtrip store has not been created.');
-    return mockStore(selector as never);
+    return mockStore(selector);
   };
   return {
     useAppStore: Object.assign(useAppStore, {
@@ -43,12 +43,12 @@ jest.mock('expo-router', () => ({
 
 jest.mock('@expo/vector-icons', () => ({
   Feather: ({ name }: { name: string }) => {
-    const ReactModule = jest.requireActual('react') as typeof import('react');
-    return ReactModule.createElement('icon', { name });
+    const mockReact = jest.requireActual<typeof import('react')>('react');
+    return mockReact.createElement('icon', { name });
   },
   Ionicons: ({ name }: { name: string }) => {
-    const ReactModule = jest.requireActual('react') as typeof import('react');
-    return ReactModule.createElement('icon', { name });
+    const mockReact = jest.requireActual<typeof import('react')>('react');
+    return mockReact.createElement('icon', { name });
   },
 }));
 
@@ -65,30 +65,30 @@ jest.mock('../../theme/useTheme', () => ({
 }));
 
 jest.mock('react-native-safe-area-context', () => {
-  const ReactModule = jest.requireActual('react') as typeof import('react');
+  const mockReact = jest.requireActual<typeof import('react')>('react');
   return {
     SafeAreaView: ({ children, ...props }: { children?: React.ReactNode; [key: string]: unknown }) =>
-      ReactModule.createElement('view', props, children),
+      mockReact.createElement('view', props, children),
     useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
   };
 });
 
 jest.mock('react-native', () => {
-  const ReactModule = jest.requireActual('react') as typeof import('react');
+  const mockReact = jest.requireActual<typeof import('react')>('react');
   const node = (type: string) => ({ children, ...props }: { children?: React.ReactNode; [key: string]: unknown }) =>
-    ReactModule.createElement(type, props, children);
+    mockReact.createElement(type, props, children);
   const FlatList = ({ data = [], renderItem, ListHeaderComponent, ...props }: {
     data?: unknown[];
     renderItem?: (info: { item: unknown; index: number }) => React.ReactNode;
     ListHeaderComponent?: React.ComponentType;
     [key: string]: unknown;
-  }) => ReactModule.createElement(
+  }) => mockReact.createElement(
     'flatlist', props,
-    ListHeaderComponent ? ReactModule.createElement(ListHeaderComponent) : null,
+    ListHeaderComponent ? mockReact.createElement(ListHeaderComponent) : null,
     ...data.map((item, index) => renderItem?.({ item, index }) ?? null),
   );
   const Modal = ({ visible, children, ...props }: { visible?: boolean; children?: React.ReactNode; [key: string]: unknown }) =>
-    visible ? ReactModule.createElement('modal', props, children) : null;
+    visible ? mockReact.createElement('modal', props, children) : null;
   return {
     Alert: { alert: jest.fn() },
     AppState: { addEventListener: () => ({ remove: jest.fn() }), currentState: 'active' },
@@ -153,7 +153,7 @@ function visibleText(renderer: TestRenderer.ReactTestRenderer): string {
 function persistedData(storage: MemoryStorage): ReturnType<typeof emptyAppData> & { budgetPlan: NonNullable<ReturnType<typeof emptyAppData>['budgetPlan']> } {
   const raw = storage.values.get('wealthwise.app.v1');
   if (!raw) throw new Error('Persisted app state was not written.');
-  return JSON.parse(raw).state.data as ReturnType<typeof emptyAppData> & { budgetPlan: NonNullable<ReturnType<typeof emptyAppData>['budgetPlan']> };
+  return JSON.parse(raw).state.data;
 }
 
 describe('Budget form persisted store roundtrip', () => {
@@ -219,25 +219,30 @@ describe('Budget form persisted store roundtrip', () => {
 
   it('edits through the real form, persists and rehydrates, then deletes by both scopes', async () => {
     let form: TestRenderer.ReactTestRenderer | null = renderScreen(React.createElement(BudgetItemFormScreen));
+    const currentForm = (): TestRenderer.ReactTestRenderer => {
+      if (!form) throw new Error('Budget item form is not mounted.');
+      return form;
+    };
     try {
       act(() => {
-        form?.root.findByProps({ accessibilityLabel: 'Planned amount' }).props.onChangeText('450');
+        currentForm().root.findByProps({ accessibilityLabel: 'Planned amount' }).props.onChangeText('450');
       });
       await act(async () => {
-        await form.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
+        await currentForm().root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
       });
       await act(async () => {
-        form.root.findByProps({ accessibilityLabel: 'This and following months' }).props.onPress();
+        currentForm().root.findByProps({ accessibilityLabel: 'This and following months' }).props.onPress();
         await flushPersistence();
       });
       expect(storage.writes).toBe(1);
       expect(mockStore?.getState().data.budgetPlan?.items.find((item) => item.id === itemId)?.value).toBe(450);
       expect(mockStore?.getState().data.monthBudgets?.[0]?.items.find((item) => item.id === itemId)?.value).toBe(450);
       await assertPersistedAndRehydrated(450, 450);
-      act(() => form?.unmount());
+      act(() => currentForm().unmount());
       form = null;
     } finally {
-      if (form) act(() => form.unmount());
+      const remainingForm = form;
+      if (remainingForm) act(() => remainingForm.unmount());
     }
 
     let budget = renderScreen(React.createElement(BudgetScreen));
@@ -246,30 +251,30 @@ describe('Budget form persisted store roundtrip', () => {
       budget.root.findByProps({ accessibilityLabel: 'Edit Rent' }).props.onPress();
       await Promise.resolve();
     });
-    const pushed = jest.requireMock('expo-router').router.push.mock.calls.at(-1)?.[0] as { params?: Record<string, string> } | undefined;
+    const pushed = jest.requireMock('expo-router').router.push.mock.calls.at(-1)?.[0];
     expect(pushed?.params).toMatchObject({ month, sectionId: 'survival', itemId });
     mockRouteParams = { month, sectionId: 'survival', itemId, scope: 'following' };
     act(() => budget.unmount());
     form = renderScreen(React.createElement(BudgetItemFormScreen));
-    expect(form.root.findByProps({ accessibilityLabel: 'Planned amount' }).props.value).toBe('450');
-    act(() => form.unmount());
+    expect(currentForm().root.findByProps({ accessibilityLabel: 'Planned amount' }).props.value).toBe('450');
+    act(() => currentForm().unmount());
     act(() => budget.unmount());
 
     form = renderScreen(React.createElement(BudgetItemFormScreen));
     storage.writes = 0;
     await act(async () => {
-      form.root.findByProps({ accessibilityLabel: 'Delete item' }).props.onPress();
+      currentForm().root.findByProps({ accessibilityLabel: 'Delete item' }).props.onPress();
       await Promise.resolve();
     });
     await act(async () => {
-      form.root.findByProps({ accessibilityLabel: 'This month only' }).props.onPress();
+      currentForm().root.findByProps({ accessibilityLabel: 'This month only' }).props.onPress();
       await flushPersistence();
     });
     expect(storage.writes).toBe(1);
     expect(mockStore?.getState().data.monthBudgets?.[0]?.items.some((item) => item.id === itemId)).toBe(false);
     expect(mockStore?.getState().data.budgetPlan?.items.some((item) => item.id === itemId)).toBe(true);
     await assertPersistedAndRehydrated(450, null);
-    act(() => form.unmount());
+    act(() => currentForm().unmount());
     budget = renderScreen(React.createElement(BudgetScreen));
     expect(visibleText(budget)).not.toContain('Rent');
     act(() => budget.unmount());
@@ -278,18 +283,18 @@ describe('Budget form persisted store roundtrip', () => {
     form = renderScreen(React.createElement(BudgetItemFormScreen));
     storage.writes = 0;
     await act(async () => {
-      form.root.findByProps({ accessibilityLabel: 'Delete item' }).props.onPress();
+      currentForm().root.findByProps({ accessibilityLabel: 'Delete item' }).props.onPress();
       await Promise.resolve();
     });
     await act(async () => {
-      form.root.findByProps({ accessibilityLabel: 'This and following months' }).props.onPress();
+      currentForm().root.findByProps({ accessibilityLabel: 'This and following months' }).props.onPress();
       await flushPersistence();
     });
     expect(storage.writes).toBe(1);
     expect(mockStore?.getState().data.budgetPlan?.items.some((item) => item.id === itemId)).toBe(false);
     expect(mockStore?.getState().data.monthBudgets?.[0]?.items.some((item) => item.id === itemId)).toBe(false);
     await assertPersistedAndRehydrated(null, null);
-    act(() => form.unmount());
+    act(() => currentForm().unmount());
     budget = renderScreen(React.createElement(BudgetScreen));
     expect(visibleText(budget)).not.toContain('Rent');
     act(() => budget.unmount());
