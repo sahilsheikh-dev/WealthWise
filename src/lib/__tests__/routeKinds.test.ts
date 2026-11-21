@@ -59,6 +59,7 @@ describe('route kind registry', () => {
     expect(routeKindForPath('/')).toBe('tab');
     expect(routeKindForPath('/(tabs)/transactions')).toBe('tab');
     expect(routeKindForPath('/goal-form?id=goal-1')).toBe('form');
+    expect(routeKindForPath('/ef-target-form')).toBe('form');
     expect(routeKindForPath('/liabilities')).toBe('stack');
     expect(routeKindForPath('/insurance')).toBe('stack');
     expect(routeKindForPath('/reminders')).toBe('stack');
