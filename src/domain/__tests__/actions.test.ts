@@ -3,6 +3,9 @@ import {
 } from '../actions';
 import { confirmHoldingValue } from '../holdingActions';
 import { GoalTargetBelowMinimumError, InvalidEmergencyFundTargetError, updateEmergencyFundTarget, updateGoal } from '../goalActions';
+import { monthsCovered } from '../ef';
+import { allocateAmounts, DEFAULT_EF_ALLOCATION } from '../efAllocation';
+import { effectiveEmergencyTarget } from '../goals';
 import type { AppData, Transaction } from '../types';
 
 const input: Omit<Transaction, 'id'> = {
@@ -145,6 +148,19 @@ describe('immutable app actions', () => {
     expect(next.goals[0]).toMatchObject({ target: 90_000, saved: 30_000, auto: 'ef' });
     expect(next.goals[1]).toEqual(data.goals[1]);
     expect(data.goals[0]).toMatchObject({ target: 60_000 });
+    const effective = effectiveEmergencyTarget(next.goals[0]!, 20_000);
+    expect(effective).toMatchObject({ target: 90_000, minimum: 60_000, raised: false });
+    expect(allocateAmounts(effective.target, DEFAULT_EF_ALLOCATION)).toMatchObject({
+      cash: 9_000,
+      bank: 36_000,
+      'fd-rd': 45_000,
+    });
+    expect(monthsCovered(30_000, 20_000)).toBe(1.5);
+    expect(effectiveEmergencyTarget(next.goals[0]!, 40_000)).toMatchObject({
+      target: 120_000,
+      minimum: 120_000,
+      raised: true,
+    });
   });
 
   it.each([0, -1, Number.NaN, Number.POSITIVE_INFINITY, 10_000_000_000.01, 1.001])(
