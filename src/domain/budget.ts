@@ -1135,21 +1135,27 @@ export function editItem(
     }
     return {
       sections,
-      items: items.map((item) => item.id !== target.id ? item : {
-        ...(() => {
-          const { firstDueMonth: _firstDueMonth, ...withoutFirstDueMonth } = item;
-          return withoutFirstDueMonth;
-        })(),
-        ...(name === undefined ? {} : { name }),
-        ...(input.patch.mode === undefined ? {} : { mode: input.patch.mode }),
-        ...(input.patch.value === undefined ? {} : { value: normalizedValue }),
-        ...(input.patch.dueDay === undefined ? {} : input.patch.dueDay === null
-          ? (() => { const { dueDay: _dueDay, ...withoutDay } = item; return withoutDay; })()
-          : { dueDay: input.patch.dueDay }),
-        ...schedule,
-        ...(input.patch.holdingId === null
-          ? (() => { const { holdingId: _holdingId, ...withoutHolding } = item; return withoutHolding; })()
-          : nextHoldingId ? { holdingId: nextHoldingId } : {}),
+      items: items.map((item) => {
+        if (item.id !== target.id) return item;
+        const {
+          firstDueMonth: _firstDueMonth,
+          dueDay: _dueDay,
+          holdingId: _holdingId,
+          ...withoutOptionalFields
+        } = item;
+        return {
+          ...withoutOptionalFields,
+          ...(name === undefined ? {} : { name }),
+          ...(input.patch.mode === undefined ? {} : { mode: input.patch.mode }),
+          ...(input.patch.value === undefined ? {} : { value: normalizedValue }),
+          ...(input.patch.dueDay === undefined
+            ? item.dueDay === undefined ? {} : { dueDay: item.dueDay }
+            : input.patch.dueDay === null ? {} : { dueDay: input.patch.dueDay }),
+          ...schedule,
+          ...(input.patch.holdingId === undefined
+            ? item.holdingId === undefined ? {} : { holdingId: item.holdingId }
+            : input.patch.holdingId === null ? {} : nextHoldingId ? { holdingId: nextHoldingId } : {}),
+        };
       }),
     };
   });
