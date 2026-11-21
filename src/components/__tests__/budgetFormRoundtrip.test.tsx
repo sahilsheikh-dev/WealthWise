@@ -8,7 +8,9 @@ import { emptyAppData } from '../../domain/actions';
 import { createAppStore } from '../../data/createAppStore';
 import { budgetPlanFromLines, monthBudgetFromLines } from '../../testFixtures/budget';
 import { todayISO } from '../../lib/clock';
+import { formatMonth } from '../../lib/format';
 import { useUIStore } from '../../data/uiStore';
+import { shiftMonth } from '../../domain/dates';
 
 let mockStore: ReturnType<typeof createAppStore> | null = null;
 let mockRouteParams: Record<string, string> = {};
@@ -148,6 +150,13 @@ function visibleText(renderer: TestRenderer.ReactTestRenderer): string {
     return '';
   };
   return renderer.root.findAllByType('text').map((node) => flatten(node.props.children)).join(' ');
+}
+
+function pressAccessibleControl(renderer: TestRenderer.ReactTestRenderer, label: string): void {
+  const control = renderer.root.findAllByProps({ accessibilityLabel: label })
+    .find((node) => typeof node.props.onPress === 'function');
+  if (!control) throw new Error(`Pressable control "${label}" was not rendered.`);
+  act(() => control.props.onPress());
 }
 
 function persistedData(storage: MemoryStorage): ReturnType<typeof emptyAppData> & { budgetPlan: NonNullable<ReturnType<typeof emptyAppData>['budgetPlan']> } {
@@ -299,5 +308,110 @@ describe('Budget form persisted store roundtrip', () => {
     expect(visibleText(budget)).not.toContain('Rent');
     act(() => budget.unmount());
   });
+
+  it.each(['name', 'due day', 'frequency', 'start month'])(
+    'round-trips a %s edit through the real form in following scope',
+    async (field) => {
+      const form = renderScreen(React.createElement(BudgetItemFormScreen));
+      const nextMonth = shiftMonth(month, 1);
+      const targetLabel = field === 'name'
+        ? 'Budget item name'
+        : field === 'due day'
+          ? 'Due day'
+          : field === 'frequency'
+            ? 'Budget item frequency'
+            : 'Budget item start month';
+      const targetValue = field === 'name'
+        ? 'Housing'
+        : field === 'due day'
+          ? '18'
+          : field === 'frequency'
+            ? 'Quarterly'
+            : formatMonth(nextMonth);
+
+      if (field === 'start month') {
+        pressAccessibleControl(form, 'Budget item frequency');
+        pressAccessibleControl(form, 'Quarterly');
+      }
+      if (field === 'frequency' || field === 'start month') {
+        pressAccessibleControl(form, targetLabel);
+        pressAccessibleControl(form, targetValue);
+      } else {
+        act(() => {
+          form.root.findByProps({ accessibilityLabel: targetLabel }).props.onChangeText(targetValue);
+        });
+      }
+      await act(async () => {
+        form.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
+      });
+      await act(async () => {
+        form.root.findByProps({ accessibilityLabel: 'This and following months' }).props.onPress();
+        await flushPersistence();
+      });
+
+      expect(storage.writes).toBe(1);
+      const editedPlanItem = mockStore?.getState().data.budgetPlan?.items.find((item) => item.id === itemId);
+      const editedSnapshotItem = mockStore?.getState().data.monthBudgets?.[0]?.items.find((item) => item.id === itemId);
+      if (field === 'name') {
+        expect(editedPlanItem?.name).toBe(targetValue);
+        expect(editedSnapshotItem?.name).toBe(targetValue);
+      } else if (field === 'due day') {
+        expect(editedPlanItem?.dueDay).toBe(18);
+        expect(editedSnapshotItem?.dueDay).toBe(18);
+      } else if (field === 'frequency') {
+        expect(editedPlanItem?.frequency).toBe('quarterly');
+        expect(editedSnapshotItem?.frequency).toBe('quarterly');
+      } else {
+        expect(editedPlanItem?.firstDueMonth).toBe(nextMonth);
+        expect(editedSnapshotItem?.firstDueMonth).toBe(nextMonth);
+      }
+      const persistedItem = persistedData(storage).budgetPlan?.items.find((item) => item.id === itemId);
+      expect(persistedItem).toEqual(editedPlanItem);
+      act(() => form.unmount());
+    },
+  );
+
+  it.each(['name', 'due day', 'frequency'])(
+    'round-trips a %s edit through the real form in month-only scope',
+    async (field) => {
+      const form = renderScreen(React.createElement(BudgetItemFormScreen));
+      if (field === 'name') {
+        act(() => {
+          form.root.findByProps({ accessibilityLabel: 'Budget item name' }).props.onChangeText('Housing');
+        });
+      } else if (field === 'due day') {
+        act(() => {
+          form.root.findByProps({ accessibilityLabel: 'Due day' }).props.onChangeText('18');
+        });
+      } else {
+        pressAccessibleControl(form, 'Budget item frequency');
+        pressAccessibleControl(form, 'Quarterly');
+      }
+      await act(async () => {
+        form.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
+      });
+      await act(async () => {
+        form.root.findByProps({ accessibilityLabel: 'This month only' }).props.onPress();
+        await flushPersistence();
+      });
+
+      expect(storage.writes).toBe(1);
+      const editedPlanItem = mockStore?.getState().data.budgetPlan?.items.find((item) => item.id === itemId);
+      const editedSnapshotItem = mockStore?.getState().data.monthBudgets?.[0]?.items.find((item) => item.id === itemId);
+      if (field === 'name') {
+        expect(editedPlanItem?.name).toBe('Rent');
+        expect(editedSnapshotItem?.name).toBe('Housing');
+      } else if (field === 'due day') {
+        expect(editedPlanItem?.dueDay).toBeUndefined();
+        expect(editedSnapshotItem?.dueDay).toBe(18);
+      } else {
+        expect(editedPlanItem?.frequency).toBe('monthly');
+        expect(editedSnapshotItem?.frequency).toBe('quarterly');
+      }
+      expect(persistedData(storage).monthBudgets?.[0]?.items.find((item) => item.id === itemId))
+        .toEqual(editedSnapshotItem);
+      act(() => form.unmount());
+    },
+  );
 
 });
