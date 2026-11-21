@@ -17,22 +17,28 @@
   polite result-count announcements, clear-button tap target and font scales
   1.3/2.0. Track these as O61–O64 in the release device checklist.
 
-## Budget item/schedule edit and delete bug (P20-U-R1, Planned)
+## P20-U-R1 Budget edit/delete defect (fixed; device check open)
 
-- **P20-U-R1 (Planned; not started):** owner-reported defect in Budget route form
-  updating and deletion. Owner report (verbatim):
-  > "In budget while updating any item/value/amount/start-month/frequency/due-day/etc it is not updating also while trying to delete it is not even deleting, not for single month and this and following months."
-  Owner instruction: "Don't start working on this."
-  Affected fields: item, value, amount, start-month, frequency, due-day, etc.
-  Delete cases: single month and this and following months.
-  Open questions (as questions, not assumptions):
-  - Which Budget screens and sections (spend, invest, income schedules, one-time vs recurring)?
-  - Whether the bug is UI, store, or persistence?
-  - App/schema version and whether it began after a specific release or CR?
-  - Exact reproduction steps and expected behavior?
-  - Whether data on device persists after restart?
-  Dependencies: report-first investigation with a red regression test before any fix (R1), then a fix with all six ordered gates; physical-device check likely required (planned process, not authorized work).
-  Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and touched files; related P20-U; reason: defect in completed budget route form item/schedule updating and deletion.
+- The owner authorized the work on 2026-11-21, superseding CR-115's earlier
+  instruction not to start.
+- The createAppStore matrix covered Spend, Invest and Income; one-time and
+  recurring entries; applicable name/value/amount/start-month/frequency/due-day
+  edits; month and following scopes; and both deletion scopes. Four reproducible
+  cases were following-scope Income schedule changes (frequency/start month for
+  one-time/recurring entries). The plan persisted, but the selected month
+  snapshot stayed old and the form read it. Other tested edits and all deletes
+  updated and survived rehydration.
+- Root cause: `editBudgetIncome` retained the month row when its schedule
+  changed, while `budget-income-form.tsx` loads that row through
+  `effectiveMonthBudget`. The fix updates the plan and selected month row in one
+  domain result/store action. Schema remains v23; no migration, backup, demo or
+  dependency changes were needed.
+- Focused Budget/domain/store/route suites pass (4 suites, 358 tests). The prior
+  assertion that a following-scope schedule edit leaves the month snapshot
+  frozen was replaced with explicit updated schedule assertions; the change
+  and reason are recorded in `docs/PROGRESS.md`.
+- O73 remains Not run: on a physical device, edit each listed field, delete
+  with both scopes, restart, and confirm the changes persist.
 
 ## CR-114 independent entities, empty slots and R7 (2026-11-12)
 

@@ -1,6 +1,18 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-21 | Updates: owner and AI agents -->
 
 # Status
+- **P20-U-R1 (2026-11-21) — Budget edit/delete defect fixed; device check open.**
+  The owner's explicit authorization superseded the earlier CR-115 hold. A
+  60-edit/12-delete createAppStore matrix reproduced four following-scope
+  Income schedule cases: changing start month or frequency for one-time or
+  recurring income updated the plan but retained an old selected-month
+  snapshot, which the form then read. Other tested edits and all deletes
+  persisted and rehydrated. The domain action now updates both plan and month.
+  Focused Budget/domain/store/route suites pass (4 suites, 358 tests). Schema
+  remains v23. Test-first commits are `c7ff3a6` and `db4c338`; fix commit is
+  `2dc72b5`. O73 physical-device edit/delete/restart verification is Not run.
+  The AGENTS.md schema-v22 statement conflicts with code; `SCHEMA_VERSION` is
+  23 and current memory is v23.
 - **P20-W (2026-11-21) — Transaction form D1/D2 in progress; D3 schema gate open.**
   P20-S-R2 merge `6b50a1d` is on `develop`; phase `phase/20-budget` was
   synced from current `origin/develop`, and the task tree now includes that
@@ -55,12 +67,13 @@
   result-count announcement, clear tap target and real-device 1.3/2.0 font
   scale checks remain unverified (O61–O64). P20-S-R2-R1 records the verified
   integration evidence; P20-S-R2-R2 preserves the complete revision chain.
-- **CR-115 (2026-11-13) — Budget edit and delete bug recorded as Planned (P20-U-R1).**
+- **CR-115 (2026-11-13) — Budget edit/delete report recorded under P20-U-R1.**
   Owner reported: "In budget while updating any item/value/amount/start-month/frequency/due-day/etc
   it is not updating also while trying to delete it is not even deleting, not for
-  single month and this and following months." Owner instruction: "Don't start working on this."
-  The defect is placed in P20 as Planned revision P20-U-R1 (rule 2, completed work revision of P20-U).
-  No investigation, reproduction, app code, schema, demo data or dependency changes were made; work on the bug is unstarted.
+  single month and this and following months." The original "Don't start
+  working on this" instruction was superseded by explicit owner authorization
+  on 2026-11-21. The P20-U-R1 investigation and schema-free fix are complete;
+  physical-device verification O73 remains open.
 - **CR-114 (2026-11-12) — independent entities, empty slots and R7 merged into develop.**
   Work tracking restructured: `cleanup`, `qa-and-release`, `schema-migration`
   and `documentation` operate as independent lifecycle entities with dedicated

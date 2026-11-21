@@ -103,6 +103,7 @@ version, and tester fields remain blank.
 | O70 | Verify the expense Budget category picker, derived section context, searchable Custom option and custom category entry on iOS and Android. | Not run | P20-W D2; physical-device check required. |
 | O71 | Verify custom earned-income type entry and persistence after D3 schema work is approved and implemented. | Not run | P20-W D3; pending schema-version decision. |
 | O72 | Verify Transaction form scrolling, validation, category picker and custom category entry at font scales 1.3 and 2.0 on iOS and Android. | Not run | P20-W; physical-device check required. |
+| O73 | Edit Budget item/income name, value/amount, start month, frequency and due day; delete single-month and this-and-following; restart and confirm each change persisted on a physical device. | Not run | P20-U-R1; device check required. |
 
 The owner reports O45-O60 passed on 2026-11-11. Device model, Android
 version, and tester fields were not supplied and remain blank.
