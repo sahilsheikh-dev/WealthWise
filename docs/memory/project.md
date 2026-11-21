@@ -55,10 +55,14 @@ runtime synchronization.
   pure utilities and platform helpers in `src/lib/`; demo data in `src/mock/`.
 - Other source groups: `src/hooks/`, `src/theme/`, `src/constants/`, `assets/`
   and `scripts/`.
-- Test counts: 102 suites, 1365 tests (1364 passed; one skipped) on
-  2026-11-21 for P21-F. Gates 1–3 passed on the task branch; Expo Doctor and
-  its retry exited 1 with `ENOTFOUND registry.npmjs.org`, so Gates 5–6 were not
-  run. P20-S-R2's task PR #164 and phase PR #165 are merged into `develop` at
+- Test counts: 102 suites, 1366 tests (1365 passed; one skipped) on
+  2026-11-21 for the synced P21-F task tree. Coverage is
+  95.96/92.14/98.03/97.63% statements/branches/functions/lines. Gates 1–3 and
+  5–6 exited 0. This session's Gate 4 attempt exited 1 with
+  `ENOTFOUND registry.npmjs.org`; the owner-supplied Gate 4 result exited 1
+  with 20/21 checks on the known six-package Expo SDK 57 patch mismatch.
+  Dependencies and app config match `origin/develop`; PR integration is
+  pending. P20-S-R2's task PR #164 and phase PR #165 are merged into `develop` at
   `6b50a1d`; its Gate 4 exited 1 on the documented Expo SDK 57 patch mismatch
   after the required DNS retry; its other five gates exited 0. The
   prior CR-112 task-tree run had 101 suites, 1325 tests (1324 passed; one skipped) on

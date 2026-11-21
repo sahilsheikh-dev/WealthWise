@@ -129,9 +129,14 @@ the phase branch is retained. Phase PR #147 merged into `develop` at
   validation. One header edit action opens a combined target/allocation form;
   the plan saves through one domain action, one store write and one Undo.
   Target/bucket reflection, demo fixture and v23 backup round-trip tests are
-  covered. Gates 1–3 exit 0 (102 suites, 1,365 passed, 1 skipped); Expo
-  Doctor and its retry exit 1 with `ENOTFOUND registry.npmjs.org`. Per the stop
-  rule, exports and PR integration were not run. Home source is untouched.
+  covered. On the synced task tree, Gate 1 exited 0 (102 suites, 1,365 passed,
+  1 skipped; coverage 95.96/92.14/98.03/97.63% statements/branches/functions/
+  lines), Gates 2–3 exited 0, and Gates 5–6 exited 0. This session's Gate 4
+  attempt exited 1 with `ENOTFOUND registry.npmjs.org`; the owner-supplied run
+  exited 1 with 20/21 checks and the six documented Expo SDK 57 patch
+  mismatches. The latter is the known owner-approved cleanup exception; the
+  network failure is not. Dependencies and app config match `origin/develop`.
+  PR integration remains pending. Home source is untouched.
   Device checks O65–O68 are Not run.
   Placement: rule 4; searched dashboard, register, P21-A–E, phase history,
   roadmap, memory and Emergency Fund/Home/Goals modules; related P21-A–E;

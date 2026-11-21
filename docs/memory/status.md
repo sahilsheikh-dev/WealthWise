@@ -1,7 +1,7 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-21 | Updates: owner and AI agents -->
 
 # Status
-- **P21-F / CR-117 (2026-11-21) — Emergency Fund target editing in progress.**
+- **P21-F / CR-117 (2026-11-21) — Emergency Fund target editing in progress; synced gates recorded.**
   Read-only investigation confirms the existing persisted `Goal.target` is used;
   schema v23 and backup shape remain unchanged. DEC-P21F-FLOOR keeps the
   max(stored target, three-month floor) effective target and rejects below-floor
@@ -10,11 +10,12 @@
   `f759932`. One `Edit Emergency Fund` header action now opens a combined target
   and allocation form. The plan saves through one domain action, one store set
   and one persisted write with one-step Undo. Domain, store, screen, form, route,
-  backup and demo tests pass. The revised full gate sequence and PR integration
-  remain stopped under the task rule: Gates 1–3 exit 0 (102 suites, 1,365
-  passed, 1 skipped); Expo Doctor and its retry exit 1 with
-  `ENOTFOUND registry.npmjs.org`; exports and PR integration were not run.
-  O65–O68 remain Not run.
+  backup and demo tests pass. Synced task gates: Gate 1 exit 0 (102 suites,
+  1,365 passed, 1 skipped; coverage 95.96/92.14/98.03/97.63% statements/
+  branches/functions/lines); Gates 2–3 exit 0; this session's Gate 4 attempt
+  exit 1 with `ENOTFOUND registry.npmjs.org`; owner-supplied Gate 4 exit 1 at
+  20/21 on the known six-package SDK 57 patch mismatch; Gates 5–6 exit 0.
+  PR integration is pending. O65–O68 remain Not run.
 - **P20-S-R2 / CR-116 (2026-11-21) — searchable Dropdown implementation complete.**
   Task branch `task/P20-S-R2-dropdown-search` merged into `phase/20-budget`
   through PR #164 at `185a5ea125f64ac104344f00ad013d68cdb7a946`; phase PR #165
@@ -613,12 +614,15 @@
   historical records in [PROGRESS.md](../PROGRESS.md).
 - CR-108 baseline: 101 suites, 1317 tests (1316 passed, 1 skipped) on
   2026-11-11; all six CR-108 gates exited 0.
-- Test counts: 102 suites, 1365 tests (1364 passed, 1 skipped) on
+- Test counts: 102 suites, 1366 tests (1365 passed, 1 skipped) on
   2026-11-21.
-- Latest validated run: 102 suites, 1365 tests (1364 passed, 1 skipped) on
-  2026-11-21 on the P21-F task tree; Gate 1 and Gates 2–3 exited 0. Expo
-  Doctor and its one retry exited 1 with `ENOTFOUND registry.npmjs.org`; Gates
-  5–6 were not run under the stop rule.
+- Latest validated run: 102 suites, 1366 tests (1365 passed, 1 skipped) on
+  2026-11-21 on the synced P21-F task tree; Gate 1 coverage was
+  95.96/92.14/98.03/97.63% statements/branches/functions/lines; Gates 1–3 and
+  5–6 exited 0. This session's Gate 4 attempt exited 1 with
+  `ENOTFOUND registry.npmjs.org`; owner-supplied Gate 4 exited 1 (20/21) on
+  the known six-package SDK 57 patch mismatch. The network failure is recorded
+  separately from the accepted owner-approved exception.
   Coverage and exact commands are recorded in [PROGRESS.md](../PROGRESS.md).
 - All six P29-L gates exit 0: Jest coverage, TypeScript, Expo lint with zero
   warnings, Expo Doctor 21/21, Android export and iOS export. Exact commands
