@@ -122,15 +122,18 @@ the phase branch is retained. Phase PR #147 merged into `develop` at
   previously retained stale phase tags. Prepare the exact proposed deletion
   list for owner review; the list has not yet been supplied or approved, so
   no deletion is authorized. Report the audit in chat or `/tmp`, not Git.
-- **P21-F (Previously: P43-C) — Emergency Fund target editing:** edit from
-  the Emergency Fund screen and reflect the value on that screen, Home, Goals,
-  allocation and bucket targets, and in the three-month minimum-floor logic.
-  Require one domain action, one Zustand `set`, one persisted write and Undo;
-  validation, tests at font scales 1.3 and 2.0, and DEC-DEMO data.
-  `app/(tabs)/index.tsx` is user-owned; the owner explicitly authorized
-  editing it if needed (CR-113). Placement: rule 4; searched dashboard, register, P21-A–E,
-  roadmap, memory and Emergency Fund modules; related P21-A–E; reason: the
-  work extends the existing Emergency Fund feature area.
+- **P21-F (Previously: P43-C) — Emergency Fund target editing (In progress):**
+  the existing persisted Goal.target is reused; schema v23 and backup formats
+  remain unchanged. DEC-P21F-FLOOR keeps the effective max(stored target,
+  three-month floor) and rejects below-floor input with the existing typed
+  validation; the form will explain the floor. The Emergency Fund header action,
+  target form, single domain action/store write, Undo, target/bucket downstream
+  updates, demo data and v23 backup round-trips remain under implementation and
+  verification. Home source is still untouched; CR-113 authorizes an edit only
+  if a failing test proves it necessary. Device checks O65–O68 are Not run.
+  Placement: rule 4; searched dashboard, register, P21-A–E, phase history,
+  roadmap, memory and Emergency Fund/Home/Goals modules; related P21-A–E;
+  reason this extends the existing Emergency Fund feature area.
 - **P20-W (Previously: P43-D) — Transaction form:** derive investment category with
   `investCategoryFor` only after a holding is selected; show only
   user-created/Budget-defined expense categories plus Custom; design category
