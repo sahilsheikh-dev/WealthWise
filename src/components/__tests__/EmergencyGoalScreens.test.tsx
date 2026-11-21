@@ -419,7 +419,7 @@ describe('three-month emergency target screens', () => {
         await Promise.resolve();
       });
       if (!home || !goals || !emergency) throw new Error(`${scenario.name}: a screen did not render.`);
-      const repairMessage = 'Your allocation was adjusted to total 100%. Check it in Edit allocation.';
+      const repairMessage = 'Your allocation was adjusted to total 100%. Check it in Edit Emergency Fund.';
       expect(renderedText(emergency.root)).toContain(repairMessage);
       expect(emergency.root.findAllByType('text').filter((node) =>
         node.children.join('') === repairMessage)).toHaveLength(1);
