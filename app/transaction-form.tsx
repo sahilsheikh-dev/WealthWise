@@ -29,6 +29,7 @@ import { suggestPolicyForTransaction } from '../src/domain/policySuggestions';
 import { holdingValue } from '../src/domain/portfolio';
 import { financialTypeLabel } from '../src/domain/typeLabels';
 import {
+  CUSTOM_EXPENSE_CATEGORY_SENTINEL,
   INVESTMENT_FORM_CATEGORIES,
   makeTransactionFormSchema,
   TRANSACTION_CATEGORIES,
@@ -50,6 +51,7 @@ const typeOptions = [
 ] as const;
 const createInvestmentChoice = '__create-investment__';
 const noInvestmentChoice = '__no-investment__';
+const customExpenseCategory = CUSTOM_EXPENSE_CATEGORY_SENTINEL;
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
@@ -139,6 +141,7 @@ export default function TransactionFormScreen() {
       note: transaction.note,
       type: transaction.type,
       category: transaction.category,
+      customCategory: '',
       instrumentId: transaction.source?.kind === 'holding-entry' ? transaction.source.parentId : undefined,
       linkToPolicy: false,
     } : {
@@ -154,16 +157,20 @@ export default function TransactionFormScreen() {
             ...(initialType === 'invest' ? INVESTMENT_FORM_CATEGORIES : TRANSACTION_CATEGORIES.expense),
             ...budgetItemCategoriesForTransaction(data, monthKey(initialDate), today, initialType),
           ];
-        return requestedCategoryParam && categories.some((category) => category === requestedCategoryParam)
-          ? requestedCategoryParam
-          : categories[0] ?? '';
+        if (initialType === 'invest') return '';
+        if (requestedCategoryParam && categories.some((category) => category === requestedCategoryParam)) {
+          return requestedCategoryParam;
+        }
+        return categories[0] ?? '';
       })(),
+      customCategory: '',
       instrumentId: undefined,
       linkToPolicy: false,
     },
   });
   const selectedType = useWatch({ control, name: 'type' });
   const selectedCategory = useWatch({ control, name: 'category' });
+  const selectedCustomCategory = useWatch({ control, name: 'customCategory' }) ?? '';
   const selectedInstrumentId = useWatch({ control, name: 'instrumentId' });
   const selectedDate = useWatch({ control, name: 'date' }) ?? today;
   const selectedAmount = useWatch({ control, name: 'amount' }) ?? '';
@@ -243,6 +250,9 @@ export default function TransactionFormScreen() {
       group: section.name,
     })),
   );
+  if (selectedType === 'expense' && !categoryOptions.some((option) => option.value === customExpenseCategory)) {
+    categoryOptions.push({ value: customExpenseCategory, title: 'Custom' });
+  }
   for (const category of choices) {
     if (!categoryOptions.some((option) => option.value === category)) {
       categoryOptions.push({
@@ -252,6 +262,9 @@ export default function TransactionFormScreen() {
       });
     }
   }
+  const selectedBudgetSection = categorySections.find((section) =>
+    section.categories.some((choice) => choice.category === selectedCategory),
+  )?.name;
 
   const save = async (values: TransactionFormOutput) => {
     const { instrumentId, linkToPolicy: shouldLinkPolicy, ...transactionValues } = values;
@@ -413,8 +426,10 @@ export default function TransactionFormScreen() {
                       field.onChange(type);
                       if (type !== 'invest') setValue('instrumentId', undefined, { shouldDirty: true, shouldValidate: true });
                       const categories = type === 'invest' ? INVESTMENT_FORM_CATEGORIES : TRANSACTION_CATEGORIES[type];
-                      if (!categories.some((value) => value === category)) {
-                        setValue('category', categories[0], { shouldDirty: true, shouldValidate: true });
+                      if (type === 'invest') {
+                        setValue('category', '', { shouldDirty: true, shouldValidate: true });
+                      } else if (!categories.some((value) => value === category)) {
+                        setValue('category', categories[0] ?? '', { shouldDirty: true, shouldValidate: true });
                       }
                     }}
                   />
@@ -477,17 +492,46 @@ export default function TransactionFormScreen() {
                 name="category"
                 render={({ field }) => (
                   selectedType === 'expense' ? (
-                    <Dropdown
-                      label="Category"
-                      accessibilityLabel="Category"
-                      value={field.value}
-                      options={categoryOptions}
-                      onChange={(value) => {
-                        field.onChange(value);
-                        setValue('instrumentId', undefined, { shouldDirty: true, shouldValidate: true });
-                      }}
-                      error={errors.category?.message}
-                    />
+                    <>
+                      <Dropdown
+                        label="Category"
+                        accessibilityLabel="Category"
+                        value={field.value}
+                        options={categoryOptions}
+                        onChange={(value) => {
+                          field.onChange(value);
+                          setValue('customCategory', '', { shouldDirty: true, shouldValidate: true });
+                          setValue('instrumentId', undefined, { shouldDirty: true, shouldValidate: true });
+                        }}
+                        error={errors.category?.message}
+                      />
+                      {field.value === customExpenseCategory ? (
+                        <Controller
+                          control={control}
+                          name="customCategory"
+                          render={({ field: customField }) => (
+                            <FieldTitle title="Custom category">
+                              <TextField
+                                label="Custom category"
+                                accessibilityLabel="Custom category"
+                                value={customField.value ?? ''}
+                                onChangeText={customField.onChange}
+                                onBlur={customField.onBlur}
+                                placeholder="Enter a category"
+                                maxLength={30}
+                                error={errors.customCategory?.message}
+                              />
+                            </FieldTitle>
+                          )}
+                        />
+                      ) : null}
+                      <ReadOnlyRow
+                        label="Budget section"
+                        value={field.value === customExpenseCategory
+                          ? selectedCustomCategory.trim() ? 'Custom category' : 'Choose a custom category'
+                          : selectedBudgetSection ?? 'Other (not in budget)'}
+                      />
+                    </>
                   ) : (
                     <Dropdown
                       label="Category"

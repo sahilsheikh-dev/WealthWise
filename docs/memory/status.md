@@ -1,6 +1,60 @@
-<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-13 | Updates: owner and AI agents -->
+<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-21 | Updates: owner and AI agents -->
 
 # Status
+- **P20-W (2026-11-21) — Transaction form D1/D2 in progress; D3 schema gate open.**
+  P20-S-R2 merge `6b50a1d` is on `develop`; phase `phase/20-budget` was
+  synced from current `origin/develop`, and the task tree now includes that
+  phase history. D1/D2 remain schema-free and implemented; focused
+  TransactionForm/schema suites pass (68 tests). On the synced task tree,
+  Gate 1 exited 0 (102 suites, 1,368 passed, 1 skipped; coverage
+  95.96/92.14/98.03/97.63% statements/branches/functions/lines); Gates 2–3
+  exited 0; local Gate 4 attempt exited 1 with
+  `ENOTFOUND registry.npmjs.org`; owner-supplied Gate 4 exited 1 at 20/21 on
+  the six known SDK 57 patch mismatches (owner-approved cleanup exception);
+  Gates 5–6 exited 0. Dependencies and app config did not change since the
+  owner run. D3 custom earned-income types still require changing validation,
+  backup and migration/archive behavior. It remains Planned pending the owner’s
+  v24 ownership decision against P36-A/B. Physical checks O69–O72 remain Not
+  run; O65–O68 belong to P21-F. Task PR #174 merged at `419a37b07e6853b3c683d22ec243ea58223514c1`; phase
+  PR #175 merged at `9e47856f20848e03ac6a4b8e699f47c387d08161`; CM-2 synchronized local `develop`.
+  P20-W-R1 records task PR #174 and phase PR #175; D3 remains Planned.
+- **P20-W-R1 (2026-11-21) — integration evidence recorded; P20-W remains open for D3.**
+  Task PR #174 merged into `phase/20-budget` at `419a37b07e6853b3c683d22ec243ea58223514c1`; phase PR #175
+  merged into `develop` at `9e47856f20848e03ac6a4b8e699f47c387d08161`. CM-2 synchronized local `develop`.
+  D1/D2 are integrated. D3 remains Planned pending the P36 v24 schema-owner
+  decision; device checks O69–O72 remain Not run.
+- **P21-F / CR-117 (2026-11-21) — Emergency Fund target editing merged; P21-F-R1 records integration.**
+  Read-only investigation confirms the existing persisted `Goal.target` is used;
+  schema v23 and backup shape remain unchanged. DEC-P21F-FLOOR keeps the
+  max(stored target, three-month floor) effective target and rejects below-floor
+  edits using current typed validation. Task branch is
+  `task/P21-F-emergency-fund-target-editing`; test-first ledger commit is
+  `f759932`. One `Edit Emergency Fund` header action now opens a combined target
+  and allocation form. The plan saves through one domain action, one store set
+  and one persisted write with one-step Undo. Domain, store, screen, form, route,
+  backup and demo tests pass. Synced task gates: Gate 1 exit 0 (102 suites,
+  1,365 passed, 1 skipped; coverage 95.96/92.14/98.03/97.63% statements/
+  branches/functions/lines); Gates 2–3 exit 0; this session's Gate 4 attempt
+  exit 1 with `ENOTFOUND registry.npmjs.org`; owner-supplied Gate 4 exit 1 at
+  20/21 on the known six-package SDK 57 patch mismatch; Gates 5–6 exit 0.
+  Task PR #170 merged into `phase/21-emergency-fund` at
+  `c877f6d19e35c0b9fbcba90e9722da7531948c8e`; phase PR #171 merged into
+  `develop` at `2e5e18a7a2be207387a7462b039547f51b0e4631`. CM-2 synchronized
+  local `develop`. P21-F-R1 records task PR #170 and phase PR #171 merge SHAs.
+  O65–O68 remain Not run.
+- **P20-S-R2 / CR-116 (2026-11-21) — searchable Dropdown implementation complete.**
+  Task branch `task/P20-S-R2-dropdown-search` merged into `phase/20-budget`
+  through PR #164 at `185a5ea125f64ac104344f00ad013d68cdb7a946`; phase PR #165
+  merged into `develop` at `6b50a1dbd36b401352776e71028fc07071c11991`.
+  CM-2 fast-forwarded local `develop` to that remote tip. Six ordered
+  gates completed: 1 exit 0 (102 suites, 1,342 passed, 1 skipped); 2 exit 0;
+  3 exit 0; 4 exit 1 (known SDK 57 patch mismatch after one DNS retry); 5 exit
+  0; 6 exit 0. The test-first ledger expectation is `36e8ba4`; helper,
+  component and focused route checks pass. **Assumed:** no schema, domain,
+  demo-data or dependency changes were needed; confirmed. Native keyboard,
+  result-count announcement, clear tap target and real-device 1.3/2.0 font
+  scale checks remain unverified (O61–O64). P20-S-R2-R1 records the verified
+  integration evidence; P20-S-R2-R2 preserves the complete revision chain.
 - **CR-115 (2026-11-13) — Budget edit and delete bug recorded as Planned (P20-U-R1).**
   Owner reported: "In budget while updating any item/value/amount/start-month/frequency/due-day/etc
   it is not updating also while trying to delete it is not even deleting, not for
@@ -586,10 +640,13 @@
   historical records in [PROGRESS.md](../PROGRESS.md).
 - CR-108 baseline: 101 suites, 1317 tests (1316 passed, 1 skipped) on
   2026-11-11; all six CR-108 gates exited 0.
-- Test counts: 101 suites, 1325 tests (1324 passed, 1 skipped) on
-  2026-11-12.
-- Latest validated run: 101 suites, 1325 tests (1324 passed, 1 skipped) on
-  2026-11-12 on the CR-112 task tree; all six ordered gates exited 0.
+- Test counts: 102 suites, 1369 tests (1,368 passed, 1 skipped) on
+  2026-11-21.
+- Latest validated run: 102 suites, 1369 tests (1,368 passed, 1 skipped) on
+  2026-11-21 on the synced P20-W task tree; Gate 1 coverage was
+  95.96/92.14/98.03/97.63% statements/branches/functions/lines; Gates 1–3 and
+  5–6 exited 0. Gate 4 exited 1 with `ENOTFOUND registry.npmjs.org`. P20-W D3
+  remains behind the P36 v24 ownership decision; O69–O72 remain Not run.
   Coverage and exact commands are recorded in [PROGRESS.md](../PROGRESS.md).
 - All six P29-L gates exit 0: Jest coverage, TypeScript, Expo lint with zero
   warnings, Expo Doctor 21/21, Android export and iOS export. Exact commands

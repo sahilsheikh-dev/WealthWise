@@ -1,4 +1,4 @@
-<!-- Purpose: Stable product and repository facts for AI contributors. | Last updated: 2026-11-11 | Updates: owner and AI agents -->
+<!-- Purpose: Stable product and repository facts for AI contributors. | Last updated: 2026-11-21 | Updates: owner and AI agents -->
 
 # Project
 
@@ -55,8 +55,35 @@ runtime synchronization.
   pure utilities and platform helpers in `src/lib/`; demo data in `src/mock/`.
 - Other source groups: `src/hooks/`, `src/theme/`, `src/constants/`, `assets/`
   and `scripts/`.
-- Test counts: 101 suites, 1325 tests (1324 passed; one skipped) on
-  2026-11-12 for the CR-112 task-tree run. The prior CR-111 task-tree run had
+- Test counts: 102 suites, 1369 tests (1,368 passed; one skipped) on
+  2026-11-21.
+- Latest synced P20-W Gate 1: 102 suites, 1369 tests (1,368 passed; one
+  skipped), coverage 95.96/92.14/98.03/97.63% statements/branches/functions/
+  lines. Gates 1–3 and 5–6 exited 0. Local Gate 4 attempt exited 1 with
+  `ENOTFOUND registry.npmjs.org`; owner-supplied Gate 4 exited 1 at 20/21 on
+  the six known SDK 57 patch mismatches (owner-approved cleanup exception).
+  Dependencies and app config did not change since the owner run. P20-W D3
+  remains gated on the P36 v24 ownership decision; O69–O72 remain Not run. P20-W gate evidence is recorded
+  in [status.md](status.md) and the [progress ledger](../PROGRESS.md).
+- P20-W integration: task PR #174 merged into `phase/20-budget` at
+  `419a37b07e6853b3c683d22ec243ea58223514c1`; phase PR #175 merged into `develop` at `9e47856f20848e03ac6a4b8e699f47c387d08161`.
+  CM-2 synchronized local `develop`. P20-W-R1 records the merge evidence.
+  D1/D2 are integrated; D3 remains open pending the P36 v24 owner decision.
+  Device checks O69–O72 remain Not run.
+- P21-F synced Gate 1 was 102 suites, 1,366 tests (1,365 passed; one skipped),
+  coverage 95.96/92.14/98.03/97.63%. Gates 1–3 and 5–6 exited 0. Gate 4
+  network attempt exited 1 (`ENOTFOUND registry.npmjs.org`); the owner-supplied
+  result exited 1 at 20/21 on the six-package Expo SDK 57 patch mismatch.
+  Dependencies and app config matched `origin/develop`. Task PR #170 merged to
+  P21 at `c877f6d19e35c0b9fbcba90e9722da7531948c8e`; phase PR #171 merged to
+  `develop` at `2e5e18a7a2be207387a7462b039547f51b0e4631`; CM-2 synchronized
+  local `develop`. P21-F-R1 records the evidence.
+- P20-W pre-sync task run: 102 suites, 1,348 tests (1,347 passed; one skipped),
+  coverage 95.97/92.15/98.02/97.63%. Gates 1–3 exited 0 after correcting a
+  fixture; Expo Doctor and its retry failed with `ENOTFOUND registry.npmjs.org`;
+  Gates 5–6 were not run on that pre-sync tree.
+  prior CR-112 task-tree run had 101 suites, 1325 tests (1324 passed; one skipped) on
+  2026-11-12. The prior CR-111 task-tree run had
   101 suites, 1,323 tests (1,322 passed; one skipped). The prior P42-A full
   run had 101 suites and 1,320 tests (1,319 passed; one skipped) on
   2026-11-11, repeated on integrated `develop` at

@@ -2,7 +2,10 @@ import {
   addTransaction, completeOnboarding, deleteTransaction, emptyAppData, NotFoundError, updateSettings, updateTransaction,
 } from '../actions';
 import { confirmHoldingValue } from '../holdingActions';
-import { GoalTargetBelowMinimumError, updateGoal } from '../goalActions';
+import { GoalTargetBelowMinimumError, InvalidEmergencyFundTargetError, updateEmergencyFundTarget, updateGoal } from '../goalActions';
+import { monthsCovered } from '../ef';
+import { allocateAmounts, DEFAULT_EF_ALLOCATION } from '../efAllocation';
+import { effectiveEmergencyTarget } from '../goals';
 import type { AppData, Transaction } from '../types';
 
 const input: Omit<Transaction, 'id'> = {
@@ -126,4 +129,46 @@ describe('immutable app actions', () => {
     expect(updateGoal(data, 'trip', { target: 1 }, { expenseBaseline: 20_000 }).goals[1])
       .toMatchObject({ target: 1 });
   });
+
+  it('updates the persisted EF target through a pure action and preserves floor-based downstream calculations', () => {
+    const data = {
+      ...base(),
+      transactions: [
+        { ...input, id: 'expense-1', date: '2026-07-01', amount: 20_000 },
+        { ...input, id: 'expense-2', date: '2026-08-01', amount: 20_000 },
+        { ...input, id: 'expense-3', date: '2026-09-01', amount: 20_000 },
+      ],
+      goals: [
+        { id: 'ef', name: 'Emergency fund', target: 60_000, saved: 30_000, year: 2028, auto: 'ef' as const, links: [] },
+        { id: 'trip', name: 'Trip', target: 10_000, saved: 0, year: 2028, links: [] },
+      ],
+    };
+    const next = updateEmergencyFundTarget(data, 90_000, { expenseBaseline: 20_000 });
+    expect(next).not.toBe(data);
+    expect(next.goals[0]).toMatchObject({ target: 90_000, saved: 30_000, auto: 'ef' });
+    expect(next.goals[1]).toEqual(data.goals[1]);
+    expect(data.goals[0]).toMatchObject({ target: 60_000 });
+    const effective = effectiveEmergencyTarget(next.goals[0]!, 20_000);
+    expect(effective).toMatchObject({ target: 90_000, minimum: 60_000, raised: false });
+    expect(allocateAmounts(effective.target, DEFAULT_EF_ALLOCATION)).toMatchObject({
+      cash: 9_000,
+      bank: 36_000,
+      'fd-rd': 45_000,
+    });
+    expect(monthsCovered(30_000, 20_000)).toBe(1.5);
+    expect(effectiveEmergencyTarget(next.goals[0]!, 40_000)).toMatchObject({
+      target: 120_000,
+      minimum: 120_000,
+      raised: true,
+    });
+  });
+
+  it.each([0, -1, Number.NaN, Number.POSITIVE_INFINITY, 10_000_000_000.01, 1.001])(
+    'rejects invalid Emergency Fund targets %s with a typed error', (target) => {
+      const data = base();
+      expect(() => updateEmergencyFundTarget(data, target, { expenseBaseline: 0 }))
+        .toThrow(InvalidEmergencyFundTargetError);
+      expect(data.goals[0]).toMatchObject({ target: 300_000 });
+    },
+  );
 });
