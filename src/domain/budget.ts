@@ -551,6 +551,7 @@ function updateBudgetItemInMonth(
       value: values.amount,
       frequency: existing?.frequency ?? 'monthly',
       ...(existing?.firstDueMonth === undefined ? {} : { firstDueMonth: existing.firstDueMonth }),
+      ...(existing?.holdingId === undefined ? {} : { holdingId: existing.holdingId }),
       ...(values.dueDay === undefined ? {} : { dueDay: values.dueDay }),
     };
     const items = remove
@@ -610,6 +611,7 @@ function updateBudgetItemInPlan(
       value: values.amount,
       frequency: existing?.frequency ?? 'monthly',
       ...(existing?.firstDueMonth === undefined ? {} : { firstDueMonth: existing.firstDueMonth }),
+      ...(existing?.holdingId === undefined ? {} : { holdingId: existing.holdingId }),
       ...(values.dueDay === undefined ? {} : { dueDay: values.dueDay }),
     };
     const items = remove
