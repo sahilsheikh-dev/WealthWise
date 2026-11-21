@@ -1,6 +1,16 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-21 | Updates: owner and AI agents -->
 
 # Status
+- **P20-A-R3 reproduction checkpoint (2026-11-21) — no failure reproduced.**
+  Existing source and focused regressions show linked manual-holding pending
+  rows retain month/holding IDs; the real-store exact/lower/higher ×
+  Savings/Cash/Other matrix records one linked deposit, the same Budget actual,
+  one persisted write and one-step Undo. Fixed Deposit is rejected. Four
+  focused suites passed (195 tests), including the shared pending-action
+  component. No P20-A-R3 code or test changes were made; the planned revision
+  remains open pending a concrete failing Transactions reproduction. This
+  checkpoint did not add new per-route tests. See the ledger checkpoint and
+  open-items note.
 - **P20-W (2026-11-21) — Transaction form D1/D2 in progress; D3 schema gate open.**
   P20-S-R2 merge `6b50a1d` is on `develop`; phase `phase/20-budget` was
   synced from current `origin/develop`, and the task tree now includes that

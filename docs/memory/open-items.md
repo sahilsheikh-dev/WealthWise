@@ -219,7 +219,14 @@ P20-A-R3 is integrated through task PR #149 (`7a5fed6c4a98d8394652e0dbb499b9aa81
 and phase PR #150 (`4170545cbaa8a4f37d4583b5c29c909c0c99a015`).
 
 - **P20-A-R3 — Linked one-time savings Paid from Transactions:** the
-  owner-reported behavior is not yet reproduced. Treat all causes as
+  owner-reported behavior remains unreproduced in the existing real-store
+  exact/lower/higher × Savings/Cash/Other matrix and shared pending-action
+  component test. Per-route linked-savings tests for Transactions, Budget,
+  Home, `/payment-confirm` and reminders were not added in this checkpoint.
+  Existing selectors preserve `month`/`holdingId`; linked holding-entry
+  transactions count toward the linked Budget line even when their generated
+  category differs. The component dispatches manual links through shared
+  `clearDue`/Undo; Fixed Deposit is rejected. Treat all proposed causes as
   hypotheses, not conclusions: the Transactions pending row may lack the
   holding ID or viewed month and fall through to generic `addTransaction`;
   a generated `Other investments` transaction may not match the Budget item

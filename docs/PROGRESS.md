@@ -10534,6 +10534,37 @@ Gradle build, version bump, or release preparation was performed.
 
 ## 11. Session and release log
 
+### P20-A-R3 reproduction checkpoint (2026-11-21)
+
+- Reviewed the Transactions pending-row path, shared `PendingItemActions`,
+  `pendingItems`, `budgetLineActual`, `clearDue`/Undo, Home, Budget,
+  `/payment-confirm`, and reminder due boundaries. H1 is not supported by
+  current source/tests: Budget pending sources preserve month and holding ID.
+  H2 is not supported by current source/tests: holding-entry transactions are
+  included in the explicitly linked Budget line even when their generated
+  transaction category differs. H3 is not supported by current source/tests:
+  recurring-plan due rows are generated only for plan-kind holdings, while the
+  Budget-linked manual-holding path uses a holding target. These remain
+  hypotheses absent a failing owner reproduction.
+- Existing real-store coverage exercises exact/lower/higher payments for
+  Savings account, Cash and Other holdings; one Deposit, one linked invest
+  transaction, matching Budget actual, one persisted write, and exact Undo all
+  pass. Existing domain coverage rejects Fixed Deposit. The shared
+  `PendingItemActions` component test passes for a linked manual Budget row.
+  Focused command `npm test -- --runInBand
+  src/data/__tests__/createAppStore.test.ts
+  src/components/__tests__/PendingItemActions.test.tsx
+  src/domain/__tests__/pending.test.ts src/domain/__tests__/dues.test.ts`
+  exited 0 (4 suites, 195 tests). Focused ledger/memory tests initially
+  terminated in Watchman with `fchmod ... Operation not permitted`; rerun as
+  `npm test -- --runInBand --watchman=false
+  src/lib/__tests__/progressLedger.test.ts
+  src/lib/__tests__/memoryDocs.test.ts` exited 0 (2 suites, 33 tests).
+  `git diff --check` exited 0. No per-route regression tests or application
+  edits were made; full gates and physical-device checks were not run. The
+  planned P20-A-R3 remains open until the reported Transactions failure can be
+  reproduced; the exact user's triggering data/steps are still needed.
+
 ### P20-W — Transaction form/category investigation (2026-11-21)
 
 - Confirmed the P20-S-R2 merge `6b50a1dbd36b401352776e71028fc07071c11991` is an ancestor of local and `origin/develop` at `3473c61a6b32fa6f82ae51306e16828f6b7d8eea`. Synced `phase/20-budget` from that origin tip with no-ff merge `e44ce6f0dc4614339f766ac91d73f0df0d428363`; task branch `task/P20-W-transaction-form-categories` is based on it.
