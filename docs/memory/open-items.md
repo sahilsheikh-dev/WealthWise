@@ -1,4 +1,4 @@
-<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-13 | Updates: owner and AI agents -->
+<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-21 | Updates: owner and AI agents -->
 
 # Open items
 
@@ -122,27 +122,66 @@ the phase branch is retained. Phase PR #147 merged into `develop` at
   previously retained stale phase tags. Prepare the exact proposed deletion
   list for owner review; the list has not yet been supplied or approved, so
   no deletion is authorized. Report the audit in chat or `/tmp`, not Git.
-- **P21-F (Previously: P43-C) — Emergency Fund target editing:** edit from
-  the Emergency Fund screen and reflect the value on that screen, Home, Goals,
-  allocation and bucket targets, and in the three-month minimum-floor logic.
-  Require one domain action, one Zustand `set`, one persisted write and Undo;
-  validation, tests at font scales 1.3 and 2.0, and DEC-DEMO data.
-  `app/(tabs)/index.tsx` is user-owned; the owner explicitly authorized
-  editing it if needed (CR-113). Placement: rule 4; searched dashboard, register, P21-A–E,
-  roadmap, memory and Emergency Fund modules; related P21-A–E; reason: the
-  work extends the existing Emergency Fund feature area.
-- **P20-W (Previously: P43-D) — Transaction form:** derive investment category with
-  `investCategoryFor` only after a holding is selected; show only
-  user-created/Budget-defined expense categories plus Custom; design category
-  (e.g. Wants/Expenses) versus item (e.g. party/others) hierarchy and
-  persistence; add custom Income type. Schema v23 is current and P36 already
-  claims v24. Schema impact remains undetermined; any bump needs a separate
-  plan, identity-preserving migration, premigration archive and backup import
-  support. Plan test-first regressions, demo-data updates and backup
-  compatibility checks. Placement: rule 4; searched dashboard, register,
-  P20-O/P, P3 history, roadmap, memory and transaction form modules; related
-  P20-O and P20-P; reason: the work extends the existing Budget/category form
-  area.
+- **P21-F (Previously: P43-C) — Emergency Fund target editing (Done; Revised by P21-F-R1):**
+  the existing persisted Goal.target is reused; schema v23 and backup formats
+  remain unchanged. DEC-P21F-FLOOR keeps the effective max(stored target,
+  three-month floor) and rejects below-floor input with the existing typed
+  validation. One header edit action opens a combined target/allocation form;
+  the plan saves through one domain action, one store write and one Undo.
+  Target/bucket reflection, demo fixture and v23 backup round-trip tests are
+  covered. On the synced task tree, Gate 1 exited 0 (102 suites, 1,365 passed,
+  1 skipped; coverage 95.96/92.14/98.03/97.63% statements/branches/functions/
+  lines), Gates 2–3 exited 0, and Gates 5–6 exited 0. This session's Gate 4
+  attempt exited 1 with `ENOTFOUND registry.npmjs.org`; the owner-supplied run
+  exited 1 with 20/21 checks and the six documented Expo SDK 57 patch
+  mismatches. The latter is the known owner-approved cleanup exception; the
+  network failure is not. Dependencies and app config match `origin/develop`.
+  P21-F is integrated into `develop` through PR #170 and PR #171. Task PR #170
+  merged at `c877f6d19e35c0b9fbcba90e9722da7531948c8e`; phase
+  PR #171 merged at `2e5e18a7a2be207387a7462b039547f51b0e4631`; CM-2
+  synchronized local `develop`. P21-F-R1 records this evidence. Home source is
+  untouched. Device checks O65–O68 are Not run.
+  Placement: rule 4; searched dashboard, register, P21-A–E, phase history,
+  roadmap, memory and Emergency Fund/Home/Goals modules; related P21-A–E;
+  reason this extends the existing Emergency Fund feature area.
+- **P20-W (Previously: P43-D) — Transaction form (D1/D2 In progress; D3 Planned):**
+  P20-S-R2 is confirmed on `develop` at merge `6b50a1d`; phase sync commit
+  `e44ce6f` and task branch `task/P20-W-transaction-form-categories` are ready.
+  D1 is implemented without a persisted-schema change: a new Invest form starts
+  with a neutral category until a holding is selected, derives with
+  `investCategoryFor`, and blocks Save with the existing missing-holding
+  message. D2 is implemented without a persisted-schema change: show
+  effective-month Budget-defined categories grouped by section, include a
+  Custom entry with a bounded name field, derive the selected section as
+  read-only context, and preserve transaction category strings when Budget
+  items are deleted. Custom input is stored only in the existing transaction
+  category string. Focused TransactionForm and schema suites pass (68 tests);
+  existing demo fixtures already include effective Budget items and require no
+  change. Pre-sync gates: Gate 1 exit 0 (102 suites, 1,347 passed, 1 skipped);
+  Gates 2–3 exit 0 after fixture correction; Gate 4 and retry exit 1 with
+  `ENOTFOUND registry.npmjs.org`; Gates 5–6 were not run. Synced-tree gates:
+  Gate 1 exit 0 (102 suites, 1,368 passed, 1 skipped; coverage
+  95.96/92.14/98.03/97.63%); Gates 2–3 exit 0; Gate 4 exit 1 with the same
+  DNS error; Gates 5–6 exit 0. No PRs have been opened.
+
+  D3 custom Income remains gated. Transaction `category` is already a bounded
+  string, but scheduled earned-income `BudgetIncomeItem.category` is the fixed
+  `EarnedIncomeCategory` enum. Proposed change: widen that same field to a
+  trimmed, nonempty string up to 60 characters, with no new field; preserve all
+  v23 category strings unchanged in v23-to-v24 migration. Update app and backup
+  schemas, domain income validation, labels/filters, and demo fixtures. Keep
+  backup format v1 and import v1–v23 through the migration chain; test plain
+  and encrypted round trips with custom income. Extend pre-migration archive
+  recognition and erase-all cleanup to include `.premigration.v23`.
+  **STOP GATE:** P36-A/B already claim schema v24. Owner decision required
+  before D3: either P20-W takes v24 and P36 is replanned to v25, or P36 keeps
+  v24 and P20-W is replanned. D1/D2 may proceed independently without schema
+  changes. Physical-device checks O69–O72 cover the placeholder, derived
+  category/section, searchable category picker, custom income and font scales
+  1.3/2.0; D3 remains gated and its device scenario is deferred until
+  implementation. Placement: rule 4; searched dashboard, register, P20-O/P,
+  P3 history, roadmap, memory and transaction form modules; related P20-O and
+  P20-P; reason this work extends the existing Budget/category form area.
 - **P43-E — GitHub issue strategy (plan only):** one issue per ledger part
   or CR; phase/type/status labels; release milestones; pending issues open;
   completed issues retrospective and closed; verified commits, PRs, merge

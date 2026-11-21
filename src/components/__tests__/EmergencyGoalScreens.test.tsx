@@ -161,6 +161,19 @@ function renderedText(root: TestRenderer.ReactTestInstance): string {
 }
 
 describe('three-month emergency target screens', () => {
+  it('uses the edited target to compute the allocation bucket targets', () => {
+    mockData.current = fixture(80_000, 20_000);
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    act(() => { renderer = TestRenderer.create(<EmergencyFundScreen />); });
+    if (!renderer) throw new Error('Emergency fund did not render.');
+    expect(renderedText(renderer.root)).toContain('Target');
+    expect(renderedText(renderer.root)).toContain('₹80,000');
+    expect(renderedText(renderer.root)).toContain('₹8,000');
+    expect(renderedText(renderer.root)).toContain('₹32,000');
+    expect(renderedText(renderer.root)).toContain('₹40,000');
+    act(() => renderer?.unmount());
+  });
+
   it('shows the Home asset, emergency fund and liability pills with net worth as assets minus liabilities', async () => {
     const data = fixture(300_000, 0, 75_000, 200_000);
     mockData.current = {
@@ -265,7 +278,7 @@ describe('three-month emergency target screens', () => {
     },
   );
 
-  it('keeps normal allocation rows detail-first with a final progress bar and one header edit action', () => {
+  it('keeps normal allocation rows detail-first with a final progress bar and one combined header edit action', () => {
     const empty = emptyAppData('2026-10-11');
     mockData.current = {
       ...empty,
@@ -305,7 +318,7 @@ describe('three-month emergency target screens', () => {
       title: 'Emergency fund',
       showBack: true,
       showDefaultMenu: false,
-      rightActions: [{ icon: 'edit-2', label: 'Edit allocation' }],
+      rightActions: [{ icon: 'edit-2', label: 'Edit Emergency Fund' }],
     });
     expect(renderer.root.findAllByProps({ label: 'Edit emergency fund allocation' })).toHaveLength(0);
     expect(text).not.toContain('Over');
@@ -406,7 +419,7 @@ describe('three-month emergency target screens', () => {
         await Promise.resolve();
       });
       if (!home || !goals || !emergency) throw new Error(`${scenario.name}: a screen did not render.`);
-      const repairMessage = 'Your allocation was adjusted to total 100%. Check it in Edit allocation.';
+      const repairMessage = 'Your allocation was adjusted to total 100%. Check it in Edit Emergency Fund.';
       expect(renderedText(emergency.root)).toContain(repairMessage);
       expect(emergency.root.findAllByType('text').filter((node) =>
         node.children.join('') === repairMessage)).toHaveLength(1);

@@ -39,7 +39,7 @@ describe('AppHeader menu usage', () => {
     expect(budget?.props).toContain('showDefaultMenu={false}');
     const emergencyFund = usages.find(({ file }) => file === 'app/emergency-fund.tsx');
     expect(emergencyFund?.props).toContain('showDefaultMenu={false}');
-    expect(emergencyFund?.props).toContain("label: 'Edit allocation'");
+    expect(emergencyFund?.props).toContain("label: 'Edit Emergency Fund'");
     expect(emergencyFund?.props).toContain("icon: 'edit-2'");
   });
 });

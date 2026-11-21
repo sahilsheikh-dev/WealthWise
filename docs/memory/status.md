@@ -1,6 +1,37 @@
-<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-13 | Updates: owner and AI agents -->
+<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-21 | Updates: owner and AI agents -->
 
 # Status
+- **P20-W (2026-11-21) — Transaction form D1/D2 in progress; D3 schema gate open.**
+  P20-S-R2 merge `6b50a1d` is on `develop`; phase `phase/20-budget` was
+  synced from current `origin/develop`, and the task tree now includes that
+  phase history. D1/D2 remain schema-free and implemented; focused
+  TransactionForm/schema suites pass (68 tests). On the synced task tree,
+  Gate 1 exited 0 (102 suites, 1,368 passed, 1 skipped; coverage
+  95.96/92.14/98.03/97.63% statements/branches/functions/lines); Gates 2–3
+  exited 0; Gate 4 exited 1 with `ENOTFOUND registry.npmjs.org`; Gates 5–6
+  exited 0. D3 custom earned-income types still require changing validation,
+  backup and migration/archive behavior. It remains Planned pending the owner’s
+  v24 ownership decision against P36-A/B. Physical checks O69–O72 remain Not
+  run; O65–O68 belong to P21-F. No PRs have been opened yet.
+- **P21-F / CR-117 (2026-11-21) — Emergency Fund target editing merged; P21-F-R1 records integration.**
+  Read-only investigation confirms the existing persisted `Goal.target` is used;
+  schema v23 and backup shape remain unchanged. DEC-P21F-FLOOR keeps the
+  max(stored target, three-month floor) effective target and rejects below-floor
+  edits using current typed validation. Task branch is
+  `task/P21-F-emergency-fund-target-editing`; test-first ledger commit is
+  `f759932`. One `Edit Emergency Fund` header action now opens a combined target
+  and allocation form. The plan saves through one domain action, one store set
+  and one persisted write with one-step Undo. Domain, store, screen, form, route,
+  backup and demo tests pass. Synced task gates: Gate 1 exit 0 (102 suites,
+  1,365 passed, 1 skipped; coverage 95.96/92.14/98.03/97.63% statements/
+  branches/functions/lines); Gates 2–3 exit 0; this session's Gate 4 attempt
+  exit 1 with `ENOTFOUND registry.npmjs.org`; owner-supplied Gate 4 exit 1 at
+  20/21 on the known six-package SDK 57 patch mismatch; Gates 5–6 exit 0.
+  Task PR #170 merged into `phase/21-emergency-fund` at
+  `c877f6d19e35c0b9fbcba90e9722da7531948c8e`; phase PR #171 merged into
+  `develop` at `2e5e18a7a2be207387a7462b039547f51b0e4631`. CM-2 synchronized
+  local `develop`. P21-F-R1 records task PR #170 and phase PR #171 merge SHAs.
+  O65–O68 remain Not run.
 - **P20-S-R2 / CR-116 (2026-11-21) — searchable Dropdown implementation complete.**
   Task branch `task/P20-S-R2-dropdown-search` merged into `phase/20-budget`
   through PR #164 at `185a5ea125f64ac104344f00ad013d68cdb7a946`; phase PR #165
@@ -599,11 +630,13 @@
   historical records in [PROGRESS.md](../PROGRESS.md).
 - CR-108 baseline: 101 suites, 1317 tests (1316 passed, 1 skipped) on
   2026-11-11; all six CR-108 gates exited 0.
-- Test counts: 102 suites, 1343 tests (1342 passed, 1 skipped) on
+- Test counts: 102 suites, 1369 tests (1,368 passed, 1 skipped) on
   2026-11-21.
-- Latest validated run: 102 suites, 1343 tests (1342 passed, 1 skipped) on
-  2026-11-21 on the P20-S-R2 task tree; gates 1–3, 5–6 exited 0 and Gate 4
-  exited 1 on the known Expo SDK 57 patch mismatch after one DNS retry.
+- Latest validated run: 102 suites, 1369 tests (1,368 passed, 1 skipped) on
+  2026-11-21 on the synced P20-W task tree; Gate 1 coverage was
+  95.96/92.14/98.03/97.63% statements/branches/functions/lines; Gates 1–3 and
+  5–6 exited 0. Gate 4 exited 1 with `ENOTFOUND registry.npmjs.org`. P20-W D3
+  remains behind the P36 v24 ownership decision; O69–O72 remain Not run.
   Coverage and exact commands are recorded in [PROGRESS.md](../PROGRESS.md).
 - All six P29-L gates exit 0: Jest coverage, TypeScript, Expo lint with zero
   warnings, Expo Doctor 21/21, Android export and iOS export. Exact commands

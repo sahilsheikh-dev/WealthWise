@@ -529,6 +529,7 @@ export const TRANSACTION_CATEGORIES = {
 
 export const INVESTMENT_FORM_CATEGORIES = TRANSACTION_CATEGORIES.invest
   .filter((category) => category !== 'Other');
+export const CUSTOM_EXPENSE_CATEGORY_SENTINEL = '__custom-expense-category__';
 
 export { EARNED_INCOME_CATEGORIES };
 export { NON_EARNED_INCOME_CATEGORIES };
@@ -590,6 +591,7 @@ export function makeTransactionFormSchema(
     note: z.string().trim().max(60, 'Keep the note under 60 characters'),
     type: z.enum(['income', 'expense', 'invest']),
     category: z.string(),
+    customCategory: z.string().trim().max(30, 'Keep the category under 30 characters').optional(),
     instrumentId: z.string().trim().optional().transform((id) => id || undefined),
     linkToPolicy: z.boolean().optional(),
   }).superRefine((value, context) => {
@@ -597,12 +599,16 @@ export function makeTransactionFormSchema(
     const customBudgetCategories = value.type === 'income'
       ? []
       : options.budgetCategoriesForMonth?.(value.type, value.date) ?? [];
-    if (
+    const customExpense = value.type === 'expense' && value.category === CUSTOM_EXPENSE_CATEGORY_SENTINEL;
+    if (!customExpense && (
       !allowedCategories.includes(value.category) &&
       !legacyCategories[value.type]?.includes(value.category) &&
       !customBudgetCategories.includes(value.category)
-    ) {
+    )) {
       context.addIssue({ code: 'custom', path: ['category'], message: 'Choose a category' });
+    }
+    if (customExpense && !value.customCategory) {
+      context.addIssue({ code: 'custom', path: ['customCategory'], message: 'Enter a category' });
     }
 
     const instrumentId = value.instrumentId;
@@ -647,6 +653,14 @@ export function makeTransactionFormSchema(
     ) {
       context.addIssue({ code: 'custom', path: ['instrumentId'], message: 'Only investment transactions can be linked' });
     }
+  }).transform((value) => {
+    const { customCategory, ...transaction } = value;
+    return {
+      ...transaction,
+      category: value.type === 'expense' && value.category === CUSTOM_EXPENSE_CATEGORY_SENTINEL
+        ? customCategory ?? ''
+        : value.category,
+    };
   });
 }
 
@@ -967,6 +981,24 @@ export function makeGoalFormSchema(
         code: 'custom',
         path: ['target'],
         message: `Emergency fund target must be at least 3 months of cover (${formatINR(minTarget)})`,
+      });
+    }
+  });
+}
+
+export function makeEmergencyFundTargetFormSchema(minimumTarget: number) {
+  return z.object({
+    target: moneyInputSchema({
+      minimum: 0.01,
+      maximum: 10_000_000_000,
+      maximumMessage: 'Amount is too large',
+    }),
+  }).superRefine(({ target }, context) => {
+    if (minimumTarget > 0 && target < minimumTarget) {
+      context.addIssue({
+        code: 'custom',
+        path: ['target'],
+        message: `The emergency fund target must be at least 3 months of cover (${formatINR(minimumTarget)})`,
       });
     }
   });
