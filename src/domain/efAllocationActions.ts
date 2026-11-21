@@ -6,6 +6,7 @@ import {
   validateAllocation,
 } from './efAllocation';
 import { linkEmergencyGoalAssets } from './goalLinks';
+import { updateEmergencyFundTarget } from './goalActions';
 import type { AppData, EfCustomBucket } from './types';
 
 export class InvalidAllocationError extends Error {
@@ -130,12 +131,16 @@ export type EfPlanDraft = {
   customBuckets: EfCustomBucket[];
   allocation: EfAllocation;
   links: Record<string, string[]>;
+  target?: number;
 };
+
+export type EfPlanOptions = { expenseBaseline?: number };
 
 export function saveEfPlan(
   data: AppData,
   plan: EfPlanDraft,
   newId: () => string,
+  options: EfPlanOptions = {},
 ): AppData {
   const existingIds = new Set(data.efCustomBuckets.map(({ id }) => id));
   const ids = new Map<string, string>();
@@ -176,10 +181,13 @@ export function saveEfPlan(
     throw new InvalidEfCustomBucketError('An investment can only be linked once to an option.');
   }
   const linkedData = linkEmergencyGoalAssets(data, linkedHoldingIds);
-  return {
+  const nextData = {
     ...linkedData,
     efCustomBuckets: customBuckets,
     efAllocation: resolveEfAllocation({ ...linkedData, efCustomBuckets: customBuckets, efAllocation: allocation }).allocation,
     efBucketLinks: links,
   };
+  return plan.target === undefined
+    ? nextData
+    : updateEmergencyFundTarget(nextData, plan.target, { expenseBaseline: options.expenseBaseline ?? 0 });
 }

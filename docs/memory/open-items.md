@@ -1,4 +1,4 @@
-<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-13 | Updates: owner and AI agents -->
+<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-21 | Updates: owner and AI agents -->
 
 # Open items
 
@@ -122,15 +122,28 @@ the phase branch is retained. Phase PR #147 merged into `develop` at
   previously retained stale phase tags. Prepare the exact proposed deletion
   list for owner review; the list has not yet been supplied or approved, so
   no deletion is authorized. Report the audit in chat or `/tmp`, not Git.
-- **P21-F (Previously: P43-C) — Emergency Fund target editing:** edit from
-  the Emergency Fund screen and reflect the value on that screen, Home, Goals,
-  allocation and bucket targets, and in the three-month minimum-floor logic.
-  Require one domain action, one Zustand `set`, one persisted write and Undo;
-  validation, tests at font scales 1.3 and 2.0, and DEC-DEMO data.
-  `app/(tabs)/index.tsx` is user-owned; the owner explicitly authorized
-  editing it if needed (CR-113). Placement: rule 4; searched dashboard, register, P21-A–E,
-  roadmap, memory and Emergency Fund modules; related P21-A–E; reason: the
-  work extends the existing Emergency Fund feature area.
+- **P21-F (Previously: P43-C) — Emergency Fund target editing (Done; Revised by P21-F-R1):**
+  the existing persisted Goal.target is reused; schema v23 and backup formats
+  remain unchanged. DEC-P21F-FLOOR keeps the effective max(stored target,
+  three-month floor) and rejects below-floor input with the existing typed
+  validation. One header edit action opens a combined target/allocation form;
+  the plan saves through one domain action, one store write and one Undo.
+  Target/bucket reflection, demo fixture and v23 backup round-trip tests are
+  covered. On the synced task tree, Gate 1 exited 0 (102 suites, 1,365 passed,
+  1 skipped; coverage 95.96/92.14/98.03/97.63% statements/branches/functions/
+  lines), Gates 2–3 exited 0, and Gates 5–6 exited 0. This session's Gate 4
+  attempt exited 1 with `ENOTFOUND registry.npmjs.org`; the owner-supplied run
+  exited 1 with 20/21 checks and the six documented Expo SDK 57 patch
+  mismatches. The latter is the known owner-approved cleanup exception; the
+  network failure is not. Dependencies and app config match `origin/develop`.
+  P21-F is integrated into `develop` through PR #170 and PR #171. Task PR #170
+  merged at `c877f6d19e35c0b9fbcba90e9722da7531948c8e`; phase
+  PR #171 merged at `2e5e18a7a2be207387a7462b039547f51b0e4631`; CM-2
+  synchronized local `develop`. P21-F-R1 records this evidence. Home source is
+  untouched. Device checks O65–O68 are Not run.
+  Placement: rule 4; searched dashboard, register, P21-A–E, phase history,
+  roadmap, memory and Emergency Fund/Home/Goals modules; related P21-A–E;
+  reason this extends the existing Emergency Fund feature area.
 - **P20-W (Previously: P43-D) — Transaction form:** derive investment category with
   `investCategoryFor` only after a holding is selected; show only
   user-created/Budget-defined expense categories plus Custom; design category

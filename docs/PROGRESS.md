@@ -74,7 +74,7 @@ parts count in the numerator and denominator. P1–P14 count as one part
 each.
 
 ```text
-Overall progress ████████░░ 77% (145/188)
+Overall progress ████████░░ 78% (147/189)
 P1          ██████████ 100% (1/1)
 P2          ██████████ 100% (1/1)
 P3          ██████████ 100% (1/1)
@@ -94,7 +94,7 @@ P17         ██████████ 100% (3/3)
 P18         ██████████ 100% (9/9)
 P19         ██████████ 100% (3/3)
 P20         █████████░ 92% (33/36)
-P21         █████████░ 86% (6/7)
+P21         ██████████ 100% (8/8)
 P22         ██████████ 100% (2/2)
 P23         ██████████ 100% (4/4)
 P24         ██████████ 100% (1/1)
@@ -197,7 +197,8 @@ P44         ░░░░░░░░░░ 0% (0/4)
 | P21-C1 | `3405101c1d65b6dfdbc7d84176d17b3208f389ca` | Done | CR-39: resolve malformed stored emergency-fund allocations, repair/archive on hydration and block invalid form saves; schema remains v8. | 2026-10-17 |
 | P21-D | — | Done | CR-51; null/default/repair targets are Cash 10, Bank account 40, FD / RD 50. Full tests/coverage and all required gates pass; schema v8 unchanged. | 2026-10-18 |
 | P21-E | `c199c8e` | Done | CR-90: replace the predefined allocation-item picker and custom-option modal with a shared-shell add/edit item route form. Schema v13 remains unchanged; full gates pass. | 2026-10-21 |
-| P21-F | — | Planned | Previously: P43-C. Plan Emergency Fund target editing and reflection on Emergency Fund, Home, Goals, allocation/bucket targets and the three-month minimum floor; one domain action, one Zustand set, one persisted write and Undo; validation, font-scale tests at 1.3/2.0 and DEC-DEMO data. Owner explicitly authorized editing `app/(tabs)/index.tsx` if needed (CR-113); no implementation started. Dependencies: design/validation; Evidence: not started. Placement: rule 4; searched dashboard, register, P21-A–E evidence, roadmap, memory and Emergency Fund modules; related P21-A–E; reason Emergency Fund target behavior belongs to the existing P21 feature area. | 2026-11-12 |
+| P21-F | — | Done; Revised by P21-F-R1 | Previously: P43-C. Emergency Fund target editing and reflection on Emergency Fund, Home, Goals, allocation/bucket targets and the three-month minimum floor; one combined header action and form edits the target and allocation together. Saving uses one domain plan action, one Zustand set, one persisted write and one-step Undo; typed validation, font-scale tests at 1.0/1.3/2.0 and DEC-DEMO data. DEC-P21F-FLOOR: effective target = max(stored target, three-month floor); reject below-floor input with the existing typed validation error and show the floor as helper text, preserving current goal behavior and avoiding a schema change. Owner explicitly authorized editing `app/(tabs)/index.tsx` if required (CR-113); no Home edit was needed. Combined-editor tests pass. Synced task gates: Gate 1 exit 0 (102 suites, 1,365 passed, 1 skipped); Gates 2–3 exit 0; local Gate 4 attempt exit 1 (`ENOTFOUND registry.npmjs.org`); owner-supplied Gate 4 exit 1 (20/21; six SDK 57 patch mismatches); Gates 5–6 exit 0. Task PR #170 and phase PR #171 are merged; P21-F-R1 records the exact merge evidence. Physical-device checks O65–O68 remain Not run. Placement: rule 4; searched dashboard, register, P21-A–E evidence, phase history, roadmap, memory and Emergency Fund modules; related P21-A–E; reason Emergency Fund target editing extends the existing P21 feature area. | 2026-11-21 |
+| P21-F-R1 | — | Done | Record P21-F task PR #170 merge `c877f6d19e35c0b9fbcba90e9722da7531948c8e` and phase PR #171 merge `2e5e18a7a2be207387a7462b039547f51b0e4631`; local `develop` was synchronized by CM-2. No application behavior changed. Focused ledger and memory tests pass; O65–O68 remain Not run on physical devices. Test-first commit `647a0c9`. Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and touched P21-F records; related P21-F and CM-2; reason: record verified PR integration as the next sequential revision of completed P21-F. | 2026-11-21 |
 | P22-A | — | Done; Revised by P22-A-R1 | `1f2d9c8`; deterministic four-month linked demo and undoable dev loader; final acceptance tests and all required gates pass. | 2026-10-16 |
 | P22-A-R1 | — | Done | `00faeb2`; six deterministic months ending the injected current month, Rs 1,00,000 earned income per month, Rs 1 crore assets, Rs 10 lakh liabilities, and every goal at or below 87%. Holdings use directly seeded opening values, not six months of accumulated flows. PR #84 merged into P28. | 2026-11-10 |
 | P23-A | P15-F | Done | Schema v11 policy model, migration/archive, pure actions/summary, active-only schedule and budget dues, Undo and demo coverage; no screens. Six final gates pass. | 2026-10-21 |
@@ -688,6 +689,75 @@ Premigration bytes are copied once and removed by erase-all.
 
 Current schema is `SCHEMA_VERSION = 23` (`src/domain/schemas.ts`); the
 persisted migration chain and backup importer cover v1 through v22.
+
+### P21-F floor design and verification stop (2026-11-21)
+
+**DEC-P21F-FLOOR:** retain the existing effective target `max(stored target, three-month floor)` and reject a user-entered target below the floor with the existing typed `GoalTargetBelowMinimumError`; show the computed floor as helper text. This matches `updateGoal` and schema validation, keeps target intent explicit in `Goal.target`, and requires no schema or backup-format change.
+
+Store test assertion correction: the initial erase check expected the AppData key to be absent. Existing erase behavior persists a fresh default AppData; the replacement asserts that the Emergency Fund target is reset to Rs 3,00,000 in both memory and persisted state. This verifies that the edited target was erased without changing established erase semantics.
+
+P21-F editor assertion update (2026-11-21): the first target-editor implementation
+exposed separate `Edit allocation` and `Edit target` header actions and separate
+forms. The replacement requires one `Edit Emergency Fund` action opening a
+single form for both target and allocation, with one combined save/write and
+Undo. Reason: the owner requested one edit entry point and a single screen that
+edits both values together.
+
+P21-F ledger assertion update (2026-11-21): the font-scale record now names
+1.0/1.3/2.0 because the combined editor smoke test checks all three scales.
+The old assertion expected only 1.3/2.0; the updated exact assertion reflects
+the expanded check without removing any scale coverage.
+
+Other P21-F assertion updates: the newly added salary-fallback check first
+expected western-grouped `₹120,000`; it now expects `₹1,20,000`, matching the
+app's existing Indian amount grouping. The demo Emergency Fund assertion
+previously expected 80% progress for the old Rs 25 lakh target; with the
+demonstration edit to Rs 24 lakh it now asserts the unchanged Rs 20 lakh saved
+amount and the recalculated 83.33% progress, still below the 87% ceiling. The
+demo allocation assertion checks the Cash, Bank and FD/RD target amounts while
+allowing `allocateAmounts`' existing zero-value entries for other buckets.
+
+Initial stopped gate sequence on `task/P21-F-emergency-fund-target-editing` (historical, before the synced rerun):
+
+| Gate | Command | Exit | Result |
+| --- | --- | ---: | --- |
+| 1 | `npm test -- --coverage` | 0 | 102 suites; 1,364 passed, 1 skipped (1,365 total). |
+| 2 | `npx tsc --noEmit` | 0 | TypeScript passed. |
+| 3 | `npx expo lint` | 0 | Lint passed. |
+| 4 | `npx expo-doctor` | 1 | `ENOTFOUND registry.npmjs.org`; the one retry also exited 1 with the same network error. |
+| 5 | `npx expo export --platform android` | Not run | Stopped after Gate 4 retry failed with a network error, as required. |
+| 6 | `npx expo export --platform ios` | Not run | Stopped after Gate 4 retry failed with a network error, as required. |
+
+An earlier Gate 1 run exited 1 because the new route was absent from
+`ROUTE_KINDS`; the registry and a direct route-kind assertion were added, then
+the ordered sequence was restarted. An earlier Gate 2 run exited 2 due to
+test-only typing errors; those were corrected before the restarted sequence.
+An earlier Gate 3 run exited 1 because React Compiler could not preserve the
+manual schema memoization; the memo now derives from stable source dependencies
+and the restarted Gate 3 passed. No Expo Doctor mismatch was observed during
+this initial attempt because the package could not be resolved from npm. Per
+the then-applicable network-error stop rule, exports and PR integration were
+not attempted. Physical-device checks O65–O68 remain Not run.
+
+Final synced P21-F task gates (2026-11-21; Node v26.10.0, Expo 57.0.32):
+
+| Gate | Command | Exit | Result |
+| --- | --- | ---: | --- |
+| 1 | `npm test -- --coverage` | 0 | 102 suites; 1,365 passed, 1 skipped (1,366 total); coverage 95.96/92.14/98.03/97.63% statements/branches/functions/lines. |
+| 2 | `npx tsc --noEmit` | 0 | TypeScript passed. |
+| 3 | `npx expo lint` | 0 | Lint passed. |
+| 4 | `npx expo-doctor` | 1 | This session's attempt failed with `ENOTFOUND registry.npmjs.org`. Owner-supplied run on Node 26.13.0 exited 1 with 20/21 checks; six SDK 57 patch mismatches (expo 57.0.32 vs ~57.0.33, expo-constants 57.0.23 vs ~57.0.24, expo-linking 57.0.13 vs ~57.0.14, expo-router 57.0.30 vs ~57.0.31, expo-sharing 57.0.25 vs ~57.0.26, expo-sqlite 57.0.4 vs ~57.0.5). This is the known owner-approved cleanup exception; dependencies were not changed. |
+| 5 | `npx expo export --platform android` | 0 | Exported to `dist`. |
+| 6 | `npx expo export --platform ios` | 0 | Exported to `dist`. |
+
+Gate evidence correction: old — the ledger treated the DNS failure as the only
+Gate 4 result and said Gates 5–6 were not run. New — preserve that initial
+stopped attempt as history, and record the owner-supplied 20/21 SDK patch result
+plus the final synced run where Gates 5–6 both exited 0; the local Gate 4
+network failure is separately identified. Reason — the authorized synced gate
+sequence and owner-provided result supersede the earlier stop without
+misrepresenting the network failure as the accepted exception. Dependencies
+and app config match `origin/develop`; no owner rerun is needed.
 **Superseded (2026-11-08):** the prior v15 current-schema statement and
 v1-through-v14 migration boundary were accurate only at their earlier
 checkpoint; the table now records the subsequent source-backed v16–v23
@@ -3243,6 +3313,8 @@ evidence present in exports/checkpoints.
 |---|---|---|---:|---|---|---|---|---|---|
 | CR-115 | documentation | — | current | 2026-11-13 | Record owner-reported Budget update and delete failure across single month and following months as Planned under P20-U-R1; owner instructed not to start work. | Done (documentation and ledger recording); product bug work Planned under P20-U-R1 | Documentation commit. | None. | current request |
 | CR-116 | P20 | — | current | 2026-11-21 | Add searchable filtering and stable relevance ranking to the shared Dropdown sheet across the app. | Done as P20-S-R2; task PR #164 and phase PR #165 are merged and verified by P20-S-R2-R1. Six ordered gates completed with the documented Gate 4 SDK patch exception. | Test-first ledger `36e8ba4`; implementation commits through `d69c5cf`; task merge `185a5ea125f64ac104344f00ad013d68cdb7a946`; phase merge `6b50a1dbd36b401352776e71028fc07071c11991`. | Assumed and confirmed: no schema, domain, demo-data or dependency changes. O61–O64 remain Not run on physical devices. | current request |
+| CR-117 | P21 | — | current | 2026-11-21 | Implement one Emergency Fund edit entry point and one form to change the saved target and allocation together, with floor behavior, cross-screen reflection, one action/write and Undo, validation, demo fixture and backup round-trip proof. | Done as P21-F; Revised by P21-F-R1; task PR #170 merged at `c877f6d19e35c0b9fbcba90e9722da7531948c8e`, phase PR #171 merged at `2e5e18a7a2be207387a7462b039547f51b0e4631`, and CM-2 synchronized local `develop`. Synced task gates: Gate 1 exit 0 (102 suites, 1,365 passed, 1 skipped); Gates 2–3 exit 0; local Gate 4 attempt exit 1 (`ENOTFOUND registry.npmjs.org`); owner-supplied Gate 4 exit 1 (20/21 checks, six SDK 57 patch mismatches); Gates 5–6 exit 0. O65–O68 remain Not run on physical devices. | Test-first ledger assertion `f759932`; gate-evidence regression `54dc17f`; evidence-revision test `647a0c9`; combined-editor test commit `99ec2fc`; integration evidence P21-F-R1. | DEC-P21F-FLOOR: retain max(stored target, three-month floor) and reject below-floor input to match existing typed validation; no schema bump or backup shape change. | current request |
+| P21-F-R1 | P21 | P21-F | current | 2026-11-21 | Record verified integration of completed P21-F through task PR #170 and phase PR #171. | Done; exact merge SHAs and CM-2 synchronization are recorded. | Test-first commit `647a0c9`; task merge `c877f6d19e35c0b9fbcba90e9722da7531948c8e`; phase merge `2e5e18a7a2be207387a7462b039547f51b0e4631`. | No app behavior changed; O65–O68 remain Not run. Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and P21-F records; related P21-F and CM-2; reason: record integration evidence as the next revision of completed P21-F. | current request |
 | P20-S-R2 | P20 | P20-S | current | 2026-11-21 | Add a default-visible, accessible Search field to shared Dropdown, with normalized multiword matching, stable ranking, grouping, Custom pinning and no-match feedback. | Done; Revised by P20-S-R2-R1 and P20-S-R2-R2. Gate 1 `npm test -- --coverage` exit 0 (102 suites, 1,342 passed, 1 skipped); Gates 2–3 exit 0; Gate 4 `npx expo-doctor` exit 1 on the required SDK 57 patch mismatch (20/21 checks; DNS attempt and one retry recorded below); Gates 5–6 exit 0. Device checks O61–O64 remain Not run. | Test-first ledger `36e8ba4`; helper tests `a959353`, Custom-order regression `81a4d31`; helper `41bb704`, `f340fca`; component tests `f169bd6`, `3a29c94`; component `70eb82a`; route-mock fix and verification `d69c5cf`; PRs #164/#165 and exact merge SHAs in P20-S-R2-R1. | Assumed: no schema, domain, demo-data or dependency changes; confirmed. Old sheet text assertion listed only group/option labels. New assertion adds Search and the 3-result announcement while preserving those labels. Reason: the sheet now exposes search and result-count feedback. Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and Dropdown source/tests; related P20-S; reason this revises completed shared Dropdown behavior from CR-70. | current request |
 | P20-S-R2-R1 | P20 | P20-S-R2 | current | 2026-11-21 | Record verified integration evidence for the searchable shared Dropdown. | Done; task PR #164 merged into `phase/20-budget` at `185a5ea125f64ac104344f00ad013d68cdb7a946`; phase PR #165 merged into `develop` at `6b50a1dbd36b401352776e71028fc07071c11991`. Focused ledger and memory tests pass; O61–O64 remain Not run. | Test-first commit `cf90f78`; PR merge evidence recorded here. | Old: the task row and memory showed PR integration as pending. New: exact task and phase PRs and merge SHAs are recorded, and local `develop` is synchronized. Reason: make the integrated state auditable. Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and touched records; related P20-S-R2 and CM-2; reason this is the next sequential revision of completed P20-S-R2. | current request |
 | P20-S-R2-R2 | P20 | P20-S-R2 | current | 2026-11-21 | Preserve the P20-S-R2 entry in its parent revision chain after recording integration evidence. | Done; parent dashboard and prompt-log rows retain P20-S-R2 and list P20-S-R2-R1 and P20-S-R2-R2. No app behavior changed. | Test-first commit `0375e55`; focused ledger/memory verification recorded below. | Old: P20-S omitted its direct P20-S-R2 revision while listing P20-S-R2-R1. New: the full chain is preserved. Reason: keep history and R2 revision links accurate. Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and touched records; related P20-S-R2 and P20-S-R2-R1; reason: correct revision-chain bookkeeping for the completed Dropdown part. | current request |
@@ -3683,6 +3755,8 @@ verification.
 | CR-114 | Restructure how the project tracks work using independent entities (cleanup, qa-and-release, schema-migration, documentation), empty slots (P7, P27, P28, P32) and R7 slot-filling rule. | Done | PR #161 merged to develop as `9058386`; Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 owner-approved exception for upstream SDK 57 patch advisory; tests updated test-first; remote branches and local refs verified. |
 | CR-115 | Record owner-reported Budget item/schedule update and delete failure across single month and following months as Planned under P20-U-R1; owner instructed not to start work. | Done (recording); product work Planned | Documented in dashboard, register, prompt log, roadmap, and memory; no app/schema/dependency changes. |
 | CR-116 | Add searchable filtering and stable relevance ranking to shared Dropdown options across the app. | Done as P20-S-R2; PR integration recorded by P20-S-R2-R1 | Helper coverage is 100% lines/branches; focused component and route/form suites pass. Six ordered gates: 1 exit 0 (102 suites, 1,342 passed, 1 skipped); 2 exit 0; 3 exit 0; 4 exit 1 (known Expo SDK 57 patch mismatch after one DNS retry); 5 exit 0; 6 exit 0. Task PR #164 and phase PR #165 merge SHAs are recorded in the revision row. No caller edits, schema/domain/demo-data changes or new dependencies. O61–O64 physical checks remain Not run. |
+| CR-117 | Implement one Emergency Fund edit action and combined target/allocation form in P21-F, with cross-screen reflection, one-write Undo, validation and synthetic demo coverage. | Done; Revised by P21-F-R1 | Existing persisted `Goal.target` reused; schema v23 unchanged. DEC-P21F-FLOOR selects effective max(stored target, three-month floor) and rejects below-floor input, matching existing typed validation. Combined editor, single plan action/store write and Undo are implemented; focused tests pass. Task PR #170 merged into P21 at `c877f6d19e35c0b9fbcba90e9722da7531948c8e`; phase PR #171 merged into develop at `2e5e18a7a2be207387a7462b039547f51b0e4631`; CM-2 synchronized local `develop`. Synced gates: Gate 1 exit 0 (102 suites, 1,365 passed, 1 skipped); Gates 2–3 exit 0; local Gate 4 attempt exit 1 (`ENOTFOUND registry.npmjs.org`); owner-supplied Gate 4 exit 1 (20/21 checks, six SDK 57 patch mismatches); Gates 5–6 exit 0. O65–O68 remain Not run. Placement: rule 4; searched dashboard, register, phase history, roadmap, memory, P21-A–E and affected Emergency Fund/Home/Goals modules; related P21-A–E; reason this extends the existing Emergency Fund feature area. | current request |
+| P21-F-R1 | Record P21-F task PR #170 merge `c877f6d19e35c0b9fbcba90e9722da7531948c8e` and phase PR #171 merge `2e5e18a7a2be207387a7462b039547f51b0e4631`; local `develop` was synchronized by CM-2. No application behavior changed. Focused ledger and memory tests pass; O65–O68 remain Not run on physical devices. Test-first commit `647a0c9`. Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and touched P21-F records; related P21-F and CM-2; reason: record verified PR integration as the next sequential revision of completed P21-F. | current request |
 | P20-S-R2-R1 | Record the task/phase integration evidence for CR-116. | Done | Task PR #164 merged into `phase/20-budget` at `185a5ea125f64ac104344f00ad013d68cdb7a946`; phase PR #165 merged into `develop` at `6b50a1dbd36b401352776e71028fc07071c11991`. Test-first commit `cf90f78`; focused ledger and memory tests pass; CM-2 synchronized `develop`. No app behavior changed. O61–O64 remain Not run. Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and touched records; related P20-S-R2 and CM-2; reason: record integration evidence as the next sequential revision. |
 | P20-S-R2-R2 | Preserve the original P20-S-R2 revision in its parent chain. | Done | Test-first ledger assertion `0375e55` preserves P20-S-R2 in the parent status alongside P20-S-R2-R1 and P20-S-R2-R2. No app behavior changed; O61–O64 remain Not run. Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and touched records; related P20-S-R2 and P20-S-R2-R1; reason: correct bookkeeping while preserving completed-work history. |
 
@@ -3911,16 +3985,14 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
    reason: the work extends existing Budget/category forms.
    P20-U-R1 — Budget item and schedule update and delete failure (Planned): owner-reported defect in Budget route form editing and deletion. Owner report (verbatim): "In budget while updating any item/value/amount/start-month/frequency/due-day/etc it is not updating also while trying to delete it is not even deleting, not for single month and this and following months." Owner instruction: "Don't start working on this." Affected fields: item, value, amount, start-month, frequency, due-day, etc. Delete cases: single month and this and following months. Open questions: which Budget screens and sections (spend, invest, income schedules, one-time vs recurring); whether the bug is UI, store, or persistence; app/schema version and whether it began after a specific release or CR; exact reproduction steps and expected behavior; whether data on device persists after restart. Dependencies: report-first investigation with a red regression test before any fix (R1), then a fix with all six ordered gates; physical-device check likely required (planned process, not authorized work). Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and touched files; related P20-U; reason: defect in completed budget route form item/schedule updating and deletion.
    P20-S-R2 — searchable shared Dropdowns (Done): add default-visible search with accessible clear/result feedback, Unicode-normalized case/diacritic-insensitive AND matching, exact/prefix/word-start/contains ranking, group preservation, selected-state behavior, Custom pinning, no-match feedback and query reset. All six gates completed; Gate 4 remains the known SDK 57 patch mismatch. No caller edits or schema/domain/demo-data/dependency changes. O61–O64 device checks remain open. Task PR #164 merged into the phase at `185a5ea`; phase PR #165 merged into `develop` at `6b50a1d`; P20-S-R2-R1 records the evidence. P20-S-R2-R2 preserves the complete revision chain. Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and Dropdown source/tests; related P20-S; reason: adjusts completed shared Dropdown behavior. Assumed: no schema, domain, demo-data or dependency changes were required; confirmed.
-3. **P21 — Emergency fund as a goal-linked model** (P21-A–E Done; P21-F Planned): P21-A links,
+3. **P21 — Emergency fund as a goal-linked model** (P21-A–F Done; P21-F-R1 Done): P21-A links,
    entries and net-worth/schema v7 changes (CR-8, CR-13); P21-B cover and
        allocation table (CR-14, CR-15); P21-C normal-mode presentation and
    allocation item editing (CR-37, CR-38); P21-C1 invalid-allocation crash
-   repair (CR-39), with schema v8 unchanged. P21-F — Emergency Fund target editing (Previously: P43-C) plans
-   Emergency Fund target editing and cross-screen reflection. Placement: rule
+   repair (CR-39), with schema v8 unchanged. P21-F (Previously: P43-C) is Done: one Emergency Fund edit action and combined target/allocation form, shared target reflection, one domain action/store write/Undo, typed floor validation, demo and v23 backup coverage. Task PR #170 and phase PR #171 are integrated; P21-F-R1 records exact SHAs. O65–O68 remain unverified on physical devices. Placement: rule
    4; searched dashboard, register, P21-A–E, roadmap, memory and Emergency
    Fund modules; related P21-A–E; reason: the work extends the Emergency Fund
-   feature area. The owner authorized editing `app/(tabs)/index.tsx` if needed;
-   the part remains Planned and no implementation has started.
+   feature area. The owner authorized editing `app/(tabs)/index.tsx` if needed. DEC-P21F-FLOOR: the effective target is max(stored target, three-month floor); the form rejects lower values using existing typed validation and shows the floor helper. The existing persisted Goal.target suffices, so schema v23 remains unchanged.
 4. **P22 — Demo data**: P22-A's original four-month demo data (CR-12) is
    complete; P22-A-R1 now uses six complete months, Rs 1,00,000 earned
    income/month, Rs 1 crore in assets and Rs 10 lakh in liabilities while
@@ -11933,7 +12005,7 @@ are guarded by `progressLedger.test.ts`.
 | P18 | `phase/18-ui-fix-rounds` | `phase-18-complete` | `3e28f763502fa09b32c00fce1bae95c71285f556` | 9 |
 | P19 | `phase/19-budget-model-and-sync` | `phase-19-complete` | `d3477f2e1266e686b611aa819be90dba113a7a5f` | 3 |
 | P20 | `phase/20-budget` | `phase-20-complete` | `eed40750f68bebc9168907f79f74a67c1f301b83` | 36 |
-| P21 | `phase/21-emergency-fund` | `phase-21-complete` | `96b85d72e401215a0f17864b9f8099e5452e3a66` | 7 |
+| P21 | `phase/21-emergency-fund` | `phase-21-complete` | `abad2be714e3574f42f2c744a2d75e253ddd5a65` | 8 |
 | P22 | `phase/22-demo-data` | `phase-22-complete` | `6cb4fa0a42be2c60ee3d4bf162bb41d6a2f0ea58` | 2 |
 | P23 | `phase/23-insurance` | `phase-23-complete` | `04988e8366949c0cde04912ca1f472c4b31c227f` | 4 |
 | P24 | `phase/24-reminders` | `phase-24-complete` | `afe54225c10d2a402d79fdc751c7c75225000e43` | 1 |

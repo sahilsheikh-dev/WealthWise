@@ -347,6 +347,31 @@ describe('backup validation and serialization', () => {
     });
   });
 
+  it('round-trips an edited Emergency Fund target through plain and encrypted v23 backups', async () => {
+    const target = 3_456_789.12;
+    const editedData = {
+      ...mockAppData,
+      goals: mockAppData.goals.map((goal) => goal.auto === 'ef' ? { ...goal, target } : goal),
+    };
+    const plain = await createBackup(editedData, {
+      exportedAt: '2026-10-10T10:00:00.000Z', digest,
+    });
+    const plainImport = await parseBackup(plain, { digest });
+    if (!plainImport.ok) throw new Error(`${plainImport.reason}: ${plainImport.message}`);
+    expect(plainImport.data.goals.find((goal) => goal.auto === 'ef')?.target).toBe(target);
+
+    const encrypted = await encryptBackup(plain, 'a sufficiently long passphrase', {
+      salt: Uint8Array.from({ length: 16 }, (_, index) => index),
+      nonce: Uint8Array.from({ length: 12 }, (_, index) => index + 16),
+      kdf: { name: 'scrypt', params: { N: 2 ** 15, r: 8, p: 1, dkLen: 32 } },
+    });
+    const decrypted = await decryptBackup(encrypted, 'a sufficiently long passphrase');
+    const encryptedImport = await parseBackup(decrypted, { digest });
+    if (!encryptedImport.ok) throw new Error(`${encryptedImport.reason}: ${encryptedImport.message}`);
+    expect(encryptedImport.data.goals.find((goal) => goal.auto === 'ef')?.target).toBe(target);
+    expect(SCHEMA_VERSION).toBe(23);
+  });
+
   it('round-trips a manual holding snapshot adjustment through backup export and import', async () => {
     const holding = mockAppData.holdings.find((item) =>
       item.kind === 'manual' && item.id === 'holding-cash');
@@ -1092,6 +1117,7 @@ describe('backup validation and serialization', () => {
       .toEqual(expectedGoalSavings);
     const importedEmergencyGoal = imported.data.goals.find((goal) => goal.auto === 'ef');
     if (!importedEmergencyGoal) throw new Error('Expected the imported Emergency Fund goal.');
+    expect(importedEmergencyGoal.target).toBe(30_000);
     const importedEfAvailableByBucket = Object.fromEntries(
       Object.entries(imported.data.efBucketLinks).map(([bucketId, holdingIds]) => [
         bucketId,
