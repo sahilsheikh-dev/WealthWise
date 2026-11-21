@@ -20,11 +20,15 @@ type PersistedTestStore = ReturnType<typeof createAppStore> & {
   persist: { rehydrate: () => Promise<void> };
 };
 
+// Jest requires `var` for values referenced by hoisted mock factories.
+// eslint-disable-next-line no-var
 var mockActiveStore: PersistedTestStore | undefined;
+// eslint-disable-next-line no-var
 var mockRouteParams: Record<string, string> = {};
+// eslint-disable-next-line no-var
 var mockPathname = '/transactions';
+// eslint-disable-next-line no-var
 var mockLastResponse: { identifier: string; data: unknown } | null = null;
-var mockResponseHandler: ((response: { identifier: string; data: unknown }) => void) | undefined;
 
 jest.mock('../../data/store', () => {
   const ReactModule = jest.requireActual<typeof React>('react');
@@ -57,20 +61,14 @@ jest.mock('expo-router', () => ({
 }));
 jest.mock('../../lib/reminderRuntime', () => ({
   reminderNotificationAdapter: {
-    addResponseListener: (handler: (response: { identifier: string; data: unknown }) => void) => {
-      mockResponseHandler = handler;
-      return jest.fn();
-    },
+    addResponseListener: () => jest.fn(),
     getLastResponse: async () => mockLastResponse,
     clearLastResponse: jest.fn(async () => undefined),
   },
 }));
 jest.mock('../../lib/reminderNotifications', () => ({
   reminderNotificationAdapter: {
-    addResponseListener: (handler: (response: { identifier: string; data: unknown }) => void) => {
-      mockResponseHandler = handler;
-      return jest.fn();
-    },
+    addResponseListener: () => jest.fn(),
     getLastResponse: async () => mockLastResponse,
     clearLastResponse: jest.fn(async () => undefined),
   },
@@ -189,7 +187,6 @@ describe('P20-A-R3 shared Paid flow with real store persistence', () => {
     mockRouteParams = {};
     mockPathname = '/transactions';
     mockLastResponse = null;
-    mockResponseHandler = undefined;
   });
 
   it('creates a linked one-time Budget row through the store, pays it from the shared action, and undoes it', async () => {
