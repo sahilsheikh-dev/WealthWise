@@ -58,10 +58,10 @@ function isMonthKey(value: string): boolean {
   return /^\d{4}-(0[1-9]|1[0-2])$/.test(value);
 }
 
-const incomeCategoryOptions: readonly DropdownOption[] = EARNED_INCOME_CATEGORIES.map((category) => ({
-  value: category,
-  title: category,
-})).concat([{ value: '__custom-income-category__', title: 'Custom' }]);
+const incomeCategoryOptions: readonly DropdownOption[] = [
+  ...EARNED_INCOME_CATEGORIES.map((category) => ({ value: category, title: category })),
+  { value: '__custom-income-category__', title: 'Custom' },
+];
 
 const incomeFrequencyOptions: readonly DropdownOption[] = [
   { value: 'monthly', title: 'Monthly' },
