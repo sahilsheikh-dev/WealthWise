@@ -215,7 +215,7 @@ describe('permanent progress ledger', () => {
     expect(register).toContain('| CR-115 |');
     expect(promptLog.split('\n').filter((line) => line.startsWith('| P20-U-R1 |'))).toHaveLength(1);
     expect(roadmap).toContain('P20-U-R1');
-    expect(branchIndex).toContain('| P20 | `phase/20-budget` | `phase-20-complete` | `eed40750f68bebc9168907f79f74a67c1f301b83` | 33 |');
+    expect(branchIndex).toContain('| P20 | `phase/20-budget` | `phase-20-complete` | `eed40750f68bebc9168907f79f74a67c1f301b83` | 34 |');
 
     // Entity checks: CR-115 belongs in documentation entity under Section 13
     expect(independentEntities).toContain('| CR-115 |');
@@ -840,7 +840,7 @@ describe('permanent progress ledger', () => {
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-S |')))
           .toContain('| Done; Revised by P20-S-R1, P20-S-R1-R1 and P20-S-R2 |');
         expect(dashboard.split('\n').find((line) => line.startsWith('| P20-S-R2 |')))
-          .toContain('| Planned |');
+          .toContain('Planned; test-first implementation in progress.');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-S-R1 |')))
       .toContain('Done; Revised by P20-S-R1-R1');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-S-R1-R1 |')))

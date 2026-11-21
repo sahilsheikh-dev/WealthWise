@@ -1,6 +1,13 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-13 | Updates: owner and AI agents -->
 
 # Status
+- **P20-S-R2 / CR-116 (2026-11-21) — searchable Dropdowns in progress.** Task
+  branch `task/P20-S-R2-dropdown-search` is based on `phase/20-budget`, which
+  includes the current `origin/develop` merge at `2e3e5ff`. The red ledger
+  expectation is committed as `36e8ba4`; helper and UI work is underway.
+  **Assumed:** no schema, domain, demo-data or dependency changes are needed.
+  Native keyboard, result-count announcement, clear tap target and real-device
+  1.3/2.0 font-scale checks remain unverified (O61–O64).
 - **CR-115 (2026-11-13) — Budget edit and delete bug recorded as Planned (P20-U-R1).**
   Owner reported: "In budget while updating any item/value/amount/start-month/frequency/due-day/etc
   it is not updating also while trying to delete it is not even deleting, not for

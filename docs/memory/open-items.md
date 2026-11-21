@@ -2,6 +2,15 @@
 
 # Open items
 
+## P20-S-R2 searchable Dropdowns (in progress)
+
+- CR-116 adds a default-visible search field and normalized filtering/ranking to
+  the shared Dropdown component. **Assumed:** no schema, domain, demo-data or
+  dependency changes are needed; implementation must confirm this.
+- Physical-device checks are not run: keyboard behavior on iOS/Android,
+  polite result-count announcements, clear-button tap target and font scales
+  1.3/2.0. Track these as O61–O64 in the release device checklist.
+
 ## Budget item/schedule edit and delete bug (P20-U-R1, Planned)
 
 - **P20-U-R1 (Planned; not started):** owner-reported defect in Budget route form
