@@ -35,7 +35,7 @@
   the existing custom earned-income category field with its v23→v24 migration
   and backup compatibility. Phase sync is
   `b5f8c52477ba88dce1c376904c36dee72b84a092`; D3 task merge is
-  `8f0840f6ca4297ebcc2db62861f6d0e110435204`. Text conflicts in this file and
+  `8f0840f82646f2b3ec91457cb48b932abf8caeaa`. Text conflicts in this file and
   `project.md` retained both branches' records. Focused suites passed (15/664).
   Gates 1–3 and 5–6 exited 0; Gate 4 exited 1 because npm could not resolve
   `expo-doctor` (`ENOTFOUND registry.npmjs.org`), with no retry. O71 is Not run

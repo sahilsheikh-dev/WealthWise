@@ -199,7 +199,7 @@ the phase branch is retained. Phase PR #147 merged into `develop` at
   Budget/category behavior after the owner resolved schema ownership.
 - Local D3 merge preparation is complete on
   `task/P20-W-D3-custom-earned-income` at
-  `8f0840f6ca4297ebcc2db62861f6d0e110435204`. PRs #178–#181 and their merge
+  `8f0840f82646f2b3ec91457cb48b932abf8caeaa`. PRs #178–#181 and their merge
   commits are present in local refs; `phase/20-budget` is synced through
   `b5f8c52477ba88dce1c376904c36dee72b84a092`. Focused suites passed (15/664).
   Gates 1–3 and 5–6 exited 0; Gate 4 exited 1 (`ENOTFOUND
