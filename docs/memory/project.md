@@ -59,10 +59,17 @@ runtime synchronization.
   2026-11-21.
 - Latest synced P20-W Gate 1: 102 suites, 1369 tests (1,368 passed; one
   skipped), coverage 95.96/92.14/98.03/97.63% statements/branches/functions/
-  lines. Gates 1–3 and 5–6 exited 0; Gate 4 exited 1 with
-  `ENOTFOUND registry.npmjs.org`. P20-W D3 remains gated on the P36 v24
-  ownership decision; O69–O72 remain Not run. P20-W gate evidence is recorded
+  lines. Gates 1–3 and 5–6 exited 0. Local Gate 4 attempt exited 1 with
+  `ENOTFOUND registry.npmjs.org`; owner-supplied Gate 4 exited 1 at 20/21 on
+  the six known SDK 57 patch mismatches (owner-approved cleanup exception).
+  Dependencies and app config did not change since the owner run. P20-W D3
+  remains gated on the P36 v24 ownership decision; O69–O72 remain Not run. P20-W gate evidence is recorded
   in [status.md](status.md) and the [progress ledger](../PROGRESS.md).
+- P20-W integration: task PR #174 merged into `phase/20-budget` at
+  `419a37b07e6853b3c683d22ec243ea58223514c1`; phase PR #175 merged into `develop` at `9e47856f20848e03ac6a4b8e699f47c387d08161`.
+  CM-2 synchronized local `develop`. P20-W-R1 records the merge evidence.
+  D1/D2 are integrated; D3 remains open pending the P36 v24 owner decision.
+  Device checks O69–O72 remain Not run.
 - P21-F synced Gate 1 was 102 suites, 1,366 tests (1,365 passed; one skipped),
   coverage 95.96/92.14/98.03/97.63%. Gates 1–3 and 5–6 exited 0. Gate 4
   network attempt exited 1 (`ENOTFOUND registry.npmjs.org`); the owner-supplied
