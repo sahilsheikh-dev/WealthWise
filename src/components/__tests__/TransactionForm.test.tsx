@@ -239,7 +239,7 @@ describe('transaction add form', () => {
     mockData.transactions = [{
       id: 'old-party', type: 'expense', amount: 80, category: 'Party', note: '', date: '2026-10-10',
     }];
-    mockData.monthBudgets = mockAppData.monthBudgets.map((budget) => ({
+    mockData.monthBudgets = (mockAppData.monthBudgets ?? []).map((budget) => ({
       ...budget,
       items: budget.items.filter((item) => item.name !== 'Party'),
     }));
