@@ -1096,7 +1096,7 @@ describe('createAppStore persistence', () => {
       };
       plan.items = [linkedItem];
       const snapshot = monthBudgetFromLines(month, [{ category: 'Long-term savings', planned: 100 }], {
-        source: 'plan',
+        incomes: [], source: 'plan',
       });
       snapshot.items = [linkedItem];
       const holding = mockAppData.holdings.find((item) => item.id === 'holding-cash');

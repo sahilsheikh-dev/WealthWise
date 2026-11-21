@@ -166,8 +166,8 @@ function pressAccessibleControl(renderer: TestRenderer.ReactTestRenderer, label:
 }
 
 function changeAccessibleText(renderer: TestRenderer.ReactTestRenderer, label: string, value: string): void {
-  const control = renderer.root.findAllByType('textinput')
-    .find((node) => node.props.accessibilityLabel === label);
+  const control = renderer.root.findAllByProps({ accessibilityLabel: label })
+    .find((node) => typeof node.props.onChangeText === 'function');
   if (!control) throw new Error(`Text input "${label}" was not rendered.`);
   act(() => {
     control.props.onFocus?.();
@@ -458,7 +458,8 @@ describe('Budget form persisted store roundtrip', () => {
 
       const form = renderScreen(React.createElement(BudgetItemFormScreen));
       changeAccessibleText(form, 'Planned amount', '475');
-      expect(form.root.findAllByType('textinput').find((node) => node.props.accessibilityLabel === 'Planned amount')?.props.value).toBe('475');
+      expect(form.root.findAllByProps({ accessibilityLabel: 'Planned amount' })
+        .find((node) => typeof node.props.onChangeText === 'function')?.props.value).toBe('475');
       await act(async () => {
         form.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
       });
