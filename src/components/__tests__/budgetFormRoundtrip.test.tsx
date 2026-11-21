@@ -742,4 +742,59 @@ describe('Budget form persisted store roundtrip', () => {
     act(() => form.unmount());
   });
 
+  it('keeps both writes when an edit is followed immediately by navigation and another edit', async () => {
+    const form = renderScreen(React.createElement(BudgetItemFormScreen));
+    const router = jest.requireMock('expo-router').router;
+    router.back.mockClear();
+    storage.writes = 0;
+    changeAccessibleText(form, 'Planned amount', '450');
+    await act(async () => {
+      form.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
+    });
+    await act(async () => {
+      form.root.findByProps({ accessibilityLabel: 'This and following months' }).props.onPress();
+    });
+    expect(router.back).toHaveBeenCalledTimes(1);
+    expect(storage.writes).toBe(1);
+
+    act(() => {
+      mockStore?.getState().actions.editBudgetStructureItem(
+        month, itemId, { value: 500 }, 'following', today,
+      );
+    });
+
+    expect(storage.writes).toBe(2);
+    expect(mockStore?.getState().data.budgetPlan?.items[0]?.value).toBe(500);
+    expect(persistedData(storage).budgetPlan?.items[0]?.value).toBe(500);
+    const freshStore = makeStore();
+    await waitForHydration(freshStore);
+    expect(freshStore.getState().data.budgetPlan?.items[0]?.value).toBe(500);
+    expect(freshStore.getState().data.monthBudgets?.[0]?.items[0]?.value).toBe(500);
+    act(() => form.unmount());
+  });
+
+  it('deletes the selected ID after a store update while the form remains mounted', async () => {
+    const form = renderScreen(React.createElement(BudgetItemFormScreen));
+    storage.writes = 0;
+    act(() => {
+      mockStore?.getState().actions.addBudgetItem(month, {
+        sectionId: 'survival', name: 'Utilities', mode: 'amount', value: 125,
+      }, 'month', today);
+    });
+    expect(storage.writes).toBe(1);
+    expect(mockStore?.getState().data.monthBudgets?.[0]?.items.some((item) => item.name === 'Utilities')).toBe(true);
+    storage.writes = 0;
+
+    pressAccessibleControl(form, 'Delete item');
+    pressAccessibleControl(form, 'This month only');
+    await flushPersistence();
+
+    expect(storage.writes).toBe(1);
+    expect(mockStore?.getState().data.monthBudgets?.[0]?.items.some((item) => item.id === itemId)).toBe(false);
+    expect(mockStore?.getState().data.monthBudgets?.[0]?.items.some((item) => item.name === 'Utilities')).toBe(true);
+    const stored = persistedData(storage);
+    expect(stored.monthBudgets?.[0]?.items.some((item) => item.name === 'Utilities')).toBe(true);
+    act(() => form.unmount());
+  });
+
 });
