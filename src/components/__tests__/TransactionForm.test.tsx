@@ -211,7 +211,14 @@ describe('transaction add form', () => {
     expect(options).toContainEqual(expect.objectContaining({ value: 'Custom' }));
     expect(options.find((option) => option.value === 'Festival')?.group).toBe('Festival, Donations, Culture');
 
-    await act(async () => category.props.onChange('Custom'));
+    await act(async () => category.props.onChange('Festival'));
+    expect(renderer.root.findAll((node) => String(node.type) === 'readonly')
+      .some((node) => node.props.label === 'Budget section'
+        && node.props.value === 'Festival, Donations, Culture')).toBe(true);
+
+    const updatedCategory = renderer.root.findAll((node) => String(node.type) === 'dropdown')
+      .find((node) => node.props.label === 'Category');
+    await act(async () => updatedCategory?.props.onChange('Custom'));
     const customCategory = renderer.root.findAll((node) => String(node.type) === 'textfield')
       .find((node) => node.props.label === 'Custom category');
     if (!customCategory) throw new Error('Custom category input was not rendered.');
