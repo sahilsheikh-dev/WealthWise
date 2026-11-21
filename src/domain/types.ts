@@ -229,7 +229,7 @@ export type BudgetLine = {
 export type BudgetIncomeItem = {
   id: string;
   name: string;
-  category: EarnedIncomeCategory;
+  category: string;
   amount: number;
   day?: number;
   frequency?: BudgetItemFrequency;

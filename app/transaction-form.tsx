@@ -30,6 +30,7 @@ import { holdingValue } from '../src/domain/portfolio';
 import { financialTypeLabel } from '../src/domain/typeLabels';
 import {
   CUSTOM_EXPENSE_CATEGORY_SENTINEL,
+  CUSTOM_INCOME_CATEGORY_SENTINEL,
   INVESTMENT_FORM_CATEGORIES,
   makeTransactionFormSchema,
   TRANSACTION_CATEGORIES,
@@ -52,6 +53,7 @@ const typeOptions = [
 const createInvestmentChoice = '__create-investment__';
 const noInvestmentChoice = '__no-investment__';
 const customExpenseCategory = CUSTOM_EXPENSE_CATEGORY_SENTINEL;
+const customIncomeCategory = CUSTOM_INCOME_CATEGORY_SENTINEL;
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
@@ -533,20 +535,46 @@ export default function TransactionFormScreen() {
                       />
                     </>
                   ) : (
-                    <Dropdown
-                      label="Category"
-                      accessibilityLabel="Category"
-                      value={field.value}
-                      options={choices.map((category) => ({
-                        value: category,
-                        title: transactionCategoryLabel(category, selectedType, customCategories),
-                      }))}
-                      onChange={(value) => {
-                        field.onChange(value);
-                        if (value !== 'Withdrawal') setValue('instrumentId', undefined, { shouldDirty: true, shouldValidate: true });
-                      }}
-                      error={errors.category?.message}
-                    />
+                    <>
+                      <Dropdown
+                        label="Category"
+                        accessibilityLabel="Category"
+                        value={field.value}
+                        options={[
+                          ...choices.map((category) => ({
+                            value: category,
+                            title: transactionCategoryLabel(category, selectedType, customCategories),
+                          })),
+                          ...(selectedType === 'income' ? [{ value: customIncomeCategory, title: 'Custom' }] : []),
+                        ]}
+                        onChange={(value) => {
+                          field.onChange(value);
+                          setValue('customCategory', '', { shouldDirty: true, shouldValidate: true });
+                          if (value !== 'Withdrawal') setValue('instrumentId', undefined, { shouldDirty: true, shouldValidate: true });
+                        }}
+                        error={errors.category?.message}
+                      />
+                      {selectedType === 'income' && field.value === customIncomeCategory ? (
+                        <Controller
+                          control={control}
+                          name="customCategory"
+                          render={({ field: customField }) => (
+                            <FieldTitle title="Custom income category">
+                              <TextField
+                                label="Custom income category"
+                                accessibilityLabel="Custom income category"
+                                value={customField.value ?? ''}
+                                onChangeText={customField.onChange}
+                                onBlur={customField.onBlur}
+                                placeholder="Enter an income category"
+                                maxLength={60}
+                                error={errors.customCategory?.message}
+                              />
+                            </FieldTitle>
+                          )}
+                        />
+                      ) : null}
+                    </>
                   )
                 )}
               />

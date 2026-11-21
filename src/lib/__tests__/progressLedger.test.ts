@@ -153,7 +153,7 @@ describe('permanent progress ledger', () => {
     const transactionForm = dashboard.split('\n').find((line) => line.startsWith('| P20-W |')) ?? '';
     expect(transactionForm).toContain('| In progress; Revised by P20-W-R1 |');
     expect(transactionForm).toContain('D1/D2 schema-free scope');
-    expect(transactionForm).toContain('D3 remains Planned pending the owner schema-version decision');
+    expect(transactionForm).toContain('Owner decision DEC-P20W-D3-SCHEMA24 assigns schema v24 to P20-W and replans P36-A/B to v25');
     expect(emergencyFund).toContain('font-scale tests at 1.0/1.3/2.0');
     expect(emergencyFund).toContain('owner-supplied Gate 4 exit 1 (20/21; six SDK 57 patch mismatches)');
     expect(emergencyFund).toContain('local Gate 4 attempt exit 1 (`ENOTFOUND registry.npmjs.org`)');
@@ -174,7 +174,7 @@ describe('permanent progress ledger', () => {
     expect(openItems).toContain('P21-F is integrated into `develop` through PR #170 and PR #171');
     expect(status).toContain('P21-F-R1 records task PR #170 and phase PR #171');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-W |')))
-      .toContain('D3 remains Planned pending the owner schema-version decision');
+      .toContain('Owner decision DEC-P20W-D3-SCHEMA24 assigns schema v24 to P20-W and replans P36-A/B to v25');
     expect(roadmap).toContain('one issue per ledger part or CR');
     expect(roadmap).toContain('API rate and noise concerns');
     expect(branchIndex).toContain('| P43 | `phase/43-lifecycle-and-transaction-planning` | — | — | 7 |');
@@ -1103,7 +1103,7 @@ describe('permanent progress ledger', () => {
     expect(status).toContain('P20-S-R2-R1 records the verified');
   });
 
-  it('records P20-W task and phase PR integration without closing D3', () => {
+  it('records P20-W task/phase integration and the D3 schema ownership decision', () => {
     const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
     const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
     const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
@@ -1116,8 +1116,9 @@ describe('permanent progress ledger', () => {
     const phaseRow = branchIndex.split('\n').find((line) => line.startsWith('| P20 |'));
 
     expect(originalRow).toContain('In progress; Revised by P20-W-R1');
-    expect(originalRow).toContain('D3 remains Planned pending the owner schema-version decision');
-    expect(originalRow).toContain('local Gate 4 attempt exit 1 (`ENOTFOUND registry.npmjs.org`)');
+    expect(originalRow).toContain('D3 is authorized: widen earned-income category to a trimmed nonempty string up to 60 characters');
+    expect(originalRow).toContain('Owner decision DEC-P20W-D3-SCHEMA24 assigns schema v24 to P20-W and replans P36-A/B to v25');
+    expect(originalRow).toContain('implementation `f2541fd` adds custom earned-income categories');
     expect(originalRow).toContain('owner-supplied Gate 4 exit 1 (20/21 checks, six SDK 57 patch mismatches; owner-approved cleanup exception)');
     expect(revisionRow).toContain('| Done |');
     expect(revisionRow).toContain('task PR #174');
@@ -1130,7 +1131,7 @@ describe('permanent progress ledger', () => {
     expect(ledger).toContain('Overall progress ████████░░ 78% (149/190)');
     expect(ledger).toContain('P20         █████████░ 95% (35/37)');
     expect(status).toContain('P20-W-R1 records task PR #174 and phase PR #175');
-    expect(openItems).toContain('P20-W remains open for D3');
+    expect(openItems).toContain('STOP GATE RESOLVED (DEC-P20W-D3-SCHEMA24');
     expect(openItems).toContain('O69–O72 remain Not run');
   });
 

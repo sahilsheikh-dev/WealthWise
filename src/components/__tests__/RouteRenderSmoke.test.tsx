@@ -1836,6 +1836,46 @@ describe('route render smoke audit', () => {
     },
   );
 
+  it('creates and persists a custom earned-income type from the Budget income form', async () => {
+    const actions = jest.requireMock('../../data/useAppData').useAppActions() as {
+      addBudgetIncome: jest.Mock;
+    };
+    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+    const previousParams = routeParams();
+    const month = monthKey(todayISO());
+    routeParams.mockReturnValue({ month, scope: 'following' });
+    actions.addBudgetIncome.mockClear();
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      renderer = renderScreen(React.createElement(BudgetIncomeFormScreen));
+      const category = renderer.root.findByProps({ accessibilityLabel: 'Income category' });
+      expect(category.props.options).toContainEqual({ value: '__custom-income-category__', title: 'Custom' });
+      await act(async () => {
+        renderer?.root.findByProps({ accessibilityLabel: 'Income name' }).props.onChangeText('Consulting');
+        renderer?.root.findByProps({ accessibilityLabel: 'Income amount' }).props.onChangeText('750');
+      });
+      await act(async () => {
+        if (!renderer) return;
+        selectDropdownOption(renderer, 'Income category', 'Custom');
+      });
+      await act(async () => {
+        renderer?.root.findByProps({ accessibilityLabel: 'Custom income category' }).props.onChangeText('  Consulting  ');
+        await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
+      });
+      const scopeDialog = renderer.root.findByProps({ testID: 'apply-scope-dialog' });
+      await act(async () => {
+        scopeDialog.findAllByProps({ children: 'This and following months' })[0].props.onPress();
+        await Promise.resolve();
+      });
+      expect(actions.addBudgetIncome).toHaveBeenCalledWith(month, {
+        name: 'Consulting', amount: 750, category: 'Consulting', frequency: 'monthly',
+      }, 'following', todayISO());
+    } finally {
+      if (renderer) act(() => renderer?.unmount());
+      routeParams.mockReturnValue(previousParams);
+    }
+  });
+
   it.each([1, 1.3, 2])(
     'reproduces recurring income visibility through the add form and Budget month controls at font scale %s',
     async (fontScale) => {

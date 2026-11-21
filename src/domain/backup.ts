@@ -7,7 +7,6 @@ import { migratePersisted } from '../data/migrate';
 import { EF_BUCKETS, EF_BUCKET_META } from './efAllocation';
 import {
   appDataSchema,
-  EARNED_INCOME_CATEGORIES,
   SCHEMA_VERSION,
 } from './schemas';
 import { HOLDING_TYPES, LIABILITY_TYPES, THEME_IDS, type AppData, type ISODate } from './types';
@@ -203,7 +202,7 @@ const budgetSchema = z.strictObject({
 const budgetIncomeSchema = z.strictObject({
   id: idSchema,
   name: z.string().min(1).max(40),
-  category: z.enum(EARNED_INCOME_CATEGORIES),
+  category: z.string().trim().min(1).max(60),
   amount: z.number().finite().positive().max(1_000_000_000),
   day: z.number().int().min(1).max(31).optional(),
   frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly', 'once']).optional(),
