@@ -305,7 +305,10 @@ describe('three-month emergency target screens', () => {
       title: 'Emergency fund',
       showBack: true,
       showDefaultMenu: false,
-      rightActions: [{ icon: 'edit-2', label: 'Edit allocation' }],
+      rightActions: [
+        { icon: 'edit-2', label: 'Edit allocation' },
+        { icon: 'edit-2', label: 'Edit target' },
+      ],
     });
     expect(renderer.root.findAllByProps({ label: 'Edit emergency fund allocation' })).toHaveLength(0);
     expect(text).not.toContain('Over');
@@ -328,6 +331,8 @@ describe('three-month emergency target screens', () => {
     mockPush.mockClear();
     act(() => header.props.rightActions[0].onPress());
     expect(mockPush).toHaveBeenCalledWith('/ef-allocation-form');
+    act(() => header.props.rightActions[1].onPress());
+    expect(mockPush).toHaveBeenLastCalledWith('/ef-target-form');
   });
 
   it.each([1.3, 2])('keeps details first and the progress bar last at font scale %s', (fontScale) => {
