@@ -6,6 +6,7 @@ import { Switch, View } from 'react-native';
 
 import { Dropdown } from '../src/components/Dropdown';
 import { DateField } from '../src/components/form/DateField';
+import { FieldTitle } from '../src/components/form/FieldTitle';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { HelperText } from '../src/components/form/HelperText';
 import { IntegerField } from '../src/components/form/IntegerField';
@@ -59,6 +60,7 @@ export default function LiabilityFormScreen() {
             kind: 'recurring',
             name: liability.name,
             type: liability.type,
+            customTypeName: liability.customTypeName ?? '',
             principal: String(liability.principal),
             ratePct: String(liability.ratePct),
             tenureMonths: String(liability.tenureMonths),
@@ -71,6 +73,7 @@ export default function LiabilityFormScreen() {
             kind: 'one-time',
             name: liability.name,
             type: liability.type,
+            customTypeName: liability.customTypeName ?? '',
             principal: String(liability.principal),
             ratePct: String(liability.ratePct),
             startDate: liability.startDate,
@@ -83,6 +86,7 @@ export default function LiabilityFormScreen() {
           kind: 'recurring',
           name: '',
           type: 'Other',
+          customTypeName: '',
           principal: '',
           ratePct: '',
           tenureMonths: '',
@@ -242,10 +246,21 @@ export default function LiabilityFormScreen() {
         )} />
       )}
       <Controller control={control} name="name" render={({ field }) => (
-        <TextField label="Name" accessibilityLabel="Liability name" maxLength={40} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.name?.message} />
+        <FieldTitle title="Name">
+          <TextField label="Name" accessibilityLabel="Liability name" maxLength={40} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.name?.message} />
+        </FieldTitle>
       )} />
       <Controller control={control} name="type" render={({ field }) => (
-        <Dropdown label="Type" accessibilityLabel="Liability type" options={LIABILITY_TYPES.map((type) => ({ value: type, title: type }))} value={field.value} onChange={field.onChange} error={errors.type?.message} />
+        <>
+          <Dropdown label="Liability type" accessibilityLabel="Liability type" options={LIABILITY_TYPES.map((type) => ({ value: type, title: type }))} value={field.value} onChange={field.onChange} error={errors.type?.message} />
+          {field.value === 'Custom' ? (
+            <Controller control={control} name="customTypeName" render={({ field: customField }) => (
+              <FieldTitle title="Custom type name">
+                <TextField label="Custom type name" accessibilityLabel="Custom liability type name" maxLength={30} value={customField.value ?? ''} onChangeText={customField.onChange} onBlur={customField.onBlur} error={errors.customTypeName?.message} />
+              </FieldTitle>
+            )} />
+          ) : null}
+        </>
       )} />
       {!liabilityId ? (
         <Controller control={control} name="received" render={({ field }) => (
@@ -273,10 +288,14 @@ export default function LiabilityFormScreen() {
         )} />
       ) : null}
       <Controller control={control} name="principal" render={({ field }) => (
-        <MoneyField label={kind === 'one-time' ? 'Amount borrowed' : 'Principal'} accessibilityLabel={kind === 'one-time' ? 'Amount borrowed' : 'Liability principal'} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.principal?.message} />
+        <FieldTitle title={kind === 'one-time' ? 'Amount borrowed' : 'Principal'}>
+          <MoneyField label={kind === 'one-time' ? 'Amount borrowed' : 'Principal'} accessibilityLabel={kind === 'one-time' ? 'Amount borrowed' : 'Liability principal'} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.principal?.message} />
+        </FieldTitle>
       )} />
       <Controller control={control} name="ratePct" render={({ field }) => (
-        <PercentField label="Annual interest rate" accessibilityLabel="Annual interest rate" value={field.value ?? ''} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.ratePct?.message} />
+        <FieldTitle title="Annual interest rate">
+          <PercentField label="Annual interest rate" accessibilityLabel="Annual interest rate" value={field.value ?? ''} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.ratePct?.message} />
+        </FieldTitle>
       )} />
       {kind === 'recurring' ? (
         <Chip
@@ -291,10 +310,14 @@ export default function LiabilityFormScreen() {
       {kind === 'recurring' ? (
         <>
           <Controller control={control} name="tenureMonths" render={({ field }) => (
-            <IntegerField label="Tenure (months)" accessibilityLabel="Liability tenure in months" value={field.value ?? ''} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.tenureMonths?.message} icon="calendar-outline"/>
+            <FieldTitle title="Tenure (months)">
+              <IntegerField label="Tenure (months)" accessibilityLabel="Liability tenure in months" value={field.value ?? ''} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.tenureMonths?.message} icon="calendar-outline"/>
+            </FieldTitle>
           )} />
           <Controller control={control} name="emi" render={({ field }) => (
-            <MoneyField label="EMI (optional)" accessibilityLabel="Liability EMI" value={field.value ?? ''} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.emi?.message} />
+            <FieldTitle title="EMI (optional)">
+              <MoneyField label="EMI (optional)" accessibilityLabel="Liability EMI" value={field.value ?? ''} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.emi?.message} />
+            </FieldTitle>
           )} />
           {solverInputCount < 2 ? (
             <HelperText>Add one more of tenure, interest rate or EMI so we can work out the rest</HelperText>
@@ -330,14 +353,16 @@ export default function LiabilityFormScreen() {
         </>
       ) : (
         <Controller control={control} name="dueDate" render={({ field }) => (
-          <TextField
-            label="Due date (optional, YYYY-MM-DD)"
-            accessibilityLabel="Liability due date"
-            value={field.value ?? ''}
-            onChangeText={field.onChange}
-            onBlur={field.onBlur}
-            error={errors.dueDate?.message}
-          />
+          <FieldTitle title="Due date (optional)">
+            <TextField
+              label="Due date (optional, YYYY-MM-DD)"
+              accessibilityLabel="Liability due date"
+              value={field.value ?? ''}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              error={errors.dueDate?.message}
+            />
+          </FieldTitle>
         )} />
       )}
       {!liabilityId && !received && kind === 'recurring' && startDate < today ? (
@@ -359,12 +384,14 @@ export default function LiabilityFormScreen() {
           ) : null}
           {pastInstallmentsMode === 'settle' ? (
             <>
-              <MoneyField
-                label="Outstanding balance today"
-                accessibilityLabel="Outstanding balance today"
-                value={outstandingBalance}
-                onChangeText={setOutstandingBalance}
-              />
+              <FieldTitle title="Outstanding balance today">
+                <MoneyField
+                  label="Outstanding balance today"
+                  accessibilityLabel="Outstanding balance today"
+                  value={outstandingBalance}
+                  onChangeText={setOutstandingBalance}
+                />
+              </FieldTitle>
               <HelperText>
                 If this loan started in the past, enter what you still owe so old EMIs do not show as due.
               </HelperText>

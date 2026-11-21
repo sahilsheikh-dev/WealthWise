@@ -10,11 +10,13 @@ export function TopAnchoredSheet({
   children,
   sheetTestID,
   contentStyle,
+  centered = false,
 }: PropsWithChildren<{
   visible: boolean;
   onClose: () => void;
   sheetTestID: string;
   contentStyle?: StyleProp<ViewStyle>;
+  centered?: boolean;
 }>) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -50,7 +52,12 @@ export function TopAnchoredSheet({
             testID={sheetTestID}
             style={[
               styles.sheet,
-              { maxHeight: Math.max(0, height * 0.6 - keyboardHeight), backgroundColor: colors.surface, borderColor: colors.border },
+              centered ? styles.centeredSheet : styles.topSheet,
+              {
+                maxHeight: Math.max(0, height * 0.6 - keyboardHeight),
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+              },
               contentStyle,
             ]}>
             {children}
@@ -64,11 +71,23 @@ export function TopAnchoredSheet({
 const styles = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)' },
   keyboardAvoiding: { flex: 1, alignItems: 'stretch' },
-  sheet: {
-    flexShrink: 1,
+  centeredSheet: {
+    alignSelf: 'center',
+    width: '88%',
+    maxWidth: 420,
+    borderRadius: 22,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: 'hidden',
+    paddingVertical: 10,
+    marginVertical: 'auto',
+  },
+  topSheet: {
     borderBottomLeftRadius: 22,
     borderBottomRightRadius: 22,
     borderBottomWidth: StyleSheet.hairlineWidth,
     paddingTop: 10,
+  },
+  sheet: {
+    flexShrink: 1,
   },
 });

@@ -1,12 +1,9 @@
-import {
-  COVER_POLICY_TYPES,
-  type CoverPolicyType,
-  type PolicyKind,
-} from './types';
+import type { PolicyKind } from './types';
 
 export const GENERIC_INSURANCE_CATEGORY = 'Insurance premium';
 
-type TypedCoverPolicyType = Exclude<CoverPolicyType, 'other'>;
+type TypedCoverPolicyType = 'term-life' | 'health' | 'motor' | 'home';
+const TYPED_POLICY_KINDS: readonly TypedCoverPolicyType[] = ['term-life', 'health', 'motor', 'home'];
 
 export const POLICY_COVER_CATEGORIES: Record<TypedCoverPolicyType, string> = {
   'term-life': 'Term life premium',
@@ -22,9 +19,8 @@ export const INSURANCE_BUDGET_CATEGORIES = [
 ] as const;
 
 export function policyPremiumCategory(kind: PolicyKind): string {
-  const type = COVER_POLICY_TYPES.find((candidate) => candidate === kind);
-  return type && type !== 'other'
-    ? POLICY_COVER_CATEGORIES[type]
+  return kind === 'term-life' || kind === 'health' || kind === 'motor' || kind === 'home'
+    ? POLICY_COVER_CATEGORIES[kind]
     : GENERIC_INSURANCE_CATEGORY;
 }
 
@@ -33,7 +29,5 @@ export function isInsuranceBudgetCategory(category: string): boolean {
 }
 
 export function coverTypeForPremiumCategory(category: string): TypedCoverPolicyType | undefined {
-  return COVER_POLICY_TYPES.find((type): type is TypedCoverPolicyType =>
-    type !== 'other' && POLICY_COVER_CATEGORIES[type] === category,
-  );
+  return TYPED_POLICY_KINDS.find((type) => POLICY_COVER_CATEGORIES[type] === category);
 }

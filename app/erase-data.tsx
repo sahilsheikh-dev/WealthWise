@@ -5,6 +5,7 @@ import { StyleSheet } from 'react-native';
 
 import { useSecuritySettings } from '../src/components/SecurityProvider';
 import { FormScreen } from '../src/components/form/FormScreen';
+import { FieldTitle } from '../src/components/form/FieldTitle';
 import { AppText, Button, Card, SectionTitle } from '../src/components/ui';
 import { TextField } from '../src/components/form/TextField';
 import { useAppStore } from '../src/data/store';
@@ -82,14 +83,16 @@ export default function EraseDataScreen() {
         <Button label="Export a backup first" icon="download" onPress={() => router.push('/backup')} />
       </Card>
       <Card>
-        <TextField
-          label="Type ERASE to continue"
-          accessibilityLabel="Type ERASE to confirm deleting all data"
-          autoCapitalize="characters"
-          value={confirmation}
-          onChangeText={setConfirmation}
-          placeholder="ERASE"
-        />
+        <FieldTitle title="Confirmation">
+          <TextField
+            label="Type ERASE to continue"
+            accessibilityLabel="Type ERASE to confirm deleting all data"
+            autoCapitalize="characters"
+            value={confirmation}
+            onChangeText={setConfirmation}
+            placeholder="ERASE"
+          />
+        </FieldTitle>
       </Card>
       {message ? <AppText accessibilityRole="alert" style={[typography.meta, styles.message, { color: colors.err }]}>{message}</AppText> : null}
     </FormScreen>

@@ -1,5 +1,7 @@
 import { emptyAppData } from '../actions';
+import { deletePolicy } from '../policyActions';
 import { availableBalance, monthPositionAt } from '../cashFlow';
+import { budgetMonthView } from '../budget';
 import { pendingActionLabel, pendingItems } from '../pending';
 import { clearDue, undoClearDue } from '../dues';
 import { validateIntegrity } from '../links';
@@ -74,6 +76,12 @@ const policy = (changes: Partial<Policy> = {}): Policy => ({
 });
 
 describe('pending item projection', () => {
+  it('excludes a non-recurring fixed deposit plan from pending dues', () => {
+    const data = { ...base(), holdings: [plan({ type: 'Fixed deposit' })] };
+
+    expect(pendingItems(data, '2026-02', '2026-02-01')).toEqual([]);
+  });
+
   it('creates recurring budget dues only in due months and clamps the due day', () => {
     const data = {
       ...base(),
@@ -96,13 +104,54 @@ describe('pending item projection', () => {
         title: 'Quarterly bill',
         amount: 1_200,
         dueDate: '2026-04-30',
-        source: { kind: 'budget', category: 'Quarterly bill', type: 'expense' },
+        source: { kind: 'budget', category: 'Quarterly bill', type: 'expense', month: '2026-04' },
       }),
     ]));
     expect(pendingItems(data, '2026-05', '2026-03-15'))
       .not.toEqual(expect.arrayContaining([expect.objectContaining({ title: 'Quarterly bill' })]));
     expect(pendingItems(data, '2026-07', '2026-03-15')).toEqual(expect.arrayContaining([
       expect.objectContaining({ title: 'Quarterly bill', dueDate: '2026-07-31' }),
+    ]));
+  });
+
+  it('creates once-only item, income, and policy dues only in their first due month', () => {
+    const income = Object.assign({
+      id: 'one-time-income',
+      name: 'One-time income',
+      category: 'Freelance' as const,
+      amount: 1_000,
+      day: 10,
+      frequency: 'monthly' as const,
+      firstDueMonth: '2026-03',
+    }, { frequency: 'once' });
+    const budgetPlan = budgetPlanFromLines([{
+      category: 'One-time expense',
+      mode: 'amount',
+      value: 250,
+      dueDay: 15,
+      frequency: 'monthly',
+      firstDueMonth: '2026-03',
+    }], {
+      incomes: [income],
+      repeatMonthly: true,
+      repeatFrom: '2026-03',
+    });
+    const item = budgetPlan.items[0];
+    if (!item) throw new Error('Once-only Budget item fixture is missing.');
+    Object.assign(item, { frequency: 'once' });
+    const oncePolicy = policy({ name: 'One-time premium', trackFrom: '2026-03-20' });
+    Object.assign(oncePolicy, { frequency: 'once' });
+    const data = { ...emptyAppData('2026-02-01'), budgetPlan, policies: [oncePolicy] };
+
+    expect(pendingItems(data, '2026-03', '2026-02-01')).toEqual(expect.arrayContaining([
+      expect.objectContaining({ title: 'One-time expense', dueDate: '2026-03-15' }),
+      expect.objectContaining({ title: 'One-time income', dueDate: '2026-03-10' }),
+      expect.objectContaining({ title: 'One-time premium', dueDate: '2026-03-20' }),
+    ]));
+    expect(pendingItems(data, '2026-04', '2026-02-01')).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ title: 'One-time expense' }),
+      expect.objectContaining({ title: 'One-time income' }),
+      expect.objectContaining({ title: 'One-time premium' }),
     ]));
   });
 
@@ -227,6 +276,49 @@ describe('pending item projection', () => {
     ]);
   });
 
+  it('creates an upcoming premium due on the selected date in its month', () => {
+    const due = pendingItems({
+      ...base(),
+      policies: [policy({
+        startDate: '2026-01-01',
+        trackFrom: '2026-02-22',
+        endDate: '2026-03-31',
+      })],
+    }, '2026-02', '2026-02-15').filter((item) => item.source.kind === 'policy');
+    expect(due).toEqual([
+      expect.objectContaining({
+        title: 'Health cover',
+        category: 'Health premium',
+        amount: 60,
+        dueDate: '2026-02-22',
+        status: 'upcoming',
+      }),
+    ]);
+  });
+
+  it('projects savings-policy dues under the generic insurance category', () => {
+    const data = base();
+    const rows = pendingItems({
+      ...data,
+      policies: [policy({ kind: 'life-savings' })],
+    }, '2026-02', '2026-02-15').filter((item) => item.source.kind === 'policy');
+    expect(rows).toEqual([
+      expect.objectContaining({ category: 'Insurance premium' }),
+    ]);
+  });
+
+  it('removes pending premium dues when a policy is deleted', () => {
+    const data = {
+      ...base(),
+      policies: [policy()],
+    };
+    expect(pendingItems(data, '2026-02', '2026-02-15')
+      .some((item) => item.source.kind === 'policy')).toBe(true);
+    const deleted = deletePolicy(data, { id: 'policy' });
+    expect(pendingItems(deleted, '2026-02', '2026-02-15')
+      .some((item) => item.source.kind === 'policy')).toBe(false);
+  });
+
   it('projects remaining budget lines once and suppresses commitments and represented investment dues', () => {
     const data: AppData = {
       ...base(),
@@ -251,6 +343,158 @@ describe('pending item projection', () => {
       expect.objectContaining({ title: 'Insurance', amount: 100, status: 'planned', actionable: true }),
     ]);
     expect(rows.find((row) => row.title === 'Food')).not.toHaveProperty('dueDate');
+  });
+
+  it('does not duplicate a linked plan due and counts its linked transaction once', () => {
+    const snapshot = monthBudgetFromLines('2026-02', [
+      { category: 'Mutual fund / SIP', planned: 100 },
+    ], { incomes: [] });
+    const snapshotItem = snapshot.items[0];
+    if (!snapshotItem) throw new Error('Linked plan budget fixture is missing.');
+    snapshot.items = [{ ...snapshotItem, holdingId: 'plan' }];
+    const data: AppData = {
+      ...base(),
+      holdings: [plan({
+        startDate: '2026-02-01',
+        trackFrom: '2026-02-01',
+      })],
+      monthBudgets: [snapshot],
+    };
+
+    const unpaidRows = pendingItems(data, '2026-02', '2026-02-15');
+    expect(unpaidRows).toHaveLength(1);
+    expect(unpaidRows[0]).toMatchObject({
+      kind: 'due',
+      title: 'Monthly SIP',
+      source: { kind: 'plan', parentId: 'plan' },
+    });
+
+    const entry = {
+      id: 'feb-deposit',
+      date: '2026-02-01',
+      amount: 100,
+      note: '',
+      kind: 'Deposit' as const,
+    };
+    const paidData: AppData = {
+      ...data,
+      holdings: [plan({
+        startDate: '2026-02-01',
+        trackFrom: '2026-02-01',
+        logs: [entry],
+      })],
+      transactions: [{
+        id: 'linked-deposit',
+        type: 'invest',
+        amount: 100,
+        category: 'Mutual fund / SIP',
+        note: 'Monthly SIP deposit',
+        date: '2026-02-01',
+        source: { kind: 'holding-entry', parentId: 'plan', entryId: entry.id },
+      }],
+    };
+    expect(pendingItems(paidData, '2026-02', '2026-02-15')).toEqual([]);
+    expect(budgetMonthView(paidData, '2026-02').lines).toContainEqual(expect.objectContaining({
+      category: 'Mutual fund / SIP',
+      planned: 100,
+      actual: 100,
+      remaining: 0,
+    }));
+  });
+
+  it.each(['Savings account', 'Cash', 'Other'] as const)(
+    'keeps an explicitly linked manual %s budget row and exposes its month and holding',
+    (type) => {
+      const snapshot = monthBudgetFromLines('2026-02', [
+        { category: 'Other investments', planned: 100 },
+      ], {
+        incomes: [],
+        sections: [{ id: 'investments', name: 'Investments', type: 'invest' }],
+      });
+      const snapshotItem = snapshot.items[0];
+      if (!snapshotItem) throw new Error('Manual holding budget fixture is missing.');
+      snapshot.items = [{
+        ...snapshotItem,
+        sectionId: 'investments',
+        holdingId: 'manual-holding',
+      }];
+      const data: AppData = {
+        ...base(),
+        holdings: [{
+          id: 'manual-holding',
+          kind: 'manual',
+          name: 'Savings reserve',
+          type,
+          invested: 1_000,
+          value: 1_000,
+          valueAsOf: '2026-02-01',
+          logs: [],
+        }],
+        monthBudgets: [snapshot],
+      };
+
+      expect(pendingItems(data, '2026-02', '2026-02-15')).toContainEqual(
+        expect.objectContaining({
+          kind: 'budget',
+          category: 'Other investments',
+          source: {
+            kind: 'budget',
+            category: 'Other investments',
+            type: 'invest',
+            month: '2026-02',
+            holdingId: 'manual-holding',
+          },
+        }),
+      );
+    },
+  );
+
+  it('carries a plan-only holding link into a virtual future-month Budget row', () => {
+    const data: AppData = {
+      ...base(),
+      holdings: [{
+        id: 'manual-savings',
+        kind: 'manual',
+        name: 'Savings reserve',
+        type: 'Savings account',
+        invested: 1_000,
+        value: 1_000,
+        valueAsOf: '2026-03-01',
+        logs: [],
+      }],
+      budgetPlan: {
+        incomes: [],
+        sections: [{ id: 'investments', name: 'Investments', type: 'invest' }],
+        repeatMonthly: true,
+        repeatFrom: '2026-02',
+        items: [{
+          id: 'savings-item',
+          sectionId: 'investments',
+          name: 'Emergency savings',
+          mode: 'amount',
+          value: 100,
+          dueDay: 10,
+          frequency: 'monthly',
+          firstDueMonth: '2026-02',
+          holdingId: 'manual-savings',
+        }],
+      },
+    };
+
+    expect(pendingItems(data, '2026-04', '2026-03-15')).toContainEqual(
+      expect.objectContaining({
+        kind: 'budget',
+        amount: 100,
+        dueDate: '2026-04-10',
+        source: {
+          kind: 'budget',
+          category: 'Emergency savings',
+          type: 'invest',
+          month: '2026-04',
+          holdingId: 'manual-savings',
+        },
+      }),
+    );
   });
 
   it('does not duplicate an active policy due with a manual budget line in the same typed category', () => {

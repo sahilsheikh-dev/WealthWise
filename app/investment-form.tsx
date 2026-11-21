@@ -5,9 +5,9 @@ import { Controller, useForm, useWatch, type Control, type FieldErrors } from 'r
 import { Modal, View } from 'react-native';
 
 import { AmountText } from '../src/components/AmountText';
-import { ChoiceField } from '../src/components/form/ChoiceField';
 import { Dropdown } from '../src/components/Dropdown';
 import { DateField } from '../src/components/form/DateField';
+import { FieldTitle } from '../src/components/form/FieldTitle';
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { FormSection } from '../src/components/form/FormSection';
@@ -23,6 +23,7 @@ import { useAppStore } from '../src/data/store';
 import { useUIStore } from '../src/data/uiStore';
 import { useAppActions } from '../src/data/useAppData';
 import { pendingDues, type PastDuesMode } from '../src/domain/dues';
+import { holdingCapabilities } from '../src/domain/holdingCapabilities';
 import {
   makeHoldingFormSchema,
   makePlanFormSchema,
@@ -32,18 +33,23 @@ import {
   type PlanFormOutput,
 } from '../src/domain/schemas';
 import { projection } from '../src/domain/sip';
-import type { Frequency, HoldingType, ManualHolding, PlanHolding } from '../src/domain/types';
+import { HOLDING_TYPES, type Frequency, type ManualHolding, type PlanHolding } from '../src/domain/types';
 import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
 import { choiceAsync, confirmAsync } from '../src/lib/confirm';
+import { suggestedValuationMethod } from '../src/domain/valuation';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
-const holdingTypes: HoldingType[] = [
-  'Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit', 'Recurring deposit', 'EPFO / PF',
-  'Savings account', 'Cash', 'Gold', 'Silver', 'Other',
-];
 const frequencies: Frequency[] = ['daily', 'weekly', 'monthly', 'yearly'];
+const compoundingOptions = ['monthly', 'quarterly', 'halfYearly', 'yearly', 'simple'] as const;
+const valuationMethodOptions = [
+  { value: 'balance', title: 'Balance' },
+  { value: 'balanceInterest', title: 'Balance plus interest' },
+  { value: 'accrual', title: 'Accrual estimate' },
+  { value: 'manual', title: 'Manual value' },
+  { value: 'unitsPrice', title: 'Units × price' },
+];
 const openingBalanceHint = 'Money you had already put in before you started tracking here. It counts towards your invested amount.';
 const actualValueHint = "Today's value from your statement or investment app. Leave it blank and we will use our estimate.";
 const actualValueDateHint = "The date you checked that value. We fill in today's date when you enter a value.";
@@ -127,18 +133,21 @@ function PlanEditor({
     earliestLogDate: plan?.logs.map((entry) => entry.date).sort()[0] ?? null,
   }), [data.holdings, data.liabilities, plan, today]);
   const submitting = useRef(false);
-  const { control, handleSubmit, getValues, setValue, formState: { errors, isDirty, isSubmitting, submitCount } } =
+  const { control, handleSubmit, getValues, setValue, formState: { errors, isDirty, isSubmitting, submitCount, dirtyFields } } =
     useForm<PlanFormInput, undefined, PlanFormOutput>({
       resolver: zodResolver(schema), mode: 'onTouched', reValidateMode: 'onChange',
       defaultValues: plan ? {
-        name: plan.name, type: plan.type, frequency: plan.frequency, amount: String(plan.amount),
+        name: plan.name, type: plan.type, customTypeName: plan.customTypeName ?? '', frequency: plan.frequency, amount: String(plan.amount),
         ratePct: String(plan.ratePct), stepUpPct: String(plan.stepUpPct), tenureYears: String(plan.tenureYears),
         startDate: plan.startDate, trackFrom: plan.trackFrom, opening: String(plan.opening),
         actualValue: plan.actualValue === null ? '' : String(plan.actualValue), actualValueDate: plan.actualValueDate ?? '',
+        valuationMethod: plan.valuationMethod ?? 'manual',
+        compounding: plan.compounding ?? 'yearly',
+        maturityDate: plan.maturityDate ?? '',
       } : {
-        name: nameSeed, type: 'Mutual fund / SIP', frequency: 'monthly', amount: '', ratePct: '',
+        name: nameSeed, type: 'Mutual fund / SIP', customTypeName: '', frequency: 'monthly', amount: '', ratePct: '',
         stepUpPct: '', tenureYears: '', startDate: today, trackFrom: today, opening: '',
-        actualValue: '', actualValueDate: '',
+        actualValue: '', actualValueDate: '', valuationMethod: 'manual', compounding: 'yearly', maturityDate: '',
       },
     });
   const amount = useWatch({ control, name: 'amount' });
@@ -149,7 +158,7 @@ function PlanEditor({
   const startDate = useWatch({ control, name: 'startDate' });
   const planType = useWatch({ control, name: 'type' });
   const opening = useWatch({ control, name: 'opening' });
-  const [pastInstallmentsMode, setPastInstallmentsMode] = useState<PastDuesMode | 'show'>('settle');
+  const [pastDepositsMode, setPastDepositsMode] = useState<PastDuesMode | 'show'>('settle');
   const previewValues: [number, number, number, number] = [
     Number(amount), Number(ratePct), Number(stepUpPct || '0'), Number(tenureYears),
   ];
@@ -189,18 +198,23 @@ function PlanEditor({
     submitting.current = true;
     try {
       if (plan) actions.updatePlan(plan.id, values);
-      else if (previewPastDues?.count && pastInstallmentsMode !== 'show') {
-        const confirmed = pastInstallmentsMode !== 'record' || await confirmAsync({
-          title: 'Record past installments?',
-          message: `This will record ${previewPastDues.count} installments totalling ${formatAmount(previewPastDues.amount, 'exact', 1)} on their due dates.`,
-          confirmLabel: `Record ${previewPastDues.count} installments`,
-          cancelLabel: 'Cancel',
-        });
-        if (!confirmed) return;
-        actions.addPlanWithHistory({ ...values, trackFrom: startDate }, pastInstallmentsMode, true);
-      } else if (previewPastDues?.count) {
-        actions.addPlan({ ...values, trackFrom: startDate });
-      } else actions.addPlan(values);
+      else {
+        const configuredValues = dirtyFields.valuationMethod
+          ? values
+          : { ...values, valuationMethod: suggestedValuationMethod(values.type, false, values.ratePct) };
+        if (previewPastDues?.count && pastDepositsMode !== 'show') {
+          const confirmed = pastDepositsMode !== 'record' || await confirmAsync({
+            title: 'Record past deposits?',
+            message: `This will record ${previewPastDues.count} deposits totalling ${formatAmount(previewPastDues.amount, 'exact', 1)} on their due dates.`,
+            confirmLabel: `Record ${previewPastDues.count} deposits`,
+            cancelLabel: 'Cancel',
+          });
+          if (!confirmed) return;
+          actions.addPlanWithHistory({ ...configuredValues, trackFrom: startDate }, pastDepositsMode, true);
+        } else if (previewPastDues?.count) {
+          actions.addPlan({ ...configuredValues, trackFrom: startDate });
+        } else actions.addPlan(configuredValues);
+      }
       const state = useAppStore.getState();
       if (!state.lastError) {
         if (!plan && fromTransaction) {
@@ -243,23 +257,23 @@ function PlanEditor({
             setValue('actualValueDate', today, { shouldDirty: true });
           }
         }}
+        suggestedMethod={suggestedValuationMethod(planType, false, Number(ratePct))}
         maximumDate={plusDays(today, 366)}
       />
       {!plan && startDate < today ? (
         <View style={{ gap: 8 }}>
-          <AppText weight="semibold">Past installments</AppText>
           <SegmentedControl
-            value={pastInstallmentsMode}
+            value={pastDepositsMode}
             options={[
               { label: 'Already paid', value: 'settle' },
               { label: 'Show as due', value: 'show' },
               { label: 'Record as paid', value: 'record' },
             ]}
-            onChange={setPastInstallmentsMode}
+            onChange={setPastDepositsMode}
           />
           {previewPastDues ? (
             <HelperText>
-              {previewPastDues.count} past installments · {formatAmount(previewPastDues.amount, 'exact', 1)}
+              {previewPastDues.count} past deposits · {formatAmount(previewPastDues.amount, 'exact', 1)}
             </HelperText>
           ) : null}
         </View>
@@ -291,20 +305,37 @@ function ManualEditor({
   const today = todayISO();
   const schema = useMemo(() => makeHoldingFormSchema({
     otherNames: data.holdings.filter((item) => item.id !== holding?.id).map((item) => item.name),
-  }), [data.holdings, holding?.id]);
-  const { control, handleSubmit, formState: { errors, isDirty, isSubmitting } } = useForm<HoldingFormInput, undefined, HoldingFormOutput>({
+    entriesExist: Boolean(holding?.logs.length),
+  }), [data.holdings, holding?.id, holding?.logs.length]);
+  const { control, handleSubmit, formState: { errors, isDirty, isSubmitting, dirtyFields } } = useForm<HoldingFormInput, undefined, HoldingFormOutput>({
     resolver: zodResolver(schema), mode: 'onTouched', reValidateMode: 'onChange',
     defaultValues: holding ? {
-      name: holding.name, type: holding.type, invested: String(holding.invested), value: String(holding.value),
-    } : { name: nameSeed, type: 'EPFO / PF', invested: '', value: '' },
+      name: holding.name, type: holding.type, customTypeName: holding.customTypeName ?? '', invested: String(holding.invested), value: String(holding.value),
+      valuationMethod: holding.valuationMethod ?? 'manual',
+      ratePct: holding.ratePct === undefined ? '' : String(holding.ratePct),
+      compounding: holding.compounding ?? 'yearly',
+      maturityDate: holding.maturityDate ?? '',
+    } : {
+      name: nameSeed, type: 'EPFO / PF', customTypeName: '', invested: '', value: '',
+      valuationMethod: 'manual', ratePct: '', compounding: 'yearly', maturityDate: '',
+    },
   });
   const invested = useWatch({ control, name: 'invested' });
   const value = useWatch({ control, name: 'value' });
+  const holdingType = useWatch({ control, name: 'type' });
+  const ratePct = useWatch({ control, name: 'ratePct' });
+  const keepsEarlierEntries = Boolean(holding?.logs.length) && !holdingCapabilities(holdingType).entries;
   const numeric = (raw: string) => Number(raw.replaceAll(',', ''));
   const belowCost = Number.isFinite(numeric(invested)) && Number.isFinite(numeric(value)) && numeric(value) < numeric(invested);
   const save = (values: HoldingFormOutput) => {
-    if (holding) actions.updateHolding(holding.id, values);
-    else actions.addHolding(values);
+    const configuredValues = !holding && !dirtyFields.valuationMethod
+      ? {
+        ...values,
+        valuationMethod: suggestedValuationMethod(values.type, false, values.ratePct),
+      }
+      : values;
+    if (holding) actions.updateHolding(holding.id, configuredValues);
+    else actions.addHolding(configuredValues);
     const state = useAppStore.getState();
     if (!state.lastError) {
       if (!holding && fromTransaction) {
@@ -336,7 +367,55 @@ function ManualEditor({
       <FormErrorBanner message={lastError} />
       {modeControl}
       {holding ? <ReadOnlyInvestmentKind label="Investment type" value="One-time (FD, gold, PF...)" /> : null}
-      <ManualFields control={control} errors={errors} onNameChange={onNameChange} />
+      <ManualFields
+        control={control}
+        errors={errors}
+        onNameChange={onNameChange}
+      />
+      <FormSection title="Valuation">
+        <Controller control={control} name="valuationMethod" render={({ field }) => <Dropdown
+          label="Valuation method"
+          accessibilityLabel="Valuation method"
+          options={valuationMethodOptions}
+          value={field.value ?? 'manual'}
+          onChange={field.onChange}
+          error={errors.valuationMethod?.message}
+        />} />
+        <Controller control={control} name="ratePct" render={({ field }) => (
+          <FieldTitle title="Annual rate">
+            <PercentField
+              label="Annual rate"
+              accessibilityLabel="Annual accrual rate"
+              value={field.value ?? ''}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              error={errors.ratePct?.message}
+            />
+          </FieldTitle>
+        )} />
+        <Controller control={control} name="compounding" render={({ field }) => <Dropdown
+          label="Compounding"
+          accessibilityLabel="Compounding"
+          options={compoundingOptions.map((option) => ({ value: option, title: option }))}
+          value={field.value ?? 'yearly'}
+          onChange={field.onChange}
+          error={errors.compounding?.message}
+        />} />
+        <Controller control={control} name="maturityDate" render={({ field }) => (
+          <FieldTitle title="Maturity date">
+            <TextField
+              label="Maturity date (YYYY-MM-DD)"
+              accessibilityLabel="Maturity date"
+              value={field.value ?? ''}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              error={errors.maturityDate?.message}
+            />
+          </FieldTitle>
+        )} />
+        <HelperText>Suggested: {suggestedValuationMethod(holdingType, Boolean(holding?.logs.some((entry) => entry.price)), ratePct === '' ? undefined : Number(ratePct))}. Changing the suggestion configures this method.</HelperText>
+      </FormSection>
+      {keepsEarlierEntries ? <HelperText>Entries from earlier are kept.</HelperText> : null}
       {holding ? <Button label="Value is still correct today" variant="soft" disabled={holding.valueAsOf === today} onPress={() => actions.confirmHoldingValue(holding.id)} /> : null}
       {belowCost ? <HelperText tone="warning">Value is below what you invested</HelperText> : null}
     </FormScreen>
@@ -354,6 +433,7 @@ function PlanFields({
   maximumDate,
   onNameChange,
   onActualValueEntered,
+  suggestedMethod,
 }: {
   control: Control<PlanFormInput, undefined, PlanFormOutput>;
   errors: FieldErrors<PlanFormInput>;
@@ -361,21 +441,53 @@ function PlanFields({
   maximumDate: string;
   onNameChange: (name: string) => void;
   onActualValueEntered: () => void;
+  suggestedMethod: string;
 }) {
   const [infoOpen, setInfoOpen] = useState(false);
   const { colors } = useTheme();
   return (
     <>
       <FormSection title="Basics">
-        <Controller control={control} name="name" render={({ field }) => <TextField label="Name" accessibilityLabel="Investment name" maxLength={40} value={field.value} onChangeText={(value) => { field.onChange(value); onNameChange(value); }} onBlur={field.onBlur} error={errors.name?.message} />} />
-        <Controller control={control} name="type" render={({ field }) => <Dropdown label="Holding type" accessibilityLabel="Holding type" options={holdingTypes.map((type) => ({ value: type, title: type }))} value={field.value} onChange={field.onChange} error={errors.type?.message} />} />
-        <Controller control={control} name="frequency" render={({ field }) => <ChoiceField label="Frequency" choices={frequencies} value={field.value} onChange={field.onChange} error={errors.frequency?.message} />} />
+        <Controller control={control} name="name" render={({ field }) => (
+          <FieldTitle title="Name">
+            <TextField label="Name" accessibilityLabel="Investment name" maxLength={40} value={field.value} onChangeText={(value) => { field.onChange(value); onNameChange(value); }} onBlur={field.onBlur} error={errors.name?.message} />
+          </FieldTitle>
+        )} />
+        <Controller control={control} name="type" render={({ field }) => (
+          <>
+            <Dropdown label="Holding type" accessibilityLabel="Holding type" options={HOLDING_TYPES.map((type) => ({ value: type, title: type }))} value={field.value} onChange={field.onChange} error={errors.type?.message} />
+            {field.value === 'Custom' ? (
+              <Controller control={control} name="customTypeName" render={({ field: customField }) => (
+                <FieldTitle title="Custom type name">
+                  <TextField label="Custom type name" accessibilityLabel="Custom holding type name" maxLength={30} value={customField.value ?? ''} onChangeText={customField.onChange} onBlur={customField.onBlur} error={errors.customTypeName?.message} />
+                </FieldTitle>
+              )} />
+            ) : null}
+          </>
+        )} />
+        <Controller control={control} name="frequency" render={({ field }) => <Dropdown label="Frequency" accessibilityLabel="Frequency" options={frequencies.map((frequency) => ({ value: frequency, title: frequency }))} value={field.value} onChange={field.onChange} error={errors.frequency?.message} />} />
       </FormSection>
       <FormSection title="Contribution">
-        <Controller control={control} name="amount" render={({ field }) => <MoneyField label="Contribution amount" accessibilityLabel="Contribution amount" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.amount?.message} />} />
-        <Controller control={control} name="ratePct" render={({ field }) => <PercentField label="Annual return" accessibilityLabel="Annual return percentage" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.ratePct?.message} />} />
-        <Controller control={control} name="stepUpPct" render={({ field }) => <PercentField label="Annual step-up" accessibilityLabel="Annual step-up percentage" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.stepUpPct?.message} />} />
-        <Controller control={control} name="tenureYears" render={({ field }) => <IntegerField label="Tenure (years)" accessibilityLabel="Tenure in years" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.tenureYears?.message} icon="calendar-outline" />} />
+        <Controller control={control} name="amount" render={({ field }) => (
+          <FieldTitle title="Contribution amount">
+            <MoneyField label="Contribution amount" accessibilityLabel="Contribution amount" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.amount?.message} />
+          </FieldTitle>
+        )} />
+        <Controller control={control} name="ratePct" render={({ field }) => (
+          <FieldTitle title="Annual return">
+            <PercentField label="Annual return" accessibilityLabel="Annual return percentage" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.ratePct?.message} />
+          </FieldTitle>
+        )} />
+        <Controller control={control} name="stepUpPct" render={({ field }) => (
+          <FieldTitle title="Annual step-up">
+            <PercentField label="Annual step-up" accessibilityLabel="Annual step-up percentage" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.stepUpPct?.message} />
+          </FieldTitle>
+        )} />
+        <Controller control={control} name="tenureYears" render={({ field }) => (
+          <FieldTitle title="Tenure (years)">
+            <IntegerField label="Tenure (years)" accessibilityLabel="Tenure in years" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.tenureYears?.message} icon="calendar-outline" />
+          </FieldTitle>
+        )} />
       </FormSection>
       <FormSection title="Dates">
         <Controller control={control} name="startDate" render={({ field }) => <DateField
@@ -389,30 +501,38 @@ function PlanFields({
         />} />
         <HelperText>The plan schedule starts on this date.</HelperText>
         <Controller control={control} name="trackFrom" render={({ field }) => <DateField
-          label="Count installments from"
-          accessibilityLabel="Installment tracking start date"
-          accessibilityHint="Only installments due on or after this date count toward missed contributions."
+          label="Count scheduled deposits from"
+          accessibilityLabel="Scheduled deposit tracking start date"
+          accessibilityHint="Only deposits due on or after this date count toward missed contributions."
           value={field.value || today}
           onChange={field.onChange}
           maximumDate={maximumDate}
           error={errors.trackFrom?.message}
         />} />
-        <HelperText>For an existing SIP, choose when you want WealthWise to start counting expected installments.</HelperText>
+        <HelperText>For an existing SIP, choose when you want WealthWise to start counting expected deposits.</HelperText>
       </FormSection>
       <FormSection title="Opening and value">
-        <Controller control={control} name="opening" render={({ field }) => <MoneyField label="Opening balance" accessibilityLabel="Opening balance" value={field.value ?? ''} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.opening?.message} />} />
+        <Controller control={control} name="opening" render={({ field }) => (
+          <FieldTitle title="Opening balance">
+            <MoneyField label="Opening balance" accessibilityLabel="Opening balance" value={field.value ?? ''} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.opening?.message} />
+          </FieldTitle>
+        )} />
         <HelperText accessibilityHint={openingBalanceHint}>{openingBalanceHint}</HelperText>
-        <Controller control={control} name="actualValue" render={({ field }) => <MoneyField
-          label="Latest actual value"
-          accessibilityLabel="Latest actual value"
-          value={field.value ?? ''}
-          onChangeText={(value) => {
-            field.onChange(value);
-            if (value.trim()) onActualValueEntered();
-          }}
-          onBlur={field.onBlur}
-          error={errors.actualValue?.message}
-        />} />
+        <Controller control={control} name="actualValue" render={({ field }) => (
+          <FieldTitle title="Latest actual value">
+            <MoneyField
+              label="Latest actual value"
+              accessibilityLabel="Latest actual value"
+              value={field.value ?? ''}
+              onChangeText={(value) => {
+                field.onChange(value);
+                if (value.trim()) onActualValueEntered();
+              }}
+              onBlur={field.onBlur}
+              error={errors.actualValue?.message}
+            />
+          </FieldTitle>
+        )} />
         <HelperText accessibilityHint={actualValueHint}>{actualValueHint}</HelperText>
         <Controller control={control} name="actualValueDate" render={({ field }) => <DateField
           label="Actual value date"
@@ -449,6 +569,39 @@ function PlanFields({
           </View>
         </Modal>
       </FormSection>
+      <FormSection title="Valuation">
+        <Controller control={control} name="valuationMethod" render={({ field }) => <Dropdown
+          label="Valuation method"
+          accessibilityLabel="Valuation method"
+          options={valuationMethodOptions}
+          value={field.value ?? 'manual'}
+          onChange={field.onChange}
+          error={errors.valuationMethod?.message}
+        />} />
+        <Controller control={control} name="compounding" render={({ field }) => <Dropdown
+          label="Compounding"
+          accessibilityLabel="Compounding"
+          options={compoundingOptions.map((option) => ({ value: option, title: option }))}
+          value={field.value ?? 'yearly'}
+          onChange={field.onChange}
+          error={errors.compounding?.message}
+        />} />
+        <Controller control={control} name="maturityDate" render={({ field }) => (
+          <FieldTitle title="Maturity date">
+            <TextField
+              label="Maturity date (YYYY-MM-DD)"
+              accessibilityLabel="Maturity date"
+              value={field.value ?? ''}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              error={errors.maturityDate?.message}
+            />
+          </FieldTitle>
+        )} />
+        <HelperText>
+          Accrual uses this plan&apos;s annual return rate. Suggested: {suggestedMethod}.
+        </HelperText>
+      </FormSection>
     </>
   );
 }
@@ -464,10 +617,33 @@ function ManualFields({
 }) {
   return (
     <FormSection title="Investment">
-      <Controller control={control} name="name" render={({ field }) => <TextField label="Name" accessibilityLabel="Holding name" maxLength={40} value={field.value} onChangeText={(value) => { field.onChange(value); onNameChange(value); }} onBlur={field.onBlur} error={errors.name?.message} />} />
-      <Controller control={control} name="type" render={({ field }) => <ChoiceField label="Type" choices={holdingTypes} value={field.value} onChange={field.onChange} error={errors.type?.message} />} />
-      <Controller control={control} name="invested" render={({ field }) => <MoneyField label="Invested" accessibilityLabel="Holding invested amount" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.invested?.message} />} />
-      <Controller control={control} name="value" render={({ field }) => <MoneyField label="Current value" accessibilityLabel="Holding current value" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.value?.message} />} />
+      <Controller control={control} name="name" render={({ field }) => (
+        <FieldTitle title="Name">
+          <TextField label="Name" accessibilityLabel="Holding name" maxLength={40} value={field.value} onChangeText={(value) => { field.onChange(value); onNameChange(value); }} onBlur={field.onBlur} error={errors.name?.message} />
+        </FieldTitle>
+      )} />
+      <Controller control={control} name="type" render={({ field }) => (
+        <>
+          <Dropdown label="Holding type" accessibilityLabel="Holding type" options={HOLDING_TYPES.map((type) => ({ value: type, title: type }))} value={field.value} onChange={field.onChange} error={errors.type?.message} />
+          {field.value === 'Custom' ? (
+            <Controller control={control} name="customTypeName" render={({ field: customField }) => (
+              <FieldTitle title="Custom type name">
+                <TextField label="Custom type name" accessibilityLabel="Custom holding type name" maxLength={30} value={customField.value ?? ''} onChangeText={customField.onChange} onBlur={customField.onBlur} error={errors.customTypeName?.message} />
+              </FieldTitle>
+            )} />
+          ) : null}
+        </>
+      )} />
+      <Controller control={control} name="invested" render={({ field }) => (
+        <FieldTitle title="Invested">
+          <MoneyField label="Invested" accessibilityLabel="Holding invested amount" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.invested?.message} />
+        </FieldTitle>
+      )} />
+      <Controller control={control} name="value" render={({ field }) => (
+        <FieldTitle title="Current value">
+          <MoneyField label="Current value" accessibilityLabel="Holding current value" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.value?.message} />
+        </FieldTitle>
+      )} />
     </FormSection>
   );
 }

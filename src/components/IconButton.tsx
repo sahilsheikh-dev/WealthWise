@@ -7,7 +7,6 @@ export const TEXT_ACTIONS_ALLOWED = [
   'Deposit',
   'Withdraw',
   'Pay EMI',
-  'Log installment',
   'Entries',
   'Schedule',
   'Payments',

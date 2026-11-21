@@ -4,8 +4,8 @@ import { useEffect, useMemo, useRef } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { StyleSheet, View } from 'react-native';
 
-import { ChoiceField } from '../src/components/form/ChoiceField';
 import { DateField } from '../src/components/form/DateField';
+import { FieldTitle } from '../src/components/form/FieldTitle';
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { MoneyField } from '../src/components/form/MoneyField';
@@ -22,10 +22,12 @@ import { isValidISO, monthKey, shiftMonth } from '../src/domain/dates';
 import { monthEndDate } from '../src/domain/cashFlow';
 import { customBudgetCategories } from '../src/domain/budget';
 import { budgetCategoryChoiceSections, budgetItemCategoriesForTransaction } from '../src/domain/budgetCategories';
+import { holdingCapabilities } from '../src/domain/holdingCapabilities';
 import { listInstruments } from '../src/domain/instruments';
 import { describeSource, investCategoryFor } from '../src/domain/links';
-import { suggestPolicyForTransaction } from '../src/domain/coverGoals';
+import { suggestPolicyForTransaction } from '../src/domain/policySuggestions';
 import { holdingValue } from '../src/domain/portfolio';
+import { financialTypeLabel } from '../src/domain/typeLabels';
 import {
   INVESTMENT_FORM_CATEGORIES,
   makeTransactionFormSchema,
@@ -204,13 +206,17 @@ export default function TransactionFormScreen() {
       ? [transaction.category]
       : []),
   ];
+  const depositInstruments = instruments.filter((item) =>
+    holdingCapabilities(item.type).entries ||
+    (transaction?.source?.kind === 'holding-entry' && transaction.source.parentId === item.id && transaction.type === 'invest'),
+  );
   const instrumentChoices = [
-    ...instruments.map((item) => item.id),
+    ...depositInstruments.map((item) => item.id),
     ...(!editing || (transaction?.type === 'invest' && !transaction.source) ? [createInvestmentChoice] : []),
     ...(pendingMode || (transaction?.type === 'invest' && !transaction.source) ? [noInvestmentChoice] : []),
   ];
   const instrumentLabels = Object.fromEntries([
-    ...instruments.map((item) => [item.id, `${item.name} (${item.type})`]),
+    ...depositInstruments.map((item) => [item.id, `${item.name} (${financialTypeLabel(item.type, item.customTypeName)})`]),
     [createInvestmentChoice, '+ Create new investment'],
     [noInvestmentChoice, 'Not linked'],
   ]);
@@ -424,7 +430,9 @@ export default function TransactionFormScreen() {
               control={control}
               name="amount"
               render={({ field }) => (
-                <MoneyField value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.amount?.message} />
+                <FieldTitle title="Amount">
+                  <MoneyField value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.amount?.message} />
+                </FieldTitle>
               )}
             />
             {!transaction?.source && selectedType === 'invest' ? (
@@ -433,11 +441,14 @@ export default function TransactionFormScreen() {
                   control={control}
                   name="instrumentId"
                   render={({ field }) => (
-                    <ChoiceField
+                    <Dropdown
                       label={transaction ? 'Link to an investment (optional)' : 'Invest in'}
+                      accessibilityLabel={transaction ? 'Link to an investment' : 'Invest in'}
                       value={field.value ?? ''}
-                      choices={effectiveInstrumentChoices}
-                      choiceLabels={effectiveInstrumentLabels}
+                      options={effectiveInstrumentChoices.map((id) => ({
+                        value: id,
+                        title: effectiveInstrumentLabels[id] ?? id,
+                      }))}
                       onChange={(id) => {
                         if (id === createInvestmentChoice) {
                           router.push({ pathname: '/investment-form', params: { fromTransaction: '1' } });
@@ -478,13 +489,14 @@ export default function TransactionFormScreen() {
                       error={errors.category?.message}
                     />
                   ) : (
-                    <ChoiceField
+                    <Dropdown
                       label="Category"
+                      accessibilityLabel="Category"
                       value={field.value}
-                      choices={choices}
-                      choiceLabels={Object.fromEntries(choices.map((category) => [
-                        category, transactionCategoryLabel(category, selectedType, customCategories),
-                      ]))}
+                      options={choices.map((category) => ({
+                        value: category,
+                        title: transactionCategoryLabel(category, selectedType, customCategories),
+                      }))}
                       onChange={(value) => {
                         field.onChange(value);
                         if (value !== 'Withdrawal') setValue('instrumentId', undefined, { shouldDirty: true, shouldValidate: true });
@@ -513,11 +525,14 @@ export default function TransactionFormScreen() {
                 control={control}
                 name="instrumentId"
                 render={({ field }) => (
-                  <ChoiceField
+                  <Dropdown
                     label={isWithdrawalForm ? 'Withdraw from' : transaction ? 'Move to investment' : 'Invest in'}
+                    accessibilityLabel={isWithdrawalForm ? 'Withdraw from' : transaction ? 'Move to investment' : 'Invest in'}
                     value={field.value ?? ''}
-                    choices={effectiveInstrumentChoices}
-                    choiceLabels={effectiveInstrumentLabels}
+                    options={effectiveInstrumentChoices.map((id) => ({
+                      value: id,
+                      title: effectiveInstrumentLabels[id] ?? id,
+                    }))}
                     onChange={(value) => {
                       field.onChange(value);
                       const item = instruments.find((candidate) => candidate.id === value);
@@ -532,7 +547,7 @@ export default function TransactionFormScreen() {
               control={control}
               name="date"
               render={({ field }) => (
-                <DateField value={field.value} onChange={field.onChange} maximumDate={maxTransactionDate} error={errors.date?.message} />
+                <DateField label="Date" value={field.value} onChange={field.onChange} maximumDate={maxTransactionDate} error={errors.date?.message} />
               )}
             />
           </>
@@ -541,16 +556,18 @@ export default function TransactionFormScreen() {
           control={control}
           name="note"
           render={({ field }) => (
-            <TextField
-              label="Note (optional)"
-              value={field.value}
-              onChangeText={field.onChange}
-              onBlur={field.onBlur}
-              placeholder="Add a note"
-              accessibilityLabel="Transaction note"
-              maxLength={61}
-              error={errors.note?.message}
-            />
+            <FieldTitle title="Note (optional)">
+              <TextField
+                label="Note (optional)"
+                value={field.value}
+                onChangeText={field.onChange}
+                onBlur={field.onBlur}
+                placeholder="Add a note"
+                accessibilityLabel="Transaction note"
+                maxLength={61}
+                error={errors.note?.message}
+              />
+            </FieldTitle>
           )}
         />
       </>

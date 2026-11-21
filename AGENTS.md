@@ -1,41 +1,254 @@
-This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
+> AI agents: read [docs/memory/README.md](docs/memory/README.md) first. Before
+> finishing, update `status.md` and `open-items.md` there.
 
-## Expo has changed — do not trust your training data
+This `AGENTS.md` is the repository's single instruction entry point for every
+AI tool. Keep tool-specific instruction files out of the repository; update
+these shared instructions instead.
 
-Expo ships breaking changes every SDK release. APIs you remember are likely renamed, moved, or removed. Before writing any code that touches an Expo, EAS, or React Native API:
+Reports, audits and generated output belong in chat or `/tmp`; release content
+must remain in Git and never be placed under `/tmp`. Routine documentation
+changes in Git are limited to `docs/memory/*`, `docs/PROGRESS.md`, and
+`docs/releases/**`, including release drafts. Change other documentation only
+when the owner explicitly requests those files.
 
-1. Read the major version of the `expo` package in `package.json`.
-2. Fetch the matching versioned docs: `https://docs.expo.dev/versions/v<major>.0.0/`
-3. For anything else, fetch https://docs.expo.dev/llms.txt — an index of all Expo docs with corrections to common LLM misconceptions. Follow its links to the specific page you need; never answer from memory.
+WealthWise is an offline-first Expo SDK 57 / React Native application. Use npm
+(`package-lock.json` is present) and Node.js 26 LTS (`.nvmrc` pins 26.13.0;
+`engines` allows `>=26.0.0 <27`); routes are in `app/`, not `src/app/`.
 
-## Commands
+## COMMON RULES
 
-Use `bunx` instead of `npx` if the project uses bun (`bun.lock` present).
+These COMMON RULES apply to every prompt and task, whether or not a prompt
+repeats or pastes them. If a task explicitly authorizes a narrower exception,
+apply only that exception and preserve all other rules.
+
+- **R1 — Preflight and commits:** before other work, list every dirty file and
+  run `git diff --stat` plus the complete diff. Before each commit, show the
+  proposed subject and staged diff-stat. Commit exactly the named files, use
+  one commit per unrelated area, and use a descriptive Conventional Commit
+  subject stating what changed. Subjects require one of `feat`, `fix`, `docs`,
+  `test`, `chore`, `refactor`, `perf`, `style`, `build`, `ci`, or `revert`;
+  optional scopes are allowed. Use a descriptive subject and never bypass
+  the hook, which rejects prohibited placeholder subjects. Preserve owner
+  edits; never use checkout, restore, stash, reset, or old-code reapplication
+  to undo them. Enable the hook with
+  `git config core.hooksPath .githooks`.
+- **R2 — Phase and revision IDs:** align work with its existing phase. A fix
+  to a completed subtask stays in that phase and uses `<ID>-R<n>`; the
+  original row must say `Revised by <ID>-R<n>`. Create a new phase only for
+  genuinely new work.
+- **R3 — History, pushes and release approval:** agents do not push unless
+  the owner explicitly authorizes it, and never force-push or rewrite history.
+  Never publish releases or create, move, or delete release tags without
+  explicit owner approval.
+- **R4 — Documentation scope:** routine Git documentation is limited to
+  `docs/memory/*`, `docs/PROGRESS.md`, `docs/releases/**`, `CONTRIBUTING.md`,
+  `SECURITY.md`, and `.github/**`. Change other documentation only when
+  explicitly authorized. Reports and generated output belong in chat or
+  `/tmp`; release content must remain in Git, never `/tmp`.
+- **R5 — Preserve owner edits:** when the owner edits a file after agent
+  changes, ask whether they want those owner edits reverted before changing
+  the affected file further. Revert or overwrite owner edits only when the
+  owner explicitly requests it; otherwise preserve them and work around them.
+- **R6 — Work placement:** before adding a ledger row, branch or task, search
+  the dashboard, register, phase history, roadmap, memory and touched
+  files/features. Apply the first matching rule: (1) ongoing standalone
+  lifecycle work (cleanup, qa-and-release, schema-migration, documentation,
+  release/hotfix, branch/tag hygiene, CI and repository-process work) goes in
+  standalone lifecycle tracking; P43 is the designated temporary setup-phase
+  exception; (2) revise completed work as the next sequential revision of its
+  original part and phase; (3) widen open work in place; (4) add related
+  feature work as the next part in its phase; (5) create a new phase for a new
+  feature area. Every new or moved row has a Placement line. See
+  [work-placement.md](docs/memory/work-placement.md).
+- **R7 — Slot-filling and empty phase reservations:** empty phase numbers freed
+  by independent entity separation or cancellation (P7, P27, P28, P32) stay
+  reserved as empty slots so no existing phase is renumbered and no
+  historical branch, tag, commit or ID is rewritten. A new feature may take an
+  empty slot only if it is related to the phase immediately before or after it:
+  P7 for backup & security (P6) or investments (P8) work; P27 for
+  accessibility & performance (P26) work; P28 for income
+  recurrence / Budget income (P29) work; P32 for project health/community (P31) or
+  widgets (P33) work. For multiple consecutive empty slots, apply the same
+  adjacency pattern per slot. Unrelated work never takes an empty slot; it
+  opens a new phase at the end under R6 rule 5. Precedence: R6 rules 1–3 first
+  (standalone lifecycle, completed-part revisions, and open-part scope), then
+  R7 for new-feature placement into an eligible adjacent empty slot before
+  opening a new phase.
+
+Work-placement quick start:
+1. Search dashboard, register, phase history, roadmap, memory and touched files.
+2. Choose the first matching R6 rule 1–5.
+3. Add `Placement: rule <1-5>; searched <what>; related <IDs or none>; reason <one sentence>`.
+4. Select the phase/lifecycle branch from `docs/memory/work-placement.md`.
+5. Add the failing test first; preserve every existing assertion.
+6. Run all six gates in order and record actual exit codes.
+7. Update dashboard, register, prompt log, branch index and memory.
+8. Merge task -> phase -> develop through PRs with `--no-ff`.
+9. After a target merge, run CM-2 synchronization.
+10. Report branch, HEAD, gates, device checks and remaining owner decisions.
+
+### Branching
+
+- `main` is stable, released code; changes arrive by release or hotfix merge
+  and receive a `vX.Y.Z` tag. The initial branching adoption baseline may
+  contain legacy unreleased history; this rule applies prospectively.
+- `develop` is the integration branch and must pass all six gates.
+- Create one `phase/NN-slug` branch per phase from `develop`. A revision to a
+  completed phase reopens its existing phase branch from `develop` (R2).
+- Create `task/ID-slug` branches from their phase branch, one per subtask or
+  revision. Example: `task/P29-AB-R2-income-rows`.
+- After approved task/phase work is merged to `develop`, create
+  `release/vX.Y.Z` from `develop` and create the GitHub Release draft at that
+  exact candidate commit. Creating the draft may create its version tag; do
+  not retarget it. Then build the APK with EAS using `android-apk`, upload
+  it to the draft, and verify the artifact. Only after separate publication
+  approval, merge the release branch `--no-ff` into `main`, verify the tag
+  target, and back-merge into `develop`. Create `hotfix/vX.Y.Z` from `main`,
+  then merge to `main`, tag, and merge to `develop`.
+- External contributors fork and use `contrib/ISSUE-slug`, submitting a PR
+  into `develop`. Contributor PRs are squash-merged with a Conventional
+  Commit title.
+- Standalone lifecycle branches (`cleanup`, historical branch name:
+  `phase/27-cleanup`; `qa-and-release`, historical branch name:
+  `phase/28-qa-and-release`; `schema-migration`, historical branch name:
+  `phase/07-schema-migration`; and `documentation`) operate independently of
+  numbered product phases and live alongside `develop`. Standalone docs tasks
+  branch from `documentation` as `task/docs-<slug>` and merge back `--no-ff`,
+  then merge `documentation` into `develop` via PR; code tasks continue
+  updating their own ledger rows in the same commit.
+- Merge task into phase, then phase into `develop`, with `--no-ff`. Merge
+  release/hotfix to `main` with `--no-ff`. Agents never commit directly to
+  `main` or `develop`, except the explicitly authorized bootstrap. Delete
+  merged task branches and keep phase branches. Do not push unless asked;
+  report merge commands in chat.
+- **CM-2 — Active:** After any merge that lands on a target branch (task->phase, phase->develop, release->main, main->develop): git fetch --all --prune; git switch <target>; git pull --ff-only. Refuse and report if the worktree is dirty, the fast-forward fails or the target has no upstream. This rule never authorizes pushing; R3 is unchanged.
+
+### Gates
+
+Run these six gates in order and record each real exit code:
 
 ```bash
-npx expo install <package>  # ALWAYS use instead of npm/yarn/pnpm/bun add — resolves SDK-compatible versions
-npx expo start              # start the dev server
-npx expo lint               # lint
-npx tsc --noEmit            # typecheck
-npx expo-doctor             # diagnose dependency and config issues
-npx expo install --fix      # fix incompatible package versions
+npm test -- --coverage
+npx tsc --noEmit
+npx expo lint
+npx expo-doctor
+npx expo export --platform android
+npx expo export --platform ios
 ```
 
-Run lint and typecheck before declaring any task done.
+Expo exports are allowed when required. EAS builds and local Gradle builds
+are not authorized unless explicitly requested, except that an EAS Android
+APK build is authorized for an owner-approved release after the approved
+code is merged to `develop` and the GitHub Release draft exists. Use the
+`android-apk` profile, download the artifact outside the repository, upload
+it to the draft and verify it before requesting separate publication approval.
+Do not wait for or ask the owner/developer to build or upload the APK, or to
+provide an APK or local APK path. Builds outside this release sequence and
+local Gradle builds still require explicit authorization.
 
-## Navigation & Routing
+## Project rules
 
-- Use **Expo Router** for all navigation. Routes live in `src/app/` — every file there is a screen, `_layout.tsx` files define navigators. Keep non-route code (components, hooks, utils) outside `src/app/`.
-- Import `Link`, `router`, and `useLocalSearchParams` from `expo-router`.
-- Docs: https://docs.expo.dev/router/introduction.md
+- If an owner edit causes a test failure, update the test to match the source
+  and record the old assertion, new assertion, and reason in `docs/PROGRESS.md`.
+- Read `docs/PROGRESS.md` before changing behavior; update its decision and
+  verification records with the same task commit.
+- Treat `app/(tabs)/index.tsx` as user-owned; do not edit without explicit task
+  authorization. Preserve the separately hashed files listed in
+  `docs/memory/rules.md`.
+- Keep `src/domain/` pure: no React/Expo imports, clock reads or randomness.
+  Inject dates and identifiers.
+- A multi-entity action must be one pure domain action and one Zustand store
+  `set`, producing one persisted write.
+- Use Expo Router for navigation. Forms use React Hook Form `Controller` and
+  `useWatch`; React Compiler is enabled.
+- Do not use `!` or `as` to silence nullability in `app/` or
+  `src/components/`. Format amounts with `AmountText` or `formatAmount` and an
+  explicit display tier.
+- Keep tabs Home, Transactions, Goals and Budget. Preserve the Budget cash-flow
+  labels, `SortChip.tsx`, `src/lib/sorting.ts`, frozen inputs in
+  `src/components/form/`, and the `formComponentsFrozen` test unless the task
+  explicitly requires a change.
+- Do not weaken assertions. If a design is superseded, document the old
+  assertion, its replacement and the reason in `docs/PROGRESS.md`.
+- Check the installed Expo major version before using Expo APIs and consult
+  matching Expo documentation. Keep native changes in app config/plugins;
+  do not hand-edit generated native files.
+- Treat the latest **published** GitHub release as current; a draft does not
+  become latest until publication. Only the current release's Download block
+  may say `Latest version` or use the `/latest/` route and
+  `WealthWise-android-latest-vX.Y.Z.apk` filename. Previous release notes
+  must say `Version`, use their own versioned APK filename, and contain no
+  `latest` wording or route. When publishing a newer version, rename the
+  previous current APK asset to `WealthWise-android-vX.Y.Z.apk` and update
+  that previous release's Download block and history link.
+  Never use the `/latest/` route for an older release. Anyone starting or
+  continuing release work creates or reuses
+  `docs/releases/drafts/vX.Y.Z.md`. Do not commit the candidate before the
+  owner approves the Markdown draft. After approval, complete all release
+  details and screenshots, move the finalized note to
+  `docs/releases/published/`, and commit it with the approved release work
+  before creating a GitHub Release draft; never leave a published file in
+  drafts or an unapproved draft in published. Before each release,
+  verify the APK digest against the artifact privately; never include the
+  digest in human-authored release material. GitHub may expose a
+  platform-generated asset digest that cannot be removed by editing the
+  release.
+  Release sequence: obtain approval of the Markdown draft first, then commit
+  the approved code and finalized note (already moved to `published/`) on the
+  task branch and merge task -> phase -> `develop` through PRs. After the
+  merge, create the GitHub Release as a draft at the merged code, attach every
+  version screenshot and use each absolute asset URL in the draft body.
+  Run `eas build --platform android --profile android-apk`, wait for
+  successful completion, download and upload the APK to the draft as
+  `WealthWise-android-latest-vX.Y.Z.apk`, and privately verify the artifact
+  and links. Record the build details, then publish only after separate
+  explicit publication approval. Do not ask the owner to build or upload the
+  APK; an owner-supplied artifact is used only if the owner explicitly elects
+  that alternative.
+  The README Download block and latest published release Download block must
+  be identical.
+  Every release updates the README Download and What's new sections and its
+  releases-page link. Include all screenshots explicitly supplied for a
+  release in its Markdown and GitHub Release body, named
+  `WealthWise-vX.Y.Z-screenshot-<screen>.png`. Commit them under
+  `docs/releases/screenshots/vX.Y.Z/` with the published note; do not attach
+  screenshots as GitHub Release assets. Link each release-note thumbnail to
+  its absolute `blob/main` URL and load the image from its matching absolute
+  `raw.githubusercontent.com/.../main/` URL. The README may use equivalent
+  relative paths. If no screenshots are supplied, reuse the previous release's
+  complete image set under the new version's filenames. The README Screenshots
+  section contains only the latest published release's screenshot set and has
+  no version title. Display images at 150 pixels wide in table rows, with no
+  more than four screenshots per row. Keep capture scripts outside the app and
+  repository. Display categories in this order, omitting unavailable screens:
+  Home, Assets, Liabilities, Emergency Fund, Goals, Insurance, Budget,
+  Transactions. Release notes and GitHub release bodies must not contain a
+  Contributors section. When updating an existing published note, change
+  only its Download block except for screenshot updates and contributor
+  section removal explicitly requested by the owner. Verify every rendered
+  screenshot URL and the current latest URL and every affected
+  versioned URL with `curl -I -L`; each must return HTTP 200 and the expected
+  artifact size. Record EAS build
+  ID, profile, Android `versionCode`, date and status in the release-history
+  Builds table; do not include source commits or digests. Follow
+  `docs/releases/build-config.md`; production Android AABs go to Google Play
+  and APKs to GitHub. iOS distribution is not currently offered.
 
-## Building with EAS
+## Schema and verification
 
-Use EAS to build, sign, and submit the app in the cloud (`eas build`, `eas submit`) and to ship over-the-air updates (`eas update`) — no local Xcode or Android Studio required. Run EAS CLI as `bunx eas-cli <command>` in Bun projects, or `npx eas-cli@latest <command>` otherwise; substitute that for bare `eas` in docs examples.
-Docs: https://docs.expo.dev/eas/index.md
+Current persisted schema version: **22**. Preserve migration and backup-import
+compatibility.
 
-## Rules
+Run the gates in this order, recording each exit code:
 
-- If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
-- Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
-- Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+```bash
+npm test -- --coverage
+npx tsc --noEmit
+npx expo lint
+npx expo-doctor
+npx expo export --platform android
+npx expo export --platform ios
+```
+
+Layout tests are simulated. Record physical-device checks that remain
+unverified in `docs/PROGRESS.md`.

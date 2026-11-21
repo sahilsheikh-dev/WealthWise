@@ -4,14 +4,18 @@ import {
   budgetOverview,
   isItemDueInMonth,
   nextDueMonth,
+  plannedIncomeOf,
 } from '../../domain/budget';
 import { monthPositions } from '../../domain/cashFlow';
 import { addMonths, monthKey, shiftMonth } from '../../domain/dates';
 import { goalProjection, goalSavedFor } from '../../domain/goalLinks';
-import { coverGoalSummaries } from '../../domain/coverGoals';
+import { goalView } from '../../domain/goals';
+import { isLiabilityClosed, liabilitySummary } from '../../domain/liability';
 import { validateIntegrity } from '../../domain/links';
 import { duesThroughPreview } from '../../domain/dues';
 import { pendingItems } from '../../domain/pending';
+import { planReminders } from '../../domain/reminders';
+import { policySchedule } from '../../domain/policySchedule';
 import { holdingValue } from '../../domain/portfolio';
 import { homeSummary, netWorth } from '../../domain/summary';
 import { monthSummary } from '../../domain/transactions';
@@ -19,10 +23,10 @@ import { appDataSchema, INVESTMENT_FORM_CATEGORIES, TRANSACTION_CATEGORIES } fro
 import { storageLevel, utf8ByteLength } from '../../lib/storageGuard';
 import { buildDemoData } from '../demoData';
 
-describe('four-month demo data', () => {
+describe('six-month demo data', () => {
   const today = '2026-10-16';
   const data = buildDemoData(today);
-  const months = Array.from({ length: 4 }, (_, index) => shiftMonth(monthKey(today), index - 3));
+  const months = Array.from({ length: 6 }, (_, index) => shiftMonth(monthKey(today), index - 5));
 
   it('is deterministic, current-schema data with valid links and no emergency-fund invest entity', () => {
     expect(buildDemoData(today)).toEqual(data);
@@ -32,10 +36,27 @@ describe('four-month demo data', () => {
     expect(data).not.toHaveProperty('efEntries');
     expect(data.settings).toEqual({
       name: 'Demo User',
-      monthlySalary: 75_000,
+      monthlySalary: 80_000,
       theme: 'system',
       onboarded: true,
     });
+  });
+
+  it('includes planner dues for today, tomorrow, and later', () => {
+    const reminders = planReminders(data, {
+      enabled: true,
+      localTime: '09:00',
+      dayBefore: true,
+      sameDay: true,
+      showAmounts: false,
+      hidePreviews: false,
+    }, new Date(2026, 9, 16, 8), 60);
+    const dueDates = new Set(reminders.map((reminder) => reminder.target.dueDate));
+    expect([...dueDates]).toEqual(expect.arrayContaining([
+      '2026-10-16',
+      '2026-10-17',
+      '2026-10-23',
+    ]));
   });
 
   it('uses the three requested emergency-fund default allocations', () => {
@@ -52,21 +73,16 @@ describe('four-month demo data', () => {
     expect(data.efCustomBuckets).toHaveLength(3);
   });
 
-  it('includes the required active and lapsed policy demo records', () => {
+  it('includes a paid-premium Term policy and leaves the Life placeholder available', () => {
     expect(data.policies).toEqual(expect.arrayContaining([
       expect.objectContaining({ id: 'demo-policy-term-life', kind: 'term-life', sumAssured: 10_000_000, status: 'active' }),
-      expect.objectContaining({ id: 'demo-policy-health-yearly', kind: 'health', frequency: 'yearly', status: 'active' }),
+      expect.objectContaining({ id: 'demo-policy-health-yearly', kind: 'health', frequency: 'once', status: 'active' }),
       expect.objectContaining({ id: 'demo-policy-motor', kind: 'motor', status: 'active' }),
       expect.objectContaining({ id: 'demo-policy-home', kind: 'home', status: 'active' }),
       expect.objectContaining({ id: 'demo-policy-lapsed', status: 'lapsed' }),
     ]));
-    expect(coverGoalSummaries(data, today)).toEqual(expect.arrayContaining([
-      expect.objectContaining({ type: 'term-life', state: 'gap' }),
-      expect.objectContaining({ type: 'health', target: 2_000_000 }),
-      expect.objectContaining({ type: 'motor', state: 'covered' }),
-      expect.objectContaining({ type: 'home', state: 'covered' }),
-      expect.objectContaining({ type: 'other', state: 'missing' }),
-    ]));
+    expect(data.policies.find((policy) => policy.id === 'demo-policy-term-life')?.premium).toBeGreaterThan(0);
+    expect(data.policies.some((policy) => policy.kind === 'life-savings')).toBe(false);
     expect(data.transactions.filter((transaction) => transaction.source?.kind === 'policy-payment')
       .map((transaction) => transaction.category)).toEqual(expect.arrayContaining([
       'Health premium',
@@ -79,25 +95,38 @@ describe('four-month demo data', () => {
     ]));
   });
 
-  it('has four complete months and a custom upcoming override for the item editor demo', () => {
+  it('has six complete months, exactly Rs 1 lakh earned income, and a custom upcoming override', () => {
     const customMonth = shiftMonth(monthKey(today), 2);
     expect(data.monthBudgets?.map(({ month }) => month)).toEqual([...months, customMonth]);
+    expect(data.budgetPlan?.incomes).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'demo-income-salary', amount: 80_000, day: 1 }),
+      expect.objectContaining({ id: 'demo-income-freelance', amount: 20_000, day: 15 }),
+    ]));
+    expect(data.budgetPlan?.incomes.reduce((sum, item) => sum + item.amount, 0)).toBe(100_000);
     for (const month of months) {
       const rows = data.transactions.filter((transaction) => monthKey(transaction.date) === month);
       expect(rows).toEqual(expect.arrayContaining([
-        expect.objectContaining({ type: 'income', category: 'Salary', amount: 75_000 }),
+        expect.objectContaining({ type: 'income', category: 'Salary', amount: 80_000 }),
+        expect.objectContaining({ type: 'income', category: 'Freelance', amount: 20_000 }),
       ]));
+      expect(monthSummary(data.transactions, month).earnedIncome).toBe(100_000);
+      expect(monthSummary(data.transactions, month).expense + monthSummary(data.transactions, month).invest)
+        .toBeLessThanOrEqual(100_000);
       for (const category of TRANSACTION_CATEGORIES.expense) {
         expect(rows).toEqual(expect.arrayContaining([
           expect.objectContaining({ type: 'expense', category }),
         ]));
       }
-      for (const category of INVESTMENT_FORM_CATEGORIES) {
+      for (const category of INVESTMENT_FORM_CATEGORIES.filter((item) => item !== 'Fixed deposit / RD')) {
         expect(rows).toEqual(expect.arrayContaining([
           expect.objectContaining({ type: 'invest', category }),
         ]));
       }
     }
+    expect(data.transactions.filter((transaction) =>
+      transaction.type === 'invest'
+      && transaction.source?.kind === 'holding-entry'
+      && transaction.source.parentId === 'demo-holding-recurring-deposit')).toHaveLength(2);
     expect(BUDGET_GROUPS.every((group) => group.categories.length > 0)).toBe(true);
     expect(data.budgetPlan?.items.some((item) => item.mode === 'amount')).toBe(true);
     expect(data.budgetPlan?.items.some((item) => item.mode === 'percent')).toBe(true);
@@ -127,6 +156,9 @@ describe('four-month demo data', () => {
         linkedIncluded: true,
         items: expect.arrayContaining([expect.objectContaining({ name: 'Bills', dueDay: 5 })]),
       });
+    const currentSnapshot = data.monthBudgets?.find(({ month }) => month === monthKey(today));
+    if (!currentSnapshot) throw new Error('Demo current-month budget snapshot is missing.');
+    expect(data.budget?.plannedIncome).toBe(plannedIncomeOf(currentSnapshot, monthKey(today)));
     expect(data.monthBudgets?.find(({ month }) => month === customMonth)).toMatchObject({
       source: 'custom',
       linkedIncluded: true,
@@ -144,7 +176,6 @@ describe('four-month demo data', () => {
     const expectations = [
       ['Recharge', 'monthly'],
       ['Streaming subscription', 'quarterly'],
-      ['Domain renewal', 'yearly'],
       ['Maintenance', 'half-yearly'],
     ] as const;
     for (const [name, frequency] of expectations) {
@@ -161,6 +192,7 @@ describe('four-month demo data', () => {
         date: expect.stringMatching(new RegExp(`^${dueMonth}-`)),
       }));
       const upcomingMonth = nextDueMonth(item, monthKey(today));
+      if (!upcomingMonth) throw new Error(`Missing projected next due for recurring demo item ${name}.`);
       expect(pendingItems(data, upcomingMonth, today)).toContainEqual(expect.objectContaining({
         title: name,
         category: name,
@@ -168,6 +200,24 @@ describe('four-month demo data', () => {
         dueDate: expect.stringMatching(new RegExp(`^${upcomingMonth}-`)),
       }));
     }
+  });
+
+  it('includes one once-only Budget item and insurance premium in the demo', () => {
+    const onceItem = data.budgetPlan?.items.find((item) => item.name === 'Domain renewal');
+    const oncePolicy = data.policies.find((policy) => policy.id === 'demo-policy-health-yearly');
+    const firstMonth = months[0];
+    if (!onceItem || !oncePolicy || !firstMonth) throw new Error('Once-only demo fixtures are missing.');
+
+    expect(onceItem).toMatchObject({
+      frequency: 'once',
+      firstDueMonth: monthKey(today),
+    });
+    expect(months.filter((month) => isItemDueInMonth(onceItem, month))).toEqual([monthKey(today)]);
+    expect(data.transactions.filter((transaction) =>
+      transaction.category === 'Domain renewal' && transaction.type === 'expense')).toHaveLength(1);
+    expect(oncePolicy.frequency).toBe('once');
+    expect(policySchedule(oncePolicy, '2026-12-31').rows.map((row) => row.dueDate))
+      .toEqual([`${firstMonth}-15`]);
   });
 
   it('shows past, current and upcoming months in the budget overview demo', () => {
@@ -219,7 +269,7 @@ describe('four-month demo data', () => {
     }
   });
 
-  it('conserves month positions with a funded shortfall and allocated surplus', () => {
+  it('conserves month positions with borrowed money and an allocated surplus', () => {
     const positions = monthPositions(data.transactions);
     expect(positions.map(({ month }) => month)).toEqual(months);
     positions.forEach((position, index) => {
@@ -240,7 +290,7 @@ describe('four-month demo data', () => {
     )).toBe(true);
   });
 
-  it('includes an overdue SIP, upcoming EMI, future-month due, later installment, and planned budget rows', () => {
+  it('keeps paid, partial and overdue Budget examples with future dues and an overdue SIP', () => {
     const currentMonth = monthKey(today);
     const futureMonth = shiftMonth(currentMonth, 1);
     const pending = [
@@ -261,9 +311,25 @@ describe('four-month demo data', () => {
     expect(billsDue).toHaveLength(1);
     expect(billsDue[0]).toMatchObject({
       title: 'Bills',
+      amount: 750,
       dueDate: `${currentMonth}-05`,
       status: 'overdue',
     });
+    const currentBudgetRows = pendingItems(data, currentMonth, today)
+      .filter((item) => item.kind === 'budget');
+    expect(currentBudgetRows).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ title: 'Festival' }),
+    ]));
+    const currentBudgetView = budgetMonthView(data, currentMonth, today);
+    expect(currentBudgetView.lines).toEqual(expect.arrayContaining([
+      expect.objectContaining({ category: 'Festival', planned: 1_000, actual: 1_000, remaining: 0 }),
+      expect.objectContaining({ category: 'Food', planned: 8_000, actual: 5_000, remaining: 3_000 }),
+      expect.objectContaining({ category: 'Mutual fund / SIP', actual: 3_000 }),
+    ]));
+    expect(data.monthBudgets?.find(({ month }) => month === currentMonth)?.items)
+      .toEqual(expect.arrayContaining([
+        expect.objectContaining({ name: 'Mutual fund / SIP' }),
+      ]));
     expect(pendingItems(data, currentMonth, today)
       .filter((item) => item.title === 'Bills')).toHaveLength(1);
     expect(pending.some((item) =>
@@ -371,14 +437,47 @@ describe('four-month demo data', () => {
       ))).toBe(true);
   });
 
+  it('includes a fully closed zero-balance demo loan without changing outstanding liabilities', () => {
+    const closed = data.liabilities.find((liability) =>
+      liability.kind === 'recurring' && isLiabilityClosed(liability));
+    if (!closed || closed.kind !== 'recurring') throw new Error('Demo closed liability is missing.');
+    expect(closed.settlement?.balance).toBe(0);
+    expect(liabilitySummary(closed, today).balance).toBe(0);
+    expect(netWorth(data, today).liabilities).toBe(1_000_000);
+  });
+
   it('uses assets minus liabilities for net worth and stays below the storage warning threshold', () => {
     const worth = netWorth(data, today);
+    expect(worth).toEqual({ assets: 10_000_000, liabilities: 1_000_000, netWorth: 9_000_000 });
     expect(worth.netWorth).toBe(worth.assets - worth.liabilities);
     expect(data.holdings.reduce((sum, holding) => sum + holdingValue(holding, today), 0)).toBe(worth.assets);
+    expect(data.holdings.filter((holding) => holding.type === 'Real estate')).toHaveLength(1);
+    expect(data.holdings.filter((holding) => holding.type === 'Custom')).toEqual([
+      expect.objectContaining({ customTypeName: 'Collectibles' }),
+    ]);
     expect(data.efBucketLinks['fd-rd']).toContain('demo-holding-fd');
     expect(data.efBucketLinks.bank).toContain('demo-holding-emergency-bank');
     const bytes = utf8ByteLength(JSON.stringify(data));
     expect(storageLevel(bytes)).toBe('ok');
+  });
+
+  it('keeps every linked goal between 20% and 87%, including full shared asset values', () => {
+    const summary = homeSummary(data, today);
+    const goals = data.goals.map((goal) => ({
+      id: goal.id,
+      ...goalView(goal, { expenseBaseline: summary.expenseBaseline, data, asOf: today }),
+    }));
+    const percentages = goals.map(({ pct }) => pct);
+    expect(Math.min(...percentages)).toBeLessThanOrEqual(25);
+    expect(Math.max(...percentages)).toBeGreaterThanOrEqual(75);
+    expect(Math.max(...percentages)).toBeLessThanOrEqual(87);
+    expect(goals).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'demo-goal-emergency', saved: 2_000_000, pct: 80 }),
+      expect.objectContaining({ id: 'demo-goal-retirement', saved: 4_000, pct: 20 }),
+      expect.objectContaining({ id: 'demo-goal-home', saved: 4_000_000 }),
+      expect.objectContaining({ id: 'demo-goal-education', saved: 2_000_000, pct: 80 }),
+      expect.objectContaining({ id: 'demo-goal-travel', saved: 25_000, pct: 20 }),
+    ]));
   });
 
   it('rejects invalid dates rather than reading the clock implicitly', () => {

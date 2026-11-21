@@ -5,6 +5,7 @@ import { StyleSheet, View } from 'react-native';
 import type { z } from 'zod';
 
 import { FormScreen } from '../src/components/form/FormScreen';
+import { FieldTitle } from '../src/components/form/FieldTitle';
 import { MoneyField } from '../src/components/form/MoneyField';
 import { TextField } from '../src/components/form/TextField';
 import { AppText, Button } from '../src/components/ui';
@@ -75,17 +76,19 @@ export default function ProfileFormScreen() {
         control={control}
         name="name"
         render={({ field }) => (
-          <TextField
-            label="Name"
-            value={field.value}
-            onChangeText={field.onChange}
-            onBlur={field.onBlur}
-            placeholder="What should we call you?"
-            accessibilityLabel="Your name"
-            maxLength={41}
-            autoCapitalize="words"
-            error={errors.name?.message}
-          />
+          <FieldTitle title="Name">
+            <TextField
+              label="Name"
+              value={field.value}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              placeholder="What should we call you?"
+              accessibilityLabel="Your name"
+              maxLength={41}
+              autoCapitalize="words"
+              error={errors.name?.message}
+            />
+          </FieldTitle>
         )}
       />
       <Controller
@@ -93,14 +96,16 @@ export default function ProfileFormScreen() {
         name="monthlySalary"
         render={({ field }) => (
           <View style={styles.salary}>
-            <MoneyField
-              label="Monthly take-home income (₹)"
-              value={field.value ?? ''}
-              onChangeText={field.onChange}
-              onBlur={field.onBlur}
-              accessibilityLabel="Monthly take-home income"
-              error={errors.monthlySalary?.message}
-            />
+            <FieldTitle title="Monthly take-home income">
+              <MoneyField
+                label="Monthly take-home income (₹)"
+                value={field.value ?? ''}
+                onChangeText={field.onChange}
+                onBlur={field.onBlur}
+                accessibilityLabel="Monthly take-home income"
+                error={errors.monthlySalary?.message}
+              />
+            </FieldTitle>
             <AppText style={[typography.meta, { color: colors.text3 }]}>
               Used to estimate how much of your income goes to EMIs
             </AppText>

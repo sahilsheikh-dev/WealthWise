@@ -5,7 +5,7 @@ import { Alert, PanResponder, Pressable, ScrollView, StyleSheet, View, useWindow
 
 import { AmountText } from '../../src/components/AmountText';
 import { AppHeader } from '../../src/components/AppHeader';
-import { PaceLine, StackedBar } from '../../src/components/BudgetCharts';
+import { PaceLine } from '../../src/components/BudgetCharts';
 import { AppText, Button, Card, Screen } from '../../src/components/ui';
 import { useAppStore } from '../../src/data/store';
 import { useUIStore } from '../../src/data/uiStore';
@@ -58,6 +58,7 @@ export default function BudgetScreen() {
   const { month } = routeState;
   const setMonth = (value: string) => setRouteState((current) => ({ ...current, month: value }));
   const [touchingHeader, setTouchingHeader] = useState(false);
+  const [recurringIncomeExpanded, setRecurringIncomeExpanded] = useState(false);
   const data = useAppData();
   const actions = useAppActions();
   const setActionToast = useUIStore((state) => state.setActionToast);
@@ -199,6 +200,8 @@ export default function BudgetScreen() {
           params: { month, incomeId: item.source.incomeId, scope: scopeFor(false) },
         });
         return;
+      case 'other-income':
+        return;
       case 'plan':
         router.push({ pathname: '/investment-form', params: { id: item.source.parentId } });
         return;
@@ -242,6 +245,26 @@ export default function BudgetScreen() {
   };
 
   const activeBudget = effectiveMonthBudget(data, month, today).budget;
+  const nonSpendingSectionIds = activeBudget?.sections
+    .filter((section) => section.type === 'invest' || section.system === 'income')
+    .map((section) => section.id) ?? [];
+  const spendingSectionIds = overview.pace?.sections
+    .filter((section) => !nonSpendingSectionIds.includes(section.id))
+    .map((section) => section.id) ?? [];
+  const spendingPaceSections = overview.pace?.sections.filter((section) =>
+    spendingSectionIds.includes(section.id),
+  ) ?? [];
+  const spendingPaceActual = spendingPaceSections.reduce(
+    (total, section) => total + (section.actual.at(-1) ?? 0),
+    0,
+  );
+  const spendingPacePlanned = spendingPaceSections.reduce(
+    (total, section) => total + (section.planned.at(-1) ?? 0),
+    0,
+  );
+  const paceSummary = overview.pace
+    ? `Spending pace through day ${overview.pace.elapsedDays}: ${formatAmount(spendingPaceActual, 'exact', 1)} actual; ${formatAmount(spendingPacePlanned, 'exact', 1)} planned by month end.`
+    : '';
 
   return (
     <Screen scroll={false}>
@@ -282,6 +305,18 @@ export default function BudgetScreen() {
               style={nextDisabled && styles.disabled}>
               <Feather name="chevron-right" size={22} color={colors.text2} />
             </Pressable>
+            {month !== currentMonth ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Go to current month"
+                onPress={() => {
+                  setMonth(currentMonth);
+                  router.replace({ pathname: '/(tabs)/budget', params: { month: currentMonth } });
+                }}
+                style={[styles.todayButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <AppText weight="semibold">Today</AppText>
+              </Pressable>
+            ) : null}
           </View>
 
           <View testID="budget-cash-flow">
@@ -332,8 +367,16 @@ export default function BudgetScreen() {
               <View testID="budget-overview-card">
                 <Card style={styles.overviewCard}>
                   <AppText weight="bold" style={[typography.name, styles.overviewTitle]}>Overview</AppText>
-                  <StackedBar values={overview.stacked} summary={overviewAccessibility} />
-                  <View style={styles.metricTable}>
+                  {overview.pace ? (
+                    <View testID="budget-pace">
+                      <PaceLine
+                        pace={overview.pace}
+                        spendingSectionIds={spendingSectionIds}
+                        summary={paceSummary}
+                      />
+                    </View>
+                  ) : null}
+                  <View testID="budget-overview-table" style={styles.metricTable}>
                     <View testID="budget-overview-table-header" style={[styles.metricTableHeader, stackMetrics && styles.metricTableRowStacked]}>
                       <View style={styles.metricTableLabel} />
                       <AppText style={[typography.label, styles.metricColumn]}>Actual</AppText>
@@ -346,30 +389,13 @@ export default function BudgetScreen() {
                   </View>
                   <AppText
                     testID="budget-overview-summary"
-                    numberOfLines={1}
+                    accessible
+                    accessibilityRole="text"
                     accessibilityLabel={overviewAccessibility}
-                    style={[typography.meta, { color: colors.text2 }]}>
-                    {overview.stacked.left.actual < 0
-                      ? `Over by ${formatAmount(Math.abs(overview.stacked.left.actual), 'exact', 1)}`
-                      : `Left ${formatAmount(overview.stacked.left.actual, 'exact', 1)}`}
-                  </AppText>
+                    style={[typography.meta, { position: 'absolute', width: 1, height: 1, margin: -1, overflow: 'hidden' }]}
+                  />
                 </Card>
               </View>
-
-              {overview.pace ? (
-                <View testID="budget-pace">
-                  <Card style={styles.overviewCard}>
-                    <AppText weight="bold" style={[typography.name, styles.overviewTitle]}>Pace</AppText>
-                    <PaceLine
-                      pace={overview.pace}
-                      summary={overview.summary.pace ?? ''}
-                      shortSummary={overview.stacked.left.actual < 0
-                        ? `Over by ${formatAmount(Math.abs(overview.stacked.left.actual), 'exact', 1)}`
-                        : `Left ${formatAmount(overview.stacked.left.actual, 'exact', 1)}`}
-                    />
-                  </Card>
-                </View>
-              ) : null}
 
               <View testID="budget-section-list" style={styles.sectionList}>
                 {overview.sections.map((section) => {
@@ -381,6 +407,11 @@ export default function BudgetScreen() {
                   const canAddIncome = !isPast && definition?.system === 'income';
                   const canAddInsurance = !isPast && definition?.system === 'insurance';
                   const sectionActions = canManageSection || canAddIncome || canAddInsurance;
+                  const recurringIncomeItems = section.items.filter((item) =>
+                    item.kind === 'income' && item.nextDueMonth !== undefined,
+                  );
+                  const recurringIncomeIds = new Set(recurringIncomeItems.map((item) => item.id));
+                  const visibleItems = section.items.filter((item) => !recurringIncomeIds.has(item.id));
                   return (
                     <View key={section.id} testID={`budget-section-${section.id}`}>
                     <Card style={styles.sectionCard}>
@@ -476,9 +507,9 @@ export default function BudgetScreen() {
                         style={[typography.meta, { color: colors.text2 }]}>
                         <AmountText value={section.actual} tier="tile" /> spent of <AmountText value={section.planned} tier="tile" />
                       </AppText>
-                      {section.items.length > 0 ? (
+                      {visibleItems.length > 0 || recurringIncomeItems.length > 0 ? (
                         <View style={styles.sectionItems}>
-                          {section.items.map((item, index) => {
+                          {visibleItems.map((item, index) => {
                             const rowStyle = [
                               styles.overviewRow,
                               stackMetrics && styles.overviewRowStacked,
@@ -538,6 +569,58 @@ export default function BudgetScreen() {
                               </View>
                             );
                           })}
+                          {recurringIncomeItems.length > 0 ? (
+                            <>
+                              <Pressable
+                                testID="budget-recurring-income-toggle"
+                                accessibilityRole="button"
+                                accessibilityLabel={`Recurring income, ${recurringIncomeItems.length} items`}
+                                accessibilityState={{ expanded: recurringIncomeExpanded }}
+                                onPress={() => setRecurringIncomeExpanded((expanded) => !expanded)}
+                                style={[styles.overviewRow, styles.rowDivider, { borderBottomColor: colors.border }]}>
+                                <AppText weight="semibold" style={typography.meta}>Recurring income</AppText>
+                                <Feather
+                                  name={recurringIncomeExpanded ? 'chevron-up' : 'chevron-down'}
+                                  size={18}
+                                  color={colors.primary}
+                                />
+                              </Pressable>
+                              {recurringIncomeExpanded ? recurringIncomeItems.map((item, index) => {
+                                const nextDueMonth = item.nextDueMonth;
+                                if (!nextDueMonth) return null;
+                                const notDueLabel = `Not due this month, next due ${formatMonth(nextDueMonth)}`;
+                                return (
+                                  <View
+                                    key={item.id}
+                                    testID={`budget-recurring-income-row:${item.source.kind === 'income' ? item.source.incomeId : item.id}`}
+                                    style={[
+                                      styles.overviewRow,
+                                      stackMetrics && styles.overviewRowStacked,
+                                      index < recurringIncomeItems.length - 1
+                                        ? [styles.rowDivider, { borderBottomColor: colors.border }]
+                                        : undefined,
+                                    ]}>
+                                    <View style={styles.rowTitleContainer}>
+                                      <AppText style={[typography.meta, styles.rowTitle]}>{item.title}</AppText>
+                                      <AppText
+                                        accessibilityLabel={notDueLabel}
+                                        style={[typography.meta, { color: colors.text3 }]}>
+                                        {notDueLabel}
+                                      </AppText>
+                                    </View>
+                                    <Pressable
+                                      accessibilityRole="button"
+                                      accessibilityLabel={`Edit ${item.title}`}
+                                      accessibilityHint={`Edit ${item.title}`}
+                                      onPress={() => openBudgetItem(item, section.id)}
+                                      style={styles.editButton}>
+                                      <Feather name="edit-2" size={16} color={colors.primary} />
+                                    </Pressable>
+                                  </View>
+                                );
+                              }) : null}
+                            </>
+                          ) : null}
                         </View>
                       ) : section.id === 'other-not-in-budget' ? null : (
                         <AppText style={[typography.meta, { color: colors.text3 }]}>No items yet.</AppText>
@@ -615,11 +698,13 @@ const styles = StyleSheet.create({
   gestureSurface: { flex: 1 },
   content: { paddingBottom: 28, gap: 16 },
   monthHeader: { marginHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 42 },
+  todayButton: { minWidth: 44, minHeight: 44, paddingHorizontal: 10, alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth, borderRadius: 22 },
   disabled: { opacity: 0.45 },
   cardTitle: { marginBottom: 8 },
   screenCard: { marginTop: 0 },
   overviewCard: { marginTop: 0, padding: 16, gap: 16 },
   overviewTitle: { marginBottom: 0 },
+  paceTitle: { marginBottom: 2 },
   metricRows: { gap: 8 },
   metricRowsStacked: { gap: 12 },
   metricRow: { minHeight: 30, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },

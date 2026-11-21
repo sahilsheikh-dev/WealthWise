@@ -4,8 +4,9 @@ import { useMemo, useRef } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { View } from 'react-native';
 
-import { ChoiceField } from '../src/components/form/ChoiceField';
+import { Dropdown } from '../src/components/Dropdown';
 import { DateField } from '../src/components/form/DateField';
+import { FieldTitle } from '../src/components/form/FieldTitle';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { MoneyField } from '../src/components/form/MoneyField';
 import { ReadOnlyRow } from '../src/components/form/ReadOnlyRow';
@@ -15,7 +16,7 @@ import { useAppStore } from '../src/data/store';
 import { useUIStore } from '../src/data/uiStore';
 import { useAppActions } from '../src/data/useAppData';
 import { monthKey } from '../src/domain/dates';
-import { loanState } from '../src/domain/liability';
+import { isLiabilityClosed, loanState } from '../src/domain/liability';
 import { makeLiabilityPaymentFormSchema, type LiabilityPaymentFormInput, type LiabilityPaymentFormOutput } from '../src/domain/schemas';
 import { todayISO } from '../src/lib/clock';
 import { confirmAsync } from '../src/lib/confirm';
@@ -120,6 +121,11 @@ export default function LiabilityPaymentFormScreen() {
       <EmptyState title="Liability payment not found" />
     </FormScreen>
   );
+  if (isLiabilityClosed(liability)) return (
+    <FormScreen title="Liability payment" onClose={() => router.back()} isDirty={false} footer={null}>
+      <EmptyState title="Payments are read-only for a closed loan" />
+    </FormScreen>
+  );
   const initialBalance = loanState(liability, today).balance;
   const initial = payment ?? {
     date: today,
@@ -136,18 +142,22 @@ export default function LiabilityPaymentFormScreen() {
       }} />
     </View>}>
       <Controller control={control} name="date" render={({ field }) => (
-        <DateField value={field.value} onChange={(next) => { field.onChange(next); void form.trigger('amount'); }} maximumDate={today} error={errors.date?.message} accessibilityLabel="Payment date" />
+        <DateField label="Payment date" value={field.value} onChange={(next) => { field.onChange(next); void form.trigger('amount'); }} maximumDate={today} error={errors.date?.message} accessibilityLabel="Payment date" />
       )} />
       <Controller control={control} name="amount" render={({ field }) => (
-        <MoneyField value={field.value || String(initial.amount)} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.amount?.message} />
+        <FieldTitle title="Amount">
+          <MoneyField value={field.value || String(initial.amount)} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.amount?.message} />
+        </FieldTitle>
       )} />
       {liability.kind === 'recurring'
         ? <Controller control={control} name="kind" render={({ field }) => (
-          <ChoiceField label="Payment type" choices={['EMI', 'Prepayment']} value={field.value} onChange={field.onChange} error={errors.kind?.message} />
+          <Dropdown label="Payment type" accessibilityLabel="Payment type" options={['EMI', 'Prepayment'].map((type) => ({ value: type, title: type }))} value={field.value} onChange={field.onChange} error={errors.kind?.message} />
         )} />
         : <ReadOnlyRow label="Payment type" value="Payment" />}
       <Controller control={control} name="note" render={({ field }) => (
-        <TextField label="Note" accessibilityLabel="Payment note" maxLength={60} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.note?.message} />
+        <FieldTitle title="Note">
+          <TextField label="Note" accessibilityLabel="Payment note" maxLength={60} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.note?.message} />
+        </FieldTitle>
       )} />
       {payment ? <ReadOnlyRow label="Linked transaction" value={linked ? 'Yes' : 'No'} /> : null}
     </FormScreen>

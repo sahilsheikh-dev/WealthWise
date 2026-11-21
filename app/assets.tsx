@@ -6,6 +6,7 @@ import { AmountText } from '../src/components/AmountText';
 import { AppHeader } from '../src/components/AppHeader';
 import { InstrumentCard } from '../src/components/InstrumentCard';
 import { SortChip } from '../src/components/SortChip';
+import { useAppActions, useAppData } from '../src/data/useAppData';
 import {
   AppText,
   Button,
@@ -13,13 +14,13 @@ import {
   Chip,
   ChipRow,
   EmptyState,
-  SearchField,
   Screen,
+  SearchField,
   StatPill,
   StatPillRow,
 } from '../src/components/ui';
-import { useAppActions, useAppData } from '../src/data/useAppData';
 import { useSort } from '../src/data/useSort';
+import { holdingCapabilities } from '../src/domain/holdingCapabilities';
 import { buildInstrumentCardModel } from '../src/domain/instrumentCard';
 import {
   buildPortfolioRows,
@@ -27,28 +28,22 @@ import {
   monthlyCommitment,
   portfolioTotals,
 } from '../src/domain/portfolio';
+import { financialTypeLabel } from '../src/domain/typeLabels';
 import { planSchedule } from '../src/domain/schedule';
-import type { HoldingType } from '../src/domain/types';
+import { HOLDING_TYPES } from '../src/domain/types';
 import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
+import { choiceAsync } from '../src/lib/confirm';
 import { DEFAULT_SORTS, SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
-const filters: ('All' | 'Recurring' | HoldingType)[] = [
+const filters = [
   'All',
   'Recurring',
-  'Mutual fund / SIP',
-  'Stocks / ETF',
-  'Fixed deposit',
-  'Recurring deposit',
-  'EPFO / PF',
-  'Savings account',
-  'Cash',
-  'Gold',
-  'Silver',
-  'Other',
-];
+  ...HOLDING_TYPES,
+] as const;
+type AssetFilter = (typeof filters)[number] | { customTypeName: string };
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
@@ -57,13 +52,17 @@ export default function AssetsScreen() {
   const data = useAppData();
   const actions = useAppActions();
   const asOf = todayISO();
-  const [filter, setFilter] = useState<(typeof filters)[number]>('All');
+  const [filter, setFilter] = useState<AssetFilter>('All');
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const [query, setQuery] = useState('');
   const assetSorting = useSort('assets');
   const sipSorting = useSort('sips');
   const rows = useMemo(() => buildPortfolioRows(data, asOf).map((row) => {
-    if (row.kind !== 'plan' || row.holding?.kind !== 'plan') {
+    if (
+      row.kind !== 'plan' ||
+      row.holding?.kind !== 'plan' ||
+      !holdingCapabilities(row.holding.type).recurring
+    ) {
       return { ...row, nextDue: null, progress: null, status: null };
     }
     const schedule = planSchedule(row.holding, asOf);
@@ -82,11 +81,17 @@ export default function AssetsScreen() {
     };
   }), [data, asOf]);
   const totals = portfolioTotals(rows);
-  const filteredRows = filterRows(rows, filter);
+  const customTypeNames = [...new Set(data.holdings
+    .filter((holding) => holding.type === 'Custom')
+    .map((holding) => financialTypeLabel(holding.type, holding.customTypeName)))];
+  const filteredRows = typeof filter === 'string'
+    ? filterRows(rows, filter)
+    : rows.filter((row) => row.holding?.type === 'Custom'
+      && financialTypeLabel(row.holding.type, row.holding.customTypeName) === filter.customTypeName);
   const normalizedQuery = query.trim().toLowerCase();
   const searchedRows = normalizedQuery
     ? filteredRows.filter((row) =>
-      `${row.name} ${row.holding?.type ?? ''}`.toLowerCase().includes(normalizedQuery),
+      `${row.name} ${row.holding ? financialTypeLabel(row.holding.type, row.holding.customTypeName) : ''}`.toLowerCase().includes(normalizedQuery),
     )
     : filteredRows;
   const visibleRows = filter === 'Recurring'
@@ -134,6 +139,14 @@ export default function AssetsScreen() {
             {filters.map((item) => (
               <Chip key={item} label={item} selected={filter === item} onPress={() => setFilter(item)} />
             ))}
+            {customTypeNames.map((name) => (
+              <Chip
+                key={`custom-${name}`}
+                label={name}
+                selected={typeof filter !== 'string' && filter.customTypeName === name}
+                onPress={() => setFilter({ customTypeName: name })}
+              />
+            ))}
           </ChipRow>
         </View>
       ) : null}
@@ -166,7 +179,7 @@ export default function AssetsScreen() {
             tone={totals.gain >= 0 ? 'ok' : 'err'}
           />
           <StatPill
-            label="Monthly SIP/RD"
+            label="Monthly Invt."
             value={<AmountText value={monthlyCommitment(data.holdings)} tier="tile" />}
             accessibilityLabel={`Monthly SIP/RD, ${formatAmount(monthlyCommitment(data.holdings), 'exact', 1)}`}
             tone="primary"
@@ -191,14 +204,29 @@ export default function AssetsScreen() {
                   router.push(`/investment-entry-form?holdingId=${encodeURIComponent(holdingId)}&kind=Deposit` as Href);
                 } else if (action === 'withdraw') {
                   router.push(`/investment-entry-form?holdingId=${encodeURIComponent(holdingId)}&kind=Withdrawal` as Href);
-                } else if (action === 'schedule') {
-                  router.push(`/investment-entries?id=${encodeURIComponent(holdingId)}` as Href);
                 } else if (action === 'entries') {
                   router.push(`/investment-entries?id=${encodeURIComponent(holdingId)}` as Href);
                 } else if (action === 'edit') {
                   router.push(`/investment-form?id=${encodeURIComponent(holdingId)}` as Href);
-                } else if (action === 'confirm' && row.kind === 'manual') {
-                  actions.confirmHoldingValue(row.id);
+                } else if (action === 'update') {
+                  router.push(`/holding-valuation-form?id=${encodeURIComponent(holdingId)}` as Href);
+                } else if (action === 'stop') {
+                  const holding = data.holdings.find((item) => item.id === holdingId);
+                  if (!holding || holding.kind !== 'plan') return;
+                  if (holding.stopDate) {
+                    void choiceAsync({
+                      title: 'Resume investment?',
+                      message: 'This restores the plan schedule from the next due after today.',
+                      choices: [
+                        { id: 'cancel', label: 'Cancel' },
+                        { id: 'resume', label: 'Resume' },
+                      ],
+                    }).then((choice) => {
+                      if (choice === 'resume') actions.resumePlan(holdingId);
+                    });
+                  } else {
+                    router.push(`/recurring-plan-stop-form?id=${encodeURIComponent(holdingId)}` as Href);
+                  }
                 }
               }}
             />

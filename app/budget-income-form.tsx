@@ -2,13 +2,15 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
+import { useState } from 'react';
 
 import { Dropdown, type DropdownOption } from '../src/components/Dropdown';
+import { ApplyScopeDialog } from '../src/components/ApplyScopeDialog';
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
+import { FieldTitle } from '../src/components/form/FieldTitle';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { IntegerField } from '../src/components/form/IntegerField';
 import { MoneyField } from '../src/components/form/MoneyField';
-import { SegmentedControl } from '../src/components/form/SegmentedControl';
 import { TextField } from '../src/components/form/TextField';
 import { AppText, Button, EmptyState } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
@@ -17,7 +19,6 @@ import { useAppActions } from '../src/data/useAppData';
 import { effectiveMonthBudget } from '../src/domain/budget';
 import { EARNED_INCOME_CATEGORIES } from '../src/domain/types';
 import { todayISO } from '../src/lib/clock';
-import { confirmAsync } from '../src/lib/confirm';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
@@ -28,9 +29,14 @@ const budgetIncomeFormSchema = z.object({
   day: z.string(),
   category: z.enum(EARNED_INCOME_CATEGORIES),
   scope: z.enum(['month', 'following']),
+  frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly', 'once']),
+  firstDueMonth: z.string(),
 }).superRefine((values, context) => {
   if (values.day !== '' && (!/^\d+$/.test(values.day) || Number(values.day) < 1 || Number(values.day) > 31)) {
     context.addIssue({ code: 'custom', path: ['day'], message: 'Enter a day from 1 to 31.' });
+  }
+  if (values.frequency !== 'monthly' && !/^\d{4}-(0[1-9]|1[0-2])$/.test(values.firstDueMonth)) {
+    context.addIssue({ code: 'custom', path: ['firstDueMonth'], message: 'Enter a first due month as YYYY-MM.' });
   }
 });
 
@@ -48,6 +54,14 @@ const incomeCategoryOptions: readonly DropdownOption[] = EARNED_INCOME_CATEGORIE
   value: category,
   title: category,
 }));
+
+const incomeFrequencyOptions: readonly DropdownOption[] = [
+  { value: 'monthly', title: 'Monthly' },
+  { value: 'quarterly', title: 'Quarterly' },
+  { value: 'half-yearly', title: 'Half-yearly' },
+  { value: 'yearly', title: 'Yearly' },
+  { value: 'once', title: 'Once only' },
+];
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
@@ -93,9 +107,14 @@ export default function BudgetIncomeFormScreen() {
         : firstParam(params.day),
       category: income?.category ?? initialCategory ?? 'Salary',
       scope: requestedScope === 'month' ? 'month' : 'following',
+      frequency: income?.frequency ?? 'monthly',
+      firstDueMonth: income?.firstDueMonth ?? month,
     },
   });
-  const scope = useWatch({ control, name: 'scope' }) ?? (requestedScope === 'month' ? 'month' : 'following');
+  const frequency = useWatch({ control, name: 'frequency' });
+  const [scopeDialogOpen, setScopeDialogOpen] = useState(false);
+  const [deleteScopeDialogOpen, setDeleteScopeDialogOpen] = useState(false);
+  const [pendingValues, setPendingValues] = useState<z.output<typeof budgetIncomeFormSchema> | null>(null);
 
   if (editing && !income) {
     return (
@@ -107,20 +126,19 @@ export default function BudgetIncomeFormScreen() {
 
   const remove = async () => {
     if (!income) return;
-    const confirmed = await confirmAsync({
-      title: 'Delete income?',
-      message: `Delete ${income.name} from the selected month range? Transactions will remain unchanged.`,
-      confirmLabel: 'Delete',
-      destructive: true,
-    });
-    if (!confirmed) return;
+    setDeleteScopeDialogOpen(true);
+  };
+
+  const applyDelete = (selectedScope: 'month' | 'following') => {
+    if (!income) return;
+    setDeleteScopeDialogOpen(false);
     const previousPlan = data.budgetPlan;
     const previousMonth = data.monthBudgets?.find((row) => row.month === month) ?? null;
     actions.removeBudgetItem(month, {
       kind: 'income',
       incomeId: income.id,
       category: income.category,
-    }, scope, today);
+    }, selectedScope, today);
     if (useAppStore.getState().lastError) return;
     setActionToast({
       message: `${income.name} deleted`,
@@ -131,6 +149,14 @@ export default function BudgetIncomeFormScreen() {
   };
 
   const save = handleSubmit((values) => {
+    setPendingValues(values);
+    setScopeDialogOpen(true);
+  });
+
+  const applySave = (selectedScope: 'month' | 'following') => {
+    setScopeDialogOpen(false);
+    const values = pendingValues;
+    if (!values) return;
     const previousPlan = data.budgetPlan;
     const previousMonth = data.monthBudgets?.find((row) => row.month === month) ?? null;
     const updatedValues = {
@@ -138,11 +164,13 @@ export default function BudgetIncomeFormScreen() {
       amount: values.amount,
       category: values.category,
       ...(values.day === '' ? {} : { day: Number(values.day) }),
+      frequency: values.frequency,
+      ...(values.frequency === 'monthly' ? {} : { firstDueMonth: values.firstDueMonth }),
     };
     if (income) {
-      actions.editBudgetIncome(month, income.id, updatedValues, values.scope, today);
+      actions.editBudgetIncome(month, income.id, updatedValues, selectedScope, today);
     } else {
-      actions.addBudgetIncome(month, updatedValues, values.scope, today);
+      actions.addBudgetIncome(month, updatedValues, selectedScope, today);
     }
     if (useAppStore.getState().lastError) return;
     setActionToast({
@@ -151,10 +179,11 @@ export default function BudgetIncomeFormScreen() {
       onAction: () => actions.restoreBudgetPlanAndMonth(previousPlan, month, previousMonth),
     });
     router.back();
-  });
+  };
   const errorCount = Object.keys(errors).length;
 
   return (
+    <>
     <FormScreen
       title={income ? 'Edit income' : 'Add income'}
       onClose={() => router.back()}
@@ -174,44 +203,50 @@ export default function BudgetIncomeFormScreen() {
         control={control}
         name="name"
         render={({ field }) => (
-          <TextField
-            label="Name"
-            accessibilityLabel="Income name"
-            value={field.value}
-            onChangeText={field.onChange}
-            onBlur={field.onBlur}
-            maxLength={40}
-            error={errors.name?.message}
-          />
+          <FieldTitle title="Name">
+            <TextField
+              label="Name"
+              accessibilityLabel="Income name"
+              value={field.value}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              maxLength={40}
+              error={errors.name?.message}
+            />
+          </FieldTitle>
         )}
       />
       <Controller
         control={control}
         name="amount"
         render={({ field }) => (
-          <MoneyField
-            label="Amount"
-            accessibilityLabel="Income amount"
-            value={field.value}
-            onChangeText={field.onChange}
-            onBlur={field.onBlur}
-            error={errors.amount?.message}
-          />
+          <FieldTitle title="Amount">
+            <MoneyField
+              label="Amount"
+              accessibilityLabel="Income amount"
+              value={field.value}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              error={errors.amount?.message}
+            />
+          </FieldTitle>
         )}
       />
       <Controller
         control={control}
         name="day"
         render={({ field }) => (
-          <IntegerField
-            label="Day"
-            accessibilityLabel="Income day"
-            icon="calendar-outline"
-            value={field.value}
-            onChangeText={field.onChange}
-            onBlur={field.onBlur}
-            error={errors.day?.message}
-          />
+          <FieldTitle title="Day">
+            <IntegerField
+              label="Day"
+              accessibilityLabel="Income day"
+              icon="calendar-outline"
+              value={field.value}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              error={errors.day?.message}
+            />
+          </FieldTitle>
         )}
       />
       <Controller
@@ -230,25 +265,45 @@ export default function BudgetIncomeFormScreen() {
       />
       <Controller
         control={control}
-        name="scope"
+        name="frequency"
         render={({ field }) => (
-          <SegmentedControl
-            label="Apply changes to"
+          <Dropdown
+            label="Frequency"
+            accessibilityLabel="Income frequency"
             value={field.value}
-            options={[
-              { label: 'This month only', value: 'month' },
-              { label: 'This and following months', value: 'following' },
-            ]}
+            options={incomeFrequencyOptions}
             onChange={field.onChange}
-            error={errors.scope?.message}
+            error={errors.frequency?.message}
           />
         )}
       />
+      {frequency !== 'monthly' ? (
+        <Controller
+          control={control}
+          name="firstDueMonth"
+          render={({ field }) => (
+            <FieldTitle title="First due month">
+              <TextField
+                label="First due month"
+                accessibilityLabel="Income first due month"
+                value={field.value}
+                onChangeText={field.onChange}
+                onBlur={field.onBlur}
+                placeholder="YYYY-MM"
+                error={errors.firstDueMonth?.message}
+              />
+            </FieldTitle>
+          )}
+        />
+      ) : null}
       {submitCount > 0 && errorCount > 0 ? (
         <AppText style={[typography.meta, { color: colors.err }]}>
           Fix {errorCount} {errorCount === 1 ? 'field' : 'fields'}
         </AppText>
       ) : null}
     </FormScreen>
+    <ApplyScopeDialog visible={scopeDialogOpen} onClose={() => setScopeDialogOpen(false)} onApply={applySave} />
+    <ApplyScopeDialog visible={deleteScopeDialogOpen} onClose={() => setDeleteScopeDialogOpen(false)} onApply={applyDelete} />
+    </>
   );
 }

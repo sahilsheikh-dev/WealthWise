@@ -53,7 +53,9 @@ export function AppHeader({
   const showBackControl = showBack || routeKind === 'stack';
   const showCloseControl = routeKind === 'form';
   const hasExplicitRightContent = rightActions.length > 0 || menu !== undefined;
-  const defaultMenu = !hasExplicitRightContent && showDefaultMenu !== false ? globalMenu : undefined;
+  const normalizedPathname = pathname.split('?')[0]?.replace(/^\/+|\/+$/g, '') ?? '';
+  const isHomeRoute = normalizedPathname === '' || normalizedPathname === '(tabs)' || normalizedPathname === '(tabs)/index';
+  const defaultMenu = !hasExplicitRightContent && showDefaultMenu !== false && isHomeRoute ? globalMenu : undefined;
   const visibleMenu = menu ?? defaultMenu;
   const constrainTitle = rightActions.length + (visibleMenu ? 1 : 0) > 1;
   const menuItems = visibleMenu?.map((item) => ({

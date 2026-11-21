@@ -4,6 +4,7 @@ import { addLiability, addLiabilityPayment, deleteLiabilityPayment } from './lia
 import { addInvestmentEntry, deleteInvestmentEntry } from './investmentActions';
 import { addPlan, type AddPlanInput } from './planActions';
 import { amortizedBalanceAfter, loanState } from './liability';
+import { holdingCapabilities } from './holdingCapabilities';
 import { liabilitySchedule, planSchedule, type ScheduleRow } from './schedule';
 import { policySchedule } from './policySchedule';
 import { policyPremiumCategory } from './policyCategories';
@@ -22,6 +23,8 @@ export type DueTarget =
   | { kind: 'plan'; id: string }
   | { kind: 'liability'; id: string }
   | { kind: 'policy'; id: string };
+
+export type ClearDueTarget = DueTarget | { kind: 'holding'; id: string };
 
 export type DueMonth = { month: string; amount: number };
 
@@ -182,16 +185,46 @@ export function addPolicyPayment(
 
 export function clearDue(
   data: AppData,
-  target: DueTarget,
-  options: { date: string; newId: () => string; rowId?: string },
+  target: ClearDueTarget,
+  options: { date: string; newId: () => string; rowId?: string; actualAmount?: number; note?: string },
 ): { data: AppData; entryId: string } {
+  if (target.kind === 'holding') {
+    const holding = data.holdings.find((item) => item.id === target.id);
+    if (!holding || holding.kind !== 'manual') throw new NotFoundError('Manual holding', target.id);
+    if (!holdingCapabilities(holding.type).entries) {
+      throw new Error('This holding does not allow deposits or investment entries.');
+    }
+    const actualAmount = options.actualAmount;
+    if (actualAmount === undefined || !Number.isFinite(actualAmount)
+      || actualAmount <= 0 || actualAmount > 100_000_000_000) {
+      throw new RangeError('Paid amount must be greater than zero and within the supported range.');
+    }
+    let entryId: string | undefined;
+    const result = addInvestmentEntry(data, holding.id, {
+      date: options.date,
+      amount: actualAmount,
+      note: options.note ?? '',
+      kind: 'Deposit',
+    }, () => {
+      const id = options.newId();
+      entryId ??= id;
+      return id;
+    }, options.date);
+    if (!entryId) throw new Error('The investment entry was not created.');
+    return { data: result, entryId };
+  }
+
   const [row] = pendingRowsFor(data, target, options.date, options.rowId);
   if (!row) throw new NothingToClearError();
+  const actualAmount = options.actualAmount ?? row.amount;
+  if (!Number.isFinite(actualAmount) || actualAmount <= 0 || actualAmount > 100_000_000_000) {
+    throw new RangeError('Paid amount must be greater than zero and within the supported range.');
+  }
   if (target.kind === 'plan') {
     let entryId: string | undefined;
     const result = addInvestmentEntry(data, target.id, {
       date: options.date,
-      amount: row.amount,
+      amount: actualAmount,
       note: '',
       kind: 'Deposit',
     }, () => {
@@ -209,7 +242,10 @@ export function clearDue(
     const liability = data.liabilities.find((item) => item.id === target.id);
     if (!liability) throw new NotFoundError('Liability', target.id);
     const balance = loanState(liability, options.date).balance;
-    const amount = liability.kind === 'one-time' ? balance : Math.min(row.amount, Math.ceil(balance));
+    const amount = liability.kind === 'one-time' ? actualAmount : actualAmount;
+    if (actualAmount > balance && liability.kind === 'one-time') {
+      throw new RangeError('Paid amount exceeds the outstanding liability balance.');
+    }
     if (amount <= 0) throw new NothingToClearError();
     const before = liability.payments.map((payment) => payment.id);
     const result = addLiabilityPayment(data, target.id, {
@@ -227,8 +263,9 @@ export function clearDue(
   if (!policy) throw new NotFoundError('Policy', target.id);
   return createPolicyPayment(data, policy, {
     date: options.date,
-    amount: row.amount,
+    amount: actualAmount,
     note: '',
+    dueDate: row.dueDate,
   }, options.newId);
 }
 
@@ -236,7 +273,7 @@ export function clearDuesThrough(
   data: AppData,
   target: DueTarget,
   dueDate: string,
-  options: { date: string; newId: () => string },
+  options: { date: string; newId: () => string; actualAmount?: number },
 ): { data: AppData; entryIds: string[] } {
   const scheduled = unpaidRows(data, target, options.date);
   if (!scheduled.some((row) => row.dueDate === dueDate)) throw new NothingToClearError();
@@ -249,6 +286,7 @@ export function clearDuesThrough(
     const cleared = clearDue(result, target, {
       ...options,
       rowId: row.id,
+      actualAmount: row.dueDate === dueDate ? options.actualAmount : undefined,
     });
     result = cleared.data;
     entryIds.push(cleared.entryId);
@@ -256,7 +294,8 @@ export function clearDuesThrough(
   return { data: result, entryIds };
 }
 
-export function undoClearDue(data: AppData, target: DueTarget, entryId: string): AppData {
+export function undoClearDue(data: AppData, target: ClearDueTarget, entryId: string): AppData {
+  if (target.kind === 'holding') return deleteInvestmentEntry(data, target.id, entryId);
   if (target.kind === 'plan') return deleteInvestmentEntry(data, target.id, entryId);
   if (target.kind === 'liability') return deleteLiabilityPayment(data, target.id, entryId);
   const policy = data.policies.find((item) => item.id === target.id);
@@ -328,6 +367,7 @@ function recordPastDues(
       date: row.dueDate,
       amount: row.amount,
       note: '',
+      dueDate: row.dueDate,
     }, newId).data;
   }
   return result;

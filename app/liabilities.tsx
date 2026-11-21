@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { AmountText } from '../src/components/AmountText';
@@ -8,7 +8,6 @@ import { CardHeaderRow } from '../src/components/CardHeaderRow';
 import { DueActions } from '../src/components/DueActions';
 import { SortChip } from '../src/components/SortChip';
 import {
-  ActionRow,
   AppText,
   Button,
   Card,
@@ -16,17 +15,18 @@ import {
   ChipRow,
   EmptyState,
   ProgressBar,
-  SearchField,
   Screen,
+  SearchField,
   StatPill,
   StatPillRow,
   StatusBadge,
 } from '../src/components/ui';
 import { useAppData } from '../src/data/useAppData';
 import { useSort } from '../src/data/useSort';
-import { liabilitySummary, payoffDate } from '../src/domain/liability';
+import { isLiabilityClosed, liabilitySummary, payoffDate } from '../src/domain/liability';
 import { liabilitySchedule } from '../src/domain/schedule';
 import { liabilitiesOverview } from '../src/domain/summary';
+import { financialTypeLabel } from '../src/domain/typeLabels';
 import type { OneTimeLiability, RecurringLiability } from '../src/domain/types';
 import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
@@ -36,7 +36,7 @@ import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
 const EXTRA_ERROR = 'Enter a whole number between 0 and 10,00,000';
-const LIABILITY_FILTERS = ['All', 'Recurring', 'One-time'] as const;
+const LIABILITY_FILTERS = ['All', 'Recurring', 'One-time', 'Closed'] as const;
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
@@ -47,15 +47,21 @@ export default function LiabilitiesScreen() {
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const [kindFilter, setKindFilter] = useState<(typeof LIABILITY_FILTERS)[number]>('All');
   const [query, setQuery] = useState('');
+  const [completedExpanded, setCompletedExpanded] = useState(false);
   const asOf = todayISO();
   const [extraText, setExtraText] = useState('0');
-  const hasRecurring = data.liabilities.some((liability) => liability.kind === 'recurring');
+  const hasRecurring = data.liabilities.some((liability) =>
+    liability.kind === 'recurring' && !isLiabilityClosed(liability));
   const isValidExtra = /^\d+$/.test(extraText) && Number.isSafeInteger(Number(extraText))
     && Number(extraText) >= 0 && Number(extraText) <= 1_000_000;
   const extra = isValidExtra ? Number(extraText) : 0;
-  const overview = liabilitiesOverview(data, asOf, extra);
-  const liabilityCreationOrder = new Map(data.liabilities.map((liability, index) => [liability.id, index]));
-  const sortedLiabilities = sorting.sort(data.liabilities.map((liability) => {
+  const overview = useMemo(
+    () => liabilitiesOverview(data, asOf, extra),
+    [asOf, data, extra],
+  );
+  const sortedLiabilities = useMemo(() => {
+    const liabilityCreationOrder = new Map(data.liabilities.map((item, index) => [item.id, index]));
+    return sorting.sort(data.liabilities.map((liability) => {
     const summary = liabilitySummary(liability, asOf);
     const schedule = liabilitySchedule(liability, asOf);
     return {
@@ -68,15 +74,25 @@ export default function LiabilitiesScreen() {
       status: summary.cleared ? 'cleared' : schedule.summary.overdue > 0 ? 'overdue' : 'active',
       sortCreatedIndex: liabilityCreationOrder.get(liability.id) ?? 0,
     };
-  }));
+    }));
+  }, [asOf, data.liabilities, sorting]);
   const filterActive = kindFilter !== 'All'
     || sorting.spec.key !== DEFAULT_SORTS.liabilities.key
     || sorting.spec.dir !== DEFAULT_SORTS.liabilities.dir;
   const normalizedQuery = query.trim().toLowerCase();
   const visibleLiabilities = sortedLiabilities.filter((liability) =>
-    (kindFilter === 'All'
-      || (kindFilter === 'Recurring' ? liability.kind === 'recurring' : liability.kind === 'one-time'))
-    && (!normalizedQuery || `${liability.name} ${liability.type}`.toLowerCase().includes(normalizedQuery)),
+    (kindFilter === 'Closed'
+      ? liability.kind === 'recurring' && isLiabilityClosed(liability)
+      : kindFilter === 'All'
+        || (!isLiabilityClosed(liability)
+          && (kindFilter === 'Recurring' ? liability.kind === 'recurring' : liability.kind === 'one-time')))
+    && (!normalizedQuery || `${liability.name} ${financialTypeLabel(liability.type, liability.customTypeName)}`.toLowerCase().includes(normalizedQuery)),
+  );
+  const completedLiabilities = visibleLiabilities.filter((liability) =>
+    liability.balance < 1 || isLiabilityClosed(liability),
+  );
+  const inProgressLiabilities = visibleLiabilities.filter((liability) =>
+    liability.balance >= 1 && !isLiabilityClosed(liability),
   );
 
   return (
@@ -167,9 +183,31 @@ export default function LiabilitiesScreen() {
           ) : null}
         </Card>
 
-        {visibleLiabilities.map((liability) => liability.kind === 'recurring'
+        {inProgressLiabilities.map((liability) => liability.kind === 'recurring'
           ? <RecurringCard key={liability.id} liability={liability} asOf={asOf} extra={extra} />
           : <OneTimeCard key={liability.id} liability={liability} asOf={asOf} />)}
+        {completedLiabilities.length > 0 ? (
+          <View style={styles.completedSection}>
+            <Pressable
+              testID="liability-completed-toggle"
+              accessibilityRole="button"
+              accessibilityLabel={`Completed (${completedLiabilities.length})`}
+              accessibilityHint={completedExpanded ? 'Hides completed liabilities' : 'Shows completed liabilities'}
+              accessibilityState={{ expanded: completedExpanded }}
+              onPress={() => setCompletedExpanded((expanded) => !expanded)}
+              style={[styles.completedToggle, { borderColor: colors.border }]}>
+              <AppText weight="semibold" style={[typography.label, { color: colors.text1 }]}>
+                Completed ({completedLiabilities.length})
+              </AppText>
+              <AppText style={[typography.meta, { color: colors.text3 }]}>
+                {completedExpanded ? 'Hide' : 'Show'}
+              </AppText>
+            </Pressable>
+            {completedExpanded ? completedLiabilities.map((liability) => liability.kind === 'recurring'
+              ? <RecurringCard key={liability.id} liability={liability} asOf={asOf} extra={extra} />
+              : <OneTimeCard key={liability.id} liability={liability} asOf={asOf} />) : null}
+          </View>
+        ) : null}
         {visibleLiabilities.length === 0 && (normalizedQuery.length > 0 || data.liabilities.length > 0) ? (
           <View testID="liability-no-matches">
             <EmptyState title="No matches" />
@@ -197,9 +235,11 @@ function RecurringCard({ liability, asOf, extra }: { liability: RecurringLiabili
     <Pressable
       testID={`liability-card-${liability.id}`}
       accessibilityRole="button"
-      accessibilityLabel={`Edit ${liability.name}`}
-      accessibilityHint="Opens this liability for editing"
-      onPress={() => router.push({ pathname: '/liability-form', params: { id: liability.id } })}
+      accessibilityLabel={`${isLiabilityClosed(liability) ? 'View' : 'Edit'} ${liability.name}`}
+      accessibilityHint={isLiabilityClosed(liability) ? 'Opens this closed liability' : 'Opens this liability for editing'}
+      onPress={() => router.push(isLiabilityClosed(liability)
+        ? { pathname: '/liability-closure-note-form', params: { liabilityId: liability.id } }
+        : { pathname: '/liability-form', params: { id: liability.id } })}
       style={[styles.liabilityCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       <View testID={`liability-card-content-${liability.id}`}>
       <CardHeaderRow
@@ -233,8 +273,10 @@ function RecurringCard({ liability, asOf, extra }: { liability: RecurringLiabili
         }`}
         style={[typography.meta, styles.liabilityStatus, { color: colors.text2 }]}>
         Paid <AmountText value={summary.paidTotal} tier="row" />. Interest accrued <AmountText value={summary.interestAccrued} tier="row" />.
-        {'\n'}{summary.cleared
-          ? 'Cleared'
+        {'\n'}{isLiabilityClosed(liability)
+          ? `Closed ${formatDate(liability.closure?.date ?? asOf)}`
+          : summary.cleared
+            ? 'Cleared'
           : summary.monthsLeft === null
             ? 'EMI is too low to clear this liability'
             : `${summary.monthsLeft} months left · Payoff ${formatMonth(payoffDate(summary.monthsLeft, asOf).slice(0, 7))}.`}
@@ -253,23 +295,48 @@ function RecurringCard({ liability, asOf, extra }: { liability: RecurringLiabili
       ) : null}
       <ProgressBar percent={summary.principalPaidPct} tone="ok" />
       <View testID={`liability-card-actions-${liability.id}`}>
-      {schedule.summary.overdue + schedule.summary.ongoing > 0 ? (
-        <DueActions
-          target={{ kind: 'liability', id: liability.id }}
-          pendingCount={schedule.summary.overdue + schedule.summary.ongoing}
-          nextAmount={schedule.rows.find((row) => row.status === 'overdue' || row.status === 'ongoing')?.amount ?? 0}
-          stopParentPress
-        />
-      ) : null}
-      <ActionRow actions={[
-        ...(!summary.cleared ? [{
-          label: 'Pay EMI',
-          variant: 'primary' as const,
-          icon: 'credit-card' as const,
-          onPress: () => router.push({ pathname: '/liability-payment-form', params: { liabilityId: liability.id, mode: 'emi' } }),
-        }] : []),
-        { label: `Payments (${liability.payments.length})`, icon: 'list' as const, onPress: () => router.push({ pathname: '/liability-payments', params: { id: liability.id } }) },
-      ]} stopParentPress />
+        {!isLiabilityClosed(liability) && schedule.summary.overdue + schedule.summary.ongoing > 0 ? (
+          <DueActions
+            target={{ kind: 'liability', id: liability.id }}
+            pendingCount={schedule.summary.overdue + schedule.summary.ongoing}
+            nextAmount={schedule.rows.find((row) => row.status === 'overdue' || row.status === 'ongoing')?.amount ?? 0}
+            stopParentPress
+          />
+        ) : null}
+        <View style={[styles.liabilityActions, { borderTopColor: colors.border }]}>
+          {!summary.cleared && !isLiabilityClosed(liability) ? (
+            <>
+              <Button
+                label="Pay EMI"
+                icon="credit-card"
+                variant="primary"
+                style={styles.liabilityAction}
+                onPress={(event) => { event?.stopPropagation(); router.push({ pathname: '/liability-payment-form', params: { liabilityId: liability.id, mode: 'emi' } }); }}
+              />
+              <Button
+                label="Foreclosure"
+                icon="check-circle"
+                style={styles.liabilityAction}
+                onPress={(event) => { event?.stopPropagation(); router.push({ pathname: '/liability-closure-form', params: { liabilityId: liability.id } }); }}
+              />
+            </>
+          ) : isLiabilityClosed(liability) ? (
+            <Button
+              label="Edit closure note"
+              icon="edit-2"
+              style={styles.liabilityAction}
+              onPress={(event) => { event?.stopPropagation(); router.push({ pathname: '/liability-closure-note-form', params: { liabilityId: liability.id } }); }}
+            />
+          ) : null}
+          {liability.payments.length > 0 ? (
+            <Button
+              label="Entries"
+              icon="list"
+              style={styles.liabilityAction}
+              onPress={(event) => { event?.stopPropagation(); router.push({ pathname: '/liability-payments', params: { id: liability.id } }); }}
+            />
+          ) : null}
+        </View>
       </View>
       </View>
     </Pressable>
@@ -293,7 +360,7 @@ function OneTimeCard({ liability, asOf }: { liability: OneTimeLiability; asOf: s
       <CardHeaderRow
         title={<AppText weight="semibold" style={typography.name}>{liability.name}</AppText>}
         subtitle={<AppText style={[typography.meta, { color: colors.text3 }]}>
-            {liability.type} · {liability.ratePct}% p.a. · Since {formatDate(liability.startDate)}
+            {financialTypeLabel(liability.type, liability.customTypeName)} · {liability.ratePct}% p.a. · Since {formatDate(liability.startDate)}
         </AppText>}
         value={<AmountText value={summary.balance} tier="tile" weight="bold" style={typography.amount} />}
       />
@@ -316,15 +383,25 @@ function OneTimeCard({ liability, asOf }: { liability: OneTimeLiability; asOf: s
       {overdue ? <AppText style={[typography.meta, { color: colors.err }]}>This liability is overdue.</AppText> : null}
       <ProgressBar percent={summary.principalPaidPct} tone="ok" />
       <View testID={`liability-card-actions-${liability.id}`}>
-      <ActionRow actions={[
-        ...(!summary.cleared ? [{
-          label: 'Pay',
-          variant: 'primary' as const,
-          icon: 'credit-card' as const,
-          onPress: () => router.push({ pathname: '/liability-payment-form', params: { liabilityId: liability.id } }),
-        }] : []),
-        { label: `Payments (${liability.payments.length})`, icon: 'list' as const, onPress: () => router.push({ pathname: '/liability-payments', params: { id: liability.id } }) },
-      ]} stopParentPress />
+        <View style={[styles.liabilityActions, { borderTopColor: colors.border }]}>
+          {!summary.cleared ? (
+            <Button
+              label="Pay EMI"
+              icon="credit-card"
+              variant="primary"
+              style={styles.liabilityAction}
+              onPress={(event) => { event?.stopPropagation(); router.push({ pathname: '/liability-payment-form', params: { liabilityId: liability.id } }); }}
+            />
+          ) : null}
+          {liability.payments.length > 0 ? (
+            <Button
+              label="Entries"
+              icon="list"
+              style={styles.liabilityAction}
+              onPress={(event) => { event?.stopPropagation(); router.push({ pathname: '/liability-payments', params: { id: liability.id } }); }}
+            />
+          ) : null}
+        </View>
       </View>
       </View>
     </Pressable>
@@ -339,9 +416,23 @@ const styles = StyleSheet.create({
   rupee: { fontSize: 13 },
   extraInput: { minWidth: 82, paddingVertical: 6, fontSize: 13, textAlign: 'right', fontFamily: 'Montserrat_600SemiBold' },
   inputError: { marginTop: 5 },
+  completedSection: { marginTop: 8 },
+  completedToggle: {
+    minHeight: 48,
+    marginHorizontal: 20,
+    marginTop: 10,
+    paddingHorizontal: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   liabilityCard: { marginHorizontal: 20, marginTop: 12, padding: 14, borderWidth: StyleSheet.hairlineWidth, borderRadius: 14 },
   liabilityStatus: { marginTop: 8, lineHeight: 18 },
   scenario: { marginTop: 7 },
   emptyAction: { marginHorizontal: 20, marginTop: 10 },
   sortRow: { marginHorizontal: 20, marginTop: 8 },
+  liabilityActions: { marginTop: 12, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth, flexDirection: 'row', flexWrap: 'nowrap', gap: 6 },
+  liabilityAction: { flex: 1, minWidth: 0 },
 });

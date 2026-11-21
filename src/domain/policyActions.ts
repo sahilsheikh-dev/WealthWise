@@ -1,7 +1,7 @@
 import { NotFoundError } from './actions';
-import type { AppData, Policy, PolicyStatus } from './types';
+import type { AppData, Policy } from './types';
 
-export type PolicyPatch = Partial<Omit<Policy, 'id' | 'payments'>>;
+export type PolicyPatch = Partial<Omit<Policy, 'id' | 'payments' | 'status'>>;
 
 export class DuplicatePolicyError extends Error {
   constructor(id: string) {
@@ -49,21 +49,6 @@ export function updatePolicy(
     ...data,
     transactions,
     policies: data.policies.map((policy) => policy.id === input.id ? updated : policy),
-  };
-}
-
-export function setPolicyStatus(
-  data: AppData,
-  input: { id: string; status: PolicyStatus },
-): AppData {
-  const policy = data.policies.find((item) => item.id === input.id);
-  if (!policy) throw new NotFoundError('Policy', input.id);
-  if (policy.status === input.status) return data;
-  return {
-    ...data,
-    policies: data.policies.map((item) =>
-      item.id === input.id ? { ...item, status: input.status } : item,
-    ),
   };
 }
 

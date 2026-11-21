@@ -1,4 +1,5 @@
 import { NotFoundError } from './actions';
+import { holdingCapabilities } from './holdingCapabilities';
 import { syncHoldingTransactions } from './investmentActions';
 import type { AppData, PlanHolding } from './types';
 
@@ -18,6 +19,9 @@ function assertPlanInvariants(plan: Pick<PlanHolding, 'startDate' | 'trackFrom' 
 }
 
 export function addPlan(data: AppData, input: AddPlanInput, newId: () => string): AppData {
+  if (!holdingCapabilities(input.type).recurring) {
+    throw new Error(`${input.type} does not support a recurring deposit schedule.`);
+  }
   const plan: PlanHolding = { ...input, id: newId(), kind: 'plan', logs: [] };
   assertPlanInvariants(plan);
   return { ...data, holdings: [...data.holdings, plan] };
@@ -26,6 +30,34 @@ export function addPlan(data: AppData, input: AddPlanInput, newId: () => string)
 export function updatePlan(data: AppData, id: string, patch: PlanPatch): AppData {
   const current = getPlan(data, id);
   const updated = { ...current, ...patch };
+  if (!holdingCapabilities(updated.type).recurring) {
+    throw new Error(`${updated.type} does not support a recurring deposit schedule.`);
+  }
+  assertPlanInvariants(updated);
+  const transactions = syncHoldingTransactions(data.transactions, current, updated);
+  return {
+    ...data,
+    holdings: data.holdings.map((holding) => holding.id === id ? updated : holding),
+    transactions,
+  };
+}
+
+export function stopPlan(data: AppData, id: string, stopDate: string, today: string): AppData {
+  const current = getPlan(data, id);
+  if (stopDate > today) throw new Error('Stop date cannot be in the future');
+  const lastPaidDate = current.logs
+    .filter((entry) => entry.kind === 'Deposit')
+    .reduce((latest: string | null, entry) => !latest || entry.date > latest ? entry.date : latest, null);
+  if (lastPaidDate && stopDate < lastPaidDate) {
+    throw new Error('Stop date cannot be before the last paid entry');
+  }
+  return updatePlan(data, id, { stopDate });
+}
+
+export function resumePlan(data: AppData, id: string): AppData {
+  const current = getPlan(data, id);
+  const updated = { ...current };
+  delete updated.stopDate;
   assertPlanInvariants(updated);
   const transactions = syncHoldingTransactions(data.transactions, current, updated);
   return {
@@ -58,6 +90,12 @@ export function deletePlan(
       ...goal,
       links: goal.links.filter((link) => link.instrumentId !== id),
     })),
+    efBucketLinks: Object.fromEntries(
+      Object.entries(data.efBucketLinks).map(([bucketId, holdingIds]) => [
+        bucketId,
+        holdingIds.filter((holdingId) => holdingId !== id),
+      ]),
+    ),
     transactions,
   };
 }

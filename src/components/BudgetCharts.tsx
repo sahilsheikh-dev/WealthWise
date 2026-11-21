@@ -6,96 +6,36 @@ import type { BudgetOverview } from '../domain/budget';
 import { useTheme } from '../theme/useTheme';
 import { typography } from '../theme/tokens';
 
-type BudgetStack = BudgetOverview['stacked'];
-
-function stackSegments(
-  period: 'planned' | 'actual',
-  values: BudgetStack,
-): { id: string; value: number; color: 'primary' | 'ok' | 'err' | 'purple' }[] {
-  const segments = [
-    { id: 'spend', value: values.spend[period] },
-    { id: 'invest', value: values.invest[period] },
-    {
-      id: values.left[period] < 0 ? 'over' : 'left',
-      value: Math.abs(values.left[period]),
-    },
-  ].filter((segment) => segment.value > 0);
-  const total = segments.reduce((sum, segment) => sum + segment.value, 0);
-  const denominator = Math.max(values.income[period], total);
-  return segments.map((segment) => ({
-    ...segment,
-    value: denominator === 0 ? 0 : segment.value / denominator * 100,
-    color: segment.id === 'spend'
-      ? 'primary'
-      : segment.id === 'invest' ? 'purple' : segment.id === 'over' ? 'err' : 'ok',
-  }));
-}
-
-export function StackedBar({
-  values,
-  summary,
-}: {
-  values: BudgetStack;
-  summary: string;
-}) {
-  const { colors } = useTheme();
-  const colorByToken = {
-    primary: colors.primary,
-    ok: colors.ok,
-    err: colors.err,
-    purple: colors.purple,
-  };
-  return (
-    <View testID="stacked-bar" accessibilityRole="image" accessibilityLabel={summary}>
-      <View testID="stacked-track" style={[styles.stackedTrack, { backgroundColor: colors.surface2 }]}>
-        {stackSegments('planned', values).map((segment) => (
-          <View
-            key={segment.id}
-            testID={`stacked-segment-planned-${segment.id}`}
-            accessibilityLabel={`Planned ${segment.id}`}
-            style={{
-              width: `${segment.value}%`,
-              backgroundColor: colorByToken[segment.color],
-            }}
-          />
-        ))}
-      </View>
-    </View>
-  );
-}
-
-function LegendItem({ label, color }: { label: string; color: string }) {
-  return (
-    <View style={styles.legendItem}>
-      <View style={[styles.legendDot, { backgroundColor: color }]} />
-      <AppText style={typography.meta}>{label}</AppText>
-    </View>
-  );
-}
-
 export function PaceLine({
   pace,
+  spendingSectionIds,
   summary,
-  shortSummary,
 }: {
   pace: NonNullable<BudgetOverview['pace']>;
+  spendingSectionIds: readonly string[];
   summary: string;
-  shortSummary: string;
 }) {
   const { colors } = useTheme();
   const [width, setWidth] = useState(0);
   const height = 92;
   const onLayout = (event: LayoutChangeEvent) => setWidth(event.nativeEvent.layout.width);
-  const allValues = [...pace.planned, ...pace.actual];
-  const maximum = Math.max(...allValues, 1);
-  const plannedPoints = pace.planned.map((value, index) => ({
+  const spendingSections = pace.sections.filter((section) => spendingSectionIds.includes(section.id));
+  const planned = Array.from({ length: pace.days }, (_, day) =>
+    spendingSections.reduce((total, section) => total + (section.planned[day] ?? 0), 0),
+  );
+  const actual = Array.from({ length: pace.elapsedDays }, (_, day) =>
+    spendingSections.reduce((total, section) => total + (section.actual[day] ?? 0), 0),
+  );
+  const maximum = Math.max(...planned, ...actual, 1);
+  const plannedPoints = planned.map((value, index) => ({
     x: pace.days <= 1 ? 0 : index / (pace.days - 1) * width,
     y: height - value / maximum * (height - 10),
   }));
-  const actualPoints = pace.actual.map((value, index) => ({
+  const actualPoints = actual.map((value, index) => ({
     x: pace.days <= 1 ? 0 : index / (pace.days - 1) * width,
     y: height - value / maximum * (height - 10),
   }));
+
   return (
     <View testID="pace-line">
       <View
@@ -116,7 +56,15 @@ export function PaceLine({
         <LegendItem label="Actual" color={colors.ok} />
         <LegendItem label="Planned pace" color={colors.primary} />
       </View>
-      <AppText numberOfLines={1} style={[typography.meta, { color: colors.text2 }]}>{shortSummary}</AppText>
+    </View>
+  );
+}
+
+function LegendItem({ label, color }: { label: string; color: string }) {
+  return (
+    <View style={styles.legendItem}>
+      <View style={[styles.legendDot, { backgroundColor: color }]} />
+      <AppText style={typography.meta}>{label}</AppText>
     </View>
   );
 }
@@ -175,7 +123,6 @@ function PaceSegments({
 }
 
 const styles = StyleSheet.create({
-  stackedTrack: { height: 12, width: '100%', flexDirection: 'row', overflow: 'hidden', borderRadius: 6 },
   legend: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginVertical: 8 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   legendDot: { width: 8, height: 8, borderRadius: 4 },
