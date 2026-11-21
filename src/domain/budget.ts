@@ -1302,7 +1302,7 @@ export function budgetLineActual(
   const linkedHoldingIds = new Set(
     [
       ...(data.budgetPlan?.items ?? []),
-      ...(data.monthBudgets?.filter((snapshot) => snapshot.month === month).flatMap((snapshot) => snapshot.items) ?? []),
+      ...(data.monthBudgets?.flatMap((snapshot) => snapshot.items) ?? []),
     ]
       .filter((item) => item.name === category && item.holdingId)
       .map((item) => item.holdingId),
