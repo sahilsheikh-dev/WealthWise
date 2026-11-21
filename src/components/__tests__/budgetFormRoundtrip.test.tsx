@@ -383,7 +383,7 @@ describe('Budget form persisted store roundtrip', () => {
     },
   );
 
-  it.each(['name', 'due day', 'frequency'])(
+  it.each(['name', 'amount', 'due day', 'frequency'])(
     'round-trips a %s edit through the real form in month-only scope',
     async (field) => {
       const form = renderScreen(React.createElement(BudgetItemFormScreen));
@@ -391,6 +391,8 @@ describe('Budget form persisted store roundtrip', () => {
         act(() => {
           form.root.findByProps({ accessibilityLabel: 'Budget item name' }).props.onChangeText('Housing');
         });
+      } else if (field === 'amount') {
+        changeAccessibleText(form, 'Planned amount', '450');
       } else if (field === 'due day') {
         act(() => {
           form.root.findByProps({ accessibilityLabel: 'Due day' }).props.onChangeText('18');
@@ -413,6 +415,9 @@ describe('Budget form persisted store roundtrip', () => {
       if (field === 'name') {
         expect(editedPlanItem?.name).toBe('Rent');
         expect(editedSnapshotItem?.name).toBe('Housing');
+      } else if (field === 'amount') {
+        expect(editedPlanItem?.value).toBe(300);
+        expect(editedSnapshotItem?.value).toBe(450);
       } else if (field === 'due day') {
         expect(editedPlanItem?.dueDay).toBeUndefined();
         expect(editedSnapshotItem?.dueDay).toBe(18);
@@ -544,5 +549,98 @@ describe('Budget form persisted store roundtrip', () => {
       act(() => form.unmount());
     },
   );
+
+  it.each([
+    { entry: 'Spend', kind: 'once', scope: 'month' },
+    { entry: 'Spend', kind: 'once', scope: 'following' },
+    { entry: 'Invest', kind: 'monthly', scope: 'month' },
+    { entry: 'Invest', kind: 'monthly', scope: 'following' },
+    { entry: 'Invest', kind: 'once', scope: 'month' },
+    { entry: 'Invest', kind: 'once', scope: 'following' },
+    { entry: 'Income', kind: 'monthly', scope: 'month' },
+    { entry: 'Income', kind: 'monthly', scope: 'following' },
+    { entry: 'Income', kind: 'once', scope: 'month' },
+    { entry: 'Income', kind: 'once', scope: 'following' },
+  ])('deletes a $kind $entry entry with $scope scope from its real form', async ({ entry, kind, scope }) => {
+    const incomeFrequency = kind === 'once' ? 'once' : 'monthly';
+    const selectedScope = scope === 'month' ? 'This month only' : 'This and following months';
+    const deletingIncome = entry === 'Income';
+    let entryName = 'Rent';
+    if (deletingIncome) {
+      const income: BudgetIncomeItem = {
+        id: 'salary', name: 'Salary', category: 'Salary', amount: 1_000, day: 12,
+        frequency: incomeFrequency,
+        ...(kind === 'once' ? { firstDueMonth: month } : {}),
+      };
+      const plan = budgetPlanFromLines([{ category: 'Rent', value: 300 }], {
+        incomes: [income], repeatMonthly: true, repeatFrom: month,
+      });
+      const snapshot = monthBudgetFromLines(month, [{ category: 'Rent', planned: 300 }], {
+        incomes: [income], source: 'plan',
+      });
+      baseline = { ...emptyAppData(today), budgetPlan: plan, monthBudgets: [snapshot] };
+      mockRouteParams = { month, incomeId: 'salary', scope };
+      entryName = 'Salary';
+    } else {
+      const sectionId = entry === 'Invest' ? 'savings-investments' : 'survival';
+      entryName = entry === 'Invest' ? 'Equity investments' : 'Rent';
+      const plan = budgetPlanFromLines([{
+        category: 'Rent', value: 300, frequency: incomeFrequency, firstDueMonth: month,
+      }], { incomes: [], repeatMonthly: true, repeatFrom: month });
+      const section = plan.sections.find((item) => item.id === sectionId);
+      if (!section) throw new Error(`${entry} section fixture is missing.`);
+      const item = { ...plan.items[0], id: itemId, sectionId, name: entryName };
+      plan.items = [item];
+      const snapshot = monthBudgetFromLines(month, [{
+        category: entryName, planned: 300, frequency: incomeFrequency, firstDueMonth: month,
+      }], { incomes: [], source: 'plan', sections: plan.sections });
+      snapshot.items = [item];
+      baseline = { ...emptyAppData(today), budgetPlan: plan, monthBudgets: [snapshot] };
+      mockRouteParams = { month, sectionId, itemId, scope };
+    }
+    mockStore?.setState({ data: baseline });
+    await flushPersistence();
+    storage.writes = 0;
+
+    const form = renderScreen(React.createElement(
+      deletingIncome ? BudgetIncomeFormScreen : BudgetItemFormScreen,
+    ));
+    pressAccessibleControl(form, deletingIncome ? 'Delete income' : 'Delete item');
+    pressAccessibleControl(form, selectedScope);
+    await flushPersistence();
+
+    expect(storage.writes).toBe(1);
+    const savedData = mockStore?.getState().data;
+    const savedPlanItem = savedData?.budgetPlan?.items.find((item) => item.id === itemId);
+    const savedSnapshotItem = savedData?.monthBudgets?.[0]?.items.find((item) => item.id === itemId);
+    const savedPlanIncome = savedData?.budgetPlan?.incomes.find((income) => income.id === 'salary');
+    const savedSnapshotIncome = savedData?.monthBudgets?.[0]?.incomes.find((income) => income.id === 'salary');
+    if (deletingIncome) {
+      expect(savedPlanIncome !== undefined).toBe(scope === 'month');
+      expect(savedSnapshotIncome).toBeUndefined();
+      const stored = persistedData(storage);
+      expect(stored.budgetPlan?.incomes.some((income) => income.id === 'salary')).toBe(scope === 'month');
+      expect(stored.monthBudgets?.[0]?.incomes.some((income) => income.id === 'salary')).toBe(false);
+    } else {
+      expect(savedPlanItem !== undefined).toBe(scope === 'month');
+      expect(savedSnapshotItem).toBeUndefined();
+      const stored = persistedData(storage);
+      expect(stored.budgetPlan?.items.some((item) => item.id === itemId)).toBe(scope === 'month');
+      expect(stored.monthBudgets?.[0]?.items.some((item) => item.id === itemId)).toBe(false);
+    }
+    const freshStore = makeStore();
+    await waitForHydration(freshStore);
+    if (deletingIncome) {
+      expect(freshStore.getState().data.budgetPlan?.incomes.some((income) => income.id === 'salary'))
+        .toBe(scope === 'month');
+    } else {
+      expect(freshStore.getState().data.budgetPlan?.items.some((item) => item.id === itemId))
+        .toBe(scope === 'month');
+    }
+    act(() => form.unmount());
+    const budget = renderScreen(React.createElement(BudgetScreen));
+    expect(visibleText(budget)).not.toContain(entryName);
+    act(() => budget.unmount());
+  });
 
 });
