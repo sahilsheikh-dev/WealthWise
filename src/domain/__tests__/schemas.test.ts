@@ -35,10 +35,30 @@ const validInput = {
 };
 
 describe('appDataSchema', () => {
-  it('accepts the typed mock app data and exports schema version twenty-three', () => {
+  it('accepts the typed mock app data and exports schema version twenty-four', () => {
     expect(appDataSchema.parse(mockAppData)).toEqual(mockAppData);
-    expect(SCHEMA_VERSION).toBe(23);
+    expect(SCHEMA_VERSION).toBe(24);
     expect(new Set(TRANSACTION_CATEGORIES.expense).size).toBe(TRANSACTION_CATEGORIES.expense.length);
+  });
+
+  it('accepts, trims and bounds custom earned-income categories in AppData', () => {
+    const data = structuredClone(mockAppData);
+    const plan = data.budgetPlan;
+    const income = plan?.incomes[0];
+    if (!plan || !income) throw new Error('Budget income fixture is missing.');
+    Object.assign(income, { category: '  Consulting  ' });
+    const parsed = appDataSchema.safeParse(data);
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.budgetPlan?.incomes[0]?.category).toBe('Consulting');
+    }
+    for (const category of ['   ', 'x'.repeat(61)]) {
+      const invalid = structuredClone(data);
+      const invalidIncome = invalid.budgetPlan?.incomes[0];
+      if (!invalidIncome) throw new Error('Budget income fixture is missing.');
+      Object.assign(invalidIncome, { category });
+      expect(appDataSchema.safeParse(invalid).success).toBe(false);
+    }
   });
 
   it('accepts once-only Budget and policy schedules only with a first due date', () => {

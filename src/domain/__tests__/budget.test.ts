@@ -1324,6 +1324,36 @@ describe('budget plans and monthly views', () => {
     expect(unplanned.income.extra).toBe(0);
   });
 
+  it('reconciles custom earned-income categories as planned income instead of non-earned money', () => {
+    const income = { id: 'consulting', name: 'Consulting', category: 'Freelance', amount: 1_000 };
+    const plan = budgetPlanFromLines([], { incomes: [income] });
+    const snapshot = monthBudgetFromLines('2026-03', [], { incomes: [income] });
+    const planIncome = plan.incomes[0];
+    const snapshotIncome = snapshot.incomes[0];
+    if (!planIncome || !snapshotIncome) throw new Error('Custom income fixtures are missing.');
+    Object.assign(planIncome, { category: 'Consulting' });
+    Object.assign(snapshotIncome, { category: 'Consulting' });
+    const data = {
+      ...emptyAppData('2026-03-01'),
+      budgetPlan: plan,
+      monthBudgets: [snapshot],
+      transactions: [{
+        id: 'consulting-actual', type: 'income' as const, amount: 750,
+        category: 'Consulting', note: '', date: '2026-03-10',
+      }],
+    };
+
+    const view = budgetMonthView(data, '2026-03');
+
+    expect(view.income).toMatchObject({
+      planned: 1_000,
+      actual: 750,
+      bySource: [{ category: 'Consulting', amount: 750 }],
+    });
+    expect(view.otherMoneyIn).toBe(0);
+    expect(transactionCategoryLabel('Consulting', 'income')).toBe('Consulting');
+  });
+
   it('shows planned and actual amounts for every non-earned income category', () => {
     const snapshot = monthBudgetFromLines('2026-03', [], {
       incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 1_200 }],
