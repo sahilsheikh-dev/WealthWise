@@ -229,10 +229,10 @@ describe('permanent progress ledger', () => {
     const p20uR1 = dashboard.split('\n').find((line) => line.startsWith('| P20-U-R1 |'));
     expect(p20u).toContain('Done; Revised by P20-U-R1');
     expect(p20uR1).toContain('| Done |');
-    expect(p20uR1).toContain('earlier “Don\'t start working on this” instruction was superseded');
-    expect(p20uR1).toContain('four following-scope income schedule cells reproduced the stale snapshot');
-    expect(p20uR1).toContain('O73 remains Not run');
-    expect(p20uR1).toMatch(/Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and touched files; related P20-U; reason: defect in completed budget route form item\/schedule updating and deletion\./);
+    expect(p20uR1).toContain('superseded CR-115’s earlier');
+    expect(p20uR1).toContain('four reproducible stale schedule cells');
+    expect(p20uR1).toContain('O73 physical-device check remains Not run');
+    expect(p20uR1).toMatch(/Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and touched Budget forms\/domain\/store; related P20-U; reason: fix a defect in the completed P20-U Budget route forms\./);
 
     // Exact fields in evidence/scope
     expect(p20uR1).toContain('item, value, amount, start-month, frequency, due-day, etc.');
@@ -650,7 +650,7 @@ describe('permanent progress ledger', () => {
       const count = counts.get(phase);
       expect(count?.total).toBeGreaterThan(0);
       if (phase === 20) {
-        expect(count?.done).toBe(34);
+        expect(count?.done).toBe(35);
         expect(count?.total).toBe(37);
         expect(dashboard.split('\n').find((line) => line.startsWith('| P20-A-R2 |')))
           .toContain('Revised by P20-A-R2-R1 and P20-A-R3');
