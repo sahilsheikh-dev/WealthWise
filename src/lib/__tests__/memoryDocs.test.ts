@@ -64,6 +64,9 @@ describe('shared AI memory documents', () => {
     expect(currentTests?.[2]).toBe(latestRun?.[2]);
     expect(status).toContain('**CR-111 (2026-11-12) has Planned product work:**');
     expect(openItems).toContain('## CR-111 planned work');
+    expect(status).toContain('P20-S-R2 / CR-116');
+    expect(openItems).toContain('## P20-S-R2 searchable Dropdowns');
+    expect(openItems).toContain('O61–O64');
   });
 
   it('requires the work-placement quick start and indexed page', () => {

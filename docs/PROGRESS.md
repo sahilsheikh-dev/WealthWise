@@ -74,7 +74,7 @@ parts count in the numerator and denominator. P1–P14 count as one part
 each.
 
 ```text
-Overall progress ████████░░ 77% (142/185)
+Overall progress ████████░░ 77% (143/186)
 P1          ██████████ 100% (1/1)
 P2          ██████████ 100% (1/1)
 P3          ██████████ 100% (1/1)
@@ -93,7 +93,7 @@ P16         ██████████ 100% (3/3)
 P17         ██████████ 100% (3/3)
 P18         ██████████ 100% (9/9)
 P19         ██████████ 100% (3/3)
-P20         █████████░ 91% (30/33)
+P20         █████████░ 91% (31/34)
 P21         █████████░ 86% (6/7)
 P22         ██████████ 100% (2/2)
 P23         ██████████ 100% (4/4)
@@ -180,7 +180,7 @@ P44         ░░░░░░░░░░ 0% (0/4)
 | P20-P | — | Done | CR-60/CR-61 schema-v10 user-managed budget sections/items, v9 migration, scoped mutations, and custom-category transaction integration. 76 suites/865 tests; all six final gates pass. Device checks remain unverified. | 2026-10-18 |
 | P20-Q | `55f9eaa` | Done | CR-62–CR-65: in-screen budget management and responsive overview; 75 suites/857 tests and all six required gates pass. Simulated layouts pass; native device checks remain. | 2026-10-19 |
 | P20-R | `391a227` | Done | CR-66–CR-69: top-anchored sheets, edit-mode header trash, and responsive per-section Budget cards. 75 suites/857 tests; all six gates exit 0. Simulated layout passes; physical-device checks remain. | 2026-10-19 |
-| P20-S | — | Done; Revised by P20-S-R1 | CR-70–CR-75: accessible dropdowns, shared sheet shell, actual-first values, custom budget item categories and manageable transaction-derived rows; Insurance manual items reconcile separately from linked policies. All six final gates pass; physical-device checks remain unverified. | 2026-10-19 |
+| P20-S | — | Done; Revised by P20-S-R1, P20-S-R1-R1 and P20-S-R2 | CR-70–CR-75: accessible dropdowns, shared sheet shell, actual-first values, custom budget item categories and manageable transaction-derived rows; Insurance manual items reconcile separately from linked policies. All six final gates pass; physical-device checks remain unverified. | 2026-10-19 |
 | P20-S-R1 | — | Done; Revised by P20-S-R1-R1 | Convert all non-filter app-form ChoiceField uses to Dropdown and add persistent single-line titles to eligible editable controls. SegmentedControl titles are intentionally absent per owner direction. All six final-tree gates pass; physical-device rendering remains unverified. Implementation commit `d36103e`; task-to-phase PR #42; phase-to-develop PR #43. | 2026-11-09 |
 | P20-S-R1-R1 | — | Done | Add the owner-requested rule to ask before reverting or overwriting owner edits made after agent changes. Documented in root `AGENTS.md` as R5; task-to-phase PR #44 merged, phase-to-develop PR #45. | 2026-11-09 |
 | P20-T | `e432034` | Done | CR-76–CR-77: one shared FormShell header/body/footer core for full-screen and sheet forms; all data-entry forms converted with route-param coverage. Six gates pass; native keyboard/font-scale behavior remains unverified. | 2026-10-19 |
@@ -188,6 +188,7 @@ P44         ░░░░░░░░░░ 0% (0/4)
 | P20-U-R1 | P20-U | Planned | not started; owner said not to start. Owner report (verbatim): "In budget while updating any item/value/amount/start-month/frequency/due-day/etc it is not updating also while trying to delete it is not even deleting, not for single month and this and following months." Affected fields: item, value, amount, start-month, frequency, due-day, etc. Delete cases: single month and this and following months. Open questions: which Budget screens and sections (spend, invest, income schedules, one-time vs recurring); whether the bug is UI, store, or persistence; app/schema version and whether it began after a specific release or CR; exact reproduction steps and expected behavior; whether data on device persists after restart. Dependencies: report-first investigation with a red regression test before any fix (R1), then a fix with all six ordered gates; physical-device check likely required (planned process, not authorized work). Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and touched files; related P20-U; reason: defect in completed budget route form item/schedule updating and deletion. | not started |
 | P20-V | `6d3feab`, `82793e8`, `1afac16`, `139230d` | Done | CR-88/CR-89: schema v13 and migration, recurrence-aware Budget planning/dues, route form, row display, demo and tests. All six automated gates pass; native-device checks remain unverified. | 2026-10-21 |
 | P20-W | — | Planned | Previously: P43-D. Plan the Transactions form's investment-category derivation, user-created/Budget-defined expense categories and Custom option, category/item hierarchy, and custom Income type. P20-O/P own Budget item/category forms and transaction-category integration; P3 is generic persistence. Preserve schema v23 and resolve schema/backup impact before any implementation. Dependencies: category/item and persistence design; schema-impact decision. Evidence: not started. Placement: rule 4; searched dashboard, register, P20-O/P, P3 history, roadmap, memory and transaction form modules; related P20-O and P20-P; reason Budget category and transaction-form behavior belongs to the existing P20 feature area. | 2026-11-12 |
+| P20-S-R2 | — | Done | Searchable shared Dropdown with Unicode-normalized, case/diacritic-insensitive AND matching; exact/prefix/word-start/contains ranking; grouping; selected-state behavior; Custom pinning; no-match feedback; query reset; accessibility announcements. No call-site edits, schema/domain/demo-data changes or new dependencies. All six gates completed; Gate 4 exited 1 on the known SDK 57 patch mismatch after the required DNS retry. Native-device checks O61–O64 remain open. | 2026-11-21 |
 | P21-A | — | Done | Schema-v7 linked emergency-fund model, backup/migration and integrity tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
 | P21-B | — | Done | Emergency-fund cover and allocation UI/tests; final Expo Doctor and all other gates pass. | 2026-10-16 |
 | P21-C | `d43be28` | Done | CR-37 header-only edit action, detail-first allocation rows without status labels and progress bar last; CR-38 editable allocation items, four defaults and no-menu behavior. | 2026-10-17 |
@@ -3239,6 +3240,8 @@ evidence present in exports/checkpoints.
 | ID | Phase | Legacy ID | Session | Date | Purpose | Outcome | Commits (Git only) | Agent mistakes / review findings | Text |
 |---|---|---|---:|---|---|---|---|---|---|
 | CR-115 | documentation | — | current | 2026-11-13 | Record owner-reported Budget update and delete failure across single month and following months as Planned under P20-U-R1; owner instructed not to start work. | Done (documentation and ledger recording); product bug work Planned under P20-U-R1 | Documentation commit. | None. | current request |
+| CR-116 | P20 | — | current | 2026-11-21 | Add searchable filtering and stable relevance ranking to the shared Dropdown sheet across the app. | Done as P20-S-R2; six ordered gates completed with the documented Gate 4 SDK patch exception. | Test-first ledger `36e8ba4`; implementation commits through `d69c5cf`; PR integration evidence follows. | Assumed and confirmed: no schema, domain, demo-data or dependency changes. O61–O64 remain Not run on physical devices. | current request |
+| P20-S-R2 | P20 | P20-S | current | 2026-11-21 | Add a default-visible, accessible Search field to shared Dropdown, with normalized multiword matching, stable ranking, grouping, Custom pinning and no-match feedback. | Done; Gate 1 `npm test -- --coverage` exit 0 (102 suites, 1,342 passed, 1 skipped); Gate 2 `npx tsc --noEmit` exit 0; Gate 3 `npx expo lint` exit 0; Gate 4 `npx expo-doctor` exit 1 on the required SDK 57 patch mismatch (20/21 checks; DNS attempt and one retry recorded below); Gate 5 Android export exit 0; Gate 6 iOS export exit 0. Device checks O61–O64 remain Not run. | Test-first ledger `36e8ba4`; helper tests `a959353`, Custom-order regression `81a4d31`; helper `41bb704`, `f340fca`; component tests `f169bd6`, `3a29c94`; component `70eb82a`; route-mock fix and verification `d69c5cf`. PR evidence follows in P20-S-R2-R1. | Assumed: no schema, domain, demo-data or dependency changes; confirmed. Old sheet text assertion listed only group/option labels. New assertion adds Search and the 3-result announcement while preserving those labels. Reason: the sheet now exposes search and result-count feedback. Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and Dropdown source/tests; related P20-S; reason this revises completed shared Dropdown behavior from CR-70. | current request |
 | P20-U-R1 | P20 | P20-U | current | 2026-11-13 | Record owner-reported Budget update and delete failure across single month and following months as Planned. Owner instruction: "Don't start working on this." | Planned; not started; owner said not to start. Owner report (verbatim): "In budget while updating any item/value/amount/start-month/frequency/due-day/etc it is not updating also while trying to delete it is not even deleting, not for single month and this and following months." Affected fields: item, value, amount, start-month, frequency, due-day, etc. Delete cases: single month and this and following months. Open questions: which Budget screens and sections (spend, invest, income schedules, one-time vs recurring); whether the bug is UI, store, or persistence; app/schema version and whether it began after a specific release or CR; exact reproduction steps and expected behavior; whether data on device persists after restart. Dependencies: report-first investigation with a red regression test before any fix (R1), then a fix with all six ordered gates; physical-device check likely required (planned process, not authorized work). Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and touched files; related P20-U; reason: defect in completed budget route form item/schedule updating and deletion. | No implementation commit; planned only. | None. | current request |
 | CR-114 | documentation | — | current | 2026-11-12 | Restructure work tracking using independent entities, empty slots and R7 slot-filling rules. | Done; PR #161 merged into `develop` as `9058386`. Preflight gates 1–3, 5, 6 passed; Gate 4 exit 1 owner-approved exception (upstream Expo SDK 57 patch advisory). | Test-first commits `f99fa67`, `83689f2`; PR #161 merge `9058386`. | None. | current request |
 | CR-110 | — | — | current | 2026-11-12 | Plan standalone cleanup/QA lifecycle tracking and deferred Emergency Fund and transaction improvements. | Planned; Revised by CR-110-R1. Original planned-only scope retained; CR-110-R1 adds detailed dependencies, approval gates, issue strategy and validation plan. | No implementation commit; revised in CR-110-R1. | Original: execution was deferred and no implementation or remote actions were authorized. New: details are tracked as separate Planned items; no implementation or remote action is authorized by the plan. Reason: preserve the original request record while making future work actionable. | current request |
@@ -3352,7 +3355,7 @@ evidence present in exports/checkpoints.
 | P20-P | P20 | — | — | 2026-10-18 | Schema-v10 user-managed budget sections/items, v9 migration, scoped actions and custom-category integration (CR-60–CR-61). | Done; 76 suites/865 tests; final coverage, TypeScript, lint, Doctor and Android/iOS exports exit 0. Device criteria remain unverified. | Preflight `1e4fdce`; implementation and ledger are included in this delivery. | Assumed: an ungrouped v9 category migrates into the first spend section; non-built-in investment category strings remain custom after item deletion. See DEC-BUDGET-V10 and DEC-P20P-CR60-61. | current request |
 | P20-Q | P20 | `55f9eaa` | `94297e1` | 2026-10-19 | Manage budget sections/items in Budget and make overview responsive (CR-62–CR-65). | Implementation, 75-suite/857-test coverage run, and six gates complete; simulated layouts pass. | Preflight `17f5ee4`; CR-62 `93a5356`; CR-63–CR-65 `55f9eaa`; assertion update `94297e1`. | Assumed: section rows start collapsed on each screen mount; current/future actions use P20-P scope semantics; create budget applies an empty current-month snapshot for immediate management; the stacked chart visualizes planned allocation. | current request |
 | P20-R | P20 | — | — | 2026-10-19 | Top-anchored Budget and bottom-sheet form surfaces; section Cards and accessible icon actions (CR-66–CR-69). | Done; 75 suites/857 tests; full coverage, TypeScript, lint, Expo Doctor and Android/iOS exports pass. | Preflight `5049ab8`; checkpoint `75e9097`; implementation `391a227`. | Assumed: see DEC-P20R; simulated keyboard and layout contracts do not verify native rendering. | current request |
-| P20-S | P20 | — | — | 2026-10-19 | Dropdowns, shared sheet form shell, Budget category selection, Actual/Planned order, and manual Insurance items (CR-70–CR-75). | Done; Revised by P20-S-R1. Original gates and implementation remain historical. | Preflight `a8a95db`; CR-70 `b7e0d53`; CR-71 `b340416`; CR-72 `aa9f050`; CR-73/74 `4134844`; CR-75 `d612e2b`; correction `4d898c6`. | Assumed: see DEC-P20S; simulated keyboard, dropdown, hint wrapping and icon layout do not establish native-device behavior. | current request |
+| P20-S | P20 | — | — | 2026-10-19 | Dropdowns, shared sheet form shell, Budget category selection, Actual/Planned order, and manual Insurance items (CR-70–CR-75). | Done; Revised by P20-S-R1, P20-S-R1-R1 and P20-S-R2. Original gates and implementation remain historical. | Preflight `a8a95db`; CR-70 `b7e0d53`; CR-71 `b340416`; CR-72 `aa9f050`; CR-73/74 `4134844`; CR-75 `d612e2b`; correction `4d898c6`. | Assumed: see DEC-P20S; simulated keyboard, dropdown, hint wrapping and icon layout do not establish native-device behavior. | current request |
 | P20-S-R1 | P20 | P20-S | current | 2026-11-09 | Replace form ChoiceField controls with Dropdown except filters; add persistent single-line titles to eligible editable controls. | 98 suites/1,267 passed/1 skipped and all six ordered gates exit 0; physical-device rendering remains unverified. Revised by P20-S-R1-R1. | Implementation `d36103e`; task-to-phase PR #42; phase-to-develop PR #43. | Old: preserve non-designated ChoiceField uses and assert the Amount placeholder prop plus SegmentedControl titles. New: all app-form ChoiceFields use Dropdown except filters; Amount checks visible title text; transaction type options and manual Investment type selection remain asserted without requiring a SegmentedControl title. Reason: owner broadened Dropdown scope, requested visible input titles, and explicitly removed SegmentedControl titles. | current request |
 | P20-S-R1-R1 | P20 | P20-S-R1 | current | 2026-11-09 | Add a shared rule for preserving owner edits: ask before changing a file with owner edits made after agent changes, and only revert/overwrite on explicit owner request. | Documentation-only update; focused progress-ledger test passes; full six gates not applicable. | Task commit `e955021`; task-to-phase PR #44 merged as `93dfb6acacca296ff7ef5c4629721efd5e0d3995`; phase-to-develop PR #45. | Old: R1 required preserving owner edits but did not require asking before further changes. New: ask first, and revert or overwrite only on explicit request. Reason: owner requested a clear safeguard after an agent restored owner-removed labels. | current request |
 | P20-T | P20 | — | — | 2026-10-19 | Consolidate full-screen and sheet forms on one header/body/footer core; convert all data-entry forms (CR-76–CR-77). | Done; 76 suites/873 tests, focused form/route tests, and all six required gates pass; native keyboard and font-scale rendering remain unverified. | Preflight `b449d9d`; implementation `e432034`. | Assumed: see DEC-P20T; onboarding retains no-back exit behavior and selection/information surfaces remain non-forms. | current request |
@@ -3675,6 +3678,7 @@ verification.
 | CR-113 | Record explicit owner approvals and placement decisions for Planned/Pending tasks without starting their work. | Done | All affected feature work remains Planned. Six ordered gates and task/phase PR evidence are recorded in Section 11. No research, implementation, tag deletion or issue creation was performed. Owner approvals cover P21-F, P33-B/C, P34-A–C, P35-B/C, P43-B/E, P44-A and P39/P40 placement; the exact proposed tag list and P43-E inventory remain prerequisites. |
 | CR-114 | Restructure how the project tracks work using independent entities (cleanup, qa-and-release, schema-migration, documentation), empty slots (P7, P27, P28, P32) and R7 slot-filling rule. | Done | PR #161 merged to develop as `9058386`; Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 owner-approved exception for upstream SDK 57 patch advisory; tests updated test-first; remote branches and local refs verified. |
 | CR-115 | Record owner-reported Budget item/schedule update and delete failure across single month and following months as Planned under P20-U-R1; owner instructed not to start work. | Done (recording); product work Planned | Documented in dashboard, register, prompt log, roadmap, and memory; no app/schema/dependency changes. |
+| CR-116 | Add searchable filtering and stable relevance ranking to shared Dropdown options across the app. | Done as P20-S-R2 | Helper coverage is 100% lines/branches; focused component and route/form suites pass. Six ordered gates: 1 exit 0 (102 suites, 1,342 passed, 1 skipped); 2 exit 0; 3 exit 0; 4 exit 1 (known Expo SDK 57 patch mismatch after one DNS retry); 5 exit 0; 6 exit 0. No caller edits, schema/domain/demo-data changes or new dependencies. O61–O64 physical checks remain Not run. |
 
 ## 8. Known issues and risks
 
@@ -3869,7 +3873,7 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
    P19-B investment/income reconciliation and Budget actions (CR-9, CR-16), and
    P19-C header icons, user-owned inputs and balance card (CR-17–CR-19).
 2. **P20 — Pending items, Home, navigation and Budget management**
-   (P20-A through P20-V Done; P20-A-R1/R2 and P20-S-R1-R1 revisions Done;
+   (P20-A through P20-V Done; P20-A-R1/R2 and P20-S-R1-R1/P20-S-R2 revisions Done;
    P20-A-R3, P20-W and P20-U-R1 Planned):
    P20-A pending
    Transactions with Pay/Clear due (CR-6), P20-B Home due actions and collapsed
@@ -3900,6 +3904,7 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
    roadmap, memory and transaction form modules; related P20-O and P20-P;
    reason: the work extends existing Budget/category forms.
    P20-U-R1 — Budget item and schedule update and delete failure (Planned): owner-reported defect in Budget route form editing and deletion. Owner report (verbatim): "In budget while updating any item/value/amount/start-month/frequency/due-day/etc it is not updating also while trying to delete it is not even deleting, not for single month and this and following months." Owner instruction: "Don't start working on this." Affected fields: item, value, amount, start-month, frequency, due-day, etc. Delete cases: single month and this and following months. Open questions: which Budget screens and sections (spend, invest, income schedules, one-time vs recurring); whether the bug is UI, store, or persistence; app/schema version and whether it began after a specific release or CR; exact reproduction steps and expected behavior; whether data on device persists after restart. Dependencies: report-first investigation with a red regression test before any fix (R1), then a fix with all six ordered gates; physical-device check likely required (planned process, not authorized work). Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and touched files; related P20-U; reason: defect in completed budget route form item/schedule updating and deletion.
+   P20-S-R2 — searchable shared Dropdowns (Done): add default-visible search with accessible clear/result feedback, Unicode-normalized case/diacritic-insensitive AND matching, exact/prefix/word-start/contains ranking, group preservation, selected-state behavior, Custom pinning, no-match feedback and query reset. All six gates completed; Gate 4 remains the known SDK 57 patch mismatch. No caller edits or schema/domain/demo-data/dependency changes. O61–O64 device checks remain open. Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and Dropdown source/tests; related P20-S; reason: adjusts completed shared Dropdown behavior. Assumed: no schema, domain, demo-data or dependency changes were required; confirmed.
 3. **P21 — Emergency fund as a goal-linked model** (P21-A–E Done; P21-F Planned): P21-A links,
    entries and net-worth/schema v7 changes (CR-8, CR-13); P21-B cover and
        allocation table (CR-14, CR-15); P21-C normal-mode presentation and
@@ -4203,6 +4208,39 @@ work remain in their original phase and use `<ID>-R<n>` (for example,
 An item is `Done` only when its named source and test evidence are available.
 Paths below are repository-relative. Baseline results are not completion
 evidence for the fixes.
+
+### 2026-11-21 — P20-S-R2 searchable shared Dropdown
+
+- Added search to the shared component only; all existing call sites compile
+  and the requested route/form suites pass without call-site edits.
+- Focused component acceptance: 1 suite / 12 tests passed. Pure helper
+  acceptance: 6 tests passed; `dropdownSearch.ts` reports 100% lines and
+  branches. Route/form regression: 6 suites / 228 tests passed. TypeScript
+  exits 0.
+- The first route-suite attempt exited 1 because some existing React Native
+  test mocks omit `AccessibilityInfo`; making the announcement call optional
+  preserves native announcement behavior when the installed API is present and
+  lets minimal mocks omit it. The rerun passed.
+- Replaced assertion (not weakened):
+
+  | Old assertion | New assertion | Reason |
+  |---|---|---|
+  | Dropdown sheet text was exactly `Essentials`, `Food`, `Rent`, `Other`, `Pets`. | It now includes the visible `Search` label and the polite `3 results` text before those unchanged group and option labels. | The open sheet now contains the requested search field and result-count feedback. |
+
+- **Assumed:** no schema, domain, demo-data or dependency changes are required;
+  no such changes are part of this implementation. Physical-device checks are
+  not run; O61–O64 track keyboard, announcement, tap-target and font-scale
+  verification.
+- Ordered gates (Node v26.10.0):
+
+  | Gate | Command | Result |
+  |---:|---|---|
+  | 1 | `npm test -- --coverage` | Exit 0; 102 suites, 1,342 passed, 1 skipped (1,343 total). |
+  | 2 | `npx tsc --noEmit` | Exit 0. |
+  | 3 | `npx expo lint` | Exit 0. |
+  | 4 | `npx expo-doctor` | Initial exit 1: `ENOTFOUND registry.npmjs.org`. Required retry exit 1: 20/21 checks; six SDK 57 packages were one patch behind. Same known owner-approved cleanup exception; dependencies unchanged. |
+  | 5 | `npx expo export --platform android` | Exit 0. |
+  | 6 | `npx expo export --platform ios` | Exit 0. |
 
 ### 2026-11-13 — CR-115 planned Budget edit and delete bug recording
 
@@ -11831,7 +11869,7 @@ are guarded by `progressLedger.test.ts`.
 | P17 | `phase/17-cash-flow-budgets-sorting` | `phase-17-complete` | `1e206ad754e95cd53f7cc06e9cba4d2d9b151a68` | 3 |
 | P18 | `phase/18-ui-fix-rounds` | `phase-18-complete` | `3e28f763502fa09b32c00fce1bae95c71285f556` | 9 |
 | P19 | `phase/19-budget-model-and-sync` | `phase-19-complete` | `d3477f2e1266e686b611aa819be90dba113a7a5f` | 3 |
-| P20 | `phase/20-budget` | `phase-20-complete` | `eed40750f68bebc9168907f79f74a67c1f301b83` | 33 |
+| P20 | `phase/20-budget` | `phase-20-complete` | `eed40750f68bebc9168907f79f74a67c1f301b83` | 34 |
 | P21 | `phase/21-emergency-fund` | `phase-21-complete` | `96b85d72e401215a0f17864b9f8099e5452e3a66` | 7 |
 | P22 | `phase/22-demo-data` | `phase-22-complete` | `6cb4fa0a42be2c60ee3d4bf162bb41d6a2f0ea58` | 2 |
 | P23 | `phase/23-insurance` | `phase-23-complete` | `04988e8366949c0cde04912ca1f472c4b31c227f` | 4 |
