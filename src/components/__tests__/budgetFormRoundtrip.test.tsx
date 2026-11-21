@@ -1,4 +1,5 @@
 import React from 'react';
+import { createHash } from 'node:crypto';
 import TestRenderer, { act } from 'react-test-renderer';
 import type { StateStorage } from 'zustand/middleware';
 
@@ -6,6 +7,7 @@ import BudgetScreen from '../../../app/(tabs)/budget';
 import BudgetItemFormScreen from '../../../app/budget-item-form';
 import BudgetIncomeFormScreen from '../../../app/budget-income-form';
 import { emptyAppData } from '../../domain/actions';
+import { createBackup, parseBackup } from '../../domain/backup';
 import { createAppStore } from '../../data/createAppStore';
 import { budgetPlanFromLines, monthBudgetFromLines } from '../../testFixtures/budget';
 import { todayISO } from '../../lib/clock';
@@ -13,9 +15,11 @@ import { formatMonth } from '../../lib/format';
 import { useUIStore } from '../../data/uiStore';
 import { shiftMonth } from '../../domain/dates';
 import type { BudgetIncomeItem } from '../../domain/types';
+import { buildDemoData } from '../../mock/demoData';
 
 let mockStore: ReturnType<typeof createAppStore> | null = null;
 let mockRouteParams: Record<string, string> = {};
+const sha256 = async (value: string): Promise<string> => createHash('sha256').update(value).digest('hex');
 
 jest.mock('../../data/store', () => {
   const useAppStore = (selector: (state: ReturnType<ReturnType<typeof createAppStore>['getState']>) => unknown) => {
@@ -641,6 +645,101 @@ describe('Budget form persisted store roundtrip', () => {
     const budget = renderScreen(React.createElement(BudgetScreen));
     expect(visibleText(budget)).not.toContain(entryName);
     act(() => budget.unmount());
+  });
+
+  it('round-trips an edit while viewing a non-current virtual month', async () => {
+    const viewedMonth = shiftMonth(month, 1);
+    mockRouteParams = { month: viewedMonth, sectionId: 'survival', itemId, scope: 'following' };
+    useUIStore.getState().setTxMonth(viewedMonth);
+    storage.writes = 0;
+    const form = renderScreen(React.createElement(BudgetItemFormScreen));
+    changeAccessibleText(form, 'Planned amount', '525');
+    await act(async () => {
+      form.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
+    });
+    await act(async () => {
+      form.root.findByProps({ accessibilityLabel: 'This and following months' }).props.onPress();
+      await flushPersistence();
+    });
+
+    expect(storage.writes).toBe(1);
+    expect(mockStore?.getState().data.budgetPlan?.items.find((item) => item.id === itemId)?.value).toBe(525);
+    expect(mockStore?.getState().data.monthBudgets?.find((row) => row.month === month)?.items[0]?.value).toBe(300);
+    expect(mockStore?.getState().data.monthBudgets?.some((row) => row.month === viewedMonth)).toBe(false);
+    const freshStore = makeStore();
+    await waitForHydration(freshStore);
+    expect(freshStore.getState().data.budgetPlan?.items.find((item) => item.id === itemId)?.value).toBe(525);
+    act(() => form.unmount());
+  });
+
+  it('round-trips a form edit after restoring a plain backup', async () => {
+    const plan = budgetPlanFromLines([{ category: 'Rent', value: 300, firstDueMonth: month }], {
+      incomes: [], repeatMonthly: true, repeatFrom: month,
+    });
+    plan.items[0].id = itemId;
+    const snapshot = monthBudgetFromLines(month, [{ category: 'Rent', planned: 300, firstDueMonth: month }], {
+      incomes: [], source: 'plan',
+    });
+    snapshot.items[0].id = itemId;
+    baseline = { ...emptyAppData(today), budgetPlan: plan, monthBudgets: [snapshot] };
+    const backup = await createBackup(baseline, {
+      exportedAt: '2026-11-21T00:00:00.000Z', digest: sha256,
+    });
+    const parsed = await parseBackup(backup, { digest: sha256, today, newId: () => 'restore-id' });
+    if (!parsed.ok) throw new Error(`${parsed.reason}: ${parsed.message}`);
+    const store = mockStore;
+    if (!store) throw new Error('Budget roundtrip store is missing.');
+    const restored = await store.getState().actions.replaceAllData(parsed.data);
+    if (!restored.ok) throw new Error(restored.message);
+    mockRouteParams = { month, sectionId: 'survival', itemId, scope: 'following' };
+    useUIStore.getState().setTxMonth(month);
+    storage.writes = 0;
+
+    const form = renderScreen(React.createElement(BudgetItemFormScreen));
+    changeAccessibleText(form, 'Planned amount', '425');
+    await act(async () => {
+      form.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
+    });
+    await act(async () => {
+      form.root.findByProps({ accessibilityLabel: 'This and following months' }).props.onPress();
+      await flushPersistence();
+    });
+
+    expect(storage.writes).toBe(1);
+    expect(mockStore?.getState().data.budgetPlan?.items.find((item) => item.id === itemId)?.value).toBe(425);
+    expect(persistedData(storage).budgetPlan?.items.find((item) => item.id === itemId)?.value).toBe(425);
+    act(() => form.unmount());
+  });
+
+  it('round-trips a form edit after loading demo data', async () => {
+    const demoData = buildDemoData(today);
+    const demoItem = demoData.budgetPlan?.items.find((item) => !item.holdingId && item.mode === 'amount');
+    if (!demoItem || !demoData.budgetPlan) throw new Error('Demo Budget item fixture is missing.');
+    const store = mockStore;
+    if (!store) throw new Error('Budget roundtrip store is missing.');
+    const loaded = await store.getState().actions.replaceAllData(demoData);
+    if (!loaded.ok) throw new Error(loaded.message);
+    mockRouteParams = {
+      month, sectionId: demoItem.sectionId, itemId: demoItem.id, scope: 'following',
+    };
+    useUIStore.getState().setTxMonth(month);
+    storage.writes = 0;
+    const nextValue = demoItem.value + 25;
+
+    const form = renderScreen(React.createElement(BudgetItemFormScreen));
+    changeAccessibleText(form, 'Planned amount', String(nextValue));
+    await act(async () => {
+      form.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
+    });
+    await act(async () => {
+      form.root.findByProps({ accessibilityLabel: 'This and following months' }).props.onPress();
+      await flushPersistence();
+    });
+
+    expect(storage.writes).toBe(1);
+    expect(mockStore?.getState().data.budgetPlan?.items.find((item) => item.id === demoItem.id)?.value).toBe(nextValue);
+    expect(persistedData(storage).budgetPlan?.items.find((item) => item.id === demoItem.id)?.value).toBe(nextValue);
+    act(() => form.unmount());
   });
 
 });
