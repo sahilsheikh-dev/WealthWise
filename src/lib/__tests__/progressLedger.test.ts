@@ -622,7 +622,7 @@ describe('permanent progress ledger', () => {
       expect(count?.total).toBeGreaterThan(0);
       if (phase === 20) {
         expect(count?.done).toBe(30);
-        expect(count?.total).toBe(33);
+        expect(count?.total).toBe(34);
         expect(dashboard.split('\n').find((line) => line.startsWith('| P20-A-R2 |')))
           .toContain('Revised by P20-A-R2-R1 and P20-A-R3');
         expect(dashboard.split('\n').find((line) => line.startsWith('| P20-A-R3 |')))
@@ -838,7 +838,9 @@ describe('permanent progress ledger', () => {
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-Q |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-R |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-S |')))
-      .toContain('| Done; Revised by P20-S-R1 |');
+          .toContain('| Done; Revised by P20-S-R1, P20-S-R1-R1 and P20-S-R2 |');
+        expect(dashboard.split('\n').find((line) => line.startsWith('| P20-S-R2 |')))
+          .toContain('| Planned |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-S-R1 |')))
       .toContain('Done; Revised by P20-S-R1-R1');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-S-R1-R1 |')))
