@@ -1,4 +1,4 @@
-<!-- Purpose: Stable product and repository facts for AI contributors. | Last updated: 2026-11-21 | Updates: owner and AI agents -->
+<!-- Purpose: Stable product and repository facts for AI contributors. | Last updated: 2026-11-22 | Updates: owner and AI agents -->
 
 # Project
 
@@ -55,12 +55,11 @@ runtime synchronization.
   pure utilities and platform helpers in `src/lib/`; demo data in `src/mock/`.
 - Other source groups: `src/hooks/`, `src/theme/`, `src/constants/`, `assets/`
   and `scripts/`.
-- Test counts: 105 suites, 1437 tests (1,436 passed; one skipped) on
+- Test counts: 105 suites, 1438 tests (1,437 passed; one skipped) on
   2026-11-22. The merged D3 task tree Gate 1 coverage was
-  96.08/92.35/98.22/97.71% statements/branches/functions/lines. Gates 1–3 and
-  5–6 passed; Gate 4 exited 1 because `npx` could not resolve `expo-doctor`
-  from `registry.npmjs.org` (`ENOTFOUND`). See [status.md](status.md) for the
-  exact ordered-gate results and local merge SHAs.
+  96.08/92.35/98.22/97.71% statements/branches/functions/lines. See
+  [status.md](status.md) for exact ordered-gate results and local merge SHAs;
+  the latest Gate 4 exit was not captured.
 - P20-W-D3's pre-merge Gate 1 was 102 suites, 1382 tests (1,381 passed; one
   skipped), coverage 95.97/92.15/98.03/97.64% statements/branches/functions/
   lines; `src/data` 91.12/87.51/94.53/94.21%, `src/domain`
@@ -107,4 +106,4 @@ schema migration evidence, feature decisions and test history.
 
 ## Remote-history reconciliation (2026-11-22)
 
-Local Git records merge commits for P20-A-R3 (#178/#179), P20-U-R1 (#180/#181), and P20-W-D3 (#182/#183). Schema v24 and migration compatibility through v23 are current. The remote snapshot supplied for reconciliation is missing PR/ref/release/issue exports; open PRs/issues, PR text/comments, remote branch deletion and GitHub mergedAt values remain unknown. The latest recorded full gate remains 105 suites / 1,437 tests (1,436 passed; one skipped) on the D3 task tree.
+Local Git records merge commits for P20-A-R3 (#178/#179), P20-U-R1 (#180/#181), and P20-W-D3 (#182/#183). Schema v24 and migration compatibility through v23 are current. The remote snapshot supplied for reconciliation is missing PR/ref/release/issue exports; open PRs/issues, PR text/comments, remote branch deletion and GitHub mergedAt values remain unknown. This task full Gate 1 completed with 105 suites / 1,438 tests (1,437 passed; one skipped); Gates 2–3 and 5–6 exited 0; Gate 4 exit was not captured after the tool wait timeout and was not rerun.

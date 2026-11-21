@@ -683,10 +683,10 @@
   historical records in [PROGRESS.md](../PROGRESS.md).
 - CR-108 baseline: 101 suites, 1317 tests (1316 passed, 1 skipped) on
   2026-11-11; all six CR-108 gates exited 0.
-- Test counts: 105 suites, 1437 tests (1,436 passed, 1 skipped) on
+- Test counts: 105 suites, 1438 tests (1,437 passed, 1 skipped) on
   2026-11-22.
-- Latest validated run: 105 suites, 1437 tests
-  (1,436 passed, 1 skipped) on 2026-11-22 on the merged D3 task tree. Gate 1
+- Latest validated run: 105 suites, 1438 tests
+  (1,437 passed, 1 skipped) on 2026-11-22 on the documentation task tree, which shares the D3 tree. Gate 1
   coverage was 96.08/92.35/98.22/97.71% statements/branches/functions/lines;
   Gates 1–3 and 5–6 exited 0. Gate 4 exited 1 because `npx` could not resolve
   `expo-doctor` from `registry.npmjs.org` (`ENOTFOUND`). D3 uses v24; P36-A/B
@@ -758,7 +758,7 @@
 
 ## Current reconciliation (2026-11-22)
 
-- Local `develop` HEAD is `b3fa175b999f3ae62e2b099a412f5a9e9da5f0db` (PR #183 merge); source schema is v24. P20-A-R3 (#178/#179), P20-U-R1 (#180/#181) and P20-W-D3 (#182/#183) have local merge commits. This does not independently establish GitHub mergedAt, PR descriptions/comments, branch deletion or remote branch tips.
-- Gate 4 owner captures: develop and D3 task runs both exit 1, 20/21, with six Expo SDK 57 patch mismatches. P20-A-R3's phase run exit code is not captured. Owner terminal captures contain no command output, despite the addendum reporting two failed PR-create attempts and a PR #181 correction. Those remain unverified pending complete terminal/snapshot exports.
-- Schema v24 includes identity migration v23→v24 and `.premigration.v23` handling; P36-A/B remain planned on v25. Latest recorded full suite is 105 suites / 1,437 tests (1,436 passed, 1 skipped) on the D3 task tree.
+- Local `develop` HEAD is `b3fa175b999f3ae62e2b099a412f5a9e9da5f0db` (PR #183 merge); its tree and local `phase/20-budget` tree equal the supplied D3 task-tree hash `e56c0b89c671ff3c23bdd96886bfd2d8090f45cc`; source schema is v24. P20-A-R3 (#178/#179), P20-U-R1 (#180/#181) and P20-W-D3 (#182/#183) have local merge commits. This does not independently establish GitHub mergedAt, PR descriptions/comments, branch deletion or remote branch tips.
+- Gate 4 owner captures: develop and D3 task runs both exit 1, 20/21, with six Expo SDK 57 patch mismatches. This task’s ordered Gate 4 invocation exceeded the 30-second tool wait and its exit was not captured; it was not rerun. P20-A-R3's phase run exit code is not captured. Owner terminal captures contain no command output, despite the addendum reporting two failed PR-create attempts and a PR #181 correction. Those remain unverified pending complete terminal/snapshot exports.
+- Schema v24 includes identity migration v23→v24 and `.premigration.v23` handling; P36-A/B remain planned on v25. Latest full suite is 105 suites / 1,438 tests (1,437 passed, 1 skipped) on this documentation task tree.
 - Device checks O61–O74 are Not run. Pending owner actions: provide complete remote snapshot and terminal evidence; perform O61–O74 device checks; owner push/PR integration of this documentation task remains pending.

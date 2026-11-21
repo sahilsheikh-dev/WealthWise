@@ -1,4 +1,4 @@
-<!-- Purpose: Compact decision index into the canonical progress ledger. | Last updated: 2026-11-11 | Updates: owner and AI agents -->
+<!-- Purpose: Compact decision index into the canonical progress ledger. | Last updated: 2026-11-22 | Updates: owner and AI agents -->
 
 # Decisions
 

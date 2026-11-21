@@ -1,4 +1,4 @@
-<!-- Purpose: Index and protocol for shared repository AI memory. | Last updated: 2026-11-12 | Updates: owner and AI agents -->
+<!-- Purpose: Index and protocol for shared repository AI memory. | Last updated: 2026-11-22 | Updates: owner and AI agents -->
 
 # Shared AI memory
 

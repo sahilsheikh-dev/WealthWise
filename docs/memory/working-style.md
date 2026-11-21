@@ -1,4 +1,4 @@
-<!-- Purpose: Capture the owner's collaboration and reporting expectations. | Last updated: 2026-10-26 | Updates: owner and AI agents -->
+<!-- Purpose: Capture the owner's collaboration and reporting expectations. | Last updated: 2026-11-22 | Updates: owner and AI agents -->
 
 # Working style
 

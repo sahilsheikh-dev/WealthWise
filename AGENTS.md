@@ -63,9 +63,10 @@ apply only that exception and preserve all other rules.
 - **R8 — Owner-run and remote-only actions:** Record actions performed outside
   an agent session (pushes, PR creation/edits/comments/merges, branch deletion,
   network gates, device checks and release steps) and remote facts (PR numbers,
-  merge SHAs, PR text/comments, tags and releases) in the ledger from verifiable evidence only: owner terminal output,
-  owner-exported remote snapshots, or Git refs. Never infer or invent them. Begin each task by comparing the latest
-  snapshot—or `git fetch --all --prune` plus first-parent merge logs for
+  merge SHAs, PR text/comments, tags and releases) in the ledger from
+  verifiable evidence only: owner terminal output, owner-exported remote
+  snapshots, or Git refs. Never infer or invent them. Begin each task by
+  comparing the latest snapshot—or `git fetch --all --prune` plus first-parent merge logs for
   `develop` and phase branches—with `docs/history/entity-history-map.md` and
   the ledger; record omissions before new work. Record exact network-gate exit
   codes when captured, otherwise `not captured`. If a PR description conflicts
@@ -88,7 +89,8 @@ apply only that exception and preserve all other rules.
   opening a new phase.
 
 Work-placement quick start:
-0. Reconcile remote state against the latest owner snapshot or available Git refs, and record missing evidence.
+0. Reconcile remote state against the latest owner snapshot or available Git
+   refs, and record missing evidence.
 1. Search dashboard, register, phase history, roadmap, memory and touched files.
 2. Choose the first matching R6 rule 1–5.
 3. Add `Placement: rule <1-5>; searched <what>; related <IDs or none>; reason <one sentence>`.
