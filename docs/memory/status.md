@@ -10,7 +10,13 @@
   validation/backup/migration/archive chain. D3 remains Planned pending owner
   choice of schema v24 ownership against P36-A/B. D1/D2 are implemented without
   persisted schema changes; focused TransactionForm and schema suites pass
-  (68 tests). Device checks O65–O68 remain Not run.
+  (68 tests). Full Gate 1 passed: 102 suites, 1,347 passed, 1 skipped;
+  coverage 95.97/92.15/98.02/97.63% statements/branches/functions/lines.
+  Gate 2 first exited 2 on a possibly-undefined test fixture, then exited 0
+  after a null-safe fixture correction; Gate 3 exited 0. Gate 4 and the one
+  required retry exited 1 with `ENOTFOUND registry.npmjs.org`. Per task stop
+  rule, Gates 5–6 and pushes/PRs were not run. Device checks O65–O68 remain Not
+  run.
 - **P20-S-R2 / CR-116 (2026-11-21) — searchable Dropdown implementation complete.**
   Task branch `task/P20-S-R2-dropdown-search` merged into `phase/20-budget`
   through PR #164 at `185a5ea125f64ac104344f00ad013d68cdb7a946`; phase PR #165
@@ -609,11 +615,14 @@
   historical records in [PROGRESS.md](../PROGRESS.md).
 - CR-108 baseline: 101 suites, 1317 tests (1316 passed, 1 skipped) on
   2026-11-11; all six CR-108 gates exited 0.
-- Test counts: 102 suites, 1343 tests (1342 passed, 1 skipped) on
+- Test counts: 102 suites, 1348 tests (1347 passed, 1 skipped) on
   2026-11-21.
-- Latest validated run: 102 suites, 1343 tests (1342 passed, 1 skipped) on
-  2026-11-21 on the P20-S-R2 task tree; gates 1–3, 5–6 exited 0 and Gate 4
-  exited 1 on the known Expo SDK 57 patch mismatch after one DNS retry.
+- Latest validated run: 102 suites, 1348 tests (1347 passed, 1 skipped) on
+  2026-11-21 on the P20-W task tree; Gate 1 exit 0 (coverage
+  95.97/92.15/98.02/97.63% statements/branches/functions/lines); Gate 2 first
+  exit 2 on a possibly-undefined fixture then exit 0 after correction; Gate 3
+  exit 0; Gate 4 and one retry exit 1 with `ENOTFOUND registry.npmjs.org`.
+  Gates 5–6 were not run under the task stop rule.
   Coverage and exact commands are recorded in [PROGRESS.md](../PROGRESS.md).
 - All six P29-L gates exit 0: Jest coverage, TypeScript, Expo lint with zero
   warnings, Expo Doctor 21/21, Android export and iOS export. Exact commands

@@ -55,8 +55,13 @@ runtime synchronization.
   pure utilities and platform helpers in `src/lib/`; demo data in `src/mock/`.
 - Other source groups: `src/hooks/`, `src/theme/`, `src/constants/`, `assets/`
   and `scripts/`.
-- Test counts: 102 suites, 1343 tests (1342 passed; one skipped) on
-  2026-11-21 for P20-S-R2. Its task PR #164 and phase PR #165 are merged into
+- Test counts: 102 suites, 1348 tests (1347 passed; one skipped) on
+  2026-11-21 for P20-W. Coverage is 95.97/92.15/98.02/97.63% statements/
+  branches/functions/lines. Gates 1–3 exited 0; Gate 4 and its one required
+  retry exited 1 with `ENOTFOUND registry.npmjs.org`; Gates 5–6 were not run
+  under the task stop rule. Task/phase PR workflow has not started.
+- Prior P20-S-R2 run: 102 suites, 1343 tests (1342 passed; one skipped) on
+  2026-11-21. Its task PR #164 and phase PR #165 are merged into
   `develop` at `6b50a1d`; Gate 4 exited 1 on the documented Expo SDK 57 patch
   mismatch after the required DNS retry; the other five gates exited 0. The
   prior CR-112 task-tree run had 101 suites, 1325 tests (1324 passed; one skipped) on

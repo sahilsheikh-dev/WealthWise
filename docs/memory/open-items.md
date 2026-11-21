@@ -144,7 +144,11 @@ the phase branch is retained. Phase PR #147 merged into `develop` at
   items are deleted. Custom input is stored only in the existing transaction
   category string. Focused TransactionForm and schema suites pass (68 tests);
   existing demo fixtures already include effective Budget items and require no
-  change.
+  change. Gate 1 passed (102 suites, 1,347 passed, 1 skipped); Gates 2–3 pass
+  after the test-fixture correction. Gate 4 and its one retry failed with
+  `ENOTFOUND registry.npmjs.org`; Gates 5–6 and PR integration are stopped by
+  the explicit task rule. D1/D2 implementation commits remain local and
+  unmerged.
 
   D3 custom Income is gated. Transaction `category` is already a bounded
   string, but scheduled earned-income `BudgetIncomeItem.category` is the fixed
