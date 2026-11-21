@@ -33,6 +33,12 @@
 - O73 remains Not run: on a physical device, restart after edits/deletions and
   verify persistence for Spend, Invest and Income, one-time/recurring items,
   all fields, and both scopes.
+- Local-only PR preparation is complete at task commit
+  `becbd83c0b18051bf54a00904c6463bd2232f5b3`, after syncing
+  `phase/20-budget` with the locally available `develop` commit
+  `cb363423384923ef19f00399cd380baba01e9e59`. Gates 1–3 and 5–6 pass; Gate 4
+  could not resolve `expo-doctor` (`ENOTFOUND registry.npmjs.org`). No push or
+  PR was created; owner-side push/PR/merge remains pending. O73 is still Not run.
 
 ## CR-114 independent entities, empty slots and R7 (2026-11-12)
 

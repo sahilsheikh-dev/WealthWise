@@ -10785,8 +10785,15 @@ Gradle build, version bump, or release preparation was performed.
   automatically. No source-code conflict occurred, and no protected file or
   `app/(tabs)/index.tsx` was changed. The combined dashboard remains 149/190
   overall and P20 35/37; P20-U-R1 is Done and P20-A-R3 remains In progress
-  pending Gate 4 evidence. Ordered gates and the resulting task HEAD are
-  recorded after verification.
+  pending Gate 4 evidence. Focused verification exited 0 (12 suites, 364
+  tests). Ordered gates on task HEAD `becbd83c0b18051bf54a00904c6463bd2232f5b3`:
+  Gate 1 `npm test -- --coverage --watchman=false` exit 0 (105 suites,
+  1,424 passed, 1 skipped; 96.07/92.35/98.22/97.70% statements/branches/
+  functions/lines); Gate 2 `npx tsc --noEmit` exit 0; Gate 3 `npx expo lint`
+  exit 0; Gate 4 `npx expo-doctor` exit 1 (`npx` could not resolve
+  `expo-doctor` from `registry.npmjs.org`, `ENOTFOUND`); Gate 5 Android export
+  exit 0; Gate 6 iOS export exit 0. No Gate 4 retry. Protected-file hashes
+  match `docs/memory/rules.md`. O73 and O74 remain Not run.
 
 
 ### P20-W — Transaction form/category investigation (2026-11-21)
