@@ -45,32 +45,36 @@ it instead of copying its tables. Use repository source as truth over memory,
 and correct stale memory in the same task. Never store personal financial
 data, credentials, tokens or private account information here.
 
-## Remote snapshot export
+## Remote snapshot export and terminal evidence
 
-Before repository work, an owner with authenticated GitHub CLI access can export
-remote evidence without placing it in Git. Run from the repository root; keep
-the resulting directory under `/tmp/wealthwise-remote-snapshot/` and supply it
-with the task. These commands are for the owner to run; agents must not run them
-when the task prohibits network access.
+Before repository work, the owner should provide a fresh remote snapshot and
+terminal evidence. Keep both under `/tmp/wealthwise-remote-snapshot/`; agents
+must not run the export script when the task prohibits network access. After
+every manual merge, refresh the snapshot before the next agent task so refs,
+PR records, and merge state describe the same point in time.
+
+For manual authenticated terminal work, start a recording session and finish it
+with `exit`:
 
 ```bash
-S=/tmp/wealthwise-remote-snapshot
-mkdir -p "$S"
-git for-each-ref --format='%(refname) %(objectname)' refs/remotes refs/tags > "$S/refs.txt"
-for b in develop main documentation cleanup qa-and-release schema-migration; do
-  git log --first-parent --merges --format='%H%x09%P%x09%cI%x09%s' "$b" > "$S/firstparent-$b.txt" 2>&1 || true
-done
-git log --all --merges --format='%H%x09%P%x09%cI%x09%s' > "$S/all-merges.txt"
-git branch -r --format='%(refname:short) %(objectname)' > "$S/remote-branches.txt"
-git tag --format='%(refname:short) %(objectname)' > "$S/tags.txt"
-gh pr list --state all --limit 1000 --json number,title,state,baseRefName,headRefName,mergedAt,mergeCommit,url > "$S/prs.json"
-gh issue list --state all --limit 1000 --json number,title,state,url,createdAt,closedAt > "$S/issues.json"
-gh release list --limit 1000 --json tagName,name,isDraft,isLatest,publishedAt,url > "$S/releases.txt"
-printf '%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$S/exported-at.txt"
-for n in $(gh pr list --state all --limit 1000 --json number --jq '.[].number'); do
-  gh pr view "$n" --json number,title,body,state,baseRefName,headRefName,mergedAt,mergeCommit,url,comments > "$S/pr-$n-detail.json"
-done
+script -a /tmp/wealthwise-remote-snapshot/owner-terminal-$(date +%F).log
+# perform the owner-run GitHub/Git actions in this recorded shell
+exit
 ```
 
-Record each command's exit status and retain owner terminal output for actions
-that are not represented by Git refs or the exported JSON.
+`pbpaste` only copies the clipboard. It is not evidence of a terminal session
+unless the complete terminal text was copied first. Preserve terminal output
+for actions that Git refs or the JSON exports cannot establish. If transcript
+text is reconstructed from chat, label it as reconstructed and identify its
+source; do not call it an original terminal capture.
+
+Use the owner's authenticated `export-remote-snapshot.sh` from the repository
+root to export into `/tmp/wealthwise-remote-snapshot/`. The export includes
+`prs.json` fields `number`, `title`, `state`, `base` (`baseRefName`),
+`head` (`headRefName`), `headRefOid`,
+`createdAt`, `updatedAt`, `mergedAt`, `closedAt`, `mergeCommit`, `mergedBy`,
+`url`, `author`, `labels`, and `body`; detail files for the latest 60 PRs;
+releases, tags, issues, remote branches, refs, first-parent logs, all merge
+records, and an export timestamp. Use the supplied snapshot as evidence and
+record its timestamp in the ledger; never infer remote facts from local commit
+subjects alone.

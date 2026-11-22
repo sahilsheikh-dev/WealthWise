@@ -554,14 +554,25 @@
 | #182 | P20-W |
 | #183 | P20 |
 
+### Review notes for previously map-only PRs
+
+The remote snapshot resolves the eight entries previously lacking a matching
+PR-numbered local merge subject. Each is `MERGED` with a GitHub merge commit
+and timestamp. The commits are reachable from `develop`, but use descriptive
+merge subjects rather than `Merge pull request #N`; the prior map search missed
+them. The mapping rows above are preserved.
+
+- #93 — state `MERGED`; base `phase/29-income-recurrence`; head `task/P29-Q-R1-stress-menu-picker`; merge commit `1b1a6d53e3716124ebdbb21799894eef0a05c7b7`; mergedAt `2026-11-10T13:52:49Z`. Classification: merged with a different subject; reachable from `develop`.
+- #94 — state `MERGED`; base `develop`; head `phase/29-income-recurrence`; merge commit `80eb0e464a24844783c96168b8c74267d83c3d67`; mergedAt `2026-11-10T13:53:50Z`. Classification: merged with a different subject; reachable from `develop`.
+- #149 — state `MERGED`; base `phase/20-budget`; head `task/P20-A-R3-plan-linked-savings-paid`; merge commit `7a5fed6c4a98d8394652e0dbb499b9aa810bae29`; mergedAt `2026-11-12T04:05:12Z`. Classification: merged with a different subject; reachable from `develop`.
+- #150 — state `MERGED`; base `develop`; head `phase/20-budget`; merge commit `4170545cbaa8a4f37d4583b5c29c909c0c99a015`; mergedAt `2026-11-12T04:05:45Z`. Classification: merged with a different subject; reachable from `develop`.
+- #151 — state `MERGED`; base `phase/44-spending-heatmap`; head `task/P44-plan-heatmap`; merge commit `0cdd8406225d15247a3843956da98c0d4dbfc2ad`; mergedAt `2026-11-12T04:17:34Z`. Classification: merged with a different subject; reachable from `develop`.
+- #152 — state `MERGED`; base `develop`; head `phase/44-spending-heatmap`; merge commit `c0bb36a06b0726dcdc536243dbc10236e40d7fdd`; mergedAt `2026-11-12T04:18:07Z`. Classification: merged with a different subject; reachable from `develop`.
+- #157 — state `MERGED`; base `phase/43-lifecycle-and-transaction-planning`; head `task/P43-G-owner-approval-planning`; merge commit `01e5559f00a3b7008292db07ed7900af0ea8f828`; mergedAt `2026-11-12T06:21:23Z`. Classification: merged with a different subject; reachable from `develop`.
+- #158 — state `MERGED`; base `develop`; head `phase/43-lifecycle-and-transaction-planning`; merge commit `14f539b4c70da1a00e24642fd3e6068091f3ed9c`; mergedAt `2026-11-12T06:22:00Z`. Classification: merged with a different subject; reachable from `develop`.
 ### Numbers without a merged PR
 
-The owner snapshot's `prs.json` and per-PR details were not supplied, so open,
-closed-unmerged, and never-created PR numbers cannot be enumerated. Local Git
-contains 167 distinct PR merge subjects; 95 PR numbers were listed before this
-run and 80 local merge PRs not previously listed are mapped above. The union is
-175 mappings because eight historical mapped numbers lack local merge subjects.
-Eight previously mapped PR numbers
-(93–94 and 149–152, 157–158) have no matching merge subject in the available
-local refs; their historical mapping is preserved, but current remote status is
-not recorded. This is not an exhaustive list of non-merged PRs.
+The snapshot lists PRs #1–#183 and issue numbers separately. Every number from
+#1 through #183 is a merged PR except #39, which is a closed, unmerged PR. No
+number in this interval is an issue or an absent PR/issue. The snapshot reports
+no open PRs and no issues.
