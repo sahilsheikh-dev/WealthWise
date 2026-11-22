@@ -49,6 +49,71 @@ apply only that exception and preserve all other rules.
   changes, ask whether they want those owner edits reverted before changing
   the affected file further. Revert or overwrite owner edits only when the
   owner explicitly requests it; otherwise preserve them and work around them.
+- **R6 — Work placement:** before adding a ledger row, branch or task, search
+  the dashboard, register, phase history, roadmap, memory and touched
+  files/features. Apply the first matching rule: (1) ongoing standalone
+  lifecycle work (cleanup, qa-and-release, schema-migration, documentation,
+  release/hotfix, branch/tag hygiene, CI and repository-process work) goes in
+  standalone lifecycle tracking; P43 is the designated temporary setup-phase
+  exception; (2) revise completed work as the next sequential revision of its
+  original part and phase; (3) widen open work in place; (4) add related
+  feature work as the next part in its phase; (5) create a new phase for a new
+  feature area. Every new or moved row has a Placement line. See
+  [work-placement.md](docs/memory/work-placement.md).
+- **R8 — Owner-run and remote-only actions:** Record actions performed outside
+  an agent session (pushes, PR creation/edits/comments/merges, branch deletion,
+  network gates, device checks and release steps) and remote facts (PR numbers,
+  merge SHAs, PR text/comments, tags and releases) in the ledger from
+  verifiable evidence only: owner terminal output, owner-exported remote
+  snapshots, or Git refs. Never infer or invent them. Begin each task by
+  comparing the latest snapshot—or `git fetch --all --prune` plus first-parent
+  merge logs for `develop` and phase branches—with
+  `docs/history/entity-history-map.md` and the ledger; record omissions before
+  new work. Record exact network-gate exit codes when captured, otherwise
+  `not captured`. If a PR description conflicts with Git history, Git wins; add
+  a dated correction without rewriting history. Every final report ends with
+  an `Owner actions pending` list.
+
+  Record manual owner terminal sessions with
+  `script -a /tmp/wealthwise-remote-snapshot/owner-terminal-$(date +%F).log`
+  and finish the session with `exit`. `pbpaste` only copies the clipboard; it
+  is not session evidence unless the full terminal text was copied first.
+  The owner exports the snapshot with `export-remote-snapshot.sh`; its PR
+  records include number, title, state, base (`baseRefName`), head
+  (`headRefName`), headRefOid, createdAt,
+  updatedAt, mergedAt, closedAt, mergeCommit, mergedBy, url, author, labels
+  and body, plus detail files for the latest 60 PRs, releases, tags, issues and
+  remote branches. After every manual merge, refresh the snapshot before the
+  next agent task. Export and capture procedures are maintained in
+  `docs/memory/README.md`.
+- **R7 — Slot-filling and empty phase reservations:** empty phase numbers freed
+  by independent entity separation or cancellation (P7, P27, P28, P32) stay
+  reserved as empty slots so no existing phase is renumbered and no
+  historical branch, tag, commit or ID is rewritten. A new feature may take an
+  empty slot only if it is related to the phase immediately before or after it:
+  P7 for backup & security (P6) or investments (P8) work; P27 for
+  accessibility & performance (P26) work; P28 for income
+  recurrence / Budget income (P29) work; P32 for project health/community (P31) or
+  widgets (P33) work. For multiple consecutive empty slots, apply the same
+  adjacency pattern per slot. Unrelated work never takes an empty slot; it
+  opens a new phase at the end under R6 rule 5. Precedence: R6 rules 1–3 first
+  (standalone lifecycle, completed-part revisions, and open-part scope), then
+  R7 for new-feature placement into an eligible adjacent empty slot before
+  opening a new phase.
+
+Work-placement quick start:
+0. Reconcile remote state against the latest owner snapshot or available Git
+   refs, and record missing evidence.
+1. Search dashboard, register, phase history, roadmap, memory and touched files.
+2. Choose the first matching R6 rule 1–5.
+3. Add `Placement: rule <1-5>; searched <what>; related <IDs or none>; reason <one sentence>`.
+4. Select the phase/lifecycle branch from `docs/memory/work-placement.md`.
+5. Add the failing test first; preserve every existing assertion.
+6. Run all six gates in order and record actual exit codes.
+7. Update dashboard, register, prompt log, branch index and memory.
+8. Merge task -> phase -> develop through PRs with `--no-ff`.
+9. After a target merge, run CM-2 synchronization.
+10. Report branch, HEAD, gates, device checks and remaining owner decisions.
 
 ### Branching
 
@@ -60,22 +125,36 @@ apply only that exception and preserve all other rules.
   completed phase reopens its existing phase branch from `develop` (R2).
 - Create `task/ID-slug` branches from their phase branch, one per subtask or
   revision. Example: `task/P29-AB-R2-income-rows`.
-- After approved task/phase work is merged to `develop`, create
-  `release/vX.Y.Z` from `develop` and create the GitHub Release draft at that
-  exact candidate commit. Creating the draft may create its version tag; do
-  not retarget it. Then build the APK with EAS using `android-apk`, upload
-  it to the draft, and verify the artifact. Only after separate publication
-  approval, merge the release branch `--no-ff` into `main`, verify the tag
-  target, and back-merge into `develop`. Create `hotfix/vX.Y.Z` from `main`,
-  then merge to `main`, tag, and merge to `develop`.
+- After approved task/phase work is merged to `develop`, apply the device
+  checklist release gate before creating a release branch, draft, tag or build:
+  A release must not be built, drafted, tagged or published while any row in ANY section of the device checklist (the Next release section and every earlier section) has a Result other than Pass. Not run, Fail and Blocked all block. Check the checklist first; if blocked, stop and report the blocking IDs, and do not start the build or the GitHub Release draft. A Pass may only be recorded from an owner-observed or owner-reported device result, never inferred from automated tests or Expo exports. Only an explicit written owner waiver for named IDs lifts the block; record the waiver in the ledger (Owner-run actions log) and in the release note, and leave the row's Result unchanged.
+  See [device checklist maintenance rules](docs/memory/rules.md#device-checklist-release-gate). When updating the device checklist, agents must prompt the owner to confirm all metadata fields before making changes: Device model, Android version, Tester (always record the tester username, e.g., sahilsheikh-dev), and verification Date, providing suggestions based on previous releases data (e.g., realme Narzo 60 Pro 5g, 15 Vanilla Ice Cream, sahilsheikh-dev).
+  Then create `release/vX.Y.Z` from `develop` and create the GitHub Release draft
+  at that exact candidate commit. Creating the draft may create its version tag;
+  do not retarget it. Build the APK with EAS using `android-apk`, upload it to
+  the draft, and verify the artifact. Only after separate publication approval,
+  merge the release branch `--no-ff` into `main`, verify the tag target, and
+  back-merge into `develop`. Create `hotfix/vX.Y.Z` from `main`, then merge to
+  `main`, tag, and merge to `develop`.
 - External contributors fork and use `contrib/ISSUE-slug`, submitting a PR
   into `develop`. Contributor PRs are squash-merged with a Conventional
   Commit title.
+- Standalone lifecycle branches (`cleanup`, historical branch name:
+  `phase/27-cleanup`; `qa-and-release`, historical branch name:
+  `phase/28-qa-and-release`; `schema-migration`, historical branch name:
+  `phase/07-schema-migration`; and `documentation`) operate independently of
+  numbered product phases and live alongside `develop`. Standalone docs tasks
+  branch from `documentation` as `task/docs-<slug>` and merge back `--no-ff`,
+  then merge `documentation` into `develop` via PR; code tasks continue
+  updating their own ledger rows in the same commit.
 - Merge task into phase, then phase into `develop`, with `--no-ff`. Merge
   release/hotfix to `main` with `--no-ff`. Agents never commit directly to
   `main` or `develop`, except the explicitly authorized bootstrap. Delete
   merged task branches and keep phase branches. Do not push unless asked;
   report merge commands in chat.
+- **CM-2 — Active:** After any merge that lands on a target branch (task->phase, phase->develop, release->main, main->develop): git fetch --all --prune; git switch <target>; git pull --ff-only. Refuse and report if the worktree is dirty, the fast-forward fails or the target has no upstream. This rule never authorizes pushing; R3 is unchanged.
+
+Device checklist policy: see [the release gate](docs/releases/device-test-checklist.md#release-gate) and maintenance rules in `docs/memory/rules.md`.
 
 ### Gates
 
@@ -162,35 +241,39 @@ local Gradle builds still require explicit authorization.
   The README Download block and latest published release Download block must
   be identical.
   Every release updates the README Download and What's new sections and its
-  releases-page link. Include all screenshots explicitly supplied for a
-  release in its Markdown and GitHub Release body, named
-  `WealthWise-vX.Y.Z-screenshot-<screen>.png`. Commit them under
-  `docs/releases/screenshots/vX.Y.Z/` with the published note; do not attach
-  screenshots as GitHub Release assets. Link each release-note thumbnail to
-  its absolute `blob/main` URL and load the image from its matching absolute
-  `raw.githubusercontent.com/.../main/` URL. The README may use equivalent
-  relative paths. If no screenshots are supplied, reuse the previous release's
-  complete image set under the new version's filenames. The README Screenshots
-  section contains only the latest published release's screenshot set and has
-  no version title. Display images at 150 pixels wide in table rows, with no
-  more than four screenshots per row. Keep capture scripts outside the app and
-  repository. Display categories in this order, omitting unavailable screens:
-  Home, Assets, Liabilities, Emergency Fund, Goals, Insurance, Budget,
-  Transactions. Release notes and GitHub release bodies must not contain a
-  Contributors section. When updating an existing published note, change
-  only its Download block except for screenshot updates and contributor
-  section removal explicitly requested by the owner. Verify every rendered
-  screenshot URL and the current latest URL and every affected
-  versioned URL with `curl -I -L`; each must return HTTP 200 and the expected
-  artifact size. Record EAS build
-  ID, profile, Android `versionCode`, date and status in the release-history
-  Builds table; do not include source commits or digests. Follow
-  `docs/releases/build-config.md`; production Android AABs go to Google Play
-  and APKs to GitHub. iOS distribution is not currently offered.
+  releases-page link. During release preparation of an approved candidate,
+  update `README.md` (Download block, What's new, and Screenshots gallery),
+  `docs/releases/published/vX.Y.Z.md`, and release history to use the newer
+  candidate release's screenshots, download details, and links so the candidate
+  repository state is fully aligned and ready for publication. Include all
+  screenshots explicitly supplied for a release in its Markdown and GitHub
+  Release body, named `WealthWise-vX.Y.Z-screenshot-<screen>.png`. Commit them
+  under `docs/releases/screenshots/vX.Y.Z/` with the published note; do not
+  attach screenshots as GitHub Release assets. Link each release-note
+  thumbnail to its absolute `blob/main` URL and load the image from its
+  matching absolute `raw.githubusercontent.com/.../main/` URL. The README may
+  use equivalent relative paths. If no screenshots are supplied, reuse the
+  previous release's complete image set under the new version's filenames.
+  The README Screenshots section contains only the latest release's
+  screenshot set and has no version title. Display images at 150 pixels wide
+  in table rows, with no more than four screenshots per row. Keep capture
+  scripts outside the app and repository. Display categories in this order,
+  omitting unavailable screens: Home, Assets, Liabilities, Emergency Fund,
+  Goals, Insurance, Budget, Transactions. Release notes and GitHub release
+  bodies must not contain a Contributors section. When updating an existing
+  published note, change only its Download block except for screenshot
+  updates and contributor section removal explicitly requested by the owner.
+  Verify every rendered screenshot URL and the current latest URL and every
+  affected versioned URL with `curl -I -L`; each must return HTTP 200 and the
+  expected artifact size. Record EAS build ID, profile, Android `versionCode`,
+  date and status in the release-history Builds table; do not include source
+  commits or digests. Follow `docs/releases/build-config.md`; production
+  Android AABs go to Google Play and APKs to GitHub. iOS distribution is not
+  currently offered.
 
 ## Schema and verification
 
-Current persisted schema version: **22**. Preserve migration and backup-import
+Current persisted schema version: **24**. Preserve migration and backup-import
 compatibility.
 
 Run the gates in this order, recording each exit code:

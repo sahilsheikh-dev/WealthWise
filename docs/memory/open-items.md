@@ -1,6 +1,375 @@
-<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-11 | Updates: owner and AI agents -->
+<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-22 | Updates: owner and AI agents -->
 
 # Open items
+
+## P28-F-R7 Prepare v1.3.0 release candidate (In progress)
+
+- Subtask P28-F-R7 (CR-130, 2026-11-22): Prepare owner-approved v1.3.0 release candidate.
+- Bumps app version in `app.json`, `package.json`, and `package-lock.json` to `1.3.0`.
+- Places finalized v1.3.0 release note in `docs/releases/published/v1.3.0.md` with 8 owner-supplied screenshots in `docs/releases/screenshots/v1.3.0/` (About and auxiliary settings screens omitted).
+- Retitles device checklist to `## v1.3.0 device checks (next release)` with confirmed metadata; all O1–O76 checks pass.
+- Task branch `task/P28-F-R7-prepare-v1.3.0` merged to `qa-and-release` via PR #210, integrated to `develop` via PR #211 (`afeb987`).
+- `release/v1.3.0` created at candidate commit `afeb987` and pushed to origin.
+- EAS build `c2ec9414-ae63-44cc-b34a-0f67f6cb51cb` (profile `android-apk`, Android `versionCode` 4) completed on 2026-11-22; 107,030,213-byte APK downloaded, privately byte-verified against EAS artifact, and uploaded to GitHub draft release `v1.3.0` as `WealthWise-android-latest-v1.3.0.apk`.
+- Task branch `task/P28-F-R7-record-v1.3.0-build` merged to `qa-and-release` via PR #212, integrated to `develop` via PR #213 (`58d9a26`), and synchronized to `release/v1.3.0`.
+- Task branch `task/P28-F-R7-align-v1.3.0-readme-screenshots-details` updates `README.md` (v1.3.0 Download block and 8-screenshot gallery), aligns `v1.3.0.md` and `v1.2.0.md` download blocks, updates `release-history.md`, and adds release rules in `AGENTS.md` and `rules.md` requiring candidate README and screenshot alignment during staging.
+- Publication approval, release merge to `main`, tag creation, and post-publication sync remain pending.
+
+## P20-Y Budget payment date, multi-asset budget links, and limited expense categories (Done; device check Pass)
+
+- CR-126 implements three related changes:
+  1. Payment date input (defaulting to today, customizable) when marking scheduled/budgeted
+     items Paid in Transactions and Budget, propagated to `clearDue`, `clearDuesThrough`,
+     and `addTransaction`.
+  2. Support for one asset linking to multiple one-time investment Budget items,
+     attributing holding entries by category/note and updating the correct holding
+     and budget actuals.
+  3. Limiting Transaction form Expense categories to user-created Budget items and
+     applicable scheduled items (due EMIs, policy premium categories, pending dues)
+     plus Custom, while preserving historical removed categories when editing.
+- Full six-gate run passes exit 0. Regression tests pass across components, domain,
+  and smoke suites.
+- Physical-device check O76 validated Pass by owner on 2026-11-22 on realme Narzo 60 Pro 5g
+  (Android 15 Vanilla Ice Cream, tester sahilsheikh-dev).
+
+## P20-X Budget category and item sorting (Done; device check Pass)
+
+- CR-125 adds sorting for Budget categories and items throughout WealthWise using
+  the existing sorting behavior in Transactions, Assets, and Liabilities as reference.
+- Adds SortChip in AppHeader filter toggle panel on BudgetScreen using
+  `useSort('budgetSpending')` with Planned, Actual, Percent used, and Name options;
+  preserves Income at top while sorting its items; sorts spending/investing
+  sections and items within sections; adds sorting support to shared Dropdown
+  with SortChip rendered in sheet; connects category dropdowns in TransactionForm
+  and BudgetIncomeForm with persistent budgetSpending sort spec; extends
+  `budgetCategoryChoiceSections` with pure sortSpec handling.
+- Full six-gate run passes exit 0. Regression tests: `BudgetSorting.test.tsx`,
+  `Dropdown.test.tsx`, `RouteRenderSmoke.test.tsx`, `budgetCategories.test.ts`.
+- Physical-device check O75 validated Pass by owner on 2026-11-22 on realme Narzo 60 Pro 5g
+  (Android 15 Vanilla Ice Cream, tester sahilsheikh-dev).
+- **P20-X-R1 (CR-129):** Remove sorting option from TransactionForm category dropdowns
+  (Expense, Income, Invest) and remove static Search header title from shared Dropdown
+  sheet, keeping search placeholder in the input. Regression coverage in `Dropdown.test.tsx`
+  and `TransactionForm.test.tsx`. All six repository gates pass.
+
+## P20-S-R2 searchable Dropdowns (implementation complete; device checks open)
+
+- CR-116 adds a default-visible search field and normalized filtering/ranking to
+  the shared Dropdown component. **Assumed and confirmed:** no schema, domain,
+  demo-data or dependency changes were needed. Existing callers need no edits.
+- Full six-gate run is complete. Gates 1–3 and 5–6 exited 0. Gate 4 exited 1
+  after one DNS retry on the same known Expo SDK 57 patch mismatch (20/21
+  checks); dependencies were not changed. Task PR #164 and phase PR #165 are
+  merged and recorded under P20-S-R2-R1; local `develop` was synchronized.
+- P20-S-R2-R2 corrects the parent revision-chain record only; it changes no app
+  behavior and leaves O61–O64 open.
+- Physical-device checks are not run: keyboard behavior on iOS/Android,
+  polite result-count announcements, clear-button tap target and font scales
+  1.3/2.0. Track these as O61–O64 in the release device checklist.
+
+## P20-U-R1 Budget edit/delete defect (automated implementation complete; device check open)
+
+- CONT3 completed the owner-report matrix on the existing P20-U-R1 branch.
+  Confirmed root causes: Income plan/snapshot schedule mismatch fixed by
+  `2dc72b5`; optional-field item edit overwrite fixed by `a292f33`; and
+  category-line holding-link loss in both scopes fixed by `e4accf5`.
+- Automated form/store coverage includes item name, amount/value, start month,
+  frequency and due day; Spend, Invest and Income; one-time and recurring cases
+  where applicable; month-only and following edits/deletes; non-current viewed
+  month; backup restore and demo-data origin. Persistence and rehydration pass.
+  H1/H2/H5 are refuted for tested scenarios; H3 was not reproduced in tested
+  Budget routes (Alert/reminder entry points not exercised); H4 was confirmed
+  and fixed. Details and six gate results are in `docs/PROGRESS.md`.
+- O73 remains Not run: on a physical device, restart after edits/deletions and
+  verify persistence for Spend, Invest and Income, one-time/recurring items,
+  all fields, and both scopes.
+- Local-only PR preparation is complete at task commit
+  `becbd83c0b18051bf54a00904c6463bd2232f5b3`, after syncing
+  `phase/20-budget` with the locally available `develop` commit
+  `cb363423384923ef19f00399cd380baba01e9e59`. Gates 1–3 and 5–6 pass; Gate 4
+  could not resolve `expo-doctor` (`ENOTFOUND registry.npmjs.org`). No push or
+  PR was created during that prep. The owner subsequently merged task PR #180
+  at `5cf3360a55cbd57f97945f6bed4c7cb7a2a03478` and phase PR #181 at
+  `22f332fe9310e92c50d94cc6640c19f4e1552dcc`; both merge commits are verified
+  in local refs. O73 is still Not run.
+
+## CR-114 independent entities, empty slots and R7 (2026-11-12)
+
+Restructuring of work tracking completed under CR-114 and merged into `develop` via PR #161 (`9058386`):
+- Independent lifecycle entities established: `cleanup`, `qa-and-release`,
+  `schema-migration` and `documentation`. They operate on dedicated branches and
+  are tracked in Section 13 outside the phase denominator.
+- Empty reserved slots established: P7, P27, P28 and P32. Reserved for adjacent
+  feature work under R7; no renumbering or ref rewrite.
+- R7 slot-filling rule added to AGENTS.md, rules.md, work-placement.md and
+  PROGRESS.md.
+- Branches: `origin/schema-migration` and `origin/documentation` pushed and
+  verified; old `origin/phase/07-schema-migration` deleted.
+- Git history map committed at `docs/history/entity-history-map.md`.
+- PR #161 merged into `develop` with merge commit `9058386`.
+
+## Cleanup lifecycle work
+
+- **SDK 57 patch alignment (Done):** aligned Expo SDK 57 patch dependencies
+  (`expo ~57.0.33`, `expo-constants ~57.0.24`, `expo-linking ~57.0.14`,
+  `expo-router ~57.0.31`, `expo-sharing ~57.0.26`, `expo-sqlite ~57.0.5`);
+  all six gates passed, with Gate 4 exiting 0 (21/21 checks passed).
+  Placement: rule 1; searched dashboard, register, memory; related cleanup
+  lifecycle; reason: dependency maintenance is ongoing repository lifecycle work.
+  The prior Gate 4 exit 1 owner-approved exception is now cleared.
+
+## CR-113 owner-approved planning (2026-11-12)
+
+The owner approved planning/research and the decisions below. All affected
+feature parts remain **Planned**; this update starts no research,
+implementation, tag deletion or GitHub issue creation.
+
+- **P21-F:** explicit authorization is granted to edit the user-owned
+  `app/(tabs)/index.tsx` if needed. The feature remains unimplemented.
+- **P33-A–C:** widgets are reactivated and platform research is approved.
+  Android implementation is approved after research/scope confirmation;
+  iOS implementation still depends on iOS distribution. No research has
+  started.
+- **P34-A–C:** renewed quick-capture scope and platform research are
+  approved. Research and dependent evaluation remain unstarted.
+- **P35-A–C:** permission/platform/policy research is approved, and the owner
+  has given a Go for implementation after that research. P35-A research is a
+  prerequisite; no research or implementation has started.
+- **P43-B:** tag-cleanup scope and the report-only branch/PR/merge audit are
+  approved. The exact proposed deletion list has not been supplied or
+  approved, so no tag deletion is authorized yet. Preserve every release tag
+  and the stale phase tags already directed.
+- **P43-E:** GitHub issue scope, strategy and batching direction are approved,
+  including issue creation. No issues are created in this planning-only task;
+  verify the ledger inventory and use a separate execution task.
+- **P44-A:** use a Transactions header action to open a stack screen. Include
+  all inflows in Income with an option to exclude non-earned inflows; count
+  linked investment transactions only under Investment. Remaining design and
+  implementation work is Planned.
+- **P39-A–H:** approved to remain in P39; no lifecycle move.
+- **P40-A–B:** approved to remain in P40; P40-B still depends on P40-A.
+
+Full row-level details and verification are in [PROGRESS.md](../PROGRESS.md).
+P43-G task PR #157 merged into P43 at
+`01e5559f00a3b7008292db07ed7900af0ea8f828`; phase PR #158 merged into
+`develop` at `14f539b4c70da1a00e24642fd3e6068091f3ed9c`. CM-2 synchronization
+completed after both merges.
+
+## CR-110-R1 planned work
+
+CR-110's original planned-only row is retained and marked **Revised by
+CR-110-R1**. Its original five P43 rows are preserved as evidence; P43-C/D
+were relocated to P21-F/P20-W, and P43-A is Done. P43-B/E remain
+Planned with dependencies and `Evidence: not started`.
+The authorized local phase `phase/43-lifecycle-and-transaction-planning` and
+task `task/P43-A-plan-cr110` were created from `develop` for the PR flow.
+Task PR #146 merged into the phase at
+`e4d950adf0344dbe12e2e0d085e83d60538ede68`; the task branch was deleted and
+the phase branch is retained. Phase PR #147 merged into `develop` at
+`a93feaecfbd591c1b6f27bac15b5839c68d10709`.
+
+- **P43-A — Lifecycle tracking separation:** list `cleanup` and
+  `qa-and-release` outside numbered development phases, alongside `develop`
+  and `release/vX.Y.Z`; preserve P27/P28 completion evidence. Both remote
+  renames are complete and verified: `cleanup` retained the old tip
+  `a2fa24f930da15c49f779577eb749b33f11a7059`, and `qa-and-release` retained
+  `9d914638e50462cbadef84df3294ed07cbf42732`. The old remote refs are absent.
+  Historical branch name: `phase/27-cleanup`; historical branch name:
+  `phase/28-qa-and-release`. The stale phase tags remain unchanged.
+- **P43-B — Tag and integration audit:** owner approved the cleanup scope and
+  report-only branch/PR/merge audit. Preserve every `vX.Y.Z` release tag and
+  previously retained stale phase tags. Prepare the exact proposed deletion
+  list for owner review; the list has not yet been supplied or approved, so
+  no deletion is authorized. Report the audit in chat or `/tmp`, not Git.
+- **P21-F (Previously: P43-C) — Emergency Fund target editing (Done; Revised by P21-F-R1):**
+  the existing persisted Goal.target is reused; schema v23 and backup formats
+  remain unchanged. DEC-P21F-FLOOR keeps the effective max(stored target,
+  three-month floor) and rejects below-floor input with the existing typed
+  validation. One header edit action opens a combined target/allocation form;
+  the plan saves through one domain action, one store write and one Undo.
+  Target/bucket reflection, demo fixture and v23 backup round-trip tests are
+  covered. On the synced task tree, Gate 1 exited 0 (102 suites, 1,365 passed,
+  1 skipped; coverage 95.96/92.14/98.03/97.63% statements/branches/functions/
+  lines), Gates 2–3 exited 0, and Gates 5–6 exited 0. This session's Gate 4
+  attempt exited 1 with `ENOTFOUND registry.npmjs.org`; the owner-supplied run
+  exited 1 with 20/21 checks and the six documented Expo SDK 57 patch
+  mismatches. The latter is the known owner-approved cleanup exception; the
+  network failure is not. Dependencies and app config match `origin/develop`.
+  P21-F is integrated into `develop` through PR #170 and PR #171. Task PR #170
+  merged at `c877f6d19e35c0b9fbcba90e9722da7531948c8e`; phase
+  PR #171 merged at `2e5e18a7a2be207387a7462b039547f51b0e4631`; CM-2
+  synchronized local `develop`. P21-F-R1 records this evidence. Home source is
+  untouched. Device checks O65–O68 are Not run.
+  Placement: rule 4; searched dashboard, register, P21-A–E, phase history,
+  roadmap, memory and Emergency Fund/Home/Goals modules; related P21-A–E;
+  reason this extends the existing Emergency Fund feature area.
+- **P20-W (Previously: P43-D) — Transaction form (D1/D2 integrated; D3 implemented, final gates/PR pending):**
+  P20-S-R2 is confirmed on `develop` at merge `6b50a1d`; phase sync commit
+  `e44ce6f` and task branch `task/P20-W-transaction-form-categories` are ready.
+  D1 is implemented without a persisted-schema change: a new Invest form starts
+  with a neutral category until a holding is selected, derives with
+  `investCategoryFor`, and blocks Save with the existing missing-holding
+  message. D2 is implemented without a persisted-schema change: show
+  effective-month Budget-defined categories grouped by section, include a
+  Custom entry with a bounded name field, derive the selected section as
+  read-only context, and preserve transaction category strings when Budget
+  items are deleted. Custom input is stored only in the existing transaction
+  category string. Focused TransactionForm and schema suites pass (68 tests);
+  existing demo fixtures already include effective Budget items and require no
+  change. Pre-sync gates: Gate 1 exit 0 (102 suites, 1,347 passed, 1 skipped);
+  Gates 2–3 exit 0 after fixture correction; Gate 4 and retry exit 1 with
+  `ENOTFOUND registry.npmjs.org`; Gates 5–6 were not run. Synced-tree gates:
+  Gate 1 exit 0 (102 suites, 1,368 passed, 1 skipped; coverage
+  95.96/92.14/98.03/97.63%); Gates 2–3 exit 0; local Gate 4 attempt exit 1
+  (`ENOTFOUND registry.npmjs.org`); owner-supplied Gate 4 exit 1 (20/21, six
+  known SDK 57 patch mismatches; owner-approved cleanup exception); Gates 5–6
+  exit 0. Dependencies and app config did not change since the owner run. Task PR #174 merged at `419a37b07e6853b3c683d22ec243ea58223514c1`; phase
+  PR #175 merged at `9e47856f20848e03ac6a4b8e699f47c387d08161`; CM-2 synchronized local `develop`. P20-W
+  D3 implementation commit `f2541fd` is on the current v24 task branch; final
+  gates and PR integration remain pending. O69–O72 remain Not run.
+
+  Integration evidence: P20-W-R1 records task PR #174 merge `419a37b07e6853b3c683d22ec243ea58223514c1` and
+  phase PR #175 merge `9e47856f20848e03ac6a4b8e699f47c387d08161`. D1/D2 are integrated; P20-W remains open for D3. O69–O72 remain Not run.
+
+  **D3 implemented on schema v24** under DEC-P20W-D3-SCHEMA24. The existing
+  `BudgetIncomeItem.category` field is a trimmed nonempty string up to 60
+  characters; v23→v24 is identity-preserving. Backup format v1 and imports
+  v1–v23 remain supported, including plain/encrypted custom-category round
+  trips. `.premigration.v23` is archived and removed by erase-all. Custom
+  earned-income entry is available in the Budget income and Transaction forms;
+  labels, filtering, and a deterministic demo override preserve the custom
+  value. Focused verification passed (8 suites / 524 tests). Gates 1–3 and 5–6
+  passed; Gate 4 exited 1 with `ENOTFOUND registry.npmjs.org`. Task PR #182
+  and phase PR #183 are merged (see the verified SHAs in the current status
+  reconciliation). O69–O72 remain Not run; O71 now checks
+  custom income persistence and reopening on device. **STOP GATE RESOLVED (DEC-P20W-D3-SCHEMA24,
+  2026-11-21):** P20-W owns v24 and P36-A/B remain on v25.
+  Placement: rule 3; searched dashboard, register, phase history, roadmap,
+  memory, P20-W/P20-O/P20-P records and income/transaction form modules;
+  related P20-W D1/D2 and P36-A/B; reason this widens the existing open
+  Budget/category behavior after the owner resolved schema ownership.
+- D3 task/phase PR integration is complete: PR #182 merged into
+  `phase/20-budget` at `4ee154bab1cbc9b0b491b87c2f8bfb5a843dca7b`, and PR #183
+  merged into `develop` at `b3fa175b999f3ae62e2b099a412f5a9e9da5f0db`; the
+  owner snapshot confirms `mergedBy` and timestamps. O71 is implemented but
+  Not run; O73 and O74 remain unchanged and Not run.
+- **P43-E — GitHub issue strategy (plan only):** one issue per ledger part
+  or CR; phase/type/status labels; release milestones; pending issues open;
+  completed issues retrospective and closed; verified commits, PRs, merge
+  SHAs and original dates in each body; one retrospective comment per issue.
+  GitHub sets actual timestamps; original dates are text only. About 216
+  ledger parts need deduplication; assess API rate, batching and noise.
+  Strategy, scope and batching are owner-approved; issue creation was not
+  started in CR-113 and requires a separate execution task.
+- **P43-F — Work placement and CM-2:** add R6, an indexed guide, ledger tests,
+  a placement audit and CM-2 activation. Test-first commits and the complete
+  six-gate run are recorded in [PROGRESS.md](../PROGRESS.md); all gates passed
+  after retrying the network-dependent Expo Doctor gate. Task PR #153 merged
+  into P43 at `6e8632f61226fabbfdeca1040f6dee097a808607`; phase PR #154
+  merged into `develop` at `faa126ba75ee58ee703b8e43b375aece91c8f4d1`.
+  P43-F-R1 records these merge SHAs. No feature implementation is included.
+- No app implementation, tag operation, issue creation or history rewrite is
+  included. The branch/PR/merge-balance report is not a Git deliverable. The
+  test-first commit is `e5114e01f363d6de5a12acb61886039469d4a86f`.
+  Full plan and final evidence: [PROGRESS.md](../PROGRESS.md).
+
+## CR-111 planned work
+
+CR-111 includes P20-A-R3 implementation/tests (complete locally; PR integration
+blocked on Gate 4 network access), Planned P44-A–P44-D feature work, and active
+CM-2 repository procedure. P20-A-R3 revises completed P20-A-R2 and remains
+in progress until `npx expo-doctor` passes and task/phase PR integration can
+proceed. See [PROGRESS.md](../PROGRESS.md) for commits, actual gate exits and
+merge commands.
+
+- **P20-A-R3 — Linked one-time savings Paid from Transactions:** real-store
+  regressions reproduced two storage-placement failures: a plan-only link was
+  absent from the displayed month snapshot and the pending row lost its
+  holding ID; a snapshot-only link in another month did not attribute a
+  holding-entry actual to the Budget line. The shared domain fix resolves the
+  holding link from the plan and retains actual attribution across stored
+  snapshots. H1 is confirmed for plan-only links; the H2 symptom is reproduced as
+  cross-month snapshot-link attribution, but the generic `Other investments`
+  transaction category alone is not the cause when the holding link is resolved.
+  H3 is refuted for a recurring Budget row linked to a manual one-time
+  holding. Tests cover real store-action creation and persistence rehydration,
+  current and different viewed months, plan-only/snapshot-only/both/neither
+  locations, following-scope creation then month-only edit, v20–v23 plain
+  backup import/migration, demo data, the real Transactions pending row,
+  `/payment-confirm`, and a cold-start reminder tap. Exact/lower/higher ×
+  Savings/Cash/Other cases and Fixed Deposit rejection remain covered. Home
+  lists only `kind === 'due'`; Budget shows counts for Budget pending items but
+  has no Paid action, so neither exposes the Budget-row Paid flow. The owner's
+  exact data origin and reproduction steps remain unknown. Gate 4 exited 1
+  (`ENOTFOUND registry.npmjs.org`); other ordered gates passed, with final
+  focused route tests, TypeScript and lint rerun after assertion strengthening.
+  Physical-device check O74 is Not run. No schema bump, dependency change or
+  protected-file edit.
+- **P44-A — Design:** owner approved a stack route opened by a Transactions
+  header action; include all inflows as Income with a toggle to exclude
+  non-earned inflows, and count linked investment transactions only as
+  Investment. Home is user-owned, Budget is protected and
+  tabs remain Home/Transactions/Goals/Budget; do not edit Home or Budget
+  without explicit authorization. A Budget section remains an alternative,
+  not the default.
+- **P44-B — Pure selector:** depends on P44-A. Add an injected-date pure
+  `src/domain/` selector for daily totals by transaction type for one month,
+  with no React/Expo imports, clock reads or randomness. Tests include a
+  seeded oracle and 50-year and 126-year stress fixtures.
+- **P44-C — Screen and route:** depends on P44-B. Add a stack route, month
+  navigation, one-at-a-time Expense (default)/Income/Investment toggle and
+  day detail. “Infinite” means previous/next navigation clamped to available
+  data plus the current month, not an infinite rendered list. Group
+  transactions by date in one pass per month and meet existing stress-tier
+  budgets. Use font-scale tests at 1.0, 1.3 and 2.0.
+- **P44-D — Demo/layout/accessibility:** depends on P44-C. Add DEC-DEMO
+  fixtures, simulated layout tests, accessibility checks and device
+  checklist rows. Cells need exact-date/amount accessible labels, numeric
+  day labels and a bucket-range legend; color alone cannot carry meaning.
+  Targets are at least 44pt; support dark/light/all themes and explicit-tier
+  `AmountText`/`formatAmount`. Use a plain seven-column React Native View;
+  no new dependency or charting library.
+- P44-A placement and counting decisions are approved by the owner (CR-113).
+  Five intensity buckets are relative to
+  the visible month's maximum, with an option for a trailing-12-month
+  percentile to resist outlier flattening. No persisted schema change is
+  Assumed; any user setting belongs in the meta store, not AppData.
+- Separately approvable P44 candidates (none included as committed scope):
+  weekday average spend; no-spend-day count and longest streak; top spending
+  days with day transaction tap-through; month-over-month delta; payday
+  effect (seven days after main income vs. the rest); biggest category on
+  day tap; and a Budget over-plan overlay. More than three add-ons would
+  bloat v1. Recommended v1 is the heat grid, day detail, weekday summary and
+  no-spend streak.
+- **CM-2 — Git sync rule:** Active and enforced in `AGENTS.md`, `rules.md`,
+  `CONTRIBUTING.md` and PROGRESS section 3 using the owner's exact sentence.
+  It does not authorize pushes. No app behavior, schema, demo data, device
+  checks, tags or history changes are part of the rule.
+
+## CR-112 closeout
+
+- P43-A and P43-F are Done. Remote `cleanup` and `qa-and-release` were each pushed at
+  their original tips, compared against the old refs before deletion, and
+  verified afterward with only the new remote names present. Tag targets and
+  all six protected blob IDs remain unchanged. See the rename evidence in
+  [PROGRESS.md](../PROGRESS.md).
+- P43-F adds R6 and the indexed work-placement guide. Test-first commits:
+  `e2f0263`, `d24acd9`, `e7c134a`, `770393d` and `bdbe159`; rules/guide commit
+  `7dab04b`; placement-audit commit `5841373`. The initial Expo Doctor attempt
+  exited 1 on `ENOTFOUND registry.npmjs.org`; the network retry passed 21/21,
+  then all six ordered gates exited 0. Gate 1: 101 suites, 1,324 passed,
+  1 skipped; coverage 95.96/92.15/98.02/97.62%. Task PR #153 merged into
+  P43 at `6e8632f61226fabbfdeca1040f6dee097a808607`; phase PR #154 merged
+  into `develop` at `faa126ba75ee58ee703b8e43b375aece91c8f4d1`. No
+  physical-device check was run.
+- P31-E CI work moved to `qa-and-release` lifecycle tracking under rule 1.
+  It is still Planned and needs a real PR run before branch protection.
+- P39-A–H remain in P39 by owner decision (CR-113); no lifecycle move.
+- P40-A/B remain under Agent-context hygiene by owner decision (CR-113); no
+  lifecycle move. P40-B remains dependent on P40-A.
+- All placements, exact row mappings, count changes and assertion replacements
+  are in [PROGRESS.md](../PROGRESS.md). No Planned application feature was
+  implemented and no device verification is claimed.
 
 ## v1.2.0 release close-out
 
@@ -23,34 +392,47 @@
   through PRs #127, #128 and #129. Final ledger/test evidence was merged and
   synchronized through PRs #130–#133; `main` and `develop` trees match.
 - The final ledger/test correction task PR #134 merged into the retained
-  `phase/28-qa-and-release` at `2d3a0f6`; see the P28-F-R6-R2 ledger entry.
-- O45-O53 are owner-reported Pass (2026-11-11); device model, Android version
-  and tester were not supplied.
+  `qa-and-release` (historical branch name: `phase/28-qa-and-release`) at
+  `2d3a0f6`; see the P28-F-R6-R2 ledger entry.
+- P28-F-R6-R3 task PR #138 merged into the retained phase at `6f5b1cb`;
+  phase PR #139 merged to `develop` at `fd7ba55`. O45-O60 are recorded as
+  owner-reported Pass, with device identity details absent.
+- O45-O60 are owner-reported Pass (2026-11-11); device model, OS version and
+  tester were not supplied.
 
-## CR-108 owner decisions and remaining scope
+## CR-108 completion and future scope
 
-- Decide whether an in-app GitHub update check should ever be added. CR-108
-  keeps update discovery browser-based after confirmation; the app itself
-  makes no update request. A true in-app check remains an owner decision.
-- Confirm whether "Once only" is desired for investment plans or liabilities
-  in a future request; CR-108 deliberately excludes both.
 - CR-108 is complete: P41-B-R1 task PR #108 merged into the retained phase as
   `e1db78e`, and phase PR #109 merged to `develop` as `5cb4957`. All six
   ordered gates pass; detailed commands, coverage and PR evidence are in
-  [PROGRESS.md](../PROGRESS.md). The owner reports O45-O53 physical-device
+  [PROGRESS.md](../PROGRESS.md). The owner reports O45-O60 physical-device
   checks passed on 2026-11-11; device/tester details were not supplied.
 
-## CR-106 owner decisions and scope
+## CR-109 integration
 
-- Decide whether public adoption is a goal. If it is not, drop public-launch
-  checklist items that depend on adoption as a goal.
-- Approve or decline P31-D's privacy statement as a root document before that
-  part is executed; its content must use verified source facts only.
-- After P40-A, choose whether P40 remains report-only or proceeds with
-  the P40-B narrative/archive split.
-- Confirm the holder of the MIT license.
-- After P31-E has a successful real PR run, set branch protection to require
-  the workflow.
+- P42-A is integrated into `develop`: task PR #142 merged into the phase at
+  `8f38e9f`, and phase PR #143 merged into `develop` at `8988121`. The six
+  ordered gates passed again on integrated `develop` and were repeated on the
+  P42-A-R1 task tree; no app behavior changed.
+
+## Owner-approved planned direction (2026-11-11)
+
+- A true in-app update check is approved for future planning. The current
+  About action remains browser-based after confirmation and makes no
+  app-side request; no in-app checker is implemented.
+- Once-only frequency for investment plans or liabilities is approved for future planning (subsequently cancelled by owner decision on 2026-11-22; see Recently resolved);
+  schema v23 and current forms remain unchanged until separately scoped.
+- Public adoption is an approved future project goal; no launch campaign or
+  community-response commitment is authorized by this decision.
+- P31-D privacy statement is approved. It remains Planned, depends on P39-C,
+  and must use verified source facts.
+- The owner confirms Sahil Aspak Sheikh as the MIT copyright holder; the
+  existing `LICENSE` notice already uses that name.
+- P40-B is approved and Planned after P40-A. P40-A remains Planned.
+- Configure branch protection after P31-E passes a real PR run; this
+  follow-up is owner-approved and Planned.
+- Retain the existing stale phase tags `phase-28-complete` and
+  `phase-29-complete`; no tag mutation is requested.
 
 Not adopted in CR-106:
 
@@ -61,21 +443,50 @@ Not adopted in CR-106:
 - GDPR consent/processor items: no server or analytics is described in the
   verified app architecture; do not add server-processing controls without a
   verified processing surface.
-- Show HN, GitHub Discussions and issue-response items: not adopted while the
-  public-adoption goal and ongoing community-response capacity remain
-  undecided.
+- Show HN, GitHub Discussions and issue-response items: not adopted by this
+  decision; evaluate them separately against community-response capacity.
 
 ## Recently resolved
 
+- **Once-only frequency for investment plans or liabilities cancelled (2026-11-22):**
+  The owner decided not to implement Once-only frequency for investment plans or
+  liabilities; investment plans retain existing manual (one-time) and recurring
+  plan kinds, and liabilities retain existing one-time and recurring EMI structures.
+  No schema or form changes will be made.
+- **P29-J is resolved for now (2026-11-11):** the owner confirms the current
+  actual-days/365 behavior is satisfactory; no statement comparison or
+  calculation change is requested. Reopen only if new bank evidence is later
+  supplied and a comparison is requested.
+- **CR-3 is resolved by owner acceptance (2026-11-11):** the existing Save
+  behavior in `profile-form.tsx` and `transaction-form.tsx` is satisfactory;
+  no UI change is requested.
+- **Dependency audit accepted (2026-11-11):** the owner accepts the last
+  recorded advisory snapshot for now; no dependency changes are requested.
+  P39-E remains Planned for the broader report-first dependency audit.
+- **No fresh backup is requested (2026-11-11):** the owner accepts the
+  existing snapshot; no backup data was altered or regenerated.
+- **Node 26 is accepted; no Node 24 repair is requested (2026-11-11):** the
+  project remains pinned to Node 26.13.0.
+- **The owner accepts the previous documentation-only verification scope
+  (2026-11-11):** that prior update ran the focused ledger test, not the full
+  suite or six gates; this records the actual scope without retroactively
+  claiming a full run.
+- **`codex-changes` was deleted at the owner's direction; no work is to be ported
+  (2026-11-11):** its obsolete schema-v2 loan/liability changes,
+  attempted Home edit, generated coverage output and migration defect are
+  detailed below and in [PROGRESS.md](../PROGRESS.md).
+- **Retain the existing stale phase tags (2026-11-11):** the owner directs
+  keeping `phase-28-complete` and `phase-29-complete` as-is. No tag was moved.
 - **Owner roadmap decisions (2026-11-09):** accessibility is the planned
   statement and audit checklist, not new app features. The owner supplied all
   23 versioned screenshots, so P32-A/B/C capture work is cancelled; no new
   captures or capture script are needed. Widgets, quick capture (shake,
   double-tap back or key combination) and notification/SMS detection are
   Planned, with research/reactivation requirements retained. P33-C still
-  requires iOS distribution; P35-C requires the P35-B owner go/no-go before
-  implementation. Notes includes text, voice/audio recordings, photos and
-  videos; its planned migration impact is now schema v24 after CR-108's v23
+  requires iOS distribution. These research and scope gates were updated by
+  the owner's 2026-11-12 approvals in CR-113; P35-C remains gated on completed
+  P35-A research. Notes includes text, voice/audio recordings, photos and
+  videos; its planned migration impact is now schema v25 after CR-108's v23
   release. Skeleton loading is planned as P38. See
   [PROGRESS.md](../PROGRESS.md) for the recorded acceptance scope.
 - **Release screenshots and APK handoff:** all 23 owner-supplied screenshots
@@ -161,11 +572,13 @@ Not adopted in CR-106:
 - **P29-O-R1 scope close-out:** P29-O is superseded by the accepted P29-O1
   holding workflow and the explicit P29-S cancellation of the separate
   ledger-only migration. No app implementation remains in scope; P29 is
-  41/41. The P29-O1 physical-device checks below remain open.
+  41/41. The owner reports the P29-O1 physical-device checks below passed on
+  2026-11-11.
 - **Local `codex-changes` branch:** deleted on 2026-11-08 at the owner's
-  direction. Its sole commit (`d033d6a`) was an October schema-v2 alternative
-  with checked-in coverage output and an unsafe migration; current schema-v22
-  loan/liability behavior supersedes its source changes. Nothing was ported.
+  direction. Commit `d033d6a` attempted an obsolete schema-v2 loan/liability
+  model, included generated coverage output, changed the protected Home screen,
+  and contained a data-loss migration defect. It was never merged; no work is
+  to be ported.
 - **P29-O1-R2 / P29-W-R2 Entries layout:** completed/pending month counts now
   use paired summary cells on Assets and Liabilities; pending schedule rows
   are sorted together with dated entries. Focused route tests pass at font
@@ -216,14 +629,22 @@ Not adopted in CR-106:
 
 ## Unresolved
 
-- **P20-S-R1 device check:** physical-device rendering remains unverified.
+- **Physical-device validation report (2026-11-11):** the owner reports that
+  all device checks listed in the previous assistant summary passed. The
+  categories and owner-reported Pass results are recorded as O54-O60 in the
+  [device checklist](../releases/device-test-checklist.md). This supersedes
+  older pending/unverified wording for the covered device checks below and in
+  the physical-device section. Device model, OS version and tester details
+  were not provided; these remain owner-reported, not independently observed.
+- **P20-S-R1 device check:** owner reports the physical-device rendering check
+  passed on 2026-11-11.
   Owner approved commit/merge; SegmentedControl labels removed by the owner
   remain absent. Final gate results and PR integration are in
   [`PROGRESS.md`](../PROGRESS.md). Implementation commit `d36103e` is in
   task-to-phase PR #42; phase-to-develop PR #43.
 - **CR-107 demo display:** route tests verify the Rs 1 crore Assets total at
-  simulated font scales 1.3 and 2.0. Physical-device rendering at both scales
-  remains unverified.
+  simulated font scales 1.3 and 2.0. The owner reports physical-device
+  rendering at both scales passed on 2026-11-11.
 - **v1.1.1 release:** the owner-approved patch release was published on
   2026-11-09 after PR #69 merged it to `main` and PR #70 back-merged it to
   `develop`. Tag `v1.1.1` points to the main merge commit. The owner-run EAS
@@ -245,92 +666,98 @@ Not adopted in CR-106:
   only because merged task branches are deleted by policy. P28-E's final
   verification commit `72fb325` is preserved and its stale status text is
   reconciled on the P28-E-R2 task branch for chronological PR integration.
-  `codex-changes` is not safe to publish as-is: it is based on schema v2
-  rather than current v22, includes generated coverage files, and review
-  found a persisted-data migration bug, a failing migration assertion, and
-  merge conflicts with current `main`. It remains local pending a decision
-  to port any still-needed changes.
-- **v1.1.0 release integrity:** the owner explicitly approved the `preview`
-  profile and reused versionCode 1 for this release. For future releases,
-  restore the configured `android-apk` profile and increment versionCode.
-- **Stale phase tags (owner decision):** `phase-28-complete` and
-  `phase-29-complete` target commits behind their current phase branch tips.
-  No tag was moved. Decide whether to retain or update them in a separately
-  authorized change.
+  The obsolete `codex-changes` commit `d033d6a` targeted schema v2 rather than
+  current v23, included generated coverage files, attempted a protected Home
+  edit, and had unsafe migration behavior and a failing migration assertion.
+  It conflicts with current `main` and was deleted at the owner's direction;
+  no port is needed or authorized.
+- **v1.0.0 and v1.1.0 preview APK artifacts:** historical releases v1.0.0 and
+  v1.1.0 distribute preview build APKs (built with EAS `preview` profile and
+  versionCode 1) rather than production builds. The owner confirmed keeping
+  these historical releases as-is while explicitly noting in their published
+  release notes, release history, and build configuration that they are preview
+  build APKs. v1.1.1 and v1.2.0 distribute production `android-apk` builds with
+  incremented version codes.
+- **Stale phase tags (owner decision, resolved 2026-11-11):**
+  `phase-28-complete` and `phase-29-complete` remain on their historical
+  targets by owner direction. No tag was moved.
 - **P29-O1-R2 / P29-W-R2 integration:** task and phase merges are included in
   the v1.1.0 release on GitHub main and develop through the merged PR chain.
-- **P29-O1-R2 / P29-W-R2 physical-device check:** verify paired count-cell
-  layout and date ordering on Assets and Liabilities at font scales 1.3 and
-  2.0 on devices. TestRenderer checks are simulated. The six ordered
-  repository gates pass locally; integration is complete on `develop`.
+- **P29-O1-R2 / P29-W-R2 physical-device check:** the owner reports paired
+  count-cell layout and date ordering on Assets and Liabilities at font scales
+  1.3 and 2.0 passed on 2026-11-11.
+  TestRenderer checks are simulated. The six ordered repository gates pass
+  locally; integration is complete on `develop`.
 - **Pre-build synthetic v13 equality:** automated coverage now imports a
   deterministic, checksummed v13 backup through `parseBackup` and compares
   source-derived net worth, every goal's saved amount and Emergency Fund
-  available amount. Physical-device backup/restore checks remain part of the
-  pre-build checklist in [`build-config.md`](../releases/build-config.md).
-- **P26-A physical-device checks:** verify touch targets, scalable labels and
+  available amount. The owner reports physical-device backup/restore checks
+  passed on 2026-11-11; they remain listed in
+  [`build-config.md`](../releases/build-config.md) as the procedure.
+- **P26-A physical-device checks:** owner reports the touch-target, scalable-label,
   text at 1.3x/2.0x, focus order, announced form errors, color-only status,
-  screen-reader navigation, cold hydration, first render and action writes on
-  iOS and Android. Jest/TestRenderer and Node benchmarks are not device
-  evidence. `app/(tabs)/index.tsx` and `app/(tabs)/budget.tsx` remain
+  screen-reader navigation, cold hydration, first render and action-write
+  checks passed on 2026-11-11. Jest/TestRenderer and Node benchmarks are not
+  device evidence. `app/(tabs)/index.tsx` and `app/(tabs)/budget.tsx` remain
   user-owned/report-only surfaces under the P26-A scope.
 - **P29-AA Emergency Fund links resolved (2026-11-06):** repeated failing
   reproduction and store coverage confirmed valid links for Cash, Savings,
   Fixed deposits and recurring plans. Plan deletion now clears EF bucket and
   goal links in the same write; hydration repairs dangling links once and
   preserves valid links, net worth and goal values. No schema change.
-- **Emergency Fund form font-scale and device check:** verify the resolved
-  link picker and EF allocation form at 1.3x and 2.0x on physical devices.
+- **Emergency Fund form font-scale and device check:** owner reports the
+  resolved link picker and EF allocation form passed at 1.3x and 2.0x on
+  physical devices on 2026-11-11.
 - **P29-Z documentation verification (historical, superseded 2026-11-08):**
   source wins over docs; current schema v22 and the migration/archive chain
   through `.premigration.v21`, Foreclosure labels, Home-only menu rule and real
   Gate 1 counts are recorded. P29-Z made no behavior, schema or UI source
   change.
-- **Home-only global menu physical-device check (2026-11-05):** verify the
-  three-dot options menu remains present on Index/Home and absent on Assets,
-  Liabilities and detail screens, including backup, reminders, security,
-  profile and theme routes, at font scales 1.3 and 2.0.
-- **Recurring asset stop/resume label physical-device check:** verify active
-  recurring cards show Stop investment and stopped plans show Resume
-  investment while the action remains within the shared instrument-card row.
-- **Holding and liability layout physical-device check (2026-11-05):** verify
-  the two-column investment Summary, same-row liability actions, conditional
-  Entries button and liability Summary/details layout at font scales 1.3 and
-  2.0 on iOS and Android. Automated route, ownership and focused font-scale
+- **Home-only global menu physical-device check (2026-11-05):** the owner
+  reports the three-dot options menu remained present on Index/Home and absent
+  on Assets, Liabilities and detail screens, including backup, reminders,
+  security, profile and theme routes at font scales 1.3 and 2.0. Pass reported
+  2026-11-11.
+- **Recurring asset stop/resume label physical-device check:** owner reports
+  active recurring cards showed Stop investment and stopped plans showed Resume
+  investment in the shared instrument-card row; Pass reported 2026-11-11.
+- **Holding and liability layout physical-device check (2026-11-05):** the
+  owner reports the two-column investment Summary, same-row liability actions,
+  conditional Entries button and liability Summary/details layout at font
+  scales 1.3 and 2.0 passed on 2026-11-11. Automated route, ownership and focused font-scale
   tests pass, and all six gates exit 0.
 - **Holding layout validation (2026-11-05):** the owner-edited holding screen
   passes the focused route smoke test at font scales 1.3 and 2.0. All six gates
   are green: 92 suites passed, with 1192 tests passed and 1 skipped.
-- **Merged holding summary card physical-device check:** verify the Recurring
-  plan and Summary information remain readable in one card and Stop/Resume stays
-  in the action row at font scales 1.3 and 2.0 on iOS and Android.
+- **Merged holding summary card physical-device check:** the owner reports the
+  Recurring plan and Summary information remain readable in one card and
+  Stop/Resume stays in the action row at font scales 1.3 and 2.0; Pass reported
+  2026-11-11.
 - **P29-Y resolved (2026-11-05):** Gate 1 was repaired from `91` passing suites
   plus one stale `memoryDocs.test.ts` failure to `92` passed suites and `1191`
   passed tests with `1` skipped at that repair step. The final real run is
   `1192` passed tests with `1` skipped (1193 total). The project inventory, status memory and
   ledger now match the repaired run; all six gates pass.
-- **P29-X physical-device checks:** verify stop/resume confirmation, inclusive
-  stop-date filtering, stopped card text, past unpaid dues, Deposit
-  availability and one-write Undo at font scales 1.3 and 2.0 on iOS and Android.
-  Confirm the v20-to-v21 archive and restart behavior on native SQLite.
+- **P29-X physical-device checks:** the owner reports stop/resume
+  confirmation, inclusive stop-date filtering, stopped card text, past unpaid
+  dues, Deposit availability and one-write Undo passed at font scales 1.3 and
+  2.0 on 2026-11-11, including the native SQLite archive/restart check.
 - **P29-X assumption:** `stopDate` is the last inclusive scheduled date. Resume
   removes the field; it restores schedule rows without rewriting entries or
   linked transactions.
-- **P29-W physical-device checks:** verify closure-date selection and
-  outstanding recalculation, overpayment/shortfall confirmations, one-write
-  Undo, future-due removal, Closed filtering, read-only payment/schedule rows,
-  note-only editing/deletion and font scales 1.3 and 2.0 on iOS and Android.
-  Also verify the v19-to-v20 archive and restart behavior on native SQLite.
-  Jest and Expo exports do not verify native interaction, persistence or
-  layout.
+- **P29-W physical-device checks:** the owner reports closure-date selection
+  and outstanding recalculation, overpayment/shortfall confirmations,
+  one-write Undo, future-due removal, Closed filtering, read-only
+  payment/schedule rows, note-only editing/deletion, font scales 1.3/2.0 and
+  native SQLite archive/restart behavior passed on 2026-11-11. Jest and Expo
+  exports do not verify native interaction, persistence or layout.
 
-- **P29-V physical-device checks:** confirm AsyncStorage migration compares
-  exact bytes before removal, failure fallback survives restart, and all four
-  stress tiers load/Undo on iOS and Android. Time native SQLite capacity,
-  hydration, actions, selectors, memory and first render. Confirm the 50-year
-  backup exports/imports plain and encrypted, and larger tiers refuse before
-  creating a temporary file. Node measurements and Expo exports do not prove
-  device behavior.
+- **P29-V physical-device checks:** the owner reports AsyncStorage migration
+  byte comparison before removal, fallback after restart, all four stress
+  tiers loading/Undo, native SQLite capacity, hydration, actions, selectors,
+  memory and first render, and plain/encrypted 50-year backup round trips with
+  larger tiers refused before temporary-file creation passed on 2026-11-11.
+  Node measurements and Expo exports do not prove device behavior.
 
 - **P29-O2 cancelled by owner (P29-S, 2026-11-05):** do not implement the
   ledger-only schema-v19 storage redesign. Its converter, alternate v19
@@ -339,28 +766,29 @@ Not adopted in CR-106:
   v22; P29-O1's unified holding actions remain supported. Historical
   preparation commits are retained; see
   DEC-P29S-CANCEL-LEDGER-ONLY-STORAGE in [PROGRESS.md](../PROGRESS.md).
-- **P29-O1 physical-device checks:** verify manual and recurring holding
-  cards, Entries, opening amount edits and Recurring plan details at font
-  scales 1.3 and 2.0 on iOS and Android. Confirm the manual and recurring
-  10,000 + five 1,000 deposits - 2,000 withdrawal case shows Invested 13,000
-  and seven rows. Fixed-deposit maturity withdrawal remains unchanged. Jest
-  and Expo exports do not prove native layout or interaction.
+- **P29-O1 physical-device checks:** the owner reports manual and recurring
+  holding cards, Entries, opening amount edits, Recurring plan details at
+  font scales 1.3 and 2.0, the 10,000 + five 1,000 deposits - 2,000 withdrawal
+  case showing Invested 13,000 and seven rows, and Fixed-deposit maturity
+  withdrawal passed on 2026-11-11.
+  Jest and Expo exports do not prove native layout or interaction.
   Automated validation is complete: 90 suites/1140 tests, TypeScript, lint,
   Expo Doctor 21/21, and Android/iOS exports all pass. Coverage and assertion
   counts are recorded in [PROGRESS.md](../PROGRESS.md).
-- **P29-T physical-device checks:** verify that adding, editing and deleting
-  dated deposits and withdrawals on or before a valuation updates manual and
-  plan values once, in the same write; verify Undo restores the entry and
-  linked transaction. Confirm goal, Emergency Fund, net-worth and Budget-linked
-  flows at font scales 1.3 and 2.0 on iOS and Android. Jest and Expo exports
+- **P29-T physical-device checks:** the owner reports adding, editing and
+  deleting dated deposits and withdrawals on or before a valuation updated
+  manual and plan values once, in the same write; Undo restored the entry and
+  linked transaction. Goal, Emergency Fund, net-worth and Budget-linked flows
+  at font scales 1.3 and 2.0 also passed on 2026-11-11. Jest and Expo exports
   do not verify native persistence, rendering or interaction. Budget's current
   linked-actual selector is transaction-based, not a current-holding-value
   display; that display was not redesigned.
-- **P29-U physical-device checks:** verify configured accrual and units-price
-  values, manual confirmation, staleness notices, and the optional monthly
-  reminder at font scales 1.3 and 2.0 on iOS and Android. Confirm v18-to-v19
-  migration, a confirmed-value reset, and entry-price/withdrawal interactions
-  on device. Node tests and Expo exports do not prove native layout,
+- **P29-U physical-device checks:** the owner reports configured accrual and
+  units-price values, manual confirmation, staleness notices, the optional
+  monthly reminder at font scales 1.3 and 2.0, v18-to-v19 migration,
+  confirmed-value reset, and entry-price/withdrawal interactions passed on
+  2026-11-11.
+  Node tests and Expo exports do not prove native layout,
   persistence or notification scheduling. Automated validation passes:
   91 suites/1170 tests and all six ordered gates exit 0; directory coverage
   and the exact calculation method are recorded in [PROGRESS.md](../PROGRESS.md).
@@ -370,13 +798,12 @@ Not adopted in CR-106:
   may omit `ratePct` unless accrual is explicitly selected.
 - **P29-L complete:** the Insurance dependency inventory, simplification and
   v16-to-v17 migration are recorded in [PROGRESS.md](../PROGRESS.md). The
-  former P29-G cover-goal feature is removed; Home remains unchanged. Its
-  physical-device checks below remain unverified.
-- **P29-J bank-balance comparison:** no calculation bug was proven. The owner
-  did not provide the bank outstanding/as-of date, principal, contractual
-  tenure, or app payment date/amount records. The actual statement-method
-  comparison and any monthly-amortization change remain pending those inputs
-  and owner approval; current behavior remains actual-days/365.
+  former P29-G cover-goal feature is removed; Home remains unchanged. The owner
+  reports its physical-device checks passed on 2026-11-11.
+- **P29-J bank-balance comparison:** resolved for now. The owner confirms the
+  current actual-days/365 method is satisfactory; no statement comparison or
+  calculation change is requested. Reopen only if the owner later supplies
+  bank evidence and asks for a comparison.
 - **P29-F2 headroom targets withdrawn:** the 92% `src/domain/budget.ts` and 88%
   `src/data/createAppStore.ts` targets were advisory and are no longer requirements.
   Configured per-file thresholds are authoritative and green.
@@ -398,34 +825,28 @@ Not adopted in CR-106:
   detail have no dedicated schema fields. The local backup is a supported
   snapshot, not a complete workbook migration. Do not retain the user's
   financial values in repository memory.
-- **Local app/backup mismatch:** the note-edited backup has a valid recalculated
-  checksum and imports, but it does not contain the separate transaction
-  deletion/addition described for current app data. Historical custom budget
-  snapshots were added through October 2026 using the transactions in this
-  backup, including distinct planned/actual historical income rows for
-  non-earned inflows; those snapshots do not resolve the missing app
-  transaction edit. Export a fresh backup from the app if that edit should be
-  included.
-- **CR-3:** the full-width Save behavior with a visible validation summary is
-  still open for `profile-form.tsx` and `transaction-form.tsx`.
-- Latest audit: `npm audit --omit=dev` reports 27 advisories (6 high,
-  20 moderate, 1 low) across the production dependency tree. `npm audit`
-  reports 55 (6 high, 44 moderate, 5 low); the 28 additional advisories are
-  dev-only build/test tooling. Exact affected package lists are in the P25-D
-  entry in `docs/PROGRESS.md`. Owner direction is required; do not use
-  `npm audit fix --force` or approve install scripts.
-- Confirm the MIT copyright holder, currently written as
-  `Sahil Aspak Sheikh` from the local account name.
-- **Node 24 Jest issue:** on Node 24.22.2, after clearing Jest cache, 13 suites
+- **Local app/backup mismatch:** the owner accepts the current snapshot and
+  does not request a fresh export. The historical mismatch remains documented;
+  no backup data was altered or regenerated.
+- **CR-3:** resolved by owner acceptance of the existing Save behavior in
+  `profile-form.tsx` and `transaction-form.tsx`; no UI change is requested.
+- The last recorded audit snapshot reports 27 production advisories (6 high,
+  20 moderate, 1 low) and 55 total (6 high, 44 moderate, 5 low); the extra 28
+  are dev-only tooling. The owner accepts this snapshot for now; no dependency
+  changes are requested. P39-E remains Planned for a broader, current
+  dependency-risk report. Never use `npm audit fix --force` or approve
+  install scripts without separate authorization.
+- The MIT copyright holder is confirmed by the owner as Sahil Aspak Sheikh;
+  the existing `LICENSE` notice already matches.
+- **Node 24 Jest issue (accepted, not a pending fix):** on Node 24.22.2, after clearing Jest cache, 13 suites
   fail because `expo-modules-core` reads `ReactNativePlatform.select` while
   `react-native` is mocked without a `Platform` export in affected test files.
   The full suite passes on Node 26.13.0. React Native 0.86.3's declared engine
   supports Node `^20.19.4 || ^22.13.0 || ^24.3.0 || >=25.0.0`; therefore the
   test difference does not prove that the SDK itself rejects Node 24.
   Project Node is pinned to 26.13.0 and the allowed engine is `>=26.0.0 <27`
-  based on the observed test results. Node 24/Jest mock behavior remains
-  unresolved and can be revisited if test mocks are corrected in a future
-  authorized task.
+  based on the observed test results. The owner accepts the Node 26.13.0
+  project pin; no Node 24-specific mock repair is requested.
 - The owner reports v0.1.0 is a GitHub pre-release (`v0.1.0`), with EAS build
   and screenshots complete. The slug was confirmed by the owner and was not
   changed.
@@ -454,77 +875,25 @@ Not adopted in CR-106:
 
 ## Physical-device verification
 
-- **P29-Q:** verify migration from existing AsyncStorage to SQLite, a full
-  200-year and daily-SIP fixture load, Undo, cold hydration, write latency,
-  selector responsiveness and available device storage on iOS and Android.
-  The SQLite adapter and loader are implemented; Node SQLite-memory timings
-  are not native bridge, disk, device-memory or physical-render measurements.
-  The 50-year serialized AppData value remains above the 1.5 MB target. The
-  installed SQLite adapter has no app-level per-value guard, but physical
-  device capacity remains unverified.
-  Details and import limits are in [PROGRESS.md](../PROGRESS.md).
-- **P29-N:** verify the first-launch prompt after unlock, Not now/Close/
-  backdrop/Android-back persistence, granted/denied/blocked permission flows,
-  Reminders menu reachability and 1.3/2.0 font-scale layout on iOS and Android.
-  Also verify Transactions has no Review-month affordance while its month
-  navigation and Budget's routed month/editor flows still work. Automated
-  TestRenderer and Expo exports do not verify native dialogs, layout or
-  notification permission behavior.
-- **P29-K:** verify immediate-once scope application and native Close,
-  backdrop, and Android-back dismissal, including the 44 pt Close target,
-  category-delete count and Undo, and option wrapping at font scales 1.3 and
-  2.0 on iOS and Android. Jest simulates these interactions and layout; native
-  hit testing, screen-reader announcements and rendering remain unverified.
-- **P29-I:** verify that Fixed deposits expose no new deposit, entry, recurring
-  schedule, or Budget-link controls; legacy entries remain viewable/editable/
-  deletable; maturity withdrawal works; and recurring deposits remain fully
-  available at font scales 1.3 and 2.0 on iOS and Android. The tests and Expo
-  exports are simulated/build evidence, not physical-device verification.
-- **P29-H:** verify asset list/card/portfolio totals and Investment Entries on
-  iOS and Android, including Cash/Bank labels, the back-dated-entry helper,
-  large amounts, and font scales 1.3 and 2.0. Automated TestRenderer cases and
-  Expo exports are not physical-device evidence.
-- **P29-B through P29-E:** verify the Today control and filter retention,
-  centered Dropdown, paid/scope dialogs at each entry point, font scales 1.3
-  and 2.0, keyboard-safe dialogs, start-month/holding-link routes, and actual
-  Home Insurance placement on iOS and Android. Holding-delete Undo is not a
-  requirement under DEC-P29E-HOLDING-DELETE.
-
-- **P29-A:** verify investment XIRR/CAGR labels, absolute-only short spans,
-  linked full-value saved totals, shared-goal notes and Emergency Fund bucket
-  targets on iOS and Android devices. Automated Jest and exports do not prove
-  native rendering.
-
-- **P29-L:** verify Term/Life placeholders, full policy editing and deletion
-  confirmation/Undo, all premium frequencies including custom month-end
-  clamping, pending/overdue dues, payment advancement, reminder behavior and
-  large-font layout at scales 1.3 and 2.0 on iOS and Android. Home's
-  `policySummary` source and screen remain unchanged. Jest and Expo exports
-  simulate or build the app; they do not verify native presentation.
-- **P29-M2:** verify early/on-time/late payment from the Insurance card, Home,
-  Transactions, `/payment-confirm` and reminder action on iOS and Android;
-  confirm the settled slot disappears everywhere, next dues appear in
-  Insurance/Transactions/Budget/Home/reminders, and Undo restores all state.
-  Also verify month-boundary timing, custom frequency, edited schedules,
-  notification action behavior and font scaling. Jest validates the real
-  store and selectors; it does not prove native notifications, dialogs or
-  physical-device interaction.
-
-- **P24-A:** verify local-notification delivery and timing, permission and
-  blocked-settings flows, reboot restoration behavior, lock-screen text,
-  cold-start and app-locked notification taps, and large-font rendering at
-  scales 1.3 and 2.0. Automated layout and Expo exports are not device proof.
-- **P25-B:** verify key-derivation time on a real phone, the native share
-  sheet, file picker, and large-font rendering at scales 1.3 and 2.0. The
-  current 247.4 ms KDF benchmark is from the development machine only.
-- Owner-verified: the owner reports that everything works in a physical-device
-  test. Device model and operating system were not recorded. This is owner
-  report, not automated test evidence or an independently observed device run.
+- **Owner-reported Pass (2026-11-11):** the owner confirms the previously
+  listed physical-device checks passed. The grouped record is in O54-O60 of
+  the [device checklist](../releases/device-test-checklist.md):
+  accessibility/large text and screen readers; native dialogs, navigation
+  and Home menu; reminders and notifications; SQLite/AsyncStorage migration,
+  restart, stress data and storage responsiveness; holdings, valuations,
+  linked financial flows, stop/resume and liability closure/foreclosure;
+  encrypted backup/restore, passphrase handling, file picker/share and
+  erase-all; and Budget/list layouts, counts and ordering.
+- The owner also reports the prior v1.2.0-specific checks O45-O53 passed.
+  Device model, OS version and tester were not supplied. These results remain
+  owner-reported; they are not independently observed or automated evidence.
 - Automated layout tests still simulate component props and font scales; do
-  not present them as physical-device evidence.
+  not present them as physical-device evidence. They are separate from the
+  owner's reported device validation.
 - P25-F did not repeat physical-device checks. Its screen-reader label and
   month-routing assertions run in TestRenderer and do not establish native
-  announcements or rendering behavior.
+  announcements or rendering behavior; the owner reports the later device
+  checks passed.
 
 ## Documented assumptions and constraints
 
@@ -592,3 +961,27 @@ Not adopted in CR-106:
   messages with descriptions of release-draft preparation and publication
   documentation. The changes are local and unpushed; see the verified
   old-to-new commit mapping in [PROGRESS.md](../PROGRESS.md).
+
+
+## Phase P7 Google Drive automated backup (planned)
+
+- **Goal:** Provide automated periodic backups to Google Drive using the `appDataFolder` scope, keeping the app serverless and private with zero-knowledge local passphrase encryption before upload.
+- **P7-A (Research & Prototyping):** Research Google Drive REST API (v3) `appDataFolder` scope (`https://www.googleapis.com/auth/drive.appdata`), Expo SDK 57 Google OAuth2/Sign-In integration, and background scheduling (`expo-background-fetch` / Android WorkManager) with Wi-Fi gating. Dependencies: none. Evidence: not started.
+- **P7-B (Pure Domain Model):** Pure domain model for cloud backup scheduling (frequency: daily, weekly, monthly, manual; retention policy: keep latest N backups; zero-knowledge AES-GCM local passphrase encryption before upload). Dependencies: P7-A. Evidence: not started.
+- **P7-C (UI & Settings):** UI & settings in Backup / Security screen (Connect/Disconnect Google Drive account, last backup status/timestamp, frequency picker, Wi-Fi only toggle, "Back up now", and "Restore from Google Drive" flow). Dependencies: P7-B. Evidence: not started.
+- **P7-D (Fixtures, Tests & Device Verification):** Deterministic demo data, offline fallback, token revocation handling, unit tests, and device checklist rows. Dependencies: P7-C. Evidence: not started.
+
+
+## Pending owner actions (2026-11-22 reconciliation)
+
+- **Next-release device gate:** O61–O74 were tested and validated on physical devices by the owner on 2026-11-22 and marked Pass. O61–O64 are P20-S-R2; O65–O68 are P21-F; O69–O72 are P20-W; O73 is P20-U-R1; O74 is P20-A-R3. All 78 rows in the device checklist now Pass; the release gate is unblocked for candidate builds. Physical device metadata (realme Narzo 60 Pro 5g, Android 15 Vanilla Ice Cream, tester sahilsheikh-dev, respective release dates) is recorded across all 5 sections, and the checklist maintenance confirmation rule with prior release suggestions is documented.
+- **Documentation PR flow:** CR-118's PR #184/#185 and CR-119's PR #186/#187
+  merges are confirmed in Git history and terminal session evidence. PR #186
+  merged `task/docs-device-checklist-by-release` into `documentation` at
+  `001df8b812e0b2c990137f22747be4d0e5cfd2a1`; PR #187 merged `documentation`
+  into `develop` at `aeacbfd65e74d0cc5428a9b2460864223e7d9cc6`. Local `develop`
+  was synchronized by CM-2.
+
+The supplied snapshot resolves the earlier request for PR/ref/release/issue
+exports and terminal evidence. See the current snapshot reconciliation in
+[status.md](status.md) and the evidence table in [PROGRESS.md](../PROGRESS.md).

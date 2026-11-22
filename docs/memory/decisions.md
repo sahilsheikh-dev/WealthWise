@@ -1,4 +1,4 @@
-<!-- Purpose: Compact decision index into the canonical progress ledger. | Last updated: 2026-11-10 | Updates: owner and AI agents -->
+<!-- Purpose: Compact decision index into the canonical progress ledger. | Last updated: 2026-11-22 | Updates: owner and AI agents -->
 
 # Decisions
 
@@ -11,6 +11,8 @@ authoritative rationale and history.
 - [DEC-CR108-ONCE-ONLY](../PROGRESS.md#dec-cr108-once-only-2026-11-10)
 - [DEC-CR108-COMPLETED-SECTIONS](../PROGRESS.md#dec-cr108-completed-sections-2026-11-10)
 - [DEC-CR108-UPDATE-CHECK](../PROGRESS.md#dec-cr108-update-check-2026-11-10)
+- [DEC-CR109-OWNER-PLANNING-AND-CLOSEOUT](../PROGRESS.md#dec-cr109-owner-planning-and-closeout-2026-11-11)
+- [DEC-P20W-D3-SCHEMA24](../PROGRESS.md#dec-p20w-d3-schema-ownership-2026-11-21)
 - [DEC-BACKUP-RECONCILIATION](../PROGRESS.md#dec-backup-reconciliation-2026-11-01)
 - [DEC-P25B](../PROGRESS.md#dec-p25b-2026-11-01)
 - [DEC-P29F3](../PROGRESS.md#dec-p29f3-assertion-and-coverage-correction)
@@ -93,3 +95,6 @@ authoritative rationale and history.
 - [DEC-TABS](../PROGRESS.md#4-architecture-and-decisions)
 - [DEC-TRACKER-CLEANUP](../PROGRESS.md#4-architecture-and-decisions)
 - [DEC-USER-CHANGES](../PROGRESS.md#4-architecture-and-decisions)
+
+- [DEC-DOCS-R8-OWNER-ACTIONS](../PROGRESS.md#docs-remote-sync-2026-11-22): owner-run and remote-only facts require verifiable evidence, an action log and explicit pending-action reporting.
+- [DEC-DOCS-DEVICE-CHECKLIST-RELEASE-GATE](../PROGRESS.md#dec-docs-device-checklist-release-gate-2026-11-22): keep device results in immutable release sections and block release work until every check passes or a named-ID written waiver is recorded.

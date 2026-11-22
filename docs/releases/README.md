@@ -93,6 +93,12 @@ The shared project rules are in [AGENTS.md](../../AGENTS.md),
     `published/`; update it only with owner-authorized final publication
     details. Never overwrite an existing published record.
 
+## Device checklist release gate
+
+A release must not be built, drafted, tagged or published while any row in ANY section of the device checklist (the Next release section and every earlier section) has a Result other than Pass. Not run, Fail and Blocked all block. Check the checklist first; if blocked, stop and report the blocking IDs, and do not start the build or the GitHub Release draft. A Pass may only be recorded from an owner-observed or owner-reported device result, never inferred from automated tests or Expo exports. Only an explicit written owner waiver for named IDs lifts the block; record the waiver in the ledger (Owner-run actions log) and in the release note, and leave the row's Result unchanged.
+
+Maintenance rules: new device checks go under Next release device checks (or the decided version's section) with the next free ID, never into a published release's section, never renumbered. When the next version is decided, retitle that section `## vX.Y.Z device checks (next release)` and fill its App version. On publication, retitle it `## vX.Y.Z device checks`, set the published date, move it to the bottom of the version list (ascending order), and create a new empty `## Next release device checks` section at the top. Device-check results the owner reports are recorded under rule R8 (Owner-run actions log) with their evidence. When updating the device checklist, agents must prompt the owner to confirm all metadata fields before making changes: Device model, Android version, Tester (always record the tester username, e.g., sahilsheikh-dev), and verification Date, providing suggestions based on previous releases data (e.g., realme Narzo 60 Pro 5g, 15 Vanilla Ice Cream, sahilsheikh-dev).
+
 ## Release rules
 
 - Include only verified, complete and merged functionality.
@@ -150,13 +156,18 @@ The shared project rules are in [AGENTS.md](../../AGENTS.md),
   release-body content. The former v1.1.1 latest-named APK was renamed to
   `WealthWise-android-v1.1.1.apk`; its GitHub Download block now uses
   `Version`. Post-publication task PRs #125/#126 merged into
-  `phase/28-qa-and-release` at `87c8e8f`/`9db08be`; phase PR #127 merged into
+  `qa-and-release` (historical branch name: `phase/28-qa-and-release`) at
+  `87c8e8f`/`9db08be`; phase PR #127 merged into
   `develop` at `d65ce75`; develop-to-main PR #128 merged at `48a64c0`; and
   main-to-develop PR #129 merged at `c554c0b`. Final ledger/test evidence was
   then synchronized by task PR #130 (`202dabe`), phase PR #131 (`6f4f4df`),
   develop-to-main PR #132 (`b678493`) and main-to-develop PR #133 (`eedff48`).
   The `main` and `develop` trees match, and the v1.2.0 tag remains at its
   verified build candidate.
+- v1.3.0 candidate release: EAS build `c2ec9414-ae63-44cc-b34a-0f67f6cb51cb`
+  completed with profile `android-apk` and Android `versionCode` 4 on
+  2026-11-22. The 107,030,213-byte APK is uploaded to the GitHub release draft
+  and byte-verified against EAS. Publication remains pending.
 - O45-O53 are owner-reported Pass; device model, Android version and tester
   details were not supplied.
 - Production AAB: not verified.

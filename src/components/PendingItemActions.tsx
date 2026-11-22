@@ -68,7 +68,7 @@ export function PendingItemActions({
     });
   };
 
-  const clear = (actualAmount = item.amount) => {
+  const clear = (actualAmount = item.amount, paymentDate = today) => {
     if (!item.actionable) return;
     let undo: (() => void) | undefined;
     let clearedAmount = item.amount;
@@ -93,7 +93,9 @@ export function PendingItemActions({
           return;
         }
         const target: DueTarget = { kind: 'plan', id: linkedHolding.id };
-        const entryId = actions.clearDue(target, linkedDue.source.slotId, actualAmount);
+        const entryId = paymentDate !== today
+          ? actions.clearDue(target, linkedDue.source.slotId, actualAmount, undefined, paymentDate)
+          : actions.clearDue(target, linkedDue.source.slotId, actualAmount);
         const state = useAppStore.getState();
         if (!entryId || state.lastError) {
           Alert.alert('Could not clear planned item', state.lastError ?? 'The linked plan installment could not be recorded.');
@@ -115,7 +117,9 @@ export function PendingItemActions({
         };
       } else if (linkedHolding?.kind === 'manual') {
         const target: ClearDueTarget = { kind: 'holding', id: linkedHolding.id };
-        const entryId = actions.clearDue(target, undefined, actualAmount, item.title);
+        const entryId = paymentDate !== today
+          ? actions.clearDue(target, undefined, actualAmount, item.title, paymentDate)
+          : actions.clearDue(target, undefined, actualAmount, item.title);
         const state = useAppStore.getState();
         if (!entryId || state.lastError) {
           Alert.alert(
@@ -144,7 +148,7 @@ export function PendingItemActions({
           amount: actualAmount,
           category: item.category,
           note: item.source.kind === 'income' ? item.title : '',
-          date: today,
+          date: paymentDate,
         });
         const state = useAppStore.getState();
         if (state.lastError) {
@@ -167,7 +171,9 @@ export function PendingItemActions({
       const source = item.source;
       if (source.kind !== 'plan' && source.kind !== 'liability' && source.kind !== 'policy') return;
       const target: DueTarget = { kind: source.kind, id: source.parentId };
-      const entryId = actions.clearDue(target, source.slotId, actualAmount);
+      const entryId = paymentDate !== today
+        ? actions.clearDue(target, source.slotId, actualAmount, undefined, paymentDate)
+        : actions.clearDue(target, source.slotId, actualAmount);
       const state = useAppStore.getState();
       if (!entryId || state.lastError) {
         Alert.alert('Could not clear due', state.lastError ?? 'The due could not be recorded.');
@@ -203,7 +209,7 @@ export function PendingItemActions({
     onClose?.();
   };
 
-  const clearThrough = async (actualAmount = item.amount) => {
+  const clearThrough = async (actualAmount = item.amount, paymentDate = today) => {
     if (item.source.kind !== 'plan' && item.source.kind !== 'liability' && item.source.kind !== 'policy') return;
     if (!item.dueDate) {
       Alert.alert('Could not clear due', 'This due does not have a scheduled date.');
@@ -215,7 +221,9 @@ export function PendingItemActions({
       Alert.alert('Could not clear due', 'There are no unpaid dues through this date.');
       return;
     }
-    const entryIds = actions.clearDuesThrough(target, item.dueDate, actualAmount);
+    const entryIds = paymentDate !== today
+      ? actions.clearDuesThrough(target, item.dueDate, actualAmount, paymentDate)
+      : actions.clearDuesThrough(target, item.dueDate, actualAmount);
     const state = useAppStore.getState();
     if (!entryIds || state.lastError) {
       Alert.alert('Could not clear due', state.lastError ?? 'The dues could not be recorded.');
@@ -255,10 +263,11 @@ export function PendingItemActions({
           title={item.title}
           dueAmount={item.amount}
           dueDate={item.dueDate}
-          onPaid={(amount) => {
+          defaultDate={today}
+          onPaid={(amount, date) => {
             setPaidDialogVisible(false);
-            if (item.actionable) clear(amount);
-            else void clearThrough(amount);
+            if (item.actionable) clear(amount, date);
+            else void clearThrough(amount, date);
           }}
           onNotPaid={() => setPaidDialogVisible(false)}
         />
@@ -282,10 +291,11 @@ export function PendingItemActions({
       title={item.title}
       dueAmount={item.amount}
       dueDate={item.dueDate}
-      onPaid={(amount) => {
+      defaultDate={today}
+      onPaid={(amount, date) => {
         setPaidDialogVisible(false);
-        if (item.actionable) clear(amount);
-        else void clearThrough(amount);
+        if (item.actionable) clear(amount, date);
+        else void clearThrough(amount, date);
       }}
       onNotPaid={() => setPaidDialogVisible(false)}
     />

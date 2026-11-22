@@ -9,6 +9,7 @@ import {
   BUDGET_CATEGORIES,
   INVESTMENT_FORM_CATEGORIES,
   makeGoalFormSchema,
+  makeEmergencyFundTargetFormSchema,
   makeHoldingFormSchema,
   makeLiabilityFormSchema,
   makeLiabilityPaymentFormSchema,
@@ -34,10 +35,30 @@ const validInput = {
 };
 
 describe('appDataSchema', () => {
-  it('accepts the typed mock app data and exports schema version twenty-three', () => {
+  it('accepts the typed mock app data and exports schema version twenty-four', () => {
     expect(appDataSchema.parse(mockAppData)).toEqual(mockAppData);
-    expect(SCHEMA_VERSION).toBe(23);
+    expect(SCHEMA_VERSION).toBe(24);
     expect(new Set(TRANSACTION_CATEGORIES.expense).size).toBe(TRANSACTION_CATEGORIES.expense.length);
+  });
+
+  it('accepts, trims and bounds custom earned-income categories in AppData', () => {
+    const data = structuredClone(mockAppData);
+    const plan = data.budgetPlan;
+    const income = plan?.incomes[0];
+    if (!plan || !income) throw new Error('Budget income fixture is missing.');
+    Object.assign(income, { category: '  Consulting  ' });
+    const parsed = appDataSchema.safeParse(data);
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.budgetPlan?.incomes[0]?.category).toBe('Consulting');
+    }
+    for (const category of ['   ', 'x'.repeat(61)]) {
+      const invalid = structuredClone(data);
+      const invalidIncome = invalid.budgetPlan?.incomes[0];
+      if (!invalidIncome) throw new Error('Budget income fixture is missing.');
+      Object.assign(invalidIncome, { category });
+      expect(appDataSchema.safeParse(invalid).success).toBe(false);
+    }
   });
 
   it('accepts once-only Budget and policy schedules only with a first due date', () => {
@@ -584,6 +605,17 @@ describe('appDataSchema', () => {
   });
 });
 
+describe('Emergency Fund target form schema', () => {
+  it('requires a finite positive cent-precision target within the goal bound and above the three-month floor', () => {
+    const schema = makeEmergencyFundTargetFormSchema(60_000);
+    expect(schema.parse({ target: '60000.25' }).target).toBe(60_000.25);
+    expect(schema.safeParse({ target: '59999.99' }).success).toBe(false);
+    expect(schema.safeParse({ target: '0' }).success).toBe(false);
+    expect(schema.safeParse({ target: '12.345' }).success).toBe(false);
+    expect(schema.safeParse({ target: '10000000000.01' }).success).toBe(false);
+  });
+});
+
 describe('makeTransactionFormSchema', () => {
   const schema = makeTransactionFormSchema('2026-10-10');
 
@@ -604,6 +636,18 @@ describe('makeTransactionFormSchema', () => {
     ]) {
       expect(schema.safeParse({ ...validInput, category }).success).toBe(true);
     }
+  });
+
+  it('trims and bounds custom earned-income transaction categories', () => {
+    const customIncome = {
+      ...validInput,
+      type: 'income' as const,
+      category: '__custom-income-category__',
+      customCategory: '  Consulting  ',
+    };
+    expect(schema.parse(customIncome).category).toBe('Consulting');
+    expect(schema.safeParse({ ...customIncome, customCategory: '   ' }).success).toBe(false);
+    expect(schema.safeParse({ ...customIncome, customCategory: 'x'.repeat(61) }).success).toBe(false);
   });
 
   it('accepts a custom category only in the selected month budget', () => {

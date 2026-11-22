@@ -92,6 +92,12 @@ Exclude:
 | Automatic Git Commit | No (draft and archive commits are required) |
 | Automatic Git Push | No |
 
+## Device checklist release gate
+
+A release must not be built, drafted, tagged or published while any row in ANY section of the device checklist (the Next release section and every earlier section) has a Result other than Pass. Not run, Fail and Blocked all block. Check the checklist first; if blocked, stop and report the blocking IDs, and do not start the build or the GitHub Release draft. A Pass may only be recorded from an owner-observed or owner-reported device result, never inferred from automated tests or Expo exports. Only an explicit written owner waiver for named IDs lifts the block; record the waiver in the ledger (Owner-run actions log) and in the release note, and leave the row's Result unchanged.
+
+Maintenance rules: new device checks go under Next release device checks (or the decided version's section) with the next free ID, never into a published release's section, never renumbered. When the next version is decided, retitle that section `## vX.Y.Z device checks (next release)` and fill its App version. On publication, retitle it `## vX.Y.Z device checks`, set the published date, move it to the bottom of the version list (ascending order), and create a new empty `## Next release device checks` section at the top. Device-check results the owner reports are recorded under rule R8 (Owner-run actions log) with their evidence. When updating the device checklist, agents must prompt the owner to confirm all metadata fields before making changes: Device model, Android version, Tester (always record the tester username, e.g., sahilsheikh-dev), and verification Date, providing suggestions based on previous releases data (e.g., realme Narzo 60 Pro 5g, 15 Vanilla Ice Cream, sahilsheikh-dev).
+
 ## Approved release sequence
 
 1. Prepare the versioned Markdown release draft, complete it with verified
@@ -193,7 +199,11 @@ Follow the shared repository rules in [`AGENTS.md`](../../AGENTS.md),
   - Keep the latest published Download block identical to README; older
     releases use their versioned asset link and versioned download filename.
   - Update the README Download and What's new sections and its releases-page
-    link for every release.
+    link for every release. During release preparation of an approved candidate,
+    update README (Download block, What's new, and Screenshots gallery),
+    docs/releases/published/vX.Y.Z.md, and release history to use the newer
+    candidate release's screenshots, download details, and links so the
+    candidate repository state is fully aligned and ready for publication.
   - Include every supplied screenshot in that version's release Markdown and
     GitHub Release body. Store files as
     `docs/releases/screenshots/vX.Y.Z/WealthWise-vX.Y.Z-screenshot-<screen>.png`
@@ -202,8 +212,8 @@ Follow the shared repository rules in [`AGENTS.md`](../../AGENTS.md),
     absolute `blob/main` URL and load the image from the matching absolute
     `raw.githubusercontent.com/.../main/` URL. README may use equivalent
     relative paths. README's Screenshots section contains only the latest
-    published release's complete image set, without a version title. If no
-    screenshots are supplied, reuse the previous published release's complete
+    release's complete image set, without a version title. If no
+    screenshots are supplied, reuse the previous release's complete
     image set under the new version's filenames. Verify each rendered URL
     after the change is merged to `main`. Render images at 150 pixels wide in
     table rows, with no more than four screenshots per row. Order categories

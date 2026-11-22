@@ -9,7 +9,8 @@ import {
 import { monthPositions } from '../../domain/cashFlow';
 import { addMonths, monthKey, shiftMonth } from '../../domain/dates';
 import { goalProjection, goalSavedFor } from '../../domain/goalLinks';
-import { goalView } from '../../domain/goals';
+import { emergencyMinimumTarget, goalView } from '../../domain/goals';
+import { allocateAmounts } from '../../domain/efAllocation';
 import { isLiabilityClosed, liabilitySummary } from '../../domain/liability';
 import { validateIntegrity } from '../../domain/links';
 import { duesThroughPreview } from '../../domain/dues';
@@ -73,6 +74,21 @@ describe('six-month demo data', () => {
     expect(data.efCustomBuckets).toHaveLength(3);
   });
 
+  it('uses an edited Emergency Fund target above the three-month floor in demo data', () => {
+    const summary = homeSummary(data, today);
+    const emergencyGoal = data.goals.find((goal) => goal.auto === 'ef');
+    if (!emergencyGoal) throw new Error('Demo Emergency Fund goal is missing.');
+    if (!data.efAllocation) throw new Error('Demo Emergency Fund allocation is missing.');
+    const minimum = emergencyMinimumTarget(summary.expenseBaseline);
+    expect(emergencyGoal.target).toBe(2_400_000);
+    expect(emergencyGoal.target).toBeGreaterThan(minimum);
+    expect(allocateAmounts(emergencyGoal.target, data.efAllocation)).toMatchObject({
+      cash: 240_000,
+      bank: 960_000,
+      'fd-rd': 1_200_000,
+    });
+  });
+
   it('includes a paid-premium Term policy and leaves the Life placeholder available', () => {
     expect(data.policies).toEqual(expect.arrayContaining([
       expect.objectContaining({ id: 'demo-policy-term-life', kind: 'term-life', sumAssured: 10_000_000, status: 'active' }),
@@ -102,6 +118,8 @@ describe('six-month demo data', () => {
       expect.objectContaining({ id: 'demo-income-salary', amount: 80_000, day: 1 }),
       expect.objectContaining({ id: 'demo-income-freelance', amount: 20_000, day: 15 }),
     ]));
+    expect(data.monthBudgets?.find((budget) => budget.month === customMonth)?.incomes)
+      .toContainEqual(expect.objectContaining({ id: 'demo-income-freelance', category: 'Consulting' }));
     expect(data.budgetPlan?.incomes.reduce((sum, item) => sum + item.amount, 0)).toBe(100_000);
     for (const month of months) {
       const rows = data.transactions.filter((transaction) => monthKey(transaction.date) === month);
@@ -468,11 +486,12 @@ describe('six-month demo data', () => {
       ...goalView(goal, { expenseBaseline: summary.expenseBaseline, data, asOf: today }),
     }));
     const percentages = goals.map(({ pct }) => pct);
+    expect(goals.find(({ id }) => id === 'demo-goal-emergency')?.pct).toBeCloseTo(83.333, 3);
     expect(Math.min(...percentages)).toBeLessThanOrEqual(25);
     expect(Math.max(...percentages)).toBeGreaterThanOrEqual(75);
     expect(Math.max(...percentages)).toBeLessThanOrEqual(87);
     expect(goals).toEqual(expect.arrayContaining([
-      expect.objectContaining({ id: 'demo-goal-emergency', saved: 2_000_000, pct: 80 }),
+      expect.objectContaining({ id: 'demo-goal-emergency', saved: 2_000_000 }),
       expect.objectContaining({ id: 'demo-goal-retirement', saved: 4_000, pct: 20 }),
       expect.objectContaining({ id: 'demo-goal-home', saved: 4_000_000 }),
       expect.objectContaining({ id: 'demo-goal-education', saved: 2_000_000, pct: 80 }),

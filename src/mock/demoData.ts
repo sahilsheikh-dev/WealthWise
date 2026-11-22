@@ -9,6 +9,7 @@ import {
   defaultBudgetSectionIdFor,
   defaultBudgetSections,
   editBudgetItem,
+  editBudgetIncome,
   isItemDueInMonth,
   plannedIncomeOf,
   plannedForMonth,
@@ -383,7 +384,7 @@ function makeGoals(): Goal[] {
   return [{
     id: 'demo-goal-emergency',
     name: 'Emergency fund',
-    target: 2_500_000,
+    target: 2_400_000,
     saved: 0,
     year: 2029,
     auto: 'ef',
@@ -807,13 +808,9 @@ export function buildDemoData(today: ISODate): AppData {
     amount: 2_400,
     dueDay: 17,
   }, 'month', today);
-  data = editBudgetItem(data, customMonth, {
-    kind: 'income',
+  data = editBudgetIncome(data, customMonth, {
     incomeId: 'demo-income-freelance',
-    category: 'Freelance',
-  }, {
-    amount: 8_000,
-    dueDay: 18,
+    values: { name: 'Freelance', category: 'Consulting', amount: 8_000, day: 18 },
   }, 'month', today);
   return data;
 }

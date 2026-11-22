@@ -45,7 +45,7 @@ import { Dropdown } from '../Dropdown';
 import { DueActions } from '../DueActions';
 import { IconButton } from '../IconButton';
 import { addDays, monthKey, shiftMonth } from '../../domain/dates';
-import { addIncomeItem, applyBudgetPlanToMonth } from '../../domain/budget';
+import { addIncomeItem, applyBudgetPlanToMonth, editBudgetIncome as editBudgetIncomeData } from '../../domain/budget';
 import { pendingItems } from '../../domain/pending';
 import { clearDue as clearDueDomain, duesThroughPreview, undoClearDue as undoClearDueDomain } from '../../domain/dues';
 import { liabilitySchedule, planSchedule } from '../../domain/schedule';
@@ -753,6 +753,57 @@ function openDropdown(
 }
 
 describe('route render smoke audit', () => {
+  it('reopens a following-scope income edit with its updated schedule', () => {
+    const routeData = jest.requireMock('../../data/useAppData').useAppData() as AppData;
+    const storeState = useAppStore((state) => state);
+    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+    const previousRouteData = { ...routeData };
+    const previousStoreData = storeState.data;
+    const previousParams = routeParams();
+    const month = monthKey(todayISO());
+    const updatedFirstDueMonth = shiftMonth(month, 2);
+    const income = {
+      id: 'contract-income', name: 'Contract work', category: 'Freelance' as const,
+      amount: 12_000, day: 5, frequency: 'quarterly' as const, firstDueMonth: month,
+    };
+    const plan = budgetPlanFromLines([], {
+      incomes: [income], repeatMonthly: true, repeatFrom: month,
+    });
+    const snapshot = monthBudgetFromLines(month, [], {
+      source: 'plan', incomes: [income], sections: plan.sections,
+    });
+    const data = { ...emptyAppData(todayISO()), budgetPlan: plan, monthBudgets: [snapshot] };
+    const updated = editBudgetIncomeData(data, month, {
+      incomeId: income.id,
+      values: {
+        name: income.name,
+        category: income.category,
+        amount: income.amount,
+        day: income.day,
+        frequency: 'yearly',
+        firstDueMonth: updatedFirstDueMonth,
+      },
+    }, 'following', todayISO());
+    Object.assign(routeData, updated);
+    storeState.data = updated;
+    routeParams.mockReturnValue({ month, incomeId: income.id, scope: 'following' });
+
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      renderer = renderScreen(React.createElement(BudgetIncomeFormScreen));
+      const frequency = renderer.root.findAllByType(Dropdown)
+        .find((node) => node.props.label === 'Frequency');
+      expect(frequency?.props.value).toBe('yearly');
+      expect(renderer.root.findByProps({ accessibilityLabel: 'Income first due month' }).props.value)
+        .toBe(updatedFirstDueMonth);
+    } finally {
+      if (renderer) act(() => renderer?.unmount());
+      Object.assign(routeData, previousRouteData);
+      storeState.data = previousStoreData;
+      routeParams.mockReturnValue(previousParams);
+    }
+  });
+
   const screens: [string, React.ReactElement][] = [
     ['Security', React.createElement(SecurityScreen)],
     ['Reminders', React.createElement(RemindersScreen)],
@@ -813,6 +864,24 @@ describe('route render smoke audit', () => {
       renderer = undefined;
     }
     mockFontScale = 1;
+  });
+
+  it.each([1, 1.3, 2])('renders the combined Emergency Fund editor at font scale %s', async (fontScale) => {
+    mockFontScale = fontScale;
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    await act(async () => {
+      renderer = renderScreen(React.createElement(EfAllocationFormScreen));
+      await Promise.resolve();
+    });
+    if (!renderer) throw new Error(`Combined Emergency Fund editor did not render at ${fontScale}x.`);
+    expect(visibleText(renderer)).toContain('Edit Emergency Fund');
+    expect(findPressable(renderer, 'Save changes')).toBeDefined();
+    expect(renderer.root.findByProps({ accessibilityLabel: 'Emergency fund target' })).toBeDefined();
+    expect(visibleText(renderer)).toContain('3 months of cover');
+    expect(renderer.root.findByProps({ accessibilityLabel: 'Cash allocation percentage' })).toBeDefined();
+    act(() => renderer?.unmount());
+    mockFontScale = 1;
+    jest.clearAllMocks();
   });
 
   it.each(screens)('%s renders without verb text', async (name, screen) => {
@@ -1766,6 +1835,46 @@ describe('route render smoke audit', () => {
       }
     },
   );
+
+  it('creates and persists a custom earned-income type from the Budget income form', async () => {
+    const actions = jest.requireMock('../../data/useAppData').useAppActions() as {
+      addBudgetIncome: jest.Mock;
+    };
+    const routeParams = jest.requireMock('expo-router').useLocalSearchParams as jest.Mock;
+    const previousParams = routeParams();
+    const month = monthKey(todayISO());
+    routeParams.mockReturnValue({ month, scope: 'following' });
+    actions.addBudgetIncome.mockClear();
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    try {
+      renderer = renderScreen(React.createElement(BudgetIncomeFormScreen));
+      const category = renderer.root.findByProps({ accessibilityLabel: 'Income category' });
+      expect(category.props.options).toContainEqual({ value: '__custom-income-category__', title: 'Custom' });
+      await act(async () => {
+        renderer?.root.findByProps({ accessibilityLabel: 'Income name' }).props.onChangeText('Consulting');
+        renderer?.root.findByProps({ accessibilityLabel: 'Income amount' }).props.onChangeText('750');
+      });
+      await act(async () => {
+        if (!renderer) return;
+        selectDropdownOption(renderer, 'Income category', 'Custom');
+      });
+      await act(async () => {
+        renderer?.root.findByProps({ accessibilityLabel: 'Custom income category' }).props.onChangeText('  Consulting  ');
+        await renderer?.root.findByProps({ accessibilityLabel: 'Save' }).props.onPress();
+      });
+      const scopeDialog = renderer.root.findByProps({ testID: 'apply-scope-dialog' });
+      await act(async () => {
+        scopeDialog.findAllByProps({ children: 'This and following months' })[0].props.onPress();
+        await Promise.resolve();
+      });
+      expect(actions.addBudgetIncome).toHaveBeenCalledWith(month, {
+        name: 'Consulting', amount: 750, category: 'Consulting', frequency: 'monthly',
+      }, 'following', todayISO());
+    } finally {
+      if (renderer) act(() => renderer?.unmount());
+      routeParams.mockReturnValue(previousParams);
+    }
+  });
 
   it.each([1, 1.3, 2])(
     'reproduces recurring income visibility through the add form and Budget month controls at font scale %s',
@@ -3918,6 +4027,7 @@ describe('route render smoke audit', () => {
     ['Goals', () => React.createElement(GoalsScreen)],
     ['Assets', () => React.createElement(AssetsScreen)],
     ['Liabilities', () => React.createElement(LiabilitiesScreen)],
+    ['Budget spending', () => React.createElement(BudgetScreen)],
     ['Investment entries', () => React.createElement(InvestmentEntriesScreen)],
     ['Liability payments', () => React.createElement(LiabilityPaymentsScreen)],
     ['Link missing transactions', () => React.createElement(LinkMissingScreen)],
@@ -3973,6 +4083,7 @@ describe('route render smoke audit', () => {
       Goals: 'goal-filter-panel',
       Assets: 'asset-filter-panel',
       Liabilities: 'liability-filter-panel',
+      'Budget spending': 'budget-filter-panel',
     };
     const panelTestID = filteredScreenPanel[name];
     if (panelTestID) {
@@ -4034,7 +4145,7 @@ describe('route render smoke audit', () => {
       }
       const header = renderer.root.findAllByType('header')[0];
       const headerActionLabels = header?.findAll((node) =>
-        ['Filter', 'Add transaction', 'New goal', 'New investment', 'Add a liability', 'More options']
+        ['Filter', 'Add transaction', 'New goal', 'New investment', 'Add a liability', 'Add category', 'More options']
           .includes(String(node.props.accessibilityLabel)),
       ).map((node) => node.props.accessibilityLabel);
       expect(headerActionLabels?.at(-1)).toBe(name === 'Transactions'
@@ -4043,7 +4154,9 @@ describe('route render smoke audit', () => {
           ? 'New goal'
           : name === 'Assets'
             ? 'New investment'
-            : 'Add a liability');
+            : name === 'Budget spending'
+              ? 'Add category'
+              : 'Add a liability');
       expect(headerActionLabels).toContain('Filter');
       if (name === 'Transactions') {
         expect(headerActionLabels?.slice(0, 2)).toEqual(['More options', 'Filter']);

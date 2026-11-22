@@ -1,6 +1,249 @@
-<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-11 | Updates: owner and AI agents -->
+<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-22 | Updates: owner and AI agents -->
 
 # Status
+- **P28-F-R7 / CR-130 (2026-11-22) — Prepare v1.3.0 release candidate.**
+  Prepared owner-approved v1.3.0 release candidate: bumped versions in app.json,
+  package.json, and package-lock.json to 1.3.0; moved finalized release note to
+  docs/releases/published/v1.3.0.md with 8 owner-supplied screenshots under
+  docs/releases/screenshots/v1.3.0/; aligned build-config.md and device checklist
+  to v1.3.0. Candidate PR #210 and PR #211 integrated to develop (afeb987);
+  release/v1.3.0 created; EAS build c2ec9414-ae63-44cc-b34a-0f67f6cb51cb (profile android-apk,
+  versionCode 4) verified and 107,030,213-byte APK uploaded to GitHub release draft.
+  Per owner instruction, updated README.md (Download block and 8-screenshot gallery for v1.3.0),
+  aligned published v1.3.0 and v1.2.0 download blocks and release history, and updated
+  release rules in AGENTS.md and rules.md to mandate aligning README and release docs during
+  candidate staging. Publication remains pending owner approval. All six repository gates pass.
+- **P20-X-R1 / CR-129 (2026-11-22) — Remove transaction sorting & Dropdown search title.**
+  Removed sorting option from TransactionForm category dropdowns (Expense, Income, Invest)
+  and removed redundant static Search header title from shared Dropdown sheet, keeping
+  search placeholder inside the input box. Regression tests in Dropdown.test.tsx and
+  TransactionForm.test.tsx pass. All six repository gates pass.
+- **CR-128 (2026-11-22) — Once-only frequency for plans/liabilities cancelled by owner.**
+  The owner decided not to add Once-only frequency to investment plans or liabilities;
+  investment plans retain existing manual (one-time) and recurring plan kinds, and
+  liabilities retain existing one-time and recurring EMI structures. No schema or form
+  changes are made. Updated open-items.md, status.md, PROGRESS.md, and ledger tests.
+- **P20-Y (2026-11-22) — Done; O76 physical-device check validated Pass.**
+  CR-126 implements three related changes: (1) payment date input (defaulting
+  to today, customizable) when marking scheduled/budgeted items Paid in
+  Transactions and Budget, propagating to clearDue / clearDuesThrough /
+  addTransaction; (2) support for one asset linking to multiple one-time
+  investment Budget items, attributing holding entries by category/note and
+  updating the correct holding and budget actuals; (3) limiting Transaction
+  form Expense categories to user-created Budget items and applicable scheduled
+  items (dues/policies) plus Custom, while preserving historical removed
+  categories when editing existing transactions. Full regression tests pass
+  in PaidAmountDialog.test.tsx, PendingItemActions.paymentDate.test.tsx,
+  budgetMultiAssetLink.test.ts, budgetCategoriesLimited.test.ts, and
+  TransactionForm.test.tsx. All six repository gates pass exit 0. O76 was
+  validated Pass on physical device realme Narzo 60 Pro 5g by owner on 2026-11-22.
+- **P20-X (2026-11-22) — Done; O75 physical-device check validated Pass.**
+  Implemented sorting for Budget categories and items throughout WealthWise using
+  existing sorting behavior in Transactions, Assets, and Liabilities as reference.
+  Added SortChip in AppHeader filter toggle panel on BudgetScreen using
+  useSort('budgetSpending') with Planned, Actual, Percent used, and Name options;
+  preserved Income at top while sorting its items; sorted spending/investing
+  sections and items within sections; added sorting support to shared Dropdown
+  with SortChip rendered in sheet; connected category dropdowns in
+  TransactionForm and BudgetIncomeForm with persistent budgetSpending sort spec;
+  extended budgetCategoryChoiceSections with pure sortSpec handling. Regression
+  tests: BudgetSorting.test.tsx, Dropdown.test.tsx, RouteRenderSmoke.test.tsx,
+  budgetCategories.test.ts. All six repository gates pass. Protected-file hash
+  for app/(tabs)/budget.tsx updated to eca7607015cb3c8b85dfc7e0d4001235166742a2.
+  O75 was validated Pass on physical device realme Narzo 60 Pro 5g by owner on 2026-11-22.
+- **P20-U-R1 (2026-11-21) — Done; O73 physical-device restart check remains open.**
+  CONT3 completed the form/store/persistence matrix for reported fields,
+  sections, kinds and both scopes, plus non-current viewed months, plain-backup
+  restore, demo origin and H1–H5. Confirmed fixes: Income plan/snapshot
+  schedule mismatch (`2dc72b5`), optional-field item edit overwrite
+  (`a292f33`), and category-line holding-link loss (`e4accf5`). Name,
+  amount/value, start month, frequency and due day are covered; Spend, Invest
+  and Income include one-time/recurring cases where applicable. H1 is refuted
+  for the tested reopen flow; H2 for live update followed by selected-ID
+  deletion; H3 was not reproduced in tested Budget routes (Alert/reminder
+  entry points were not exercised); H4 is confirmed/fixed; H5 is refuted for
+  the synchronous test-storage path. O73 remains Not run. At P20-U-R1 closeout
+  the schema was v23; P20-W-D3 later advanced it to v24. U-R1 made no migration
+  or protected-file change. Final gates: 1 exit 0 (104 suites,
+  1,406 passed, 1 skipped); 2 exit 0 after test-only harness typing fixes;
+  3 exit 0; 4 exit 1 once (`ENOTFOUND registry.npmjs.org`); 5–6 exit 0.
+  Protected-file hashes match `docs/memory/rules.md`. O73 remains Not run.
+- **P20-U-R1 local integration prep (2026-11-22):** phase sync commit
+  `cb363423384923ef19f00399cd380baba01e9e59` incorporates local `develop`;
+  task branch `task/P20-U-R1-budget-edit-delete` includes the phase at merge
+  commit `becbd83c0b18051bf54a00904c6463bd2232f5b3`. Conflict resolution kept
+  both U-R1/A-R3 records and unique O73/O74 rows. Focused suites passed (12/364).
+  Gates 1–3 and 5–6 exited 0; Gate 4 exited 1 because `npx` could not resolve
+  `expo-doctor` from `registry.npmjs.org` (`ENOTFOUND`); it was not retried.
+  No remote action occurred during that prep. The owner subsequently merged
+  task PR #180 at `5cf3360a55cbd57f97945f6bed4c7cb7a2a03478` and phase PR #181
+  at `22f332fe9310e92c50d94cc6640c19f4e1552dcc`, verified in local refs. O73
+  remains Not run.
+- **P20-A-R3 linked savings Paid fix (2026-11-21) — implementation and PR integration complete.** Real-store placement regressions reproduced a plan-only holding link being lost from a viewed month snapshot and a snapshot-only link failing to attribute a holding-entry transaction to the Budget item from another month. `pendingItems` now resolves a snapshot's link from its plan item; linked Budget actuals include stored month-snapshot links. Focused real Transactions and `/payment-confirm` route tests, reminder cold-start routing, real-store create/rehydration, v20–v23 plain-backup import/migration path, scope history and demo data pass. Exact/lower/higher × Savings/Cash/Other tests pass; Fixed deposit remains rejected. Home's due list filters to `kind === 'due'`; Budget has no Paid action for pending items. The owner-provided exact data origin and steps remain blank, so the synthetic failure shape is established but the exact device reproduction is still unknown. Six gates: Gate 1 exit 0 (103 suites, 1,387 passed, 1 skipped; coverage 96.00/92.23/98.09/97.66% statements/branches/functions/lines); Gate 2 exit 0; Gate 3 first exit 1 for test-harness lint, then exit 0 after correction; Gate 4 exit 1 (`ENOTFOUND registry.npmjs.org`); Gates 5–6 exit 0. After strengthening route Undo assertions, the focused 18-test suite, TypeScript and lint were rerun successfully. O74 is Not run. No schema, dependency or protected-file change. See the task row and final evidence in [PROGRESS.md](../PROGRESS.md).
+- **P20-W (2026-11-22) — D1/D2/D3 integrated; schema v24.**
+  Schema version: v24 (`SCHEMA_VERSION` in `src/domain/schemas.ts`). D3 uses
+  the existing custom earned-income category field with its v23→v24 migration
+  and backup compatibility. Phase sync is
+  `b5f8c52477ba88dce1c376904c36dee72b84a092`; D3 task merge is
+  `8f0840f82646f2b3ec91457cb48b932abf8caeaa`. Text conflicts in this file and
+  `project.md` retained both branches' records. Focused suites passed (15/664).
+  Gates 1–3 and 5–6 exited 0; Gate 4 exited 1 because npm could not resolve
+  `expo-doctor` (`ENOTFOUND registry.npmjs.org`), with no retry. O71 is Not run
+  and covers custom earned-income entry, persistence and reopening. O73/O74
+  remain Not run. P36-A/B are replanned to v25. No push or PR was performed.
+  P20-S-R2 merge `6b50a1d` is on `develop`; phase `phase/20-budget` was
+  synced from current `origin/develop`, and the task tree now includes that
+  phase history. D1/D2 remain schema-free and implemented; focused
+  TransactionForm/schema suites pass (68 tests). On the synced task tree,
+  Gate 1 exited 0 (102 suites, 1,368 passed, 1 skipped; coverage
+  95.96/92.14/98.03/97.63% statements/branches/functions/lines); Gates 2–3
+  exited 0; local Gate 4 attempt exited 1 with
+  `ENOTFOUND registry.npmjs.org`; owner-supplied Gate 4 exited 1 at 20/21 on
+  the six known SDK 57 patch mismatches (owner-approved cleanup exception);
+  Gates 5–6 exited 0. Dependencies and app config did not change since the
+  owner run. DEC-P20W-D3-SCHEMA24 resolves schema ownership: P20-W takes v24
+  and P36-A/B are replanned to v25. D3 commit `f2541fd` adds custom income schemas/forms, identity
+  v23→v24 migration, archive cleanup and backup compatibility. Focused checks
+  pass (8 suites / 524 tests). D3 gates: Gate 1 exit 0 (102 suites, 1,381
+  passed, one skipped; coverage 95.97/92.15/98.03/97.64%); Gates 2–3 and 5–6
+  exit 0; Gate 4 exit 1 (`ENOTFOUND registry.npmjs.org`) on its single attempt.
+  Task PR #182 and phase PR #183 are merged; exact merge SHAs are in the
+  current snapshot reconciliation below. Physical checks O69–O72 remain Not
+  run; O65–O68 belong to P21-F. Task PR #174 merged at `419a37b07e6853b3c683d22ec243ea58223514c1`; phase
+  PR #175 merged at `9e47856f20848e03ac6a4b8e699f47c387d08161`; CM-2 synchronized local `develop`.
+  P20-W-R1 records task PR #174 and phase PR #175; D3 schema ownership is
+  resolved by DEC-P20W-D3-SCHEMA24.
+- **P20-W-R1 (2026-11-21) — integration evidence recorded; P20-W remains open for D3.**
+  Task PR #174 merged into `phase/20-budget` at `419a37b07e6853b3c683d22ec243ea58223514c1`; phase PR #175
+  merged into `develop` at `9e47856f20848e03ac6a4b8e699f47c387d08161`. CM-2 synchronized local `develop`.
+  D1/D2 are integrated. D3 is authorized to use v24; P36-A/B are replanned to
+  v25. Device checks O69–O72 remain Not run.
+- **P21-F / CR-117 (2026-11-21) — Emergency Fund target editing merged; P21-F-R1 records integration.**
+  Read-only investigation confirms the existing persisted `Goal.target` is used;
+  schema v23 and backup shape remain unchanged. DEC-P21F-FLOOR keeps the
+  max(stored target, three-month floor) effective target and rejects below-floor
+  edits using current typed validation. Task branch is
+  `task/P21-F-emergency-fund-target-editing`; test-first ledger commit is
+  `f759932`. One `Edit Emergency Fund` header action now opens a combined target
+  and allocation form. The plan saves through one domain action, one store set
+  and one persisted write with one-step Undo. Domain, store, screen, form, route,
+  backup and demo tests pass. Synced task gates: Gate 1 exit 0 (102 suites,
+  1,365 passed, 1 skipped; coverage 95.96/92.14/98.03/97.63% statements/
+  branches/functions/lines); Gates 2–3 exit 0; this session's Gate 4 attempt
+  exit 1 with `ENOTFOUND registry.npmjs.org`; owner-supplied Gate 4 exit 1 at
+  20/21 on the known six-package SDK 57 patch mismatch; Gates 5–6 exit 0.
+  Task PR #170 merged into `phase/21-emergency-fund` at
+  `c877f6d19e35c0b9fbcba90e9722da7531948c8e`; phase PR #171 merged into
+  `develop` at `2e5e18a7a2be207387a7462b039547f51b0e4631`. CM-2 synchronized
+  local `develop`. P21-F-R1 records task PR #170 and phase PR #171 merge SHAs.
+  O65–O68 remain Not run.
+- **P20-S-R2 / CR-116 (2026-11-21) — searchable Dropdown implementation complete.**
+  Task branch `task/P20-S-R2-dropdown-search` merged into `phase/20-budget`
+  through PR #164 at `185a5ea125f64ac104344f00ad013d68cdb7a946`; phase PR #165
+  merged into `develop` at `6b50a1dbd36b401352776e71028fc07071c11991`.
+  CM-2 fast-forwarded local `develop` to that remote tip. Six ordered
+  gates completed: 1 exit 0 (102 suites, 1,342 passed, 1 skipped); 2 exit 0;
+  3 exit 0; 4 exit 1 (known SDK 57 patch mismatch after one DNS retry); 5 exit
+  0; 6 exit 0. The test-first ledger expectation is `36e8ba4`; helper,
+  component and focused route checks pass. **Assumed:** no schema, domain,
+  demo-data or dependency changes were needed; confirmed. Native keyboard,
+  result-count announcement, clear tap target and real-device 1.3/2.0 font
+  scale checks remain unverified (O61–O64). P20-S-R2-R1 records the verified
+  integration evidence; P20-S-R2-R2 preserves the complete revision chain.
+- **CR-115 (2026-11-13) — Budget edit/delete report recorded under P20-U-R1.**
+  Owner reported: "In budget while updating any item/value/amount/start-month/frequency/due-day/etc
+  it is not updating also while trying to delete it is not even deleting, not for
+  single month and this and following months." The original "Don't start
+  working on this" instruction was superseded by explicit owner authorization
+  on 2026-11-21. P20-U-R1 is Done after the complete automated owner-report
+  matrix; physical-device restart verification O73 remains open and Not run.
+- **CR-114 (2026-11-12) — independent entities, empty slots and R7 merged into develop.**
+  Work tracking restructured: `cleanup`, `qa-and-release`, `schema-migration`
+  and `documentation` operate as independent lifecycle entities with dedicated
+  branches and Section 13 tracking, excluded from phase progress bars (142/184, 77%).
+  Freed phase slots P7, P27, P28 and P32 remain reserved as Empty (reserved)
+  slots so no phase is renumbered and no historical ref is rewritten. R7
+  slot-filling rule enforced across instructions and placement guide. Remote
+  branches `schema-migration` and `documentation` pushed and verified;
+  `phase/07-schema-migration` deleted on origin. Historical tags
+  `phase-07-complete`, `phase-27-complete`, `phase-28-complete` retained. All
+  historical commits/PRs preserved with complete history map in
+  `docs/history/entity-history-map.md`. PR #161 merged `documentation` into `develop`
+  as `9058386`. Preflight Gates 1–3, 5, 6 passed; Gate 4 exit 1 owner-approved
+  exception (upstream Expo SDK 57 patch advisory on both develop and documentation).
+  Dependency patch alignment is tracked as a Planned `cleanup` task. Merge evidence
+  recorded on `documentation` (unpushed).
+- **CR-113 (2026-11-12) — owner approvals recorded; all feature work remains
+  Planned.** P21-F Home-source editing is authorized if needed; P33/P34/P35
+  research and stated follow-on scopes are approved; P35 has a Go after
+  research; P43-B/E planning direction is approved; P44-A placement/counting
+  is decided; P39/P40 stay in their existing areas. No research, app
+  implementation, tag deletion or issue creation started. The exact proposed
+  non-release tag list still needs approval, and P43-E needs verified inventory.
+  P43-G task PR #157 and phase PR #158 are merged; their exact merge commits
+  are recorded in [PROGRESS.md](../PROGRESS.md).
+  See [open-items.md](open-items.md) and [PROGRESS.md](../PROGRESS.md).
+- **CR-111 (2026-11-12):** P20-A-R3 implementation/tests are complete locally,
+  but Gate 4 network failure blocks task/phase PR integration. P44-A–P44-D
+  remain Planned; CM-2 is Active and enforced as a repository rule, not a phase
+  part. The earlier P20 planning PRs #149/#150 remain historical integrations.
+  Current P20-A-R3 work has no schema or demo-data changes; no issue creation,
+  tag operation or history rewrite occurred. See [open-items.md](open-items.md)
+  and [PROGRESS.md](../PROGRESS.md).
+- **CR-112 (2026-11-12) is complete:** R6, the indexed placement guide,
+  ledger relocations, tests and CM-2 are complete on
+  `task/P43-F-work-placement-rules`. Test-first commits include `e2f0263`,
+  `d24acd9`, `e7c134a`, `770393d` and `bdbe159`; the placement audit is
+  `5841373`.
+  Initial Gate 4 exited 1 on registry DNS (`ENOTFOUND registry.npmjs.org`);
+  the authorized network retry passed 21/21, then the full ordered rerun
+  passed all six gates. Gate 1: 101 suites, 1,324 passed, 1 skipped;
+  coverage 95.96/92.15/98.02/97.62% statements/branches/functions/lines.
+  No physical-device verification was performed. Task PR #153 and phase PR
+  #154 are merged as recorded in the CR-112 closeout.
+- **P43-A is Done:** `origin/cleanup` is at the old
+  `origin/phase/27-cleanup` tip `a2fa24f930da15c49f779577eb749b33f11a7059`;
+  `origin/qa-and-release` is at the old
+  `origin/phase/28-qa-and-release` tip
+  `9d914638e50462cbadef84df3294ed07cbf42732`. Each new ref matched its old
+  counterpart before deletion; final checks show the old refs are absent.
+  Historical branch name: `phase/27-cleanup`; historical branch name:
+  `phase/28-qa-and-release`. The retained `phase-27-complete`,
+  `phase-28-complete` and `phase-29-complete` tag targets are unchanged.
+  P43-A and P43-F are Done. Task PR #153 merged into P43 at
+  `6e8632f61226fabbfdeca1040f6dee097a808607`; phase PR #154 merged into
+  `develop` at `faa126ba75ee58ee703b8e43b375aece91c8f4d1`. P43-F-R1 records
+  the verified merge evidence. No application/schema/demo, release, tag,
+  issue or history work occurred.
+- **CR-110-R1 (2026-11-12) is Planned only:** CR-110 is marked Revised by
+  CR-110-R1. Five P43 items record lifecycle tracking separation, tag cleanup and
+  a report-only branch/PR/merge audit, Emergency Fund target editing,
+  transaction-form changes, and a GitHub issue strategy. Every item has
+  dependencies and `Evidence: not started`. No application implementation,
+  remote branch rename, tag operation, issue creation or history rewrite is
+  authorized. Historical P27/P28 evidence and Git chronology remain intact.
+  The test-first commit is `e5114e01f363d6de5a12acb61886039469d4a86f`;
+  authorized local P43 phase/task branches were created for the planned PR
+  flow. Task PR #146 merged into P43 at
+  `e4d950adf0344dbe12e2e0d085e83d60538ede68`; phase PR #147 merged into
+  `develop` at `a93feaecfbd591c1b6f27bac15b5839c68d10709`. The task branch
+  was deleted and the phase branch is retained. See
+  [open-items.md](open-items.md) and [PROGRESS.md](../PROGRESS.md).
+- Lifecycle branches are currently `cleanup` and `qa-and-release`; the
+  historical branch name: `phase/27-cleanup`; historical branch name:
+  `phase/28-qa-and-release`. Their remote refs have been renamed and verified.
+  Any deletion of non-release tags is blocked on an owner-approved exact tag
+  list; retain all `vX.Y.Z` releases and stale phase tags already directed.
+  GitHub issue creation is a separate owner-approved task; GitHub controls
+  actual issue/comment/closure timestamps.
+- **Owner-decision reconciliation (CR-109, 2026-11-11):** future in-app
+  update discovery, Once-only investment/liability frequencies, public
+  adoption, the P31-D privacy statement, P40-B and post-P31-E branch
+  protection are approved as Planned; this record implements none of them.
+  The MIT holder is confirmed as Sahil Aspak Sheikh. The owner accepts current
+  P29-J calculation behavior, CR-3 Save behavior, the recorded dependency
+  audit, existing backup snapshot and Node 26 pin. Stale phase tags are to be
+  retained. See [open-items.md](open-items.md) and [PROGRESS.md](../PROGRESS.md).
 - v1.2.0 (minor) is published. `app.json`, package metadata and the
   About-screen test identify v1.2.0. The approved note has fourteen
   screenshots, with five new settings/backup screens added to every release
@@ -19,8 +262,26 @@
   PR #132 (`b678493`) and main-to-develop PR #133 (`eedff48`); `main` and
   `develop` trees match.
 - P28-F-R6-R2's ledger regression correction merged from task PR #134 into
-  `phase/28-qa-and-release` at `2d3a0f6`. Its evidence records the prior
+  `qa-and-release` (historical branch name: `phase/28-qa-and-release`) at
+  `2d3a0f6`. Its evidence records the prior
   release sync and exact P28 38/38 completion status.
+- The owner reports all previously listed physical-device follow-ups passed
+  on 2026-11-11. O54-O60 in the device checklist record the grouped areas:
+  accessibility/large text, dialogs/navigation, reminders/notifications,
+  persistence/storage, financial flows, backup/restore and Budget/list
+  layouts. No device model, OS version or tester details were supplied; these
+  are owner-reported, not independently observed.
+- P28-F-R6-R3 changes documentation and ledger tests only; the focused
+  progress-ledger test passes 17/17. The full suite and six application gates
+  were not rerun for this update. Task PR #138 merged into the retained phase
+  at `6f5b1cb`; phase PR #139 merged to `develop` at `fd7ba55`. P28-F-R6-R3
+  is integrated into `develop` at `fd7ba55`.
+- CR-109 is integrated without application behavior changes. P42-A task PR
+  #142 merged into the phase at `8f38e9f`; phase PR #143 merged into
+  `develop` at `8988121`. P42-A-R1 records task PR #142 and phase PR #143;
+  all six gates were rerun on integrated `develop` and passed. P42-A-R1 also
+  reran all six gates on its task branch with the same results. Exact results
+  are in the CR-109 verification entry.
 - All 104 screenshot image/link URLs returned HTTP 200; raw image sizes match
   all 52 repository files. The latest and four versioned APK URLs returned
   HTTP 200 with their expected artifact sizes. Historical release screenshot
@@ -28,11 +289,10 @@
   previous v1.1.1 latest APK was renamed to its versioned filename.
 - The final README/latest-release Download parity update and branch
   synchronization are complete: task PRs #125/#126, phase PR #127,
-  develop-to-main PR #128 and main-to-develop PR #129 are merged. O45-O53
-  remain owner-reported Pass; device model, Android version and tester details
-  were not supplied. The subsequent final ledger/test correction is also
-  synchronized through PRs #130–#133; `main` and `develop` have identical
-  trees.
+  develop-to-main PR #128 and main-to-develop PR #129 are merged. O45-O60 are
+  owner-reported Pass; device identity details were not supplied. The
+  subsequent final ledger/test correction is also synchronized through PRs
+  #130–#133; `main` and `develop` have identical trees.
 - CR-108 is complete on `develop`. P29-Q-R1 and P20-N-R3 merged at
   `80eb0e4` and `f5f6e16`. P41-A and its category correction merged through
   PRs #97–#100 at `9aa6540` and `a67f54f`; P41-B merged through PRs #101/#102
@@ -46,7 +306,7 @@
   `src/domain` 96.94/93.00/98.80/98.31%, and `src/lib` 100% in all measures.
   The current schema is v23; Once only applies to Budget items, Budget income
   and insurance premiums, not investment plans or liabilities. No CR-108 work
-  ships in v1.1.1. The owner reports O45-O53 physical checks passed; device
+  ships in v1.1.1. The owner reports O45-O60 physical checks passed; device
   and tester fields remain blank. The authorized Budget blob and all other
   protected hashes are recorded in [rules.md](rules.md).
 - CR-106 adds planning rows only: P31-D privacy and P31-E CI, report-first
@@ -69,8 +329,8 @@
   before/after table, goal percentages, PR SHAs and APK sizes are in
   [PROGRESS.md](../PROGRESS.md). Directly seeded holding openings are an
   explicit sample-data assumption. The v1.1.1 APK does not contain the demo
-  change. Physical-device rendering at font scales 1.3 and 2.0 remains
-  unverified.
+  change. The owner reports physical-device rendering at font scales 1.3 and
+  2.0 passed on 2026-11-11.
 - The owner-approved v1.1.1 patch release was published on 2026-11-09. The
   app, package and lockfile versions are aligned to 1.1.1. All six ordered
   gates passed on the release candidate: 98 suites, 1,271 passed, 1 skipped;
@@ -137,7 +397,7 @@
   recorded in [PROGRESS.md](../PROGRESS.md).
 - P28-E-R3 records the selected P25-F, v1.1.0 merge and P1 commits as
   ancestry through `task/P28-E-R3-record-selected-ancestry` and
-  `phase/28-qa-and-release`. The ancestry merges preserve the captured
+  `qa-and-release` (historical branch name: `phase/28-qa-and-release`). The ancestry merges preserve the captured
   `develop` tree; the task adds only ledger/memory documentation and a ledger
   test. PR #47 merged to P28 and PR #48 merged to `develop`; no
   application source or `main` changes were included.
@@ -174,10 +434,12 @@
   read-only `history/by-phase` archive, all 30 phase branches, and release
   branches `release/v1.0.0` and `release/v1.1.0`.
   Publication PRs #11-#15 are merged in order; their task branch was deleted
-  and `phase/28-qa-and-release` was retained.
+  and `qa-and-release` (historical branch name: `phase/28-qa-and-release`) was retained.
   `phase/25-release-and-backups` remains outside this Release 2 PR chain.
-  P28-E's final-verification commit was reconciled in P28-E-R2; the separate
-  `codex-changes` branch remains under review.
+  P28-E's final-verification commit was reconciled in P28-E-R2; at that time
+  the separate `codex-changes` branch was under review. The later owner
+  decision recorded below supersedes that status: the branch was deleted and
+  no work is to be ported.
 - The v1.1.0 release-tree gates passed before publication. The clean
   2026-11-09 develop preflight at `c939458` passed all six ordered gates;
   Gate 1 had 98 suites, 1,268 passed and 1 skipped, with 95.96/92.04/98.02/
@@ -197,7 +459,8 @@
   `task/P20-S-R1-form-choicefields-labels`. Final gates, test totals and
   integration PRs are recorded in `docs/PROGRESS.md`. Implementation commit
   `d36103e` is in PR #42 (task to phase); PR #43 promotes the phase to develop.
-  Physical-device rendering remains unverified.
+  At that close-out, physical-device rendering was unverified; the owner
+  later reported it passed on 2026-11-11.
 - P20-S-R1 final-tree validation: all six ordered gates exit 0. Coverage:
   98 suites, 1,267 passed, 1 skipped; 95.96/92.04/98.02/97.63% overall
   (statements/branches/functions/lines), `src/data`
@@ -240,6 +503,11 @@
   `release/v1.1.0`; v1.1.0 is published with the required README Download
   parity, release notes and build-history record. The owner-approved
   `preview` profile and reused versionCode 1 exceptions are documented.
+- CR-124 historical APK profile documentation: v1.0.0 and v1.1.0 published
+  release notes and release-history records are updated to explicitly identify
+  their direct APK downloads as preview build APKs (built with EAS `preview`
+  profile and versionCode 1) rather than production builds, while v1.1.1 and
+  v1.2.0 distribute production `android-apk` builds with incremented version codes.
 - P28-E archive evidence: 337 direct plus 175 date-fallback mappings; zero
   unmapped hashes, 512 unique original commits, and 131 synthetic archive
   commits. Its tree matched `main` at the original verification point; the
@@ -264,18 +532,20 @@
 - P29-O-R1 closes the only uncompleted P29 implementation row. The
   proposed ledger-only migration was explicitly cancelled as unnecessary;
   P29-O1's accepted unified holding workflow remains. P29 is 41/41 after
-  the close-out. P29-O1's physical-device checks remain unverified.
+  the close-out. The owner reports P29-O1's physical-device checks passed on
+  2026-11-11.
 - The owner directed deletion of local `codex-changes` (`d033d6a`). Its
-  October schema-v2 loan/liability alternative was stale against schema v22,
-  included generated coverage, and contained a migration defect. Nothing was
-  ported or pushed.
+  October schema-v2 loan/liability alternative is stale against schema v23,
+  modifies the protected Home screen, includes generated coverage and has
+  unsafe migration behavior. It was never merged; nothing is to be ported or
+  pushed.
 - Protected hashes reverified with `git hash-object`: Budget
   `b60f77af4f76d47f2cee07393fe9d8f3fa6bd04c` and Home
   `d3d1e465fe9f5d238d338afeb033e2a54889ddc6`. Current values and
   device/release follow-ups are recorded in [open-items.md](open-items.md).
-- Phase tag targets `phase-28-complete` and `phase-29-complete` are behind the
-  latest commits on their respective phase branches. Tags were not moved;
-  whether to update them remains an owner decision.
+- Phase tag targets `phase-28-complete` and `phase-29-complete` remain behind
+  the latest commits on their phase branches. The owner directs retaining
+  these historical tags; they were not moved.
 - Branch audit (2026-11-08): the chronological PR path carries the task
   correction through P28, develop, the release branch and main, then
   back-merges main into develop. The relevant branch refs are verified in the
@@ -283,10 +553,10 @@
   GitHub release is published. `phase/25-release-and-backups` remains outside
   the Release 2 chain; `history/by-phase` is a read-only archive. P28-E's
   final-verification commit `72fb325` is preserved by P28-E-R2, with its
-  stale status edits reconciled instead of merged verbatim. `codex-changes`
-  remains local pending a safe port: it targets schema v2 rather than v22,
-  includes generated coverage, and review found a persisted-data migration
-  bug and a failing migration assertion. No unsafe branch content was pushed.
+  stale status edits reconciled instead of merged verbatim. The earlier note
+  that `codex-changes` awaited a safe port is superseded by the owner's
+  2026-11-11 decision: the branch was deleted, no work is to be ported, and no
+  unsafe branch content was pushed.
 - P28-F-R2 contributor-credit correction and owner-reported device results
   are integrated through PRs #1-#3. P28-F-R2-R1 audit records use PRs #4-#7
   to follow task -> P28 -> develop -> release -> main -> develop.
@@ -303,7 +573,8 @@
   91.03/87.39/94.46/94.17%, `src/domain` 96.95/92.85/98.80/98.32%, and
   `src/lib` 100% in all measures. No schema change. Task commit `601a731` and
   P29 merge `22a0ec4` are included in GitHub main/develop through the
-  Release 2 PR chain. Physical-device verification remains pending.
+  Release 2 PR chain. Physical-device verification was pending at that time;
+  the owner later reported it passed on 2026-11-11.
 - Corrected the five historical checkpoint commit subjects and force-pushed
   the rewritten `main` history to `origin/main` with explicit owner
   authorization. Replacement commit IDs, unchanged tree verification, and
@@ -327,7 +598,9 @@
   remote tag alignment are verified in P28-C-R3. The GitHub release body's
   stored `targetCommitish` still shows the original target because no release
   edit was made.
-- Schema version: v23 (`SCHEMA_VERSION` in `src/domain/schemas.ts`).
+- Current schema version: v24 (`SCHEMA_VERSION` in `src/domain/schemas.ts`);
+  P20-W-D3 added the v23→v24 migration. Earlier P29-AB work described below
+  introduced schema v22.
 - P29-AB is complete. Budget income recurrence supports monthly, quarterly,
   half-yearly and yearly frequencies, with a required first-due month for
   non-monthly items. Migration v21-to-v22 defaults existing income monthly
@@ -416,8 +689,8 @@
   Displayed Invested is net of withdrawals and floored at zero; fixed-deposit
   restrictions and P29-H return/current-value logic remain unchanged. The
   P29-U's compatibility table and six ordered gates are recorded in
-  [PROGRESS.md](../PROGRESS.md); physical-device checks remain open in
-  [open-items.md](open-items.md).
+  [PROGRESS.md](../PROGRESS.md); the owner reports the physical-device checks
+  passed on 2026-11-11, as recorded in [open-items.md](open-items.md).
   P29-Q is implemented after the owner approved Expo SQLite.
   Native Zustand AppData uses the SDK-57 SQLite key-value adapter with lazy
   migration from AsyncStorage; web and UI metadata remain on AsyncStorage.
@@ -464,10 +737,17 @@
   tests (1194 passed; one opt-in stress benchmark skipped). P29-M2's
   1120-test run, P29-N's 1104-test run and P29-M's blocked reproduction remain
   historical records in [PROGRESS.md](../PROGRESS.md).
-- Test counts: 101 suites, 1317 tests (1316 passed, 1 skipped) on 2026-11-11.
-- Latest validated run: 101 suites, 1317 tests (1316 passed, 1 skipped) on
-  2026-11-11; all six CR-108 gates exit 0. Coverage and exact commands are
-  recorded in [PROGRESS.md](../PROGRESS.md).
+- CR-108 baseline: 101 suites, 1317 tests (1316 passed, 1 skipped) on
+  2026-11-11; all six CR-108 gates exited 0.
+- Test counts: 106 suites, 1449 tests (1,448 passed, 1 skipped) on
+  2026-11-22.
+- Latest validated run: 106 suites, 1449 tests
+  (1,437 passed, 1 skipped) on 2026-11-22 on the documentation task tree, which shares the D3 tree. Gate 1
+  coverage was 96.08/92.35/98.22/97.71% statements/branches/functions/lines;
+  Gates 1–3 and 5–6 exited 0. Gate 4 exited 1 because `npx` could not resolve
+  `expo-doctor` from `registry.npmjs.org` (`ENOTFOUND`). D3 uses v24; P36-A/B
+  are replanned to v25. O69–O74 remain Not run.
+  Coverage and exact commands are recorded in [PROGRESS.md](../PROGRESS.md).
 - All six P29-L gates exit 0: Jest coverage, TypeScript, Expo lint with zero
   warnings, Expo Doctor 21/21, Android export and iOS export. Exact commands
   and exit codes are in [PROGRESS.md](../PROGRESS.md).
@@ -523,9 +803,174 @@
 - The prior Gate 1 timeout output is unavailable and cannot be quoted. The
   final fresh full run passes; see the ledger for the historical isolated-run
   information and the preliminary TypeScript correction.
-- Coverage and UI tests are simulated. See [open-items.md](open-items.md) for
-  physical-device checks not verified.
+- Coverage and UI tests are simulated and distinct from device evidence. The
+  owner reports all listed physical-device checks passed; see
+  [open-items.md](open-items.md) for scope and provenance.
 - Encrypted backups protect exported files only. On-device data remains
   unencrypted; app lock is not encryption. A lost passphrase is unrecoverable.
 - The ledger at [`docs/PROGRESS.md`](../PROGRESS.md) is the source of truth
   for decisions, status, acceptance evidence, gates and device checks.
+
+
+## Earlier reconciliation (2026-11-22, snapshot exported 11:12:56 IST)
+
+- `develop` is `b3fa175b999f3ae62e2b099a412f5a9e9da5f0db`; `phase/20-budget` is
+  `4ee154bab1cbc9b0b491b87c2f8bfb5a843dca7b`. D3 task tip
+  `5424171b5eee69dc70606c8664da2e2f5c3f2e71` and both remote branch tips have
+  tree `e56c0b89c671ff3c23bdd96886bfd2d8090f45cc`. Schema v24 and
+  `.premigration.v23` migration/archive handling are present.
+- Snapshot contains 183 PRs, zero open PRs and zero issues. #39 is closed
+  unmerged; every other PR number from #1 through #183 is merged. The remote
+  branch snapshot contains 42 refs: phase branches are retained and merged
+  task branches are absent. There are 51 tags; the four `v1.*` release tags
+  match `docs/releases/release-history.md`. GitHub lists v1.2.0 as latest,
+  published 2026-11-10T20:38:40Z, consistent with the release history.
+- PR #181's corrected body and comment #7067953238 are confirmed; PR #179's
+  Gate 4 comment #7067676816 is confirmed. Both failed PR-create attempts and
+  the owner Gate 4 outputs are documented in the ledger from the reconstructed
+  terminal paste and supplied capture files. The 00:29 phase exit remains not
+  captured; 00:51 develop and 01:17 D3 task runs exited 1 (20/21; six SDK 57
+  patch mismatches).
+- Current documentation-task Gate 1 passed: 105 suites, 1,437 passed, 1
+  skipped (1,438 total); focused docs/ledger/memory checks pass (3 suites,
+  37 tests). Gates 2–3 and 5–6 exit 0. Gate 4 was invoked once in the previous
+  run but did not return a captured code; it was not rerun. Protected-file
+  hashes match `docs/memory/rules.md`.
+- Device checks O61–O74 remain Not run. Owner still needs to perform those
+  checks and push/open/merge this documentation task through its task PR and
+  documentation-to-develop PR, then run CM-2. P20-A-R3's exact device
+  reproduction remains unknown.
+
+
+## Current reconciliation (2026-11-22, snapshot exported 11:39:32 IST)
+
+- PR #184 merged the remote task branch into `documentation` at
+  `6c69977fa12bfeb3c979ee6fd415df7deaaf1dea` at 11:34:08 IST / 06:04:08 UTC;
+  `mergedBy` is `sahilsheikh-dev`. PR #185 merged `documentation` into
+  `develop` at `a946baff7793e7485b54cb363048f7906983574c` at 11:34:59 IST /
+  06:04:59 UTC; `mergedBy` is `sahilsheikh-dev`. `origin/develop` agrees with
+  the snapshot develop SHA.
+- PR #184's head OID is `c14fc2a420f0efc791813ab5cc2f42d0a15ef5fc`;
+  `origin/documentation` is `6c69977fa12bfeb3c979ee6fd415df7deaaf1dea`. Exact
+  push actions/times are not in the terminal recording; remote refs and PR
+  head OIDs establish the published tips. Correction (2026-11-22): this refers
+  to the 2,188-byte script(1) recording; reconstructed terminal paste records
+  `documentation` pushed at 11:33:08 IST and the task branch at 11:33:15 IST,
+  plus PR #184/#185 and CM-2. The script log itself is incomplete and does not
+  contain those commands.
+- The `script` log records a session from 11:13:17 to 11:37:46 IST but contains
+  no Git/PR commands. `gate4-develop-after185.txt` shows 20/21 and the six
+  known SDK 57 patch mismatches; no exit code is printed, so Gate 4 exit is
+  not captured. Correction (2026-11-22): this is true of the output file; the
+  reconstructed terminal paste shows exit 1 at 11:40:11 IST, while the file
+  has no exit code because the command had an unterminated quote. This agent
+  continuation performed no network action.
+- The repository contains 187 PRs, zero open PRs and zero issues; #39 remains
+  the only closed unmerged PR. PR #186 merged `task/docs-device-checklist-by-release`
+  into `documentation` at `001df8b812e0b2c990137f22747be4d0e5cfd2a1` at 12:42:48 IST;
+  PR #187 merged `documentation` into `develop` at `aeacbfd65e74d0cc5428a9b2460864223e7d9cc6`
+  at 12:43:16 IST. Local `develop` and `origin/develop` match at `aeacbfd65e74d0cc5428a9b2460864223e7d9cc6`.
+  Gate 4 exits 0 (21/21 checks passed, no issues detected). The prior Gate 4 exit 1 exception on six SDK 57 patch mismatches was cleared by task cleanup-expo-sdk57-patch-align.
+  Device checklist is merged to `develop` (78 rows, release gate rule).
+  The owner reported physical-device validation for O61–O74 on 2026-11-22 as Pass.
+  All 78 rows in the device checklist now Pass; the release gate is unblocked.
+
+
+## Current task — CR-119 device checklist by release (2026-11-22)
+
+- Branch: `task/docs-device-checklist-by-release`; local task base is sync
+  commit `25c7b29d8fc3a2e7e6ecfe1660b6b9f32e385098`. Test-first commits are
+  `1d9b574` (expected failure on old versioned H1), `9864859` (pin all 78
+  original IDs), `7221ba5` (CR-119/policy regression), `c7eb5e1` (range punctuation correction), and `26f7a92` (full shared wording checks).
+- The checklist now has Next release O61–O74 first, then published v1.0.0,
+  v1.1.0, v1.1.1 and v1.2.0 sections in ascending order. Every check row's
+  ID, Test, Result and Notes matches the pre-change baseline by ID. The
+  v1.0.0, v1.1.0, v1.1.1 and v1.2.0 assignments follow release-history dates,
+  tags and ledger entries; none is uncertain.
+- The release gate blocks release work for every non-Pass row in every section.
+  O61–O74 remain Not run and block the next release. No owner waiver is
+  recorded. Focused ledger suite passes after the checklist and gate changes.
+- Final six gates: Gate 1 exit 0 (105 suites, 1,439 passed, 1 skipped); its
+  initial Watchman attempt exited 1, then passed with `--watchman=false`. Gates
+  2–3 exit 0. Gate 4 is not captured because local-only forbids network; the
+  supplied post-#185 owner output is 20/21 with six known SDK 57 patch
+  mismatches, but no exit code was captured. Correction (2026-11-22): no exit
+  code appears in the output file, but reconstructed terminal paste shows
+  owner-run exit 1 at 11:40:11 IST. Gates 5–6 exit 0. All six
+  protected-file hashes match; `package.json`, `package-lock.json` and
+  `app.json` have no diff against `develop`.
+- This is local-only work: no network, push, PR, merge, release, tag or build
+  was performed. Device checks O61–O74 remain Not run and block the next
+  release.
+
+
+## Current task — DOCS-R8-LOG-CORRECTIONS (2026-11-22)
+
+- Branch: `task/docs-device-checklist-by-release`; expected starting HEAD
+  `a914ab17b8768465cb91245dbefec0b5ddcd19e8`. Corrected the Owner-run actions
+  log with reconstructed terminal evidence and the refreshed remote snapshot.
+  The script(1) recording is incomplete: its 2,188 bytes contain shell start,
+  prompt and exit only; reconstructed segments 7–8 contain the pushes, PR
+  operations, CM-2 and Gate 4 absent from that recording.
+- The supplied PR snapshot and reconstructed terminal paste agree on PR #184/#185
+  merges and branch state. CLI prompt observations may occur after snapshot API
+  `createdAt`/`mergedAt`; the ledger keeps snapshot timestamps authoritative
+  and records terminal observations separately.
+- Focused ledger/memory tests: 3 suites, 39 tests passed. Gate 1 exit 0 (105
+  suites, 1,439 passed, 1 skipped); Gates 2–3 exit 0; Gate 4 not run locally
+  because this task prohibits network access. The owner terminal paste records
+  Gate 4 exit 1 at 11:40:11 IST / 06:10:11 UTC, 20/21 with six known SDK 57
+  patch mismatches; the output file itself has no exit code. Gates 5–6 exit 0.
+  Protected hashes match and package/config diff against `develop` is empty.
+- Local only: no network, push, PR or merge. O61–O74 remain Not run and block
+  the next release; owner PR flow remains pending.
+
+
+## Current task — cleanup-expo-sdk57-patch-align (2026-11-22)
+
+- Branch: `task/cleanup-expo-sdk57-patch-align`; standalone lifecycle: `cleanup`.
+- Aligned Expo SDK 57 patch dependencies: `expo ~57.0.33`, `expo-constants ~57.0.24`, `expo-linking ~57.0.14`, `expo-router ~57.0.31`, `expo-sharing ~57.0.26`, `expo-sqlite ~57.0.5`.
+- All six gates passed with exit 0; Gate 4 now passes with exit 0 (21/21 checks passed, no issues detected).
+- Six protected-file hashes match. No application code or schema changed.
+- Device checks O61–O74 remain Not run and block releases.
+
+
+## Current task — docs-device-checks-pass-o61-o74 (2026-11-22)
+
+- Branch: `task/docs-device-checks-pass-o61-o74`; standalone lifecycle branch: `documentation`.
+- Recorded owner-reported physical-device validation Pass for checks O61–O74:
+  - O61–O64: Searchable shared Dropdown keyboard usability, polite screen-reader announcements, clear tap target (44x44 pt), and font scale 1.3/2.0 layout (P20-S-R2).
+  - O65–O68: Emergency Fund target edit/save, Undo toast timing, Home/Goals refresh, and font scale 1.3/2.0 layout (P21-F).
+  - O69: Invest transaction neutral category and holding selection derivation (P20-W D1).
+  - O70: Expense Budget category picker, derived section, and custom category entry (P20-W D2).
+  - O71: Custom earned-income type entry, trimming, persistence, and reopening under schema v24 (P20-W D3).
+  - O72: Transaction form scrolling, validation, category picker, and font scale 1.3/2.0 layout (P20-W).
+  - O73: Spend/Invest/Income item edit/delete persistence across single/following scopes and device restart (P20-U-R1).
+  - O74: Linked one-time savings Budget item marked Paid from Transactions, holding deposit, Budget actual, and Undo (P20-A-R3).
+- Device model, OS version, and tester details were not supplied and remain blank.
+- All 78 rows across all 5 sections of the device checklist now Pass.
+- The release gate is unblocked for candidate builds.
+
+
+## Current task — docs-device-checklist-metadata-rules (2026-11-22)
+
+- Branch: `task/docs-device-checklist-metadata-rules`; standalone lifecycle branch: `documentation`.
+- Recorded physical device metadata across all 5 sections of `docs/releases/device-test-checklist.md`:
+  - Device model: `realme Narzo 60 Pro 5g`
+  - Android version: `15 Vanilla Ice Cream`
+  - Tester: `sahilsheikh-dev`
+  - Dates: `2026-11-22` (Next release), `2026-11-07` (v1.0.0), `2026-11-08` (v1.1.0), `2026-11-09` (v1.1.1), `2026-11-11` (v1.2.0).
+- Updated Notes across all Pass checks to record owner-reported physical-device verification as of the respective release date.
+- Updated device checklist maintenance rules across all policy documents (`device-test-checklist.md`, `rules.md`, `AGENTS.md`, `README.md`, `RELEASE_PROMPT.md`, `release-config.md`, `build-config.md`) requiring agents to prompt the owner to confirm all metadata fields (Device model, Android version, Tester username, and Date) with suggestions based on previous releases data before making changes.
+
+
+## Current task — P7-plan-cloud-backup (2026-11-22)
+
+- Branch: `task/P7-plan-cloud-backup`; phase branch: `phase/07-cloud-backup`.
+- Recorded Phase P7 — Cloud Backup (Google Drive) as Planned across repository ledgers, memory, and roadmap under Rule R7 (empty slot adjacent to P6 Backup & Security).
+- Planned subtasks (all Planned; Evidence: not started):
+  - P7-A: Research Google Drive REST API (v3) appDataFolder scope, Expo SDK 57 Google OAuth2/Sign-In integration, and background scheduling (expo-background-fetch / Android WorkManager) with Wi-Fi gating.
+  - P7-B: Pure domain model for cloud backup scheduling (frequency: daily / weekly / monthly / manual, retention policy, zero-knowledge local passphrase encryption before upload).
+  - P7-C: UI & settings in Backup / Security screen (Connect/Disconnect Google Drive, last backup status/timestamp, frequency picker, Wi-Fi only toggle, "Back up now", and "Restore from Google Drive" flow).
+  - P7-D: Deterministic demo data, offline fallback, token revocation handling, unit tests, and device checklist rows.
+- Planning-only task: no application code, no dependencies, no schema change.

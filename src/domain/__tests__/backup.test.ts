@@ -49,7 +49,7 @@ describe('backup validation and serialization', () => {
     expect(canonicalJson([undefined, 1])).toBe('[1]');
     const text = await createBackup(mockAppData, { exportedAt: '2026-10-10T10:00:00.000Z', digest });
     expect(text).toContain('\n  "app": "wealthwise"');
-    expect(JSON.parse(text)).toMatchObject({ schemaVersion: 23 });
+    expect(JSON.parse(text)).toMatchObject({ schemaVersion: 24 });
     await expect(parseBackup(text, { digest })).resolves.toMatchObject({
       ok: true, data: mockAppData, exportedAt: '2026-10-10T10:00:00.000Z',
       summary: { transactions: mockAppData.transactions.length },
@@ -96,6 +96,47 @@ describe('backup validation and serialization', () => {
       ok: true,
       data: mockAppData,
     });
+  });
+
+  it.each([19, 20, 21])('imports a v%s backup through the remaining schema chain', async (schemaVersion) => {
+    const raw = await createBackup(mockAppData, {
+      exportedAt: '2026-10-10T10:00:00.000Z', digest,
+    });
+    const legacy = await reChecksum(raw, (envelope) => { envelope.schemaVersion = schemaVersion; });
+
+    await expect(parseBackup(legacy, migrationOptions)).resolves.toMatchObject({
+      ok: true,
+      data: mockAppData,
+    });
+  });
+
+  it('preserves custom earned-income categories through v23 import and plain/encrypted backup round trips', async () => {
+    const data = structuredClone(mockAppData);
+    const plan = data.budgetPlan;
+    const income = plan?.incomes[0];
+    if (!plan || !income) throw new Error('Custom earned-income backup fixture is missing.');
+    Object.assign(income, { category: 'Consulting' });
+    const currentBackup = await createBackup(data, {
+      exportedAt: '2026-10-10T10:00:00.000Z', digest,
+    });
+    const imported = await parseBackup(currentBackup, { digest });
+    if (!imported.ok) throw new Error(`${imported.reason}: ${imported.message}`);
+    expect(imported.data.budgetPlan?.incomes[0]?.category).toBe('Consulting');
+
+    const v23Backup = await reChecksum(currentBackup, (envelope) => { envelope.schemaVersion = 23; });
+    const v23Imported = await parseBackup(v23Backup, migrationOptions);
+    if (!v23Imported.ok) throw new Error(`${v23Imported.reason}: ${v23Imported.message}`);
+    expect(v23Imported.data.budgetPlan?.incomes[0]?.category).toBe('Consulting');
+
+    const encrypted = await encryptBackup(currentBackup, 'a sufficiently long passphrase', {
+      salt: Uint8Array.from({ length: 16 }, (_, index) => index),
+      nonce: Uint8Array.from({ length: 12 }, (_, index) => index + 16),
+      kdf: { name: 'scrypt', params: { N: 2 ** 15, r: 8, p: 1, dkLen: 32 } },
+    });
+    const decrypted = await decryptBackup(encrypted, 'a sufficiently long passphrase');
+    const encryptedImported = await parseBackup(decrypted, { digest });
+    if (!encryptedImported.ok) throw new Error(`${encryptedImported.reason}: ${encryptedImported.message}`);
+    expect(encryptedImported.data.budgetPlan?.incomes[0]?.category).toBe('Consulting');
   });
 
   it('accepts historical backup dates from 1900 and rejects dates before that floor', () => {
@@ -347,6 +388,31 @@ describe('backup validation and serialization', () => {
     });
   });
 
+  it('round-trips an edited Emergency Fund target through plain and encrypted v23 backups', async () => {
+    const target = 3_456_789.12;
+    const editedData = {
+      ...mockAppData,
+      goals: mockAppData.goals.map((goal) => goal.auto === 'ef' ? { ...goal, target } : goal),
+    };
+    const plain = await createBackup(editedData, {
+      exportedAt: '2026-10-10T10:00:00.000Z', digest,
+    });
+    const plainImport = await parseBackup(plain, { digest });
+    if (!plainImport.ok) throw new Error(`${plainImport.reason}: ${plainImport.message}`);
+    expect(plainImport.data.goals.find((goal) => goal.auto === 'ef')?.target).toBe(target);
+
+    const encrypted = await encryptBackup(plain, 'a sufficiently long passphrase', {
+      salt: Uint8Array.from({ length: 16 }, (_, index) => index),
+      nonce: Uint8Array.from({ length: 12 }, (_, index) => index + 16),
+      kdf: { name: 'scrypt', params: { N: 2 ** 15, r: 8, p: 1, dkLen: 32 } },
+    });
+    const decrypted = await decryptBackup(encrypted, 'a sufficiently long passphrase');
+    const encryptedImport = await parseBackup(decrypted, { digest });
+    if (!encryptedImport.ok) throw new Error(`${encryptedImport.reason}: ${encryptedImport.message}`);
+    expect(encryptedImport.data.goals.find((goal) => goal.auto === 'ef')?.target).toBe(target);
+    expect(SCHEMA_VERSION).toBe(24);
+  });
+
   it('round-trips a manual holding snapshot adjustment through backup export and import', async () => {
     const holding = mockAppData.holdings.find((item) =>
       item.kind === 'manual' && item.id === 'holding-cash');
@@ -437,7 +503,7 @@ describe('backup validation and serialization', () => {
         incomes: [{ id: 'income', name: 'Income', category: 'Salary' as const, amount: 10_000 }],
       })],
     };
-    expect(SCHEMA_VERSION).toBe(23);
+    expect(SCHEMA_VERSION).toBe(24);
     const raw = await createBackup(data, { exportedAt: '2026-10-13T10:00:00.000Z', digest });
     const result = await parseBackup(raw, { digest });
     if (!result.ok) throw new Error(`${result.reason}: ${result.issues?.join('; ') ?? result.message}`);
@@ -499,7 +565,7 @@ describe('backup validation and serialization', () => {
       },
     });
     const future = JSON.parse(raw) as { schemaVersion: number };
-    future.schemaVersion = 24;
+    future.schemaVersion = 25;
     await expect(parseBackup(JSON.stringify(future), { digest }))
       .resolves.toMatchObject({ ok: false, reason: 'newer-version' });
   });
@@ -685,7 +751,7 @@ describe('backup validation and serialization', () => {
       budgetPlan: { ...plan, incomes: [oneTimeIncome], items: [onceItem] },
     };
     const raw = await createBackup(data, { exportedAt: '2026-10-13T10:00:00.000Z', digest });
-    expect(JSON.parse(raw)).toMatchObject({ schemaVersion: 23 });
+    expect(JSON.parse(raw)).toMatchObject({ schemaVersion: 24 });
     const passphrase = 'a sufficiently long backup passphrase';
     const encrypted = await encryptBackup(raw, passphrase, {
       salt: Uint8Array.from({ length: 16 }, (_, index) => index),
@@ -906,7 +972,7 @@ describe('backup validation and serialization', () => {
     const tampered = raw.replace('"amount": 47000', '"amount": 47001');
     await expect(parseBackup(tampered, { digest })).resolves.toMatchObject({ ok: false, reason: 'checksum-mismatch' });
     const newer = JSON.parse(raw) as Record<string, unknown>;
-    newer.schemaVersion = 24;
+    newer.schemaVersion = 25;
     await expect(parseBackup(JSON.stringify(newer), { digest })).resolves.toMatchObject({ ok: false, reason: 'newer-version' });
     const futureFormat = await reChecksum(raw, (envelope) => { envelope.formatVersion = BACKUP_FORMAT_VERSION + 1; });
     await expect(parseBackup(futureFormat, { digest })).resolves.toMatchObject({ ok: false, reason: 'newer-version' });
@@ -1092,6 +1158,7 @@ describe('backup validation and serialization', () => {
       .toEqual(expectedGoalSavings);
     const importedEmergencyGoal = imported.data.goals.find((goal) => goal.auto === 'ef');
     if (!importedEmergencyGoal) throw new Error('Expected the imported Emergency Fund goal.');
+    expect(importedEmergencyGoal.target).toBe(30_000);
     const importedEfAvailableByBucket = Object.fromEntries(
       Object.entries(imported.data.efBucketLinks).map(([bucketId, holdingIds]) => [
         bucketId,

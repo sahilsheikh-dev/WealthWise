@@ -12,6 +12,7 @@ const memoryFiles = [
   'status.md',
   'open-items.md',
   'working-style.md',
+  'work-placement.md',
 ];
 const header = /^<!-- Purpose: .+ \| Last updated: \d{4}-\d{2}-\d{2} \| Updates: .+ -->/;
 
@@ -51,6 +52,7 @@ describe('shared AI memory documents', () => {
 
     const projectTests = readMemoryFile('project.md').match(/Test counts: (\d+) suites, (\d+) tests/);
     const status = readMemoryFile('status.md');
+    const openItems = readMemoryFile('open-items.md');
     const currentTests = status.match(/Test counts: (\d+) suites, (\d+) tests/);
     const latestRun = status.match(/Latest validated run: (\d+) suites, (\d+) tests/);
     expect(projectTests).not.toBeNull();
@@ -60,5 +62,22 @@ describe('shared AI memory documents', () => {
     expect(projectTests?.[2]).toBe(currentTests?.[2]);
     expect(currentTests?.[1]).toBe(latestRun?.[1]);
     expect(currentTests?.[2]).toBe(latestRun?.[2]);
+    expect(status).toContain('**CR-111 (2026-11-12):** P20-A-R3 implementation/tests are complete locally');
+    expect(openItems).toContain('## CR-111 planned work');
+    expect(status).toContain('P20-S-R2 / CR-116');
+    expect(openItems).toContain('## P20-S-R2 searchable Dropdowns');
+    expect(openItems).toContain('O61–O64');
+  });
+
+  it('requires the work-placement quick start and indexed page', () => {
+    const index = readMemoryFile('README.md');
+    const page = readMemoryFile('work-placement.md');
+    expect(index).toContain('work-placement.md');
+    expect(page).toMatch(header);
+    expect(page).toMatch(/^# Work placement/m);
+    expect(page).toContain('1. Search the dashboard');
+    expect(page).toContain('P20-A-R3');
+    expect(page).toContain('P44');
+    expect(page).toContain('CM-2');
   });
 });

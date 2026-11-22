@@ -16,7 +16,7 @@ import {
   addLiability, addLiabilityPayment, closeRecurringLiability, deleteLiability, deleteLiabilityPayment, updateLiability, updateLiabilityPayment,
   type AddLiabilityInput, type CloseLiabilityInput, type LiabilityPatch, type LiabilityPaymentPatch,
 } from '../domain/liabilityActions';
-import { addGoal, deleteGoal, updateGoal, type AddGoalInput, type GoalPatch } from '../domain/goalActions';
+import { addGoal, deleteGoal, updateEmergencyFundTarget, updateGoal, type AddGoalInput, type GoalPatch } from '../domain/goalActions';
 import {
   addPolicy as addPolicyData,
   deletePolicy as deletePolicyData,
@@ -51,7 +51,7 @@ import {
   type LinkedTransactionPatch,
 } from '../domain/instruments';
 import { validateIntegrity } from '../domain/links';
-import { monthlyBaseline } from '../domain/ef';
+import { emergencyFundBaseline, monthlyBaseline } from '../domain/ef';
 import { ensureEfGoal } from '../domain/goals';
 import {
   repairEfLinkedHoldings,
@@ -138,8 +138,8 @@ export type AppActions = {
   addInvestmentEntry: (holdingId: string, input: InvestmentEntryInput) => void;
   updateInvestmentEntry: (holdingId: string, entryId: string, patch: InvestmentEntryPatch) => void;
   deleteInvestmentEntry: (holdingId: string, entryId: string) => void;
-  clearDue: (target: ClearDueTarget, rowId?: string, actualAmount?: number, note?: string) => string | undefined;
-  clearDuesThrough: (target: DueTarget, dueDate: ISODate, actualAmount?: number) => string[] | undefined;
+  clearDue: (target: ClearDueTarget, rowId?: string, actualAmount?: number, note?: string, date?: ISODate) => string | undefined;
+  clearDuesThrough: (target: DueTarget, dueDate: ISODate, actualAmount?: number, date?: ISODate) => string[] | undefined;
   clearPastDues: (target: DueTarget, options: {
     mode: 'settle' | 'record';
     balance?: number;
@@ -163,6 +163,7 @@ export type AppActions = {
   deleteLiabilityPayment: (liabilityId: string, paymentId: string) => void;
   addGoal: (input: AddGoalInput) => void;
   updateGoal: (id: string, patch: GoalPatch) => void;
+  setEmergencyFundTarget: (target: number) => void;
   setGoalLinks: (goalId: string, links: GoalLink[]) => void;
   fundShortfall: (month: string, allocations: ShortfallAllocation[]) => void;
   allocateSurplus: (date: ISODate, allocations: SurplusAllocation[]) => void;
@@ -413,11 +414,11 @@ export function createAppStore(
             'Investment entry deleted.',
           );
         },
-        clearDue(target, rowId, actualAmount, note) {
+        clearDue(target, rowId, actualAmount, note, date) {
           let entryId: string | undefined;
           applyDataAction((data) => {
             const result = clearDue(data, target, {
-              date: deps.today(),
+              date: date ?? deps.today(),
               newId: deps.newId,
               ...(rowId ? { rowId } : {}),
               ...(actualAmount !== undefined ? { actualAmount } : {}),
@@ -428,11 +429,11 @@ export function createAppStore(
           });
           return entryId;
         },
-        clearDuesThrough(target, dueDate, actualAmount) {
+        clearDuesThrough(target, dueDate, actualAmount, date) {
           let entryIds: string[] | undefined;
           applyDataAction((data) => {
             const result = clearDuesThrough(data, target, dueDate, {
-              date: deps.today(),
+              date: date ?? deps.today(),
               newId: deps.newId,
               ...(actualAmount !== undefined ? { actualAmount } : {}),
             });
@@ -537,6 +538,11 @@ export function createAppStore(
           applyDataAction((data) => updateGoal(data, id, patch, {
             expenseBaseline: monthlyBaseline(data.transactions, 'expense', deps.today()),
           }));
+        },
+        setEmergencyFundTarget(target) {
+          applyDataActionWithUndo((data) => updateEmergencyFundTarget(data, target, {
+            expenseBaseline: emergencyFundBaseline(data.transactions, data.settings.monthlySalary, deps.today()).amount,
+          }), 'Emergency fund target updated');
         },
         setGoalLinks(goalId, links) {
           applyDataAction((data) => setGoalLinks(data, goalId, links));
@@ -650,7 +656,13 @@ export function createAppStore(
           applyDataAction((data) => setEfBucketLinks(data, bucketId, holdingIds));
         },
         saveEfPlan(plan) {
-          applyDataAction((data) => saveEfPlan(data, plan, deps.newId));
+          applyDataActionWithUndo((data) => saveEfPlan(data, plan, deps.newId, {
+            expenseBaseline: emergencyFundBaseline(
+              data.transactions,
+              data.settings.monthlySalary,
+              deps.today(),
+            ).amount,
+          }), 'Emergency fund updated');
         },
         dismissStorageError() {
           suppressNextWrite = true;
@@ -762,6 +774,7 @@ export function createAppStore(
             await storage.removeItem(`${PERSIST_NAME}.premigration.v20`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v21`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v22`);
+            await storage.removeItem(`${PERSIST_NAME}.premigration.v23`);
             await storage.removeItem(`${PERSIST_NAME}.prerepair-efallocation`);
             await storage.removeItem(PREIMPORT_KEY);
             await storage.removeItem(`${PERSIST_NAME}.corrupt.latest`);
