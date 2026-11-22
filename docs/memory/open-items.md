@@ -2,7 +2,7 @@
 
 # Open items
 
-## P20-Y Budget payment date, multi-asset budget links, and limited expense categories (implementation complete; device check open)
+## P20-Y Budget payment date, multi-asset budget links, and limited expense categories (Done; device check Pass)
 
 - CR-126 implements three related changes:
   1. Payment date input (defaulting to today, customizable) when marking scheduled/budgeted
@@ -16,14 +16,10 @@
      plus Custom, while preserving historical removed categories when editing.
 - Full six-gate run passes exit 0. Regression tests pass across components, domain,
   and smoke suites.
-- Physical-device check O76 remains Not run: verify payment date prompt when marking
-  scheduled/budgeted items Paid in Transactions and Budget (default today, customizable,
-  historical dates preserved), verify linking one asset to multiple one-time investment
-  budgets and paying each updates correct holding and budget actuals, and verify
-  Transaction form Expense category dropdown only displays user-created or applicable
-  scheduled categories while preserving historical removed categories when editing.
+- Physical-device check O76 validated Pass by owner on 2026-11-22 on realme Narzo 60 Pro 5g
+  (Android 15 Vanilla Ice Cream, tester sahilsheikh-dev).
 
-## P20-X Budget category and item sorting (implementation complete; device check open)
+## P20-X Budget category and item sorting (Done; device check Pass)
 
 - CR-125 adds sorting for Budget categories and items throughout WealthWise using
   the existing sorting behavior in Transactions, Assets, and Liabilities as reference.
@@ -36,10 +32,8 @@
   `budgetCategoryChoiceSections` with pure sortSpec handling.
 - Full six-gate run passes exit 0. Regression tests: `BudgetSorting.test.tsx`,
   `Dropdown.test.tsx`, `RouteRenderSmoke.test.tsx`, `budgetCategories.test.ts`.
-- Physical-device check O75 remains Not run: verify Budget category and item
-  sorting on iOS and Android: SortChip in filter panel on Budget screen, persistent
-  sort order across app restart, and category dropdown sorting in TransactionForm
-  and BudgetIncomeForm at font scales 1.0, 1.3, and 2.0.
+- Physical-device check O75 validated Pass by owner on 2026-11-22 on realme Narzo 60 Pro 5g
+  (Android 15 Vanilla Ice Cream, tester sahilsheikh-dev).
 
 ## P20-S-R2 searchable Dropdowns (implementation complete; device checks open)
 
