@@ -1119,6 +1119,9 @@ describe('permanent progress ledger', () => {
     expect(originalRow).toContain('D3 is authorized: widen earned-income category to a trimmed nonempty string up to 60 characters');
     expect(originalRow).toContain('Owner decision DEC-P20W-D3-SCHEMA24 assigns schema v24 to P20-W and replans P36-A/B to v25');
     expect(originalRow).toContain('implementation `f2541fd` adds custom earned-income categories');
+    expect(originalRow).toContain('PR #182 merged into `phase/20-budget`');
+    expect(readFileSync(join(process.cwd(), 'docs/history/entity-history-map.md'), 'utf8')).toContain('Every number from');
+    expect(readFileSync(join(process.cwd(), 'docs/history/entity-history-map.md'), 'utf8')).toContain('#39, which is a closed, unmerged PR');
     expect(originalRow).toContain('owner-supplied Gate 4 exit 1 (20/21 checks, six SDK 57 patch mismatches; owner-approved cleanup exception)');
     expect(revisionRow).toContain('| Done |');
     expect(revisionRow).toContain('task PR #174');
