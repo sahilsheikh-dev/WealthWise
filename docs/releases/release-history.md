@@ -37,14 +37,17 @@ The v1.1.0 Android APK matched the EAS artifact and is published as
 `WealthWise-android-v1.1.0.apk`. Its versioned URL returns HTTP 200 with a
 content length of 112,147,677 bytes. The former latest-named asset was
 replaced after v1.1.1 publication. The owner explicitly approved using the
-`preview` profile and reusing Android `versionCode` 1 for this release.
+`preview` profile (internal distribution preview build APK, not a production build)
+and reusing Android `versionCode` 1 for this release.
 
 The v1.0.0 Android APK artifact was verified against its published download.
 After v1.1.0 became latest, the v1.0.0 asset was renamed to
 `WealthWise-android-v1.0.0.apk`, and its Download block was updated to the
 matching versioned URL. That URL returns HTTP 200 with a content length of
-112,133,413 bytes; the former generic v1.0.0 URL returns HTTP 404. Its digest
-was checked privately and is not included in human-authored release material.
+112,133,413 bytes; the former generic v1.0.0 URL returns HTTP 404. It was built
+with the EAS `preview` profile (internal distribution preview build APK, not a
+production build) with Android `versionCode` 1. Its digest was checked privately
+and is not included in human-authored release material.
 
 ## Versioning
 

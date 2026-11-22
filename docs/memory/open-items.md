@@ -616,9 +616,13 @@ Not adopted in CR-106:
   edit, and had unsafe migration behavior and a failing migration assertion.
   It conflicts with current `main` and was deleted at the owner's direction;
   no port is needed or authorized.
-- **v1.1.0 release integrity:** the owner explicitly approved the `preview`
-  profile and reused versionCode 1 for this release. For future releases,
-  restore the configured `android-apk` profile and increment versionCode.
+- **v1.0.0 and v1.1.0 preview APK artifacts:** historical releases v1.0.0 and
+  v1.1.0 distribute preview build APKs (built with EAS `preview` profile and
+  versionCode 1) rather than production builds. The owner confirmed keeping
+  these historical releases as-is while explicitly noting in their published
+  release notes, release history, and build configuration that they are preview
+  build APKs. v1.1.1 and v1.2.0 distribute production `android-apk` builds with
+  incremented version codes.
 - **Stale phase tags (owner decision, resolved 2026-11-11):**
   `phase-28-complete` and `phase-29-complete` remain on their historical
   targets by owner direction. No tag was moved.
@@ -902,6 +906,15 @@ Not adopted in CR-106:
   messages with descriptions of release-draft preparation and publication
   documentation. The changes are local and unpushed; see the verified
   old-to-new commit mapping in [PROGRESS.md](../PROGRESS.md).
+
+
+## Phase P7 Google Drive automated backup (planned)
+
+- **Goal:** Provide automated periodic backups to Google Drive using the `appDataFolder` scope, keeping the app serverless and private with zero-knowledge local passphrase encryption before upload.
+- **P7-A (Research & Prototyping):** Research Google Drive REST API (v3) `appDataFolder` scope (`https://www.googleapis.com/auth/drive.appdata`), Expo SDK 57 Google OAuth2/Sign-In integration, and background scheduling (`expo-background-fetch` / Android WorkManager) with Wi-Fi gating. Dependencies: none. Evidence: not started.
+- **P7-B (Pure Domain Model):** Pure domain model for cloud backup scheduling (frequency: daily, weekly, monthly, manual; retention policy: keep latest N backups; zero-knowledge AES-GCM local passphrase encryption before upload). Dependencies: P7-A. Evidence: not started.
+- **P7-C (UI & Settings):** UI & settings in Backup / Security screen (Connect/Disconnect Google Drive account, last backup status/timestamp, frequency picker, Wi-Fi only toggle, "Back up now", and "Restore from Google Drive" flow). Dependencies: P7-B. Evidence: not started.
+- **P7-D (Fixtures, Tests & Device Verification):** Deterministic demo data, offline fallback, token revocation handling, unit tests, and device checklist rows. Dependencies: P7-C. Evidence: not started.
 
 
 ## Pending owner actions (2026-11-22 reconciliation)

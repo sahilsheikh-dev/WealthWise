@@ -393,4 +393,14 @@ describe('published release download documentation', () => {
     expect(lockfile.version).toBe(releaseVersion);
     expect(lockfile.packages[''].version).toBe(releaseVersion);
   });
+
+  it('documents that v1.0.0 and v1.1.0 APKs are preview builds rather than production builds', () => {
+    const v100 = readFileSync(join(publishedDirectory, 'v1.0.0.md'), 'utf8');
+    const v110 = readFileSync(join(publishedDirectory, 'v1.1.0.md'), 'utf8');
+    const releaseHistory = readFileSync(join(root, 'docs', 'releases', 'release-history.md'), 'utf8');
+
+    expect(v100).toContain('preview build APK');
+    expect(v110).toContain('preview build APK');
+    expect(releaseHistory).toContain('preview build APK');
+  });
 });
