@@ -2,6 +2,13 @@
 
 # Open items
 
+## CR-136 Device checklist rearrangement for published v1.3.0 (Done)
+
+- Change request CR-136 (2026-11-23): Rearranged `docs/releases/device-test-checklist.md` to move published v1.3.0 checks O61–O76 into dedicated `## v1.3.0 device checks` section placed below `v1.2.0` in ascending version order.
+- `## Next release device checks` at the top contains only unreleased checks (O77) for upcoming version 1.3.1.
+- Established standing rule across all policy documents: once a release is published, move all checks verified for that specific version into its own `## vX.Y.Z device checks` section placed below previous release checks in ascending order, keeping each specific version's checks strictly under its own release section.
+- Next release device check O77 remains pending physical-device validation by the owner.
+
 ## CR-135 Device check O77 and feature/fix checklist rule (Done)
 
 - Change request CR-135 (2026-11-22): Added physical device check O77 to `docs/releases/device-test-checklist.md` under Next release device checks in `Not run` status for P20-Y-R3 budget item and section rename note preservation.
