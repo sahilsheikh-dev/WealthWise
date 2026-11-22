@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, PanResponder, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 
 import { AmountText } from '../../src/components/AmountText';
-import { AppHeader } from '../../src/components/AppHeader';
+import { AppHeader, type AppHeaderAction } from '../../src/components/AppHeader';
 import { PaceLine } from '../../src/components/BudgetCharts';
 import { SortChip } from '../../src/components/SortChip';
 import { AppText, Button, Card, ChipRow, Screen } from '../../src/components/ui';
@@ -277,9 +277,16 @@ export default function BudgetScreen() {
     <Screen scroll={false}>
       <View style={styles.gestureSurface} {...panResponder.panHandlers}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <AppHeader
-            title="Budget"
-            rightActions={[
+          {(() => {
+            const addCategoryAction: AppHeaderAction = {
+              icon: 'plus',
+              label: 'Add category',
+              onPress: () => router.push({
+                pathname: '/budget-section-form',
+                params: { month, type: 'spend', scope: scopeFor(true) },
+              }),
+            };
+            const headerRightActions: AppHeaderAction[] = [
               {
                 icon: 'filter',
                 label: 'Filter',
@@ -287,19 +294,16 @@ export default function BudgetScreen() {
                 expanded: filterPanelOpen,
                 showIndicator: filterActive,
               },
-              ...(overview.mode === 'past'
-                ? []
-                : [{
-                  icon: 'plus',
-                  label: 'Add category',
-                  onPress: () => router.push({
-                    pathname: '/budget-section-form',
-                    params: { month, type: 'spend', scope: scopeFor(true) },
-                  }),
-                }]),
-            ]}
-            showDefaultMenu={false}
-          />
+              ...(overview.mode === 'past' ? [] : [addCategoryAction]),
+            ];
+            return (
+              <AppHeader
+                title="Budget"
+                rightActions={headerRightActions}
+                showDefaultMenu={false}
+              />
+            );
+          })()}
           {filterPanelOpen ? (
             <View testID="budget-filter-panel" style={styles.filterPanel}>
               <ChipRow>

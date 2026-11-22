@@ -195,7 +195,7 @@ describe('Budget category and item sorting', () => {
     // Select Name sort option
     const nameOptionButton = renderer.root.find((node) =>
       node.props.accessibilityRole === 'button'
-      && node.findAllByType && node.findAllByType('text').some((t: { children: string[] }) => t.children.includes('Name')),
+      && Boolean(node.findAllByType && node.findAllByType('text').some((t) => t.children.join('').includes('Name'))),
     );
     act(() => {
       nameOptionButton.props.onPress();

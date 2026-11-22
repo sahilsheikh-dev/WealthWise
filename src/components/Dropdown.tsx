@@ -53,13 +53,15 @@ export function Dropdown({
     () => searchable ? filterAndRankDropdownOptions(options, query) : [...options],
     [options, query, searchable],
   );
-  const customOptions = filteredOptions.filter((option) =>
-    option.title.trim().toLocaleLowerCase() === 'custom' || option.value.toLocaleLowerCase() === 'custom',
-  );
-  const visibleOptions = filteredOptions.filter((option) => !customOptions.includes(option));
-  const sortedVisibleOptions = useMemo(() => {
-    if (!sortSpec) return visibleOptions;
-    const withMeta = visibleOptions.map((option) => ({
+  const { customOptions, sortedVisibleOptions } = useMemo(() => {
+    const custom = filteredOptions.filter((option) =>
+      option.title.trim().toLocaleLowerCase() === 'custom' || option.value.toLocaleLowerCase() === 'custom',
+    );
+    const visible = filteredOptions.filter((option) => !custom.includes(option));
+    if (!sortSpec) {
+      return { customOptions: custom, sortedVisibleOptions: visible };
+    }
+    const withMeta = visible.map((option) => ({
       ...option,
       name: option.title,
       percentUsed: typeof option.percentUsed === 'number'
@@ -68,8 +70,11 @@ export function Dropdown({
           ? (option.actual / option.planned) * 100
           : null),
     }));
-    return sortItems(withMeta, 'budgetSpending', sortSpec);
-  }, [sortSpec, visibleOptions]);
+    return {
+      customOptions: custom,
+      sortedVisibleOptions: sortItems(withMeta, 'budgetSpending', sortSpec),
+    };
+  }, [filteredOptions, sortSpec]);
 
   const groups = useMemo(() => {
     const rawGroups = [...new Set(sortedVisibleOptions.map((option) => option.group).filter((group): group is string => Boolean(group)))];
