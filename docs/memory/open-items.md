@@ -34,6 +34,10 @@
   `Dropdown.test.tsx`, `RouteRenderSmoke.test.tsx`, `budgetCategories.test.ts`.
 - Physical-device check O75 validated Pass by owner on 2026-11-22 on realme Narzo 60 Pro 5g
   (Android 15 Vanilla Ice Cream, tester sahilsheikh-dev).
+- **P20-X-R1 (CR-129):** Remove sorting option from TransactionForm category dropdowns
+  (Expense, Income, Invest) and remove static Search header title from shared Dropdown
+  sheet, keeping search placeholder in the input. Regression coverage in `Dropdown.test.tsx`
+  and `TransactionForm.test.tsx`. All six repository gates pass.
 
 ## P20-S-R2 searchable Dropdowns (implementation complete; device checks open)
 
