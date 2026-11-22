@@ -176,11 +176,15 @@ the phase branch is retained. Phase PR #147 merged into `develop` at
   `9d914638e50462cbadef84df3294ed07cbf42732`. The old remote refs are absent.
   Historical branch name: `phase/27-cleanup`; historical branch name:
   `phase/28-qa-and-release`. The stale phase tags remain unchanged.
-- **P43-B — Tag and integration audit:** owner approved the cleanup scope and
-  report-only branch/PR/merge audit. Preserve every `vX.Y.Z` release tag and
-  previously retained stale phase tags. Prepare the exact proposed deletion
-  list for owner review; the list has not yet been supplied or approved, so
-  no deletion is authorized. Report the audit in chat or `/tmp`, not Git.
+- **P43-B — Tag and integration audit (Done):** owner explicitly approved
+  deleting all non-release tags while keeping only release tags and enforcing
+  the release-only tag policy in repository rules. All 47 non-release and
+  legacy phase tags (`phase-01-complete` through `phase-30-complete`, and 17
+  intermediate phase tags) were deleted locally and on remote `origin` on
+  2026-11-22. Only the five verified release tags (`v1.0.0`, `v1.1.0`, `v1.1.1`,
+  `v1.2.0`, `v1.3.0`) are retained. Rules in `AGENTS.md`, `rules.md`, and
+  `PROGRESS.md` were updated to prohibit non-release tags. Report the audit in
+  chat or `/tmp`, not Git.
 - **P21-F (Previously: P43-C) — Emergency Fund target editing (Done; Revised by P21-F-R1):**
   the existing persisted Goal.target is reused; schema v23 and backup formats
   remain unchanged. DEC-P21F-FLOOR keeps the effective max(stored target,
