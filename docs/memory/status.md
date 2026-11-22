@@ -1,7 +1,7 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-22 | Updates: owner and AI agents -->
 
 # Status
-- **P20-Y (2026-11-22) — Done; O76 physical-device check remains open.**
+- **P20-Y (2026-11-22) — Done; O76 physical-device check validated Pass.**
   CR-126 implements three related changes: (1) payment date input (defaulting
   to today, customizable) when marking scheduled/budgeted items Paid in
   Transactions and Budget, propagating to clearDue / clearDuesThrough /
@@ -13,9 +13,9 @@
   categories when editing existing transactions. Full regression tests pass
   in PaidAmountDialog.test.tsx, PendingItemActions.paymentDate.test.tsx,
   budgetMultiAssetLink.test.ts, budgetCategoriesLimited.test.ts, and
-  TransactionForm.test.tsx. All six repository gates pass exit 0. O76 remains
-  Not run.
-- **P20-X (2026-11-22) — Done; O75 physical-device check remains open.**
+  TransactionForm.test.tsx. All six repository gates pass exit 0. O76 was
+  validated Pass on physical device realme Narzo 60 Pro 5g by owner on 2026-11-22.
+- **P20-X (2026-11-22) — Done; O75 physical-device check validated Pass.**
   Implemented sorting for Budget categories and items throughout WealthWise using
   existing sorting behavior in Transactions, Assets, and Liabilities as reference.
   Added SortChip in AppHeader filter toggle panel on BudgetScreen using
@@ -28,7 +28,7 @@
   tests: BudgetSorting.test.tsx, Dropdown.test.tsx, RouteRenderSmoke.test.tsx,
   budgetCategories.test.ts. All six repository gates pass. Protected-file hash
   for app/(tabs)/budget.tsx updated to eca7607015cb3c8b85dfc7e0d4001235166742a2.
-  O75 remains Not run.
+  O75 was validated Pass on physical device realme Narzo 60 Pro 5g by owner on 2026-11-22.
 - **P20-U-R1 (2026-11-21) — Done; O73 physical-device restart check remains open.**
   CONT3 completed the form/store/persistence matrix for reported fields,
   sections, kinds and both scopes, plus non-current viewed months, plain-backup
