@@ -798,15 +798,24 @@
 - PR #184's head OID is `c14fc2a420f0efc791813ab5cc2f42d0a15ef5fc`;
   `origin/documentation` is `6c69977fa12bfeb3c979ee6fd415df7deaaf1dea`. Exact
   push actions/times are not in the terminal recording; remote refs and PR
-  head OIDs establish the published tips.
+  head OIDs establish the published tips. Correction (2026-11-22): this refers
+  to the 2,188-byte script(1) recording; reconstructed terminal paste records
+  `documentation` pushed at 11:33:08 IST and the task branch at 11:33:15 IST,
+  plus PR #184/#185 and CM-2. The script log itself is incomplete and does not
+  contain those commands.
 - The `script` log records a session from 11:13:17 to 11:37:46 IST but contains
   no Git/PR commands. `gate4-develop-after185.txt` shows 20/21 and the six
   known SDK 57 patch mismatches; no exit code is printed, so Gate 4 exit is
-  not captured. This agent continuation performed no network action.
+  not captured. Correction (2026-11-22): this is true of the output file; the
+  reconstructed terminal paste shows exit 1 at 11:40:11 IST, while the file
+  has no exit code because the command had an unterminated quote. This agent
+  continuation performed no network action.
 - The snapshot contains 185 PRs, zero open PRs and zero issues; #39 remains
   the only closed unmerged PR. O61–O74 remain Not run. The current task is
   `task/docs-device-checklist-by-release` at its Stage 0 sync commit; checklist
-  restructuring and release gate work remain in progress.
+  restructuring and release gate work remain in progress. Correction (2026-11-22):
+  CR-119 is complete locally; DOCS-R8-LOG-CORRECTIONS is the active local-only
+  evidence-log correction task on this branch.
 
 
 ## Current task — CR-119 device checklist by release (2026-11-22)
@@ -827,9 +836,33 @@
   initial Watchman attempt exited 1, then passed with `--watchman=false`. Gates
   2–3 exit 0. Gate 4 is not captured because local-only forbids network; the
   supplied post-#185 owner output is 20/21 with six known SDK 57 patch
-  mismatches, but no exit code was captured. Gates 5–6 exit 0. All six
+  mismatches, but no exit code was captured. Correction (2026-11-22): no exit
+  code appears in the output file, but reconstructed terminal paste shows
+  owner-run exit 1 at 11:40:11 IST. Gates 5–6 exit 0. All six
   protected-file hashes match; `package.json`, `package-lock.json` and
   `app.json` have no diff against `develop`.
 - This is local-only work: no network, push, PR, merge, release, tag or build
   was performed. Device checks O61–O74 remain Not run and block the next
   release.
+
+
+## Current task — DOCS-R8-LOG-CORRECTIONS (2026-11-22)
+
+- Branch: `task/docs-device-checklist-by-release`; expected starting HEAD
+  `a914ab17b8768465cb91245dbefec0b5ddcd19e8`. Corrected the Owner-run actions
+  log with reconstructed terminal evidence and the refreshed remote snapshot.
+  The script(1) recording is incomplete: its 2,188 bytes contain shell start,
+  prompt and exit only; reconstructed segments 7–8 contain the pushes, PR
+  operations, CM-2 and Gate 4 absent from that recording.
+- The supplied PR snapshot and reconstructed terminal paste agree on PR #184/#185
+  merges and branch state. CLI prompt observations may occur after snapshot API
+  `createdAt`/`mergedAt`; the ledger keeps snapshot timestamps authoritative
+  and records terminal observations separately.
+- Focused ledger/memory tests: 3 suites, 39 tests passed. Gate 1 exit 0 (105
+  suites, 1,439 passed, 1 skipped); Gates 2–3 exit 0; Gate 4 not run locally
+  because this task prohibits network access. The owner terminal paste records
+  Gate 4 exit 1 at 11:40:11 IST / 06:10:11 UTC, 20/21 with six known SDK 57
+  patch mismatches; the output file itself has no exit code. Gates 5–6 exit 0.
+  Protected hashes match and package/config diff against `develop` is empty.
+- Local only: no network, push, PR or merge. O61–O74 remain Not run and block
+  the next release; owner PR flow remains pending.
