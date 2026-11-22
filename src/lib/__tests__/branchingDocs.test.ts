@@ -18,7 +18,16 @@ describe('shared branching and contributor rules', () => {
       expect(read(file)).toContain('Owner actions pending');
     }
     expect(read('AGENTS.md')).toContain('0. Reconcile remote state');
-    expect(read('docs/memory/README.md')).toContain('Remote snapshot export');
+    const memoryIndex = read('docs/memory/README.md');
+    expect(memoryIndex).toContain('script -a /tmp/wealthwise-remote-snapshot/owner-terminal-$(date +%F).log');
+    expect(memoryIndex).toContain('pbpaste only copies the clipboard');
+    expect(memoryIndex).toContain('export-remote-snapshot.sh');
+    expect(memoryIndex).toContain('after every manual merge');
+    expect(read('AGENTS.md')).toContain('script -a /tmp/wealthwise-remote-snapshot/owner-terminal-$(date +%F).log');
+    expect(read('docs/memory/rules.md')).toContain('script -a /tmp/wealthwise-remote-snapshot/owner-terminal-$(date +%F).log');
+    expect(read('docs/memory/README.md')).toContain('headRefOid');
+    expect(read('docs/memory/README.md')).toContain('detail files for the latest 60 PRs');
+    expect(read('docs/memory/README.md')).toContain('refreshes the snapshot');
     expect(read('docs/memory/working-style.md')).toContain('Owner-run actions log');
     const progress = read('docs/PROGRESS.md');
     expect(progress).toContain('### Owner-run actions log');
