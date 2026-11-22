@@ -11,7 +11,7 @@ import { isInsuranceBudgetCategory } from './policyCategories';
 import { pendingItems, pendingTransactionType } from './pending';
 import { normalizeMoney } from './cashFlow';
 import { sortItems, type SortSpec } from '../lib/sorting';
-import type { AppData, BudgetSection, ISODate } from './types';
+import type { AppData, BudgetItem, BudgetSection, ISODate, Transaction } from './types';
 
 export type BudgetCategoryChoice = {
   category: string;
@@ -155,6 +155,72 @@ export function budgetItemCategoriesForTransaction(
     limitExpenseToCreatedOrApplicable: type === 'expense',
   });
   return sections.flatMap((section) => section.categories.map((category) => category.category));
+}
+
+export function budgetItemForTransaction(
+  data: AppData,
+  transaction: Transaction,
+): BudgetItem | undefined {
+  const month = transaction.date.slice(0, 7);
+  const { budget } = effectiveMonthBudget(data, month, transaction.date);
+  if (!budget) return undefined;
+
+  if (transaction.source?.kind === 'holding-entry') {
+    const matchingItems = budget.items.filter((item) => item.holdingId === transaction.source?.parentId);
+    if (matchingItems.length === 1) return matchingItems[0];
+    const holding = data.holdings.find((h) => h.id === transaction.source?.parentId);
+    const entry = holding?.logs.find((e) => e.id === transaction.source?.entryId);
+    return matchingItems.find((item) => item.name === entry?.note || item.name === transaction.note);
+  }
+
+  const direct = budget.items.find((item) => item.name === transaction.category);
+  if (direct) return direct;
+
+  const allItems = [...(data.budgetPlan?.items ?? []), ...(data.monthBudgets ?? []).flatMap((m) => m.items)];
+  const oldItem = allItems.find((item) => item.name === transaction.category);
+  return oldItem ? budget.items.find((item) => item.id === oldItem.id) : undefined;
+}
+
+export function reconcileBudgetItemTransactions(data: AppData): AppData {
+  const allItems = [...(data.budgetPlan?.items ?? []), ...(data.monthBudgets ?? []).flatMap((m) => m.items)];
+  const namesById = new Map<string, Set<string>>();
+  for (const item of allItems) {
+    let set = namesById.get(item.id);
+    if (!set) {
+      set = new Set();
+      namesById.set(item.id, set);
+    }
+    set.add(item.name);
+  }
+
+  const renamed = new Map<string, Set<string>>();
+  for (const [id, names] of namesById) {
+    if (names.size > 1) renamed.set(id, names);
+  }
+  if (renamed.size === 0) return data;
+
+  let changed = false;
+  const nextTransactions = data.transactions.map((tx) => {
+    const month = tx.date.slice(0, 7);
+    const { budget } = effectiveMonthBudget(data, month, tx.date);
+    if (!budget) return tx;
+
+    for (const [itemId, names] of renamed) {
+      if (names.has(tx.category)) {
+        const currentItem = budget.items.find((i) => i.id === itemId);
+        if (currentItem && currentItem.name !== tx.category) {
+          changed = true;
+          return {
+            ...tx,
+            category: currentItem.name,
+          };
+        }
+      }
+    }
+    return tx;
+  });
+
+  return changed ? { ...data, transactions: nextTransactions } : data;
 }
 
 export { budgetGroupFor };

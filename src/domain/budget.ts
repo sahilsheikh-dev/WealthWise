@@ -947,34 +947,65 @@ export function editBudgetIncome(
     amount: normalizedAmount,
   };
 
+  let updatedData: AppData;
   if (scope === 'month') {
-    return replaceMonth(data, {
+    updatedData = replaceMonth(data, {
       ...budget,
       source: 'custom',
       incomes: budget.incomes.map((income) => income.id === input.incomeId ? updatedIncome : income),
     });
+  } else {
+    const stored = monthRows(data).find((row) => row.month === month);
+    const plan = data.budgetPlan ?? snapshotAsPlan(budget);
+    const planHasIncome = plan.incomes.some((income) => income.id === input.incomeId);
+    const updatedPlan: BudgetPlan = {
+      ...plan,
+      incomes: planHasIncome
+        ? plan.incomes.map((income) => income.id === input.incomeId ? updatedIncome : income)
+        : [...plan.incomes, updatedIncome],
+    };
+    if (!stored) {
+      updatedData = { ...data, budgetPlan: updatedPlan };
+    } else {
+      updatedData = {
+        ...data,
+        budgetPlan: updatedPlan,
+        monthBudgets: monthRows(data).map((row) => row.month === month
+          ? {
+            ...row,
+            incomes: row.incomes.map((income) => income.id === input.incomeId ? updatedIncome : income),
+          }
+          : row),
+      };
+    }
   }
 
-  const stored = monthRows(data).find((row) => row.month === month);
-  const plan = data.budgetPlan ?? snapshotAsPlan(budget);
-  const planHasIncome = plan.incomes.some((income) => income.id === input.incomeId);
-  const updatedPlan: BudgetPlan = {
-    ...plan,
-    incomes: planHasIncome
-      ? plan.incomes.map((income) => income.id === input.incomeId ? updatedIncome : income)
-      : [...plan.incomes, updatedIncome],
-  };
-  if (!stored) return { ...data, budgetPlan: updatedPlan };
-  return {
-    ...data,
-    budgetPlan: updatedPlan,
-    monthBudgets: monthRows(data).map((row) => row.month === month
-      ? {
-        ...row,
-        incomes: row.incomes.map((income) => income.id === input.incomeId ? updatedIncome : income),
+  const oldIncomeName = currentIncome.name;
+  const oldIncomeCategory = currentIncome.category;
+  if (oldIncomeName !== name || oldIncomeCategory !== category) {
+    const nextTransactions = updatedData.transactions.map((tx) => {
+      if (tx.type !== 'income') return tx;
+      const txMonth = monthKey(tx.date);
+      if (scope === 'month' && txMonth !== month) return tx;
+      if (scope === 'following' && txMonth < month) return tx;
+
+      let txUpdated = false;
+      let nextCategory = tx.category;
+
+      if (tx.category === oldIncomeCategory && oldIncomeCategory !== category) {
+        nextCategory = category;
+        txUpdated = true;
+      } else if (tx.category === oldIncomeName) {
+        nextCategory = name;
+        txUpdated = true;
       }
-      : row),
-  };
+
+      return txUpdated ? { ...tx, category: nextCategory } : tx;
+    });
+    return { ...updatedData, transactions: nextTransactions };
+  }
+
+  return updatedData;
 }
 
 export function addSection(
@@ -1002,7 +1033,11 @@ export function renameSection(
   today: ISODate,
 ): AppData {
   const name = validateBudgetName(input.name);
-  return mutateBudgetStructure(data, month, scope, today, (sections, items) => {
+  const { budget } = effectiveMonthBudget(data, month, today);
+  const targetSection = budget?.sections.find((s) => s.id === input.sectionId);
+  const oldSectionName = targetSection?.name;
+
+  const updatedData = mutateBudgetStructure(data, month, scope, today, (sections, items) => {
     const target = sections.find((section) => section.id === input.sectionId);
     if (!target) throw new BudgetMutationError('section-not-found', 'The budget section no longer exists.');
     if (target.system) throw new BudgetMutationError('system-section', 'System sections cannot be renamed.');
@@ -1011,6 +1046,24 @@ export function renameSection(
     }
     return { sections: sections.map((section) => section.id === target.id ? { ...section, name } : section), items };
   });
+
+  if (oldSectionName && oldSectionName !== name) {
+    const nextTransactions = updatedData.transactions.map((tx) => {
+      const txMonth = monthKey(tx.date);
+      if (scope === 'month' && txMonth !== month) return tx;
+      if (scope === 'following' && txMonth < month) return tx;
+      if (tx.category === oldSectionName) {
+        return {
+          ...tx,
+          category: name,
+        };
+      }
+      return tx;
+    });
+    return { ...updatedData, transactions: nextTransactions };
+  }
+
+  return updatedData;
 }
 
 export function changeSectionType(
@@ -1103,7 +1156,7 @@ export function editItem(
     .find((item) => item.id === input.itemId);
   if (!requestedItem) throw new BudgetMutationError('item-not-found', 'The budget item no longer exists.');
   const name = input.patch.name === undefined ? undefined : validateBudgetName(input.patch.name);
-  return mutateBudgetStructure(data, month, scope, today, (sections, items) => {
+  const updatedData = mutateBudgetStructure(data, month, scope, today, (sections, items) => {
     const target = items.find((item) => item.id === input.itemId)
       ?? items.find((item) => item.name === requestedItem.name);
     if (!target) throw new BudgetMutationError('item-not-found', 'The budget item no longer exists.');
@@ -1180,6 +1233,85 @@ export function editItem(
       }),
     };
   });
+
+  if (name !== undefined && name !== requestedItem.name) {
+    const oldName = requestedItem.name;
+    const targetHoldingId = input.patch.holdingId === null
+      ? undefined
+      : (input.patch.holdingId ?? requestedItem.holdingId ?? data.budgetPlan?.items.find((i) => i.id === requestedItem.id)?.holdingId);
+
+    let nextTransactions = updatedData.transactions.map((tx) => {
+      const txMonth = monthKey(tx.date);
+      if (scope === 'month' && txMonth !== month) return tx;
+      if (scope === 'following' && txMonth < month) return tx;
+
+      if (tx.category === oldName) {
+        return { ...tx, category: name };
+      }
+
+      return tx;
+    });
+
+    let nextHoldings = updatedData.holdings;
+
+    if (targetHoldingId) {
+      const holding = data.holdings.find((h) => h.id === targetHoldingId);
+      const allBudgetItems = [
+        ...(data.budgetPlan?.items ?? []),
+        ...(data.monthBudgets?.flatMap((snapshot) => snapshot.items) ?? []),
+      ];
+      const siblingItems = allBudgetItems.filter((item) => item.holdingId === targetHoldingId);
+      const distinctNames = new Set(siblingItems.map((item) => item.name));
+      const hasSiblings = distinctNames.size > 1;
+
+      const matchedEntryIds = new Set<string>();
+      const matchedTxIds = new Set<string>();
+
+      for (const tx of nextTransactions) {
+        if (tx.source?.kind !== 'holding-entry' || tx.source.parentId !== targetHoldingId) continue;
+        const txMonth = monthKey(tx.date);
+        if (scope === 'month' && txMonth !== month) continue;
+        if (scope === 'following' && txMonth < month) continue;
+
+        const entry = holding?.logs.find((e) => e.id === tx.source?.entryId);
+        let matches = false;
+        if (hasSiblings) {
+          matches = entry?.note === oldName || tx.note === oldName;
+        } else {
+          matches = entry?.note === oldName || tx.note === oldName
+            || entry?.note === '' || !entry?.note
+            || tx.note === '' || !tx.note
+            || (holding ? tx.note === `${holding.name} deposit` : false);
+        }
+
+        if (matches) {
+          matchedTxIds.add(tx.id);
+          if (tx.source?.entryId) matchedEntryIds.add(tx.source.entryId);
+        }
+      }
+
+      if (matchedTxIds.size > 0 || matchedEntryIds.size > 0) {
+        nextTransactions = nextTransactions.map((tx) =>
+          matchedTxIds.has(tx.id) ? { ...tx, note: name } : tx,
+        );
+        nextHoldings = updatedData.holdings.map((h) => {
+          if (h.id !== targetHoldingId) return h;
+          return {
+            ...h,
+            logs: h.logs.map((log) => matchedEntryIds.has(log.id) ? { ...log, note: name } : log),
+          };
+        });
+      }
+    }
+
+    return {
+      ...updatedData,
+      holdings: nextHoldings,
+      transactions: nextTransactions,
+    };
+  }
+
+  return updatedData;
 }
 
 export function deleteItem(

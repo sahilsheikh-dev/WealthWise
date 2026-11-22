@@ -23,7 +23,9 @@
 - **R3 — History and release approval:** never push, amend or rewrite history
   unless the owner explicitly authorizes a push; never force-push. Release
   publication and tag creation, movement or deletion require explicit owner
-  approval.
+  approval. Only `vX.Y.Z` release tags are maintained in the repository;
+  non-release, phase, and intermediate tags are prohibited and must not be
+  created. Legacy non-release tags were deleted under approved task P43-B.
 - **R4 — Documentation scope:** routine documentation committed to Git is
   limited to `docs/memory/*`, `docs/PROGRESS.md`, `docs/releases/**`,
   `CONTRIBUTING.md`, `SECURITY.md`, and `.github/**`. Other documentation
@@ -142,7 +144,12 @@
   platform-generated asset digest that cannot be removed by editing the
   release. Keep the README Download block byte-identical to the latest
   published block. Each release updates the README Download and
-  What's new sections and the releases-page link. Verify the latest and every
+  What's new sections and the releases-page link. During release preparation
+  of an approved candidate, update README.md (Download block, What's new, and
+  Screenshots gallery), docs/releases/published/vX.Y.Z.md, and release history
+  to use the newer candidate release's screenshots, download details, and links
+  so the candidate repository state is fully aligned and ready for publication.
+  Verify the latest and every
   affected versioned link with `curl -I -L`; require HTTP 200 and expected
   artifact size. The Builds table records EAS build ID, profile, Android
   `versionCode`, date and status, but no source commit or digest.
@@ -152,7 +159,7 @@
   notes, link thumbnails to absolute `blob/main` URLs and load images from
   matching absolute `raw.githubusercontent.com/.../main/` URLs; the README may
   use equivalent relative paths. Keep the README gallery limited to the
-  latest published release.
+  latest release.
 - No null-silencing `!` or `as` in `app/` or `src/components/`.
 - Format monetary values through `AmountText`/`formatAmount` with an explicit
   display tier.
@@ -174,13 +181,16 @@
   material. GitHub may expose a platform-generated asset digest that cannot
   be removed by editing the release. Keep the README and latest published
   Download blocks identical; update README Download/What's new and the
-  releases-page link for every release. Verify the current latest URL and
+  releases-page link for every release. During release preparation of an
+  approved candidate, update README (Download block, What's new, Screenshots)
+  and release docs to use the newer release assets and screenshots.
+  Verify the current latest URL and
   every affected versioned link with `curl -I -L`, HTTP 200 and expected size.
   Name screenshots `WealthWise-vX.Y.Z-screenshot-<screen>.png`, commit them
   under `docs/releases/screenshots/vX.Y.Z/` with the corresponding release
   note, and reference the repository files in Markdown; only the APK is
   uploaded to the GitHub Release. README screenshots come from the latest
-  published release only.
+  release.
   Record EAS build ID, profile, Android `versionCode`, date and status in
   Builds, omitting source commits and digests.
   Production Android AABs go to Google Play and APKs to GitHub; iOS
@@ -191,7 +201,7 @@
 
 A release must not be built, drafted, tagged or published while any row in ANY section of the device checklist (the Next release section and every earlier section) has a Result other than Pass. Not run, Fail and Blocked all block. Check the checklist first; if blocked, stop and report the blocking IDs, and do not start the build or the GitHub Release draft. A Pass may only be recorded from an owner-observed or owner-reported device result, never inferred from automated tests or Expo exports. Only an explicit written owner waiver for named IDs lifts the block; record the waiver in the ledger (Owner-run actions log) and in the release note, and leave the row's Result unchanged.
 
-Maintenance rules: new device checks go under Next release device checks (or the decided version's section) with the next free ID, never into a published release's section, never renumbered. When the next version is decided, retitle that section `## vX.Y.Z device checks (next release)` and fill its App version. On publication, retitle it `## vX.Y.Z device checks`, set the published date, move it to the bottom of the version list (ascending order), and create a new empty `## Next release device checks` section at the top. Device-check results the owner reports are recorded under rule R8 (Owner-run actions log) with their evidence. When updating the device checklist, agents must prompt the owner to confirm all metadata fields before making changes: Device model, Android version, Tester (always record the tester username, e.g., sahilsheikh-dev), and verification Date, providing suggestions based on previous releases data (e.g., realme Narzo 60 Pro 5g, 15 Vanilla Ice Cream, sahilsheikh-dev).
+Maintenance rules: new device checks go under Next release device checks (or the decided version's section) with the next free ID, never into a published release's section, never renumbered. When the next version is decided, retitle that section `## vX.Y.Z device checks (next release)` and fill its App version. On publication, retitle it `## vX.Y.Z device checks`, set the published date, move it to the bottom of the version list (ascending order), and create a new empty `## Next release device checks` section at the top. Device-check results the owner reports are recorded under rule R8 (Owner-run actions log) with their evidence. When updating the device checklist, agents must prompt the owner to confirm all metadata fields before making changes: Device model, Android version, Tester (always record the tester username, e.g., sahilsheikh-dev), and verification Date, providing suggestions based on previous releases data (e.g., realme Narzo 60 Pro 5g, 15 Vanilla Ice Cream, sahilsheikh-dev). For any new feature, bug fix, behavior change, or revision that modifies user-facing behavior, data integrity, calculations, navigation, or forms, agents must add the corresponding physical-device verification check(s) to the device checklist under Next release device checks with the next free sequential ID (`O<n>`) in `Not run` status, and record the check ID in `docs/PROGRESS.md`, `status.md`, and `open-items.md`.
 
 ## Protected file hashes
 

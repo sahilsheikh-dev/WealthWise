@@ -2,6 +2,53 @@
 
 # Open items
 
+## CR-135 Device check O77 and feature/fix checklist rule (Done)
+
+- Change request CR-135 (2026-11-22): Added physical device check O77 to `docs/releases/device-test-checklist.md` under Next release device checks in `Not run` status for P20-Y-R3 budget item and section rename note preservation.
+- Established standing repository rule across all policy documents requiring physical-device verification check(s) to be added for any feature, fix, bug fix, or revision that modifies user-facing behavior, data integrity, calculations, navigation, or forms.
+- O77 is pending physical-device validation by the owner.
+
+## P20-Y-R3 Sync budget category only, preserving transaction note (Done; CR-134)
+
+- Subtask P20-Y-R3 (CR-134, 2026-11-22): Refine budget item and section rename to sync transaction category only while preserving transaction note.
+- Previously in P20-Y-R2, if a transaction note matched the old item or section name, the note was also updated.
+- P20-Y-R3 ensures that `editItem`, `renameSection`, `editBudgetIncome`, and `reconcileBudgetItemTransactions` strictly update `transaction.category` to the new name and leave `transaction.note` untouched.
+- Regression tests added in `src/domain/__tests__/budgetItemRenameTransactions.test.ts`.
+- Ordered six gates pass with exit 0.
+
+## P20-Y-R2 Budget item rename reflects in transaction category item (Done; Revised by P20-Y-R3; CR-133)
+
+- Subtask P20-Y-R2 (CR-133, 2026-11-22): Fix WealthWise bug where renaming an expense or standard budget item did not reflect in transaction category item, leaving transactions showing the old name.
+- In P20-Y-R1, transaction updates were gated behind `targetHoldingId`, preventing expense/spend budget items from updating transactions on rename and leaving `tx.category` as the old name.
+- `editItem` in `src/domain/budget.ts` now updates `tx.category` and `tx.note` across matching transactions for all budget items within the specified month/following scope, while preserving amount, date, custom notes, and holding links.
+- `renameSection` and `editBudgetIncome` update matching transactions within scope.
+- `budgetItemForTransaction` dynamically resolves the budget item for non-holding transactions by direct match, note match, or historical rename lookup by item ID.
+- `reconcileBudgetItemTransactions` reconciles existing or backup-imported transactions whose category matches an older budget item name; integrated into store rehydration and backup import.
+- `TransactionsScreen` in `app/(tabs)/transactions.tsx` updates `categoryLabel` to reflect `linkedBudgetItem?.name || item.category`.
+- Regression tests in `src/domain/__tests__/budgetItemRenameTransactions.test.ts` (12 tests) and `src/components/__tests__/TransactionsScreen.test.tsx` (28 tests).
+- Ordered six gates pass with exit 0.
+
+## P20-Y-R1 Linked transactions update on budget item rename (Done; Revised by P20-Y-R2; CR-132)
+
+- Subtask P20-Y-R1 (CR-132, 2026-11-22): Fix WealthWise bug where renaming a budget item or category in one month did not update the name shown by transactions linked to that item.
+- Linked transactions reflect the current budget item name wherever they appear, including existing transactions, while preserving their amount, date, category (e.g. `'Mutual fund / SIP'`), and budget link source.
+- Handles month-specific items and create, edit, display, persistence, migration, and backup-import paths.
+- Regression tests added in `src/domain/__tests__/budgetItemRenameTransactions.test.ts` (5 tests passing).
+- Ordered six gates pass with exit 0.
+
+## P28-F-R7 Prepare v1.3.0 release candidate (In progress)
+
+- Subtask P28-F-R7 (CR-130, 2026-11-22): Prepare owner-approved v1.3.0 release candidate.
+- Bumps app version in `app.json`, `package.json`, and `package-lock.json` to `1.3.0`.
+- Places finalized v1.3.0 release note in `docs/releases/published/v1.3.0.md` with 8 owner-supplied screenshots in `docs/releases/screenshots/v1.3.0/` (About and auxiliary settings screens omitted).
+- Retitles device checklist to `## v1.3.0 device checks (next release)` with confirmed metadata; all O1–O76 checks pass.
+- Task branch `task/P28-F-R7-prepare-v1.3.0` merged to `qa-and-release` via PR #210, integrated to `develop` via PR #211 (`afeb987`).
+- `release/v1.3.0` created at candidate commit `afeb987` and pushed to origin.
+- EAS build `c2ec9414-ae63-44cc-b34a-0f67f6cb51cb` (profile `android-apk`, Android `versionCode` 4) completed on 2026-11-22; 107,030,213-byte APK downloaded, privately byte-verified against EAS artifact, and uploaded to GitHub draft release `v1.3.0` as `WealthWise-android-latest-v1.3.0.apk`.
+- Task branch `task/P28-F-R7-record-v1.3.0-build` merged to `qa-and-release` via PR #212, integrated to `develop` via PR #213 (`58d9a26`), and synchronized to `release/v1.3.0`.
+- Task branch `task/P28-F-R7-align-v1.3.0-readme-screenshots-details` updates `README.md` (v1.3.0 Download block and 8-screenshot gallery), aligns `v1.3.0.md` and `v1.2.0.md` download blocks, updates `release-history.md`, and adds release rules in `AGENTS.md` and `rules.md` requiring candidate README and screenshot alignment during staging.
+- Publication approval, release merge to `main`, tag creation, and post-publication sync remain pending.
+
 ## P20-Y Budget payment date, multi-asset budget links, and limited expense categories (Done; device check Pass)
 
 - CR-126 implements three related changes:
@@ -34,6 +81,10 @@
   `Dropdown.test.tsx`, `RouteRenderSmoke.test.tsx`, `budgetCategories.test.ts`.
 - Physical-device check O75 validated Pass by owner on 2026-11-22 on realme Narzo 60 Pro 5g
   (Android 15 Vanilla Ice Cream, tester sahilsheikh-dev).
+- **P20-X-R1 (CR-129):** Remove sorting option from TransactionForm category dropdowns
+  (Expense, Income, Invest) and remove static Search header title from shared Dropdown
+  sheet, keeping search placeholder in the input. Regression coverage in `Dropdown.test.tsx`
+  and `TransactionForm.test.tsx`. All six repository gates pass.
 
 ## P20-S-R2 searchable Dropdowns (implementation complete; device checks open)
 
@@ -159,11 +210,15 @@ the phase branch is retained. Phase PR #147 merged into `develop` at
   `9d914638e50462cbadef84df3294ed07cbf42732`. The old remote refs are absent.
   Historical branch name: `phase/27-cleanup`; historical branch name:
   `phase/28-qa-and-release`. The stale phase tags remain unchanged.
-- **P43-B — Tag and integration audit:** owner approved the cleanup scope and
-  report-only branch/PR/merge audit. Preserve every `vX.Y.Z` release tag and
-  previously retained stale phase tags. Prepare the exact proposed deletion
-  list for owner review; the list has not yet been supplied or approved, so
-  no deletion is authorized. Report the audit in chat or `/tmp`, not Git.
+- **P43-B — Tag and integration audit (Done):** owner explicitly approved
+  deleting all non-release tags while keeping only release tags and enforcing
+  the release-only tag policy in repository rules. All 47 non-release and
+  legacy phase tags (`phase-01-complete` through `phase-30-complete`, and 17
+  intermediate phase tags) were deleted locally and on remote `origin` on
+  2026-11-22. Only the five verified release tags (`v1.0.0`, `v1.1.0`, `v1.1.1`,
+  `v1.2.0`, `v1.3.0`) are retained. Rules in `AGENTS.md`, `rules.md`, and
+  `PROGRESS.md` were updated to prohibit non-release tags. Report the audit in
+  chat or `/tmp`, not Git.
 - **P21-F (Previously: P43-C) — Emergency Fund target editing (Done; Revised by P21-F-R1):**
   the existing persisted Goal.target is reused; schema v23 and backup formats
   remain unchanged. DEC-P21F-FLOOR keeps the effective max(stored target,
@@ -957,7 +1012,7 @@ Not adopted in CR-106:
 
 ## Pending owner actions (2026-11-22 reconciliation)
 
-- **Next-release device gate:** O61–O74 were tested and validated on physical devices by the owner on 2026-11-22 and marked Pass. O61–O64 are P20-S-R2; O65–O68 are P21-F; O69–O72 are P20-W; O73 is P20-U-R1; O74 is P20-A-R3. All 78 rows in the device checklist now Pass; the release gate is unblocked for candidate builds. Physical device metadata (realme Narzo 60 Pro 5g, Android 15 Vanilla Ice Cream, tester sahilsheikh-dev, respective release dates) is recorded across all 5 sections, and the checklist maintenance confirmation rule with prior release suggestions is documented.
+- **Next-release device gate:** O61–O74 and O75–O76 were tested and validated on physical devices by the owner on 2026-11-22 and marked Pass. O77 was added under CR-135 for P20-Y-R3 in Not run status. Next release device checks require owner validation of O77 before candidate release build. Physical device metadata (realme Narzo 60 Pro 5g, Android 15 Vanilla Ice Cream, tester sahilsheikh-dev, respective release dates) is recorded across all 5 sections, and the checklist maintenance confirmation rule with prior release suggestions is documented.
 - **Documentation PR flow:** CR-118's PR #184/#185 and CR-119's PR #186/#187
   merges are confirmed in Git history and terminal session evidence. PR #186
   merged `task/docs-device-checklist-by-release` into `documentation` at

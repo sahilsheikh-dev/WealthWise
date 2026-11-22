@@ -82,6 +82,7 @@ import {
   setBudgetPlan,
   setBudgetRepeat,
 } from '../domain/budget';
+import { reconcileBudgetItemTransactions } from '../domain/budgetCategories';
 import { resolveEfAllocation, type EfAllocation } from '../domain/efAllocation';
 import {
   addLiabilityWithHistory,
@@ -335,7 +336,8 @@ export function createAppStore(
             ...importedData,
             goals: ensureEfGoal(importedData.goals, { expenseBaseline, asOf: today }),
           };
-        set({ data, undoImport: { savedAt: today }, lastError: null });
+        const reconciled = reconcileBudgetItemTransactions(data);
+        set({ data: reconciled, undoImport: { savedAt: today }, lastError: null });
         return { ok: true as const };
       };
       const actions: AppActions = {
@@ -902,6 +904,7 @@ export function createAppStore(
         }
         const today = deps.today();
         data = ensureCurrentMonthBudget(data, today, deps.newId);
+        data = reconcileBudgetItemTransactions(data);
         let undoImport: { savedAt: ISODate } | null = null;
         try {
           const rawSnapshot = await storage.getItem(PREIMPORT_KEY);

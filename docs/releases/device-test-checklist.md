@@ -4,11 +4,11 @@ This checklist records owner-run Android physical-device checks for WealthWise r
 
 ## Next release device checks
 
-Version not yet decided
+Version 1.3.0
 
 | Field | Value |
 |---|---|
-| App version | To be decided |
+| App version | 1.3.0 |
 | Device model | realme Narzo 60 Pro 5g |
 | Android version | 15 Vanilla Ice Cream |
 | Tester | sahilsheikh-dev |
@@ -36,6 +36,7 @@ Use only `Pass`, `Fail`, or `Blocked` after running each check. `Not run` remain
 | O74 | On a physical device, create a linked one-time savings Budget item, then mark it Paid from Transactions with a different viewed month and after a month-only edit; verify one holding Deposit, one linked transaction, correct Budget actual, one-write persistence and one-step Undo. | Pass | P20-A-R3; owner-reported physical-device verification, 2026-11-22. |
 | O75 | Verify Budget category and item sorting on iOS and Android: SortChip in filter panel on Budget screen, persistent sort order across app restart, and category dropdown sorting in TransactionForm and BudgetIncomeForm at font scales 1.0, 1.3, and 2.0. | Pass | P20-X; owner-reported physical-device verification, 2026-11-22. |
 | O76 | Verify payment date prompt when marking scheduled/budgeted items Paid in Transactions and Budget (default today, customizable, historical dates preserved), verify linking one asset to multiple one-time investment budgets and paying each updates correct holding and budget actuals, and verify Transaction form Expense category dropdown only displays user-created or applicable scheduled categories while preserving historical removed categories when editing. | Pass | P20-Y; owner-reported physical-device verification, 2026-11-22. |
+| O77 | Verify budget item and section rename on a physical device: rename an expense, investment, or income budget item and a section across month and following scopes; confirm that linked transactions update to display the new category name in Transactions list, filter, and detail views, while preserving the transaction amount, date, budget link, and custom note (even when the note matches the old item or section name). | Not run | P20-Y-R3; physical-device check required. |
 
 ### Owner follow-up
 
@@ -207,7 +208,7 @@ The owner reports O45-O60 passed on 2026-11-11. Tested and validated by sahilshe
 
 A release must not be built, drafted, tagged or published while any row in ANY section of the device checklist (the Next release section and every earlier section) has a Result other than Pass. Not run, Fail and Blocked all block. Check the checklist first; if blocked, stop and report the blocking IDs, and do not start the build or the GitHub Release draft. A Pass may only be recorded from an owner-observed or owner-reported device result, never inferred from automated tests or Expo exports. Only an explicit written owner waiver for named IDs lifts the block; record the waiver in the ledger (Owner-run actions log) and in the release note, and leave the row's Result unchanged.
 
-Maintenance rules: new device checks go under Next release device checks (or the decided version's section) with the next free ID, never into a published release's section, never renumbered. When the next version is decided, retitle that section `## vX.Y.Z device checks (next release)` and fill its App version. On publication, retitle it `## vX.Y.Z device checks`, set the published date, move it to the bottom of the version list (ascending order), and create a new empty `## Next release device checks` section at the top. Device-check results the owner reports are recorded under rule R8 (Owner-run actions log) with their evidence. When updating the device checklist, agents must prompt the owner to confirm all metadata fields before making changes: Device model, Android version, Tester (always record the tester username, e.g., sahilsheikh-dev), and verification Date, providing suggestions based on previous releases data (e.g., realme Narzo 60 Pro 5g, 15 Vanilla Ice Cream, sahilsheikh-dev).
+Maintenance rules: new device checks go under Next release device checks (or the decided version's section) with the next free ID, never into a published release's section, never renumbered. When the next version is decided, retitle that section `## vX.Y.Z device checks (next release)` and fill its App version. On publication, retitle it `## vX.Y.Z device checks`, set the published date, move it to the bottom of the version list (ascending order), and create a new empty `## Next release device checks` section at the top. Device-check results the owner reports are recorded under rule R8 (Owner-run actions log) with their evidence. When updating the device checklist, agents must prompt the owner to confirm all metadata fields before making changes: Device model, Android version, Tester (always record the tester username, e.g., sahilsheikh-dev), and verification Date, providing suggestions based on previous releases data (e.g., realme Narzo 60 Pro 5g, 15 Vanilla Ice Cream, sahilsheikh-dev). For any new feature, bug fix, behavior change, or revision that modifies user-facing behavior, data integrity, calculations, navigation, or forms, agents must add the corresponding physical-device verification check(s) to the device checklist under Next release device checks with the next free sequential ID (`O<n>`) in `Not run` status, and record the check ID in `docs/PROGRESS.md`, `status.md`, and `open-items.md`.
 
 ## How to run
 
