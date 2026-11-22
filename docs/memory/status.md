@@ -1,6 +1,13 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-22 | Updates: owner and AI agents -->
 
 # Status
+- **CR-135 / Documentation (2026-11-22) — Device check O77 and feature/fix checklist rule.**
+  Added check O77 to docs/releases/device-test-checklist.md under Next release device
+  checks in Not run status to verify budget item and section rename on physical devices.
+  Confirmed metadata with owner (realme Narzo 60 Pro 5g, Android 15 Vanilla Ice Cream,
+  tester sahilsheikh-dev, 2026-11-22). Established standing repository rule across policy
+  docs requiring physical-device verification check(s) to be added for any feature,
+  fix, bug fix, or revision that modifies user-facing behavior or core logic.
 - **P20-Y-R3 / CR-134 (2026-11-22) — Sync budget category only, preserving transaction note.**
   Refined budget item and section rename behavior to update transaction.category only,
   preserving transaction.note even if it is identical to the old name. Updated editItem,
