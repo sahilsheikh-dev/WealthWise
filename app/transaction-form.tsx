@@ -18,7 +18,6 @@ import { AppText, Button, EmptyState } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useUIStore } from '../src/data/uiStore';
 import { useAppActions } from '../src/data/useAppData';
-import { useSort } from '../src/data/useSort';
 import { isValidISO, monthKey, shiftMonth } from '../src/domain/dates';
 import { monthEndDate } from '../src/domain/cashFlow';
 import { customBudgetCategories } from '../src/domain/budget';
@@ -44,7 +43,6 @@ import type { Transaction } from '../src/domain/types';
 import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
 import { confirmAsync } from '../src/lib/confirm';
-import { SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
@@ -242,17 +240,16 @@ export default function TransactionFormScreen() {
   const derivedCategory = selectedInstrument
     ? investCategoryFor(selectedInstrument.type)
     : transaction?.category ?? '';
-  const budgetSorting = useSort('budgetSpending');
   const selectedMonth = isValidISO(selectedDate) ? monthKey(selectedDate) : monthKey(today);
   const categorySections = useMemo(
     () => selectedType === 'income'
       ? []
-      : budgetCategoryChoiceSections(data, selectedMonth, today, selectedType, budgetSorting.spec, {
+      : budgetCategoryChoiceSections(data, selectedMonth, today, selectedType, undefined, {
         limitExpenseToCreatedOrApplicable: selectedType === 'expense',
         existingCategory: (transaction?.type === 'expense' ? transaction.category : undefined)
           ?? (requestedCategoryParam && requestedCategoryParam !== customExpenseCategory ? requestedCategoryParam : undefined),
       }),
-    [budgetSorting.spec, data, requestedCategoryParam, selectedMonth, selectedType, today, transaction],
+    [data, requestedCategoryParam, selectedMonth, selectedType, today, transaction],
   );
   const maxTransactionDate = monthEndDate(shiftMonth(monthKey(today), 24));
   const categoryOptions: DropdownOption[] = categorySections.flatMap((section) =>
@@ -522,9 +519,6 @@ export default function TransactionFormScreen() {
                         accessibilityLabel="Category"
                         value={field.value}
                         options={categoryOptions}
-                        sortOptions={SORT_OPTIONS.budgetSpending}
-                        sortSpec={budgetSorting.spec}
-                        onSortChange={budgetSorting.setSpec}
                         onChange={(value) => {
                           field.onChange(value);
                           setValue('customCategory', '', { shouldDirty: true, shouldValidate: true });
@@ -572,9 +566,6 @@ export default function TransactionFormScreen() {
                           })),
                           ...(selectedType === 'income' ? [{ value: customIncomeCategory, title: 'Custom' }] : []),
                         ]}
-                        sortOptions={SORT_OPTIONS.budgetSpending}
-                        sortSpec={budgetSorting.spec}
-                        onSortChange={budgetSorting.setSpec}
                         onChange={(value) => {
                           field.onChange(value);
                           setValue('customCategory', '', { shouldDirty: true, shouldValidate: true });
