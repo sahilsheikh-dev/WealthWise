@@ -118,7 +118,7 @@ describe('permanent progress ledger', () => {
     expect(register.split('\n').filter((line) => line.startsWith('| CR-119 |'))).toHaveLength(1);
     expect(independentEntities.split('\n').filter((line) => line.startsWith('| CR-119 |'))).toHaveLength(1);
     expect(status).toContain('CR-119');
-    expect(openItems).toContain('O61-O74');
+    expect(openItems).toContain('O61–O74');
     for (const policyPath of policyDocs) {
       expect(readFileSync(join(process.cwd(), policyPath), 'utf8')).toContain(gate);
     }
