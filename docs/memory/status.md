@@ -1,6 +1,12 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-22 | Updates: owner and AI agents -->
 
 # Status
+- **CR-136 / Documentation (2026-11-23) — Device checklist rearrangement for published v1.3.0.**
+  Rearranged docs/releases/device-test-checklist.md: moved published checks O61–O76 into
+  dedicated ## v1.3.0 device checks section placed below v1.2.0 in ascending order.
+  Next release device checks at the top retains only unreleased checks (O77) for upcoming
+  version 1.3.1. Established standing rule across all policy documents requiring published
+  release checks to move into their own specific version section below previous releases.
 - **CR-135 / Documentation (2026-11-22) — Device check O77 and feature/fix checklist rule.**
   Added check O77 to docs/releases/device-test-checklist.md under Next release device
   checks in Not run status to verify budget item and section rename on physical devices.
