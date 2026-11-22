@@ -1,6 +1,15 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-22 | Updates: owner and AI agents -->
 
 # Status
+- **P20-Y-R1 / CR-132 (2026-11-22) — Linked transactions update on budget item rename.**
+  Fixed WealthWise bug where renaming a budget item or category in one month did
+  not update the name shown by transactions linked to that item. Linked
+  transactions now reflect the current budget item name wherever it appears,
+  including existing transactions, while preserving amount, date, category, and
+  budget link. Handles month-specific items and create, edit, display,
+  persistence, migration, and backup-import paths. Added regression tests in
+  `src/domain/__tests__/budgetItemRenameTransactions.test.ts`. All six
+  repository gates pass with exit 0.
 - **P28-F-R7 / CR-130 (2026-11-22) — Prepare v1.3.0 release candidate.**
   Prepared owner-approved v1.3.0 release candidate: bumped versions in app.json,
   package.json, and package-lock.json to 1.3.0; moved finalized release note to
