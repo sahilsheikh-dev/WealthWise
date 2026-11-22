@@ -2,6 +2,12 @@
 
 # Open items
 
+## CR-135 Device check O77 and feature/fix checklist rule (Done)
+
+- Change request CR-135 (2026-11-22): Added physical device check O77 to `docs/releases/device-test-checklist.md` under Next release device checks in `Not run` status for P20-Y-R3 budget item and section rename note preservation.
+- Established standing repository rule across all policy documents requiring physical-device verification check(s) to be added for any feature, fix, bug fix, or revision that modifies user-facing behavior, data integrity, calculations, navigation, or forms.
+- O77 is pending physical-device validation by the owner.
+
 ## P20-Y-R3 Sync budget category only, preserving transaction note (Done; CR-134)
 
 - Subtask P20-Y-R3 (CR-134, 2026-11-22): Refine budget item and section rename to sync transaction category only while preserving transaction note.
@@ -1006,7 +1012,7 @@ Not adopted in CR-106:
 
 ## Pending owner actions (2026-11-22 reconciliation)
 
-- **Next-release device gate:** O61–O74 were tested and validated on physical devices by the owner on 2026-11-22 and marked Pass. O61–O64 are P20-S-R2; O65–O68 are P21-F; O69–O72 are P20-W; O73 is P20-U-R1; O74 is P20-A-R3. All 78 rows in the device checklist now Pass; the release gate is unblocked for candidate builds. Physical device metadata (realme Narzo 60 Pro 5g, Android 15 Vanilla Ice Cream, tester sahilsheikh-dev, respective release dates) is recorded across all 5 sections, and the checklist maintenance confirmation rule with prior release suggestions is documented.
+- **Next-release device gate:** O61–O74 and O75–O76 were tested and validated on physical devices by the owner on 2026-11-22 and marked Pass. O77 was added under CR-135 for P20-Y-R3 in Not run status. Next release device checks require owner validation of O77 before candidate release build. Physical device metadata (realme Narzo 60 Pro 5g, Android 15 Vanilla Ice Cream, tester sahilsheikh-dev, respective release dates) is recorded across all 5 sections, and the checklist maintenance confirmation rule with prior release suggestions is documented.
 - **Documentation PR flow:** CR-118's PR #184/#185 and CR-119's PR #186/#187
   merges are confirmed in Git history and terminal session evidence. PR #186
   merged `task/docs-device-checklist-by-release` into `documentation` at
