@@ -1,4 +1,4 @@
-<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-21 | Updates: owner and AI agents -->
+<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-22 | Updates: owner and AI agents -->
 
 # Status
 - **P20-U-R1 (2026-11-21) — Done; O73 physical-device restart check remains open.**
@@ -29,8 +29,8 @@
   task PR #180 at `5cf3360a55cbd57f97945f6bed4c7cb7a2a03478` and phase PR #181
   at `22f332fe9310e92c50d94cc6640c19f4e1552dcc`, verified in local refs. O73
   remains Not run.
-- **P20-A-R3 linked savings Paid fix (2026-11-21) — implementation complete; Gate 4 blocks PR integration.** Real-store placement regressions reproduced a plan-only holding link being lost from a viewed month snapshot and a snapshot-only link failing to attribute a holding-entry transaction to the Budget item from another month. `pendingItems` now resolves a snapshot's link from its plan item; linked Budget actuals include stored month-snapshot links. Focused real Transactions and `/payment-confirm` route tests, reminder cold-start routing, real-store create/rehydration, v20–v23 plain-backup import/migration path, scope history and demo data pass. Exact/lower/higher × Savings/Cash/Other tests pass; Fixed deposit remains rejected. Home's due list filters to `kind === 'due'`; Budget has no Paid action for pending items. The owner-provided exact data origin and steps remain blank, so the synthetic failure shape is established but the exact device reproduction is still unknown. Six gates: Gate 1 exit 0 (103 suites, 1,387 passed, 1 skipped; coverage 96.00/92.23/98.09/97.66% statements/branches/functions/lines); Gate 2 exit 0; Gate 3 first exit 1 for test-harness lint, then exit 0 after correction; Gate 4 exit 1 (`ENOTFOUND registry.npmjs.org`); Gates 5–6 exit 0. After strengthening route Undo assertions, the focused 18-test suite, TypeScript and lint were rerun successfully. O74 is Not run. No schema, dependency or protected-file change. See the task row and final evidence in [PROGRESS.md](../PROGRESS.md).
-- **P20-W (2026-11-22) — D1/D2 integrated; D3 implemented under schema v24 and merged locally for PR preparation.**
+- **P20-A-R3 linked savings Paid fix (2026-11-21) — implementation and PR integration complete.** Real-store placement regressions reproduced a plan-only holding link being lost from a viewed month snapshot and a snapshot-only link failing to attribute a holding-entry transaction to the Budget item from another month. `pendingItems` now resolves a snapshot's link from its plan item; linked Budget actuals include stored month-snapshot links. Focused real Transactions and `/payment-confirm` route tests, reminder cold-start routing, real-store create/rehydration, v20–v23 plain-backup import/migration path, scope history and demo data pass. Exact/lower/higher × Savings/Cash/Other tests pass; Fixed deposit remains rejected. Home's due list filters to `kind === 'due'`; Budget has no Paid action for pending items. The owner-provided exact data origin and steps remain blank, so the synthetic failure shape is established but the exact device reproduction is still unknown. Six gates: Gate 1 exit 0 (103 suites, 1,387 passed, 1 skipped; coverage 96.00/92.23/98.09/97.66% statements/branches/functions/lines); Gate 2 exit 0; Gate 3 first exit 1 for test-harness lint, then exit 0 after correction; Gate 4 exit 1 (`ENOTFOUND registry.npmjs.org`); Gates 5–6 exit 0. After strengthening route Undo assertions, the focused 18-test suite, TypeScript and lint were rerun successfully. O74 is Not run. No schema, dependency or protected-file change. See the task row and final evidence in [PROGRESS.md](../PROGRESS.md).
+- **P20-W (2026-11-22) — D1/D2/D3 integrated; schema v24.**
   Schema version: v24 (`SCHEMA_VERSION` in `src/domain/schemas.ts`). D3 uses
   the existing custom earned-income category field with its v23→v24 migration
   and backup compatibility. Phase sync is
@@ -57,8 +57,9 @@
   pass (8 suites / 524 tests). D3 gates: Gate 1 exit 0 (102 suites, 1,381
   passed, one skipped; coverage 95.97/92.15/98.03/97.64%); Gates 2–3 and 5–6
   exit 0; Gate 4 exit 1 (`ENOTFOUND registry.npmjs.org`) on its single attempt.
-  Task/phase PR integration remains pending.
-  Physical checks O69–O72 remain Not run; O65–O68 belong to P21-F. Task PR #174 merged at `419a37b07e6853b3c683d22ec243ea58223514c1`; phase
+  Task PR #182 and phase PR #183 are merged; exact merge SHAs are in the
+  current snapshot reconciliation below. Physical checks O69–O72 remain Not
+  run; O65–O68 belong to P21-F. Task PR #174 merged at `419a37b07e6853b3c683d22ec243ea58223514c1`; phase
   PR #175 merged at `9e47856f20848e03ac6a4b8e699f47c387d08161`; CM-2 synchronized local `develop`.
   P20-W-R1 records task PR #174 and phase PR #175; D3 schema ownership is
   resolved by DEC-P20W-D3-SCHEMA24.
@@ -683,10 +684,10 @@
   historical records in [PROGRESS.md](../PROGRESS.md).
 - CR-108 baseline: 101 suites, 1317 tests (1316 passed, 1 skipped) on
   2026-11-11; all six CR-108 gates exited 0.
-- Test counts: 105 suites, 1437 tests (1,436 passed, 1 skipped) on
+- Test counts: 105 suites, 1438 tests (1,437 passed, 1 skipped) on
   2026-11-22.
-- Latest validated run: 105 suites, 1437 tests
-  (1,436 passed, 1 skipped) on 2026-11-22 on the merged D3 task tree. Gate 1
+- Latest validated run: 105 suites, 1438 tests
+  (1,437 passed, 1 skipped) on 2026-11-22 on the documentation task tree, which shares the D3 tree. Gate 1
   coverage was 96.08/92.35/98.22/97.71% statements/branches/functions/lines;
   Gates 1–3 and 5–6 exited 0. Gate 4 exited 1 because `npx` could not resolve
   `expo-doctor` from `registry.npmjs.org` (`ENOTFOUND`). D3 uses v24; P36-A/B
@@ -754,3 +755,33 @@
   unencrypted; app lock is not encryption. A lost passphrase is unrecoverable.
 - The ledger at [`docs/PROGRESS.md`](../PROGRESS.md) is the source of truth
   for decisions, status, acceptance evidence, gates and device checks.
+
+
+## Current reconciliation (2026-11-22, snapshot exported 11:12:56 IST)
+
+- `develop` is `b3fa175b999f3ae62e2b099a412f5a9e9da5f0db`; `phase/20-budget` is
+  `4ee154bab1cbc9b0b491b87c2f8bfb5a843dca7b`. D3 task tip
+  `5424171b5eee69dc70606c8664da2e2f5c3f2e71` and both remote branch tips have
+  tree `e56c0b89c671ff3c23bdd96886bfd2d8090f45cc`. Schema v24 and
+  `.premigration.v23` migration/archive handling are present.
+- Snapshot contains 183 PRs, zero open PRs and zero issues. #39 is closed
+  unmerged; every other PR number from #1 through #183 is merged. The remote
+  branch snapshot contains 42 refs: phase branches are retained and merged
+  task branches are absent. There are 51 tags; the four `v1.*` release tags
+  match `docs/releases/release-history.md`. GitHub lists v1.2.0 as latest,
+  published 2026-11-10T20:38:40Z, consistent with the release history.
+- PR #181's corrected body and comment #7067953238 are confirmed; PR #179's
+  Gate 4 comment #7067676816 is confirmed. Both failed PR-create attempts and
+  the owner Gate 4 outputs are documented in the ledger from the reconstructed
+  terminal paste and supplied capture files. The 00:29 phase exit remains not
+  captured; 00:51 develop and 01:17 D3 task runs exited 1 (20/21; six SDK 57
+  patch mismatches).
+- Current documentation-task Gate 1 passed: 105 suites, 1,437 passed, 1
+  skipped (1,438 total); focused docs/ledger/memory checks pass (3 suites,
+  37 tests). Gates 2–3 and 5–6 exit 0. Gate 4 was invoked once in the previous
+  run but did not return a captured code; it was not rerun. Protected-file
+  hashes match `docs/memory/rules.md`.
+- Device checks O61–O74 remain Not run. Owner still needs to perform those
+  checks and push/open/merge this documentation task through its task PR and
+  documentation-to-develop PR, then run CM-2. P20-A-R3's exact device
+  reproduction remains unknown.

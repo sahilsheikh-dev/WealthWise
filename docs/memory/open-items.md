@@ -1,4 +1,4 @@
-<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-21 | Updates: owner and AI agents -->
+<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-22 | Updates: owner and AI agents -->
 
 # Open items
 
@@ -189,23 +189,20 @@ the phase branch is retained. Phase PR #147 merged into `develop` at
   earned-income entry is available in the Budget income and Transaction forms;
   labels, filtering, and a deterministic demo override preserve the custom
   value. Focused verification passed (8 suites / 524 tests). Gates 1–3 and 5–6
-  passed; Gate 4 exited 1 with `ENOTFOUND registry.npmjs.org`. Task/phase PR
-  integration is pending. O69–O72 remain Not run; O71 now checks
+  passed; Gate 4 exited 1 with `ENOTFOUND registry.npmjs.org`. Task PR #182
+  and phase PR #183 are merged (see the verified SHAs in the current status
+  reconciliation). O69–O72 remain Not run; O71 now checks
   custom income persistence and reopening on device. **STOP GATE RESOLVED (DEC-P20W-D3-SCHEMA24,
   2026-11-21):** P20-W owns v24 and P36-A/B remain on v25.
   Placement: rule 3; searched dashboard, register, phase history, roadmap,
   memory, P20-W/P20-O/P20-P records and income/transaction form modules;
   related P20-W D1/D2 and P36-A/B; reason this widens the existing open
   Budget/category behavior after the owner resolved schema ownership.
-- Local D3 merge preparation is complete on
-  `task/P20-W-D3-custom-earned-income` at
-  `8f0840f82646f2b3ec91457cb48b932abf8caeaa`. PRs #178–#181 and their merge
-  commits are present in local refs; `phase/20-budget` is synced through
-  `b5f8c52477ba88dce1c376904c36dee72b84a092`. Focused suites passed (15/664).
-  Gates 1–3 and 5–6 exited 0; Gate 4 exited 1 (`ENOTFOUND
-  registry.npmjs.org`). Owner-side task/phase PR integration remains pending
-  under the local-only instruction. O71 is implemented but Not run; O73 and
-  O74 are unchanged and Not run.
+- D3 task/phase PR integration is complete: PR #182 merged into
+  `phase/20-budget` at `4ee154bab1cbc9b0b491b87c2f8bfb5a843dca7b`, and PR #183
+  merged into `develop` at `b3fa175b999f3ae62e2b099a412f5a9e9da5f0db`; the
+  owner snapshot confirms `mergedBy` and timestamps. O71 is implemented but
+  Not run; O73 and O74 remain unchanged and Not run.
 - **P43-E — GitHub issue strategy (plan only):** one issue per ledger part
   or CR; phase/type/status labels; release milestones; pending issues open;
   completed issues retrospective and closed; verified commits, PRs, merge
@@ -905,3 +902,19 @@ Not adopted in CR-106:
   messages with descriptions of release-draft preparation and publication
   documentation. The changes are local and unpushed; see the verified
   old-to-new commit mapping in [PROGRESS.md](../PROGRESS.md).
+
+
+## Pending owner actions (2026-11-22 reconciliation)
+
+- **Device checks:** O61–O74 remain Not run: P20-S-R2 O61–O64; P21-F
+  O65–O68; P20-W O69–O72; P20-U-R1 O73; P20-A-R3 O74. The exact owner
+  reproduction details for P20-A-R3 are still unknown.
+- **Documentation PR flow:** push `documentation` and
+  `task/docs-remote-sync-2026-11-22`; create the task PR into `documentation`,
+  merge it with `--merge --delete-branch`, then create the documentation PR
+  into `develop`, merge it with `--merge` (keep the phase/lifecycle branch),
+  and run CM-2. No remote action is performed by this local-only task.
+
+The supplied snapshot resolves the earlier request for PR/ref/release/issue
+exports and terminal evidence. See the current snapshot reconciliation in
+[status.md](status.md) and the evidence table in [PROGRESS.md](../PROGRESS.md).

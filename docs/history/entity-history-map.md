@@ -2,6 +2,18 @@
 
 | Short SHA | Ledger Ref | Owning Entity | Docs-only? | Subject |
 |---|---|---|---|---|
+| `ef4f263` | CR-118 | documentation | Yes (documentation) | docs(ledger): record documentation task commits |
+| `8b059db` | CR-118 | documentation | Yes (documentation) | docs(history): map current reconciliation commits |
+| `1c27944` | CR-118 | documentation | Yes (documentation) | docs(memory): record final gate and status updates |
+| `917b313` | CR-118 | documentation | Yes (documentation) | docs(ledger): reconcile remote history |
+| `3c54da3` | CR-118 | documentation | Yes (documentation) | docs(memory): sync status and open items |
+| `cc18b52` | CR-118 | documentation | Yes (documentation) | docs(history): correct generated PR entity mappings |
+| `72c1def` | CR-118 | documentation | Yes (documentation) | docs(history): sync history map to 2026-11-22 |
+| `3097fc3` | CR-118 | documentation | Yes (documentation) | docs(ledger): record owner-run actions log |
+| `9b54d92` | CR-118 | documentation | Yes (documentation) | docs(memory): add R8 owner-run action tracking |
+| `ce911c0` | CR-118 | documentation | No | test(docs): align ledger assertions with integrated tasks |
+| `e5808c4` | CR-118 | documentation | Yes (documentation) | chore(docs): sync documentation with develop |
+| `fc50970` | CR-118 | documentation | No | test(docs): assert owner-run action tracking rule |
 | `d36103e` | P20-S-R1-R1 | P20 (budget) | No | feat(forms): standardize dropdowns and input titles |
 | `a2fa24f` | P43-A | P43 (lifecycle setup) | No | cleanup: remove P27-A Cleanup Audit Report |
 | `5cb4957` | CR-108 | documentation | Yes (documentation) | Merge pull request #109 from sahilsheikh-dev/phase/41-types-frequency-completion |
@@ -279,102 +291,288 @@
 | `5a2572e` | CR-96 | unknown | No | feat: apply Budget scope choices immediately |
 
 
+
+
+| `b3fa175` | P20 | P20 | No | Merge pull request #183 from sahilsheikh-dev/phase/20-budget |
+| `4ee154b` | P20-W | P20-W | No | Merge pull request #182 from sahilsheikh-dev/task/P20-W-D3-custom-earned-income |
+| `22f332f` | P20 | P20 | No | Merge pull request #181 from sahilsheikh-dev/phase/20-budget |
+| `5cf3360` | P20-U-R1 | P20-U-R1 | No | Merge pull request #180 from sahilsheikh-dev/task/P20-U-R1-budget-edit-delete |
+| `f7d40f4` | P20 | P20 | No | Merge pull request #179 from sahilsheikh-dev/phase/20-budget |
+| `e1e2fc9` | P20-A-R3 | P20-A-R3 | No | Merge pull request #178 from sahilsheikh-dev/task/P20-A-R3-linked-savings-paid-transactions |
+| `4c51f6d` | P20 | P20 | No | Merge pull request #177 from sahilsheikh-dev/phase/20-budget |
+| `4084fa4` | P20-W-R1 | P20-W-R1 | No | Merge pull request #176 from sahilsheikh-dev/task/P20-W-R1-record-merge-evidence |
+| `9e47856` | P20 | P20 | No | Merge pull request #175 from sahilsheikh-dev/phase/20-budget |
+| `419a37b` | P20-W | P20-W | No | Merge pull request #174 from sahilsheikh-dev/task/P20-W-transaction-form-categories |
+| `aab0131` | P21 | P21 | No | Merge pull request #173 from sahilsheikh-dev/phase/21-emergency-fund |
+| `f12b7c4` | P21-F-R1 | P21-F-R1 | No | Merge pull request #172 from sahilsheikh-dev/task/P21-F-R1-record-merge-evidence |
+| `2e5e18a` | P21 | P21 | No | Merge pull request #171 from sahilsheikh-dev/phase/21-emergency-fund |
+| `c877f6d` | P21-F | P21-F | No | Merge pull request #170 from sahilsheikh-dev/task/P21-F-emergency-fund-target-editing |
+| `3473c61` | P20 | P20 | No | Merge pull request #169 from sahilsheikh-dev/phase/20-budget |
+| `1ba5a76` | P20-S-R2-R2 | P20-S-R2-R2 | No | Merge pull request #168 from sahilsheikh-dev/task/P20-S-R2-R2-retain-revision-history |
+| `3a1cf8e` | P20 | P20 | No | Merge pull request #167 from sahilsheikh-dev/phase/20-budget |
+| `c01add0` | P20-S-R2-R1 | P20-S-R2-R1 | No | Merge pull request #166 from sahilsheikh-dev/task/P20-S-R2-R1-integration-evidence |
+| `6b50a1d` | P20 | P20 | No | Merge pull request #165 from sahilsheikh-dev/phase/20-budget |
+| `185a5ea` | P20-S-R2 | P20-S-R2 | No | Merge pull request #164 from sahilsheikh-dev/task/P20-S-R2-dropdown-search |
+| `bfe86c5` | documentation | documentation | No | Merge pull request #163 from sahilsheikh-dev/documentation |
+| `a6a980e` | documentation | documentation | Yes (documentation) | Merge pull request #162 from sahilsheikh-dev/documentation |
+| `9058386` | documentation | documentation | No | Merge pull request #161 from sahilsheikh-dev/documentation |
+| `4a8961e` | P43 | P43 | No | Merge pull request #156 from sahilsheikh-dev/phase/43-lifecycle-and-transaction-planning |
+| `8ed8362` | P43-F-R1 | P43-F-R1 | No | Merge pull request #155 from sahilsheikh-dev/task/P43-F-R1-record-merge-evidence |
+| `1229cc3` | P43 | P43 | Yes (documentation) | Merge pull request #148 from sahilsheikh-dev/phase/43-lifecycle-and-transaction-planning |
+| `7342c20` | P42 | P42 | No | Merge pull request #145 from sahilsheikh-dev/phase/42-owner-decision-reconciliation |
+| `3ff05e0` | P42-A-R1 | P42-A-R1 | No | Merge pull request #144 from sahilsheikh-dev/task/P42-A-R1-integration-evidence |
+| `f252a6d` | P28 | P28 | No | Merge pull request #141 from sahilsheikh-dev/phase/28-qa-and-release |
+| `9d91463` | P28-F-R6-R3-R1 | P28-F-R6-R3-R1 | No | Merge pull request #140 from sahilsheikh-dev/task/P28-F-R6-R3-R1-record-develop-merge |
+| `6a7c248` | main | main | No | Merge pull request #137 from sahilsheikh-dev/main |
+| `8abfc9c` | develop | develop | No | Merge pull request #136 from sahilsheikh-dev/develop |
+| `0c427c2` | P28 | P28 | No | Merge pull request #135 from sahilsheikh-dev/phase/28-qa-and-release |
+| `31df9ea` | P41 | P41 | No | Merge pull request #111 from sahilsheikh-dev/phase/41-types-frequency-completion |
+| `14c079a` | P41-B-R1 | P41-B-R1 | No | Merge pull request #110 from sahilsheikh-dev/task/P41-B-R1-final-evidence |
+| `712aadd` | main | main | No | Merge pull request #92 from sahilsheikh-dev/main |
+| `66c365c` | develop | develop | No | Merge pull request #91 from sahilsheikh-dev/develop |
+| `b8324b7` | P28 | P28 | No | Merge pull request #90 from sahilsheikh-dev/phase/28-qa-and-release |
+| `a51127a` | CR-107 | CR-107 | No | Merge pull request #89 from sahilsheikh-dev/task/CR-107-final-evidence |
+| `8da39bd` | main | main | No | Merge pull request #88 from sahilsheikh-dev/main |
+| `c8a58ab` | develop | develop | No | Merge pull request #87 from sahilsheikh-dev/develop |
+| `d6cc568` | P28 | P28 | No | Merge pull request #86 from sahilsheikh-dev/phase/28-qa-and-release |
+| `43ccf79` | P28 | P28 | No | Merge pull request #82 from sahilsheikh-dev/phase/28-qa-and-release |
+| `c9713a9` | CR-106 | CR-106 | No | Merge pull request #81 from sahilsheikh-dev/task/CR-106-roadmap-external-guides |
+| `330b331` | P28 | P28 | No | Merge pull request #80 from sahilsheikh-dev/phase/28-qa-and-release |
+| `6f1f3ac` | CR-105 | CR-105 | No | Merge pull request #79 from sahilsheikh-dev/task/CR-105-explicit-agent-apk-handoff |
+| `e43976b` | main | main | No | Merge pull request #78 from sahilsheikh-dev/main |
+| `15549f5` | qa-and-release | qa-and-release | Yes (documentation) | Merge pull request #77 from sahilsheikh-dev/release/v1.1.1 |
+| `5e43430` | P28 | P28 | Yes (documentation) | Merge pull request #76 from sahilsheikh-dev/phase/28-qa-and-release |
+| `c09eb74` | CR-104 | CR-104 | Yes (documentation) | Merge pull request #75 from sahilsheikh-dev/task/CR-104-remote-branch-audit |
+| `6b05698` | main | main | No | Merge pull request #74 from sahilsheikh-dev/main |
+| `9c6122f` | qa-and-release | qa-and-release | No | Merge pull request #73 from sahilsheikh-dev/release/v1.1.1 |
+| `f6e8bc7` | P28 | P28 | No | Merge pull request #72 from sahilsheikh-dev/phase/28-qa-and-release |
+| `7c9d2c0` | P28-F-R4-R1-R1-R1-R1-R1-R1-R1 | P28-F-R4-R1-R1-R1-R1-R1-R1-R1 | No | Merge pull request #71 from sahilsheikh-dev/task/P28-F-R4-R1-R1-R1-R1-R1-R1-R1-release-finalization |
+| `8ab1e18` | P28 | P28 | No | Merge pull request #68 from sahilsheikh-dev/phase/28-qa-and-release |
+| `49199ee` | P28-F-R4-R1-R1-R1-R1-R1-R1 | P28-F-R4-R1-R1-R1-R1-R1-R1 | No | Merge pull request #67 from sahilsheikh-dev/task/P28-F-R4-R1-R1-R1-R1-R1-R1-release-and-metadata |
+| `b5d9d1c` | P28-F-R4-R1-R1-R1-R1-R1 | P28-F-R4-R1-R1-R1-R1-R1 | No | Merge pull request #66 from sahilsheikh-dev/task/P28-F-R4-R1-R1-R1-R1-R1-integration-record |
+| `b534de4` | P28 | P28 | Yes (documentation) | Merge pull request #63 from sahilsheikh-dev/phase/28-qa-and-release |
+| `8bd1caf` | P28-F-R4-R1-R1-R1-R1 | P28-F-R4-R1-R1-R1-R1 | Yes (documentation) | Merge pull request #62 from sahilsheikh-dev/task/P28-F-R4-R1-R1-R1-R1-integration-record |
+| `c939458` | P28 | P28 | No | Merge pull request #55 from sahilsheikh-dev/phase/28-qa-and-release |
+| `ee6deae` | P28-E-R5-R1 | P28-E-R5-R1 | No | Merge pull request #54 from sahilsheikh-dev/task/P28-E-R5-R1-record-develop-merge |
+| `b5065ce` | P28 | P28 | No | Merge pull request #51 from sahilsheikh-dev/phase/28-qa-and-release |
+| `3433ead` | P20 | P20 | No | Merge pull request #41 from sahilsheikh-dev/phase/20-budget |
+| `67c5b01` | P20-A-R2 | P20-A-R2 | No | Merge pull request #40 from sahilsheikh-dev/task/P20-A-R2-linked-manual-savings |
+| `7bea8e6` | qa-and-release | qa-and-release | No | Merge pull request #38 from sahilsheikh-dev/release/v1.1.0 |
+| `5aa3b03` | develop | develop | No | Merge pull request #37 from sahilsheikh-dev/develop |
+| `7af7698` | P29 | P29 | No | Merge pull request #36 from sahilsheikh-dev/phase/29-income-recurrence |
+| `2f4e706` | main | main | No | Merge pull request #30 from sahilsheikh-dev/main |
+| `eeaabd4` | qa-and-release | qa-and-release | Yes (documentation) | Merge pull request #29 from sahilsheikh-dev/release/v1.1.0 |
+| `f1cff7b` | develop | documentation | Yes (documentation) | Merge pull request #28 from sahilsheikh-dev/develop |
+| `e2f8823` | P28 | P28 | Yes (documentation) | Merge pull request #27 from sahilsheikh-dev/phase/28-qa-and-release |
+| `bd6b5ef` | P28-F-R3-R3-R1 | P28-F-R3-R3-R1 | Yes (documentation) | Merge pull request #26 from sahilsheikh-dev/task/P28-F-R3-R3-R1-github-integration-record |
+| `e898737` | main | main | No | Merge pull request #20 from sahilsheikh-dev/main |
+| `c4fe7fd` | qa-and-release | qa-and-release | No | Merge pull request #19 from sahilsheikh-dev/release/v1.1.0 |
+| `ed9b9c7` | develop | develop | No | Merge pull request #18 from sahilsheikh-dev/develop |
+| `74a9f16` | P28 | P28 | No | Merge pull request #17 from sahilsheikh-dev/phase/28-qa-and-release |
+| `0120604` | P28-F-R3-R1 | P28-F-R3-R1 | No | Merge pull request #16 from sahilsheikh-dev/task/P28-F-R3-R1-pr-integration-record |
+| `5451692` | main | documentation | Yes (documentation) | Merge pull request #10 from sahilsheikh-dev/main |
+| `da11170` | qa-and-release | qa-and-release | Yes (documentation) | Merge pull request #9 from sahilsheikh-dev/release/v1.1.0 |
+| `1fce4dd` | qa-and-release | qa-and-release | Yes (documentation) | Merge pull request #8 from sahilsheikh-dev/release/v1.1.0 |
+
 ## PR Mapping
 
 | PR # | Ledger Ref |
 |---|---|
-| #1 | P28-F-R2, P28-F-R2-R1 |
-| #2 | P28-F, P28-F-R2 |
-| #3 | P28-F, P28-F-R2, P28-F-R2-R1 |
+| #1 | P28 |
+| #2 | qa-and-release |
+| #3 | main |
 | #4 | P28-F-R2-R1 |
-| #5 | P28-F-R2-R1 |
-| #6 | P28-F-R2-R1 |
-| #7 | P28-F-R2-R1 |
-| #11 | P28-F-R3, P28-F-R3-R1 |
-| #12 | P28-F-R3, P28-F-R3-R1 |
-| #13 | P28-F-R3, P28-F-R3-R1 |
-| #14 | P28-F-R3, P28-F-R3-R1 |
-| #15 | P28-F-R3, P28-F-R3-R1 |
-| #21 | P28-F-R3-R3-R1 |
-| #22 | P28-F-R3-R3-R1 |
-| #23 | P28-F-R3-R3-R1 |
-| #24 | P28-F-R3-R3-R1 |
-| #25 | P28-F-R3-R3-R1 |
-| #42 | P20-S-R1-R1 |
-| #43 | P20-S-R1-R1 |
+| #5 | P28 |
+| #6 | qa-and-release |
+| #7 | main |
+| #8 | qa-and-release |
+| #9 | qa-and-release |
+| #10 | main |
+| #11 | P28-F-R3 |
+| #12 | P28 |
+| #13 | develop |
+| #14 | qa-and-release |
+| #15 | main |
+| #16 | P28-F-R3-R1 |
+| #17 | P28 |
+| #18 | develop |
+| #19 | qa-and-release |
+| #20 | main |
+| #21 | P28-F-R3-R2 |
+| #22 | P28 |
+| #23 | develop |
+| #24 | qa-and-release |
+| #25 | main |
+| #26 | P28-F-R3-R3-R1 |
+| #27 | P28 |
+| #28 | develop |
+| #29 | qa-and-release |
+| #30 | main |
+| #36 | P29 |
+| #37 | develop |
+| #38 | qa-and-release |
+| #40 | P20-A-R2 |
+| #41 | P20 |
+| #42 | P20-S-R1 |
+| #43 | P20 |
 | #44 | P20-S-R1-R1 |
-| #45 | P20-S-R1-R1 |
-| #46 | P28-E-R3, P28-E-R4 |
+| #45 | P20 |
+| #46 | history/record-selected-commit-ancestry |
 | #47 | P28-E-R3 |
-| #48 | P28-E-R3 |
-| #49 | P28-E-R4, P28-E-R5 |
-| #50 | P28-E-R4, P28-E-R5 |
-| #52 | CR-98, P28-E-R5 |
-| #53 | CR-98, P28-E-R5, P28-E-R5-R1 |
+| #48 | P28 |
+| #49 | P28-E-R4 |
+| #50 | P28 |
+| #51 | P28 |
+| #52 | P28-E-R5 |
+| #53 | P28 |
+| #54 | P28-E-R5-R1 |
+| #55 | P28 |
 | #56 | P28-F-R4-R1-R1 |
-| #57 | P28-F-R4-R1-R1 |
+| #57 | P28 |
 | #58 | P28-F-R4-R1-R1-R1 |
-| #59 | P28-F-R4-R1-R1-R1 |
+| #59 | P28 |
 | #60 | P28-F-R4-R1-R1-R1-R1 |
-| #61 | P28-F-R4-R1-R1-R1-R1 |
+| #61 | P28 |
+| #62 | P28-F-R4-R1-R1-R1-R1 |
+| #63 | P28 |
 | #64 | P28-F-R4-R1-R1-R1-R1-R1 |
-| #65 | P28-F-R4-R1-R1-R1-R1-R1 |
-| #69 | P28-F-R4-R1-R1-R1-R1-R1-R1 |
-| #70 | P28-F-R4-R1-R1-R1-R1-R1-R1 |
+| #65 | P28 |
+| #66 | P28-F-R4-R1-R1-R1-R1-R1 |
+| #67 | P28-F-R4-R1-R1-R1-R1-R1-R1 |
+| #68 | P28 |
+| #69 | qa-and-release |
+| #70 | main |
+| #71 | P28-F-R4-R1-R1-R1-R1-R1-R1-R1 |
+| #72 | P28 |
+| #73 | qa-and-release |
+| #74 | main |
+| #75 | CR-104 |
+| #76 | P28 |
+| #77 | qa-and-release |
+| #78 | main |
+| #79 | CR-105 |
+| #80 | P28 |
+| #81 | CR-106 |
+| #82 | P28 |
 | #83 | P28-F-R5 |
-| #84 | P28-F-R5 |
-| #85 | P28-F-R5, P28-G |
+| #84 | P22-A-R1 |
+| #85 | P28-G |
+| #86 | P28 |
+| #87 | develop |
+| #88 | main |
+| #89 | CR-107 |
+| #90 | P28 |
+| #91 | develop |
+| #92 | main |
 | #93 | CR-108 |
 | #94 | CR-108 |
-| #95 | CR-108 |
-| #96 | CR-108 |
-| #97 | CR-108 |
-| #98 | CR-108 |
-| #99 | CR-108 |
-| #100 | CR-108 |
-| #101 | CR-108 |
-| #102 | CR-108 |
-| #103 | CR-108 |
-| #104 | CR-108 |
-| #105 | CR-108 |
-| #106 | CR-108 |
-| #107 | CR-108 |
-| #108 | CR-108 |
-| #109 | CR-108 |
+| #95 | P20-N-R3 |
+| #96 | P20 |
+| #97 | P41-A |
+| #98 | P41 |
+| #99 | P41-A-R1 |
+| #100 | P41 |
+| #101 | P41-B |
+| #102 | P41 |
+| #103 | P41 |
+| #104 | P41-C |
+| #105 | P41 |
+| #106 | P41-D |
+| #107 | P41 |
+| #108 | P41-B-R1 |
+| #109 | P41 |
+| #110 | P41-B-R1 |
+| #111 | P41 |
 | #112 | P28-F-R6 |
-| #113 | P28-F-R6 |
-| #114 | P28-F-R6 |
-| #115 | P28-F-R6 |
-| #116 | P28-F-R6, P28-F-R6-R1 |
-| #117 | P28-F-R6, P28-F-R6-R1 |
+| #113 | P28 |
+| #114 | P28 |
+| #115 | P28 |
+| #116 | P28-F-R6-R1 |
+| #117 | P28 |
 | #118 | P28-F-R6-R1 |
-| #119 | P28-F-R6-R1 |
-| #120 | P28-F-R6, P28-F-R6-R1 |
+| #119 | P28 |
+| #120 | develop |
 | #121 | P28-F-R6 |
-| #122 | P28-F-R6 |
-| #123 | P28-F-R6 |
-| #124 | P28-F-R6, P28-F-R6-R1 |
+| #122 | P28 |
+| #123 | develop |
+| #124 | qa-and-release |
 | #125 | P28-F-R6 |
 | #126 | P28-F-R6 |
-| #127 | P28-F-R6 |
-| #128 | P28-F-R6 |
-| #129 | P28-F-R6, P28-F-R6-R2 |
-| #130 | P28-F-R6, P28-F-R6-R2 |
-| #131 | P28-F-R6, P28-F-R6-R2 |
-| #132 | P28-F-R6, P28-F-R6-R2 |
-| #133 | P28-F-R6, P28-F-R6-R2 |
+| #127 | P28 |
+| #128 | develop |
+| #129 | main |
+| #130 | P28-F-R6 |
+| #131 | P28 |
+| #132 | develop |
+| #133 | main |
 | #134 | P28-F-R6-R2 |
-| #138 | P28-F-R6-R3, P28-F-R6-R3-R1 |
-| #139 | P28-F-R6-R3, P28-F-R6-R3-R1 |
-| #142 | CR-109, CR-3 |
-| #143 | CR-109, CR-3 |
+| #135 | P28 |
+| #136 | develop |
+| #137 | main |
+| #138 | P28-F-R6-R3 |
+| #139 | P28 |
+| #140 | P28-F-R6-R3-R1 |
+| #141 | P28 |
+| #142 | P42-A |
+| #143 | P42 |
+| #144 | P42-A-R1 |
+| #145 | P42 |
 | #146 | P43-A |
-| #147 | P43-A |
+| #147 | P43 |
+| #148 | P43 |
 | #149 | CR-111 |
 | #150 | CR-111 |
 | #151 | CR-111 |
 | #152 | CR-111 |
-| #153 | CR-112, P43-A, P43-F, P43-F-R1 |
-| #154 | CR-112, P43-A, P43-F, P43-F-R1 |
+| #153 | P43-F |
+| #154 | P43 |
+| #155 | P43-F-R1 |
+| #156 | P43 |
 | #157 | CR-113, P43-G, P43-G-R1 |
 | #158 | CR-113, P43-G, P43-G-R1 |
+| #161 | documentation |
+| #162 | documentation |
+| #163 | documentation |
+| #164 | P20-S-R2 |
+| #165 | P20 |
+| #166 | P20-S-R2-R1 |
+| #167 | P20 |
+| #168 | P20-S-R2-R2 |
+| #169 | P20 |
+| #170 | P21-F |
+| #171 | P21 |
+| #172 | P21-F-R1 |
+| #173 | P21 |
+| #174 | P20-W |
+| #175 | P20 |
+| #176 | P20-W-R1 |
+| #177 | P20 |
+| #178 | P20-A-R3 |
+| #179 | P20 |
+| #180 | P20-U-R1 |
+| #181 | P20 |
+| #182 | P20-W |
+| #183 | P20 |
+
+### Review notes for previously map-only PRs
+
+The remote snapshot resolves the eight entries previously lacking a matching
+PR-numbered local merge subject. Each is `MERGED` with a GitHub merge commit
+and timestamp. The commits are reachable from `develop`, but use descriptive
+merge subjects rather than `Merge pull request #N`; the prior map search missed
+them. The mapping rows above are preserved.
+
+- #93 — state `MERGED`; base `phase/29-income-recurrence`; head `task/P29-Q-R1-stress-menu-picker`; merge commit `1b1a6d53e3716124ebdbb21799894eef0a05c7b7`; mergedAt `2026-11-10T13:52:49Z`. Classification: merged with a different subject; reachable from `develop`.
+- #94 — state `MERGED`; base `develop`; head `phase/29-income-recurrence`; merge commit `80eb0e464a24844783c96168b8c74267d83c3d67`; mergedAt `2026-11-10T13:53:50Z`. Classification: merged with a different subject; reachable from `develop`.
+- #149 — state `MERGED`; base `phase/20-budget`; head `task/P20-A-R3-plan-linked-savings-paid`; merge commit `7a5fed6c4a98d8394652e0dbb499b9aa810bae29`; mergedAt `2026-11-12T04:05:12Z`. Classification: merged with a different subject; reachable from `develop`.
+- #150 — state `MERGED`; base `develop`; head `phase/20-budget`; merge commit `4170545cbaa8a4f37d4583b5c29c909c0c99a015`; mergedAt `2026-11-12T04:05:45Z`. Classification: merged with a different subject; reachable from `develop`.
+- #151 — state `MERGED`; base `phase/44-spending-heatmap`; head `task/P44-plan-heatmap`; merge commit `0cdd8406225d15247a3843956da98c0d4dbfc2ad`; mergedAt `2026-11-12T04:17:34Z`. Classification: merged with a different subject; reachable from `develop`.
+- #152 — state `MERGED`; base `develop`; head `phase/44-spending-heatmap`; merge commit `c0bb36a06b0726dcdc536243dbc10236e40d7fdd`; mergedAt `2026-11-12T04:18:07Z`. Classification: merged with a different subject; reachable from `develop`.
+- #157 — state `MERGED`; base `phase/43-lifecycle-and-transaction-planning`; head `task/P43-G-owner-approval-planning`; merge commit `01e5559f00a3b7008292db07ed7900af0ea8f828`; mergedAt `2026-11-12T06:21:23Z`. Classification: merged with a different subject; reachable from `develop`.
+- #158 — state `MERGED`; base `develop`; head `phase/43-lifecycle-and-transaction-planning`; merge commit `14f539b4c70da1a00e24642fd3e6068091f3ed9c`; mergedAt `2026-11-12T06:22:00Z`. Classification: merged with a different subject; reachable from `develop`.
+### Numbers without a merged PR
+
+The snapshot lists PRs #1–#183 and issue numbers separately. Every number from
+#1 through #183 is a merged PR except #39, which is a closed, unmerged PR. No
+number in this interval is an issue or an absent PR/issue. The snapshot reports
+no open PRs and no issues.
