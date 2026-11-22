@@ -39,7 +39,10 @@ apply only that exception and preserve all other rules.
 - **R3 — History, pushes and release approval:** agents do not push unless
   the owner explicitly authorizes it, and never force-push or rewrite history.
   Never publish releases or create, move, or delete release tags without
-  explicit owner approval.
+  explicit owner approval. Only `vX.Y.Z` release tags are maintained in the
+  repository; non-release, phase, and intermediate tags are prohibited and
+  must not be created. Legacy non-release tags were deleted under approved
+  task P43-B.
 - **R4 — Documentation scope:** routine Git documentation is limited to
   `docs/memory/*`, `docs/PROGRESS.md`, `docs/releases/**`, `CONTRIBUTING.md`,
   `SECURITY.md`, and `.github/**`. Change other documentation only when
