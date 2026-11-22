@@ -70,12 +70,15 @@ describe('permanent progress ledger', () => {
       'v1.2.0 device checks',
     ];
     const ids = [...checklist.matchAll(/^\| ([A-Z]+[0-9]+) \|/gm)].map(([, id]) => id);
+    const expectedIds = ['X1', 'X2', 'X3', 'X4', 'A1', 'A2', 'A3', 'A4', 'B5', 'B6', 'C7', 'C8', 'D9', 'D10', 'D11', 'D12', 'E13', 'E14', 'E15', 'E16', 'E17', 'F18', 'F19', 'F20', 'G21', 'G22', 'G23', 'H24', 'H25', 'H26', 'H27', 'H28', 'I29', 'I30', 'J31', 'J32', 'J33', 'K34', 'K35', 'K36', 'L37', 'M38', 'N39', 'N40', 'N41', 'N42', 'N43', 'N44', 'O45', 'O46', 'O47', 'O48', 'O49', 'O50', 'O51', 'O52', 'O53', 'O54', 'O55', 'O56', 'O57', 'O58', 'O59', 'O60', 'O61', 'O62', 'O63', 'O64', 'O65', 'O66', 'O67', 'O68', 'O69', 'O70', 'O71', 'O72', 'O73', 'O74'];
 
     expect(h1).toEqual(['# WealthWise Android Device Test Checklist']);
     expect(h2[0]).toBe(expectedSections[0]);
     expect(h2.filter((heading) => expectedSections.includes(heading))).toEqual(expectedSections);
     expect(h2).toContain('Release gate');
+    expect(checklist).toContain('any row in ANY section of the device checklist');
     expect(new Set(ids).size).toBe(ids.length);
+    expect([...ids].sort()).toEqual([...expectedIds].sort());
 
     for (const [index, heading] of expectedSections.entries()) {
       const start = checklist.indexOf(`## ${heading}`);
