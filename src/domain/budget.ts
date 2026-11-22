@@ -991,7 +991,6 @@ export function editBudgetIncome(
 
       let txUpdated = false;
       let nextCategory = tx.category;
-      let nextNote = tx.note;
 
       if (tx.category === oldIncomeCategory && oldIncomeCategory !== category) {
         nextCategory = category;
@@ -1001,12 +1000,7 @@ export function editBudgetIncome(
         txUpdated = true;
       }
 
-      if (tx.note === oldIncomeName) {
-        nextNote = name;
-        txUpdated = true;
-      }
-
-      return txUpdated ? { ...tx, category: nextCategory, note: nextNote } : tx;
+      return txUpdated ? { ...tx, category: nextCategory } : tx;
     });
     return { ...updatedData, transactions: nextTransactions };
   }
@@ -1062,7 +1056,6 @@ export function renameSection(
         return {
           ...tx,
           category: name,
-          note: tx.note === oldSectionName ? name : tx.note,
         };
       }
       return tx;
@@ -1252,23 +1245,11 @@ export function editItem(
       if (scope === 'month' && txMonth !== month) return tx;
       if (scope === 'following' && txMonth < month) return tx;
 
-      let txUpdated = false;
-      let nextCategory = tx.category;
-      let nextNote = tx.note;
-
       if (tx.category === oldName) {
-        nextCategory = name;
-        txUpdated = true;
+        return { ...tx, category: name };
       }
 
-      if (!(targetHoldingId && tx.source?.kind === 'holding-entry' && tx.source.parentId === targetHoldingId)) {
-        if (tx.note === oldName) {
-          nextNote = name;
-          txUpdated = true;
-        }
-      }
-
-      return txUpdated ? { ...tx, category: nextCategory, note: nextNote } : tx;
+      return tx;
     });
 
     let nextHoldings = updatedData.holdings;
