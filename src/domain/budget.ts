@@ -1073,8 +1073,16 @@ export function addItem(
       if (!linkedHolding || !holdingCapabilities(linkedHolding.type).recurring) {
         throw new BudgetMutationError('invalid-holding-link', 'Fixed deposits cannot be linked to recurring Budget schedules.');
       }
-      if (items.some((item) => item.holdingId === input.holdingId)) {
-        throw new BudgetMutationError('holding-link-duplicate', 'This holding is already linked to another budget item.');
+      const isOneTime = (freq?: string) => freq === 'once';
+      const isNewOneTime = isOneTime(schedule.frequency);
+      if (linkedHolding.kind === 'plan') {
+        if (items.some((item) => item.holdingId === input.holdingId)) {
+          throw new BudgetMutationError('holding-link-duplicate', 'This holding is already linked to another budget item.');
+        }
+      } else if (!isNewOneTime || items.some((item) => item.holdingId === input.holdingId && !isOneTime(item.frequency))) {
+        if (items.some((item) => item.holdingId === input.holdingId)) {
+          throw new BudgetMutationError('holding-link-duplicate', 'This holding is already linked to another budget item.');
+        }
       }
     }
     if (items.some((item) => item.name.toLowerCase() === name.toLowerCase())) {
@@ -1127,8 +1135,16 @@ export function editItem(
       if (!linkedHolding || !holdingCapabilities(linkedHolding.type).recurring) {
         throw new BudgetMutationError('invalid-holding-link', 'Fixed deposits cannot be linked to recurring Budget schedules.');
       }
-      if (items.some((item) => item.id !== target.id && item.holdingId === nextHoldingId)) {
-        throw new BudgetMutationError('holding-link-duplicate', 'This holding is already linked to another budget item.');
+      const isOneTime = (freq?: string) => freq === 'once';
+      const isTargetOneTime = isOneTime(schedule.frequency);
+      if (linkedHolding.kind === 'plan') {
+        if (items.some((item) => item.id !== target.id && item.holdingId === nextHoldingId)) {
+          throw new BudgetMutationError('holding-link-duplicate', 'This holding is already linked to another budget item.');
+        }
+      } else if (!isTargetOneTime || items.some((item) => item.id !== target.id && item.holdingId === nextHoldingId && !isOneTime(item.frequency))) {
+        if (items.some((item) => item.id !== target.id && item.holdingId === nextHoldingId)) {
+          throw new BudgetMutationError('holding-link-duplicate', 'This holding is already linked to another budget item.');
+        }
       }
     }
     if (items.some((item) => item.id !== target.id && item.name.toLowerCase() === nextName.toLowerCase())) {
@@ -1306,23 +1322,32 @@ export function budgetLineActual(
   options: { excludePolicyPayments?: boolean; customCategories?: ReadonlySet<string> } = {},
 ): number {
   const customCategories = options.customCategories ?? customBudgetCategories(data);
+  const allBudgetItems = [
+    ...(data.budgetPlan?.items ?? []),
+    ...(data.monthBudgets?.flatMap((snapshot) => snapshot.items) ?? []),
+  ];
   const linkedHoldingIds = new Set(
-    [
-      ...(data.budgetPlan?.items ?? []),
-      ...(data.monthBudgets?.flatMap((snapshot) => snapshot.items) ?? []),
-    ]
+    allBudgetItems
       .filter((item) => item.name === category && item.holdingId)
       .map((item) => item.holdingId),
   );
-  return data.transactions.filter((row) =>
-    monthKey(row.date) === month
-    && (row.type === 'expense' || row.type === 'invest')
-    && (
-      (row.source?.kind === 'holding-entry' && linkedHoldingIds.has(row.source.parentId))
-      || budgetCategoryForTransaction(row, customCategories) === category
-    )
-    && !(options.excludePolicyPayments && isInsuranceBudgetCategory(category) && row.source?.kind === 'policy-payment'),
-  ).reduce((sum, row) => sum + row.amount, 0);
+  return data.transactions.filter((row) => {
+    if (monthKey(row.date) !== month) return false;
+    if (row.type !== 'expense' && row.type !== 'invest') return false;
+    if (options.excludePolicyPayments && isInsuranceBudgetCategory(category) && row.source?.kind === 'policy-payment') {
+      return false;
+    }
+    if (budgetCategoryForTransaction(row, customCategories) === category) return true;
+    if (row.source?.kind === 'holding-entry' && linkedHoldingIds.has(row.source.parentId)) {
+      const siblingItems = allBudgetItems.filter((item) => item.holdingId === row.source?.parentId);
+      const distinctCategories = new Set(siblingItems.map((item) => item.name));
+      if (distinctCategories.size <= 1) return true;
+      const holding = data.holdings.find((h) => h.id === row.source?.parentId);
+      const entry = holding?.logs.find((e) => e.id === row.source?.entryId);
+      return entry?.note === category || row.note === category || row.category === category;
+    }
+    return false;
+  }).reduce((sum, row) => sum + row.amount, 0);
 }
 
 export type BudgetIncomeSource = { category: string; amount: number };

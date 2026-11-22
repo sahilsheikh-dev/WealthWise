@@ -155,17 +155,19 @@ export default function TransactionFormScreen() {
       type: initialType,
       category: (() => {
         const initialDate = requestedDate && isValidISO(requestedDate) ? requestedDate : today;
-        const categories = initialType === 'income'
-          ? TRANSACTION_CATEGORIES.income
-          : [
-            ...(initialType === 'invest' ? INVESTMENT_FORM_CATEGORIES : TRANSACTION_CATEGORIES.expense),
-            ...budgetItemCategoriesForTransaction(data, monthKey(initialDate), today, initialType),
-          ];
         if (initialType === 'invest') return '';
-        if (requestedCategoryParam && categories.some((category) => category === requestedCategoryParam)) {
+        if (initialType === 'income') {
+          const categories = TRANSACTION_CATEGORIES.income;
+          if (requestedCategoryParam && categories.some((category) => category === requestedCategoryParam)) {
+            return requestedCategoryParam;
+          }
+          return categories[0] ?? '';
+        }
+        if (requestedCategoryParam) {
           return requestedCategoryParam;
         }
-        return categories[0] ?? '';
+        const categories = budgetItemCategoriesForTransaction(data, monthKey(initialDate), today, 'expense');
+        return categories[0] ?? customExpenseCategory;
       })(),
       customCategory: '',
       instrumentId: undefined,
@@ -244,8 +246,12 @@ export default function TransactionFormScreen() {
   const categorySections = useMemo(
     () => selectedType === 'income'
       ? []
-      : budgetCategoryChoiceSections(data, selectedMonth, today, selectedType, budgetSorting.spec),
-    [budgetSorting.spec, data, selectedMonth, selectedType, today],
+      : budgetCategoryChoiceSections(data, selectedMonth, today, selectedType, budgetSorting.spec, {
+        limitExpenseToCreatedOrApplicable: selectedType === 'expense',
+        existingCategory: (transaction?.type === 'expense' ? transaction.category : undefined)
+          ?? (requestedCategoryParam && requestedCategoryParam !== customExpenseCategory ? requestedCategoryParam : undefined),
+      }),
+    [budgetSorting.spec, data, requestedCategoryParam, selectedMonth, selectedType, today, transaction?.category, transaction?.type],
   );
   const maxTransactionDate = monthEndDate(shiftMonth(monthKey(today), 24));
   const categoryOptions: DropdownOption[] = categorySections.flatMap((section) =>
@@ -258,12 +264,24 @@ export default function TransactionFormScreen() {
   if (selectedType === 'expense' && !categoryOptions.some((option) => option.value === customExpenseCategory)) {
     categoryOptions.push({ value: customExpenseCategory, title: 'Custom' });
   }
-  for (const category of choices) {
-    if (!categoryOptions.some((option) => option.value === category)) {
+  if (selectedType !== 'expense') {
+    for (const category of choices) {
+      if (!categoryOptions.some((option) => option.value === category)) {
+        categoryOptions.push({
+          value: category,
+          title: transactionCategoryLabel(category, selectedType ?? 'expense', customCategories),
+          group: 'Other',
+        });
+      }
+    }
+  } else {
+    const extraCategory = (transaction?.type === 'expense' ? transaction.category : undefined)
+      ?? (requestedCategoryParam && requestedCategoryParam !== customExpenseCategory ? requestedCategoryParam : undefined);
+    if (extraCategory && !categoryOptions.some((option) => option.value === extraCategory)) {
       categoryOptions.push({
-        value: category,
-        title: transactionCategoryLabel(category, selectedType ?? 'expense', customCategories),
-        group: 'Other',
+        value: extraCategory,
+        title: transactionCategoryLabel(extraCategory, 'expense', customCategories),
+        group: budgetGroupFor(extraCategory)?.name ?? 'Other',
       });
     }
   }

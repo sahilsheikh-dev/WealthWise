@@ -2,8 +2,8 @@ import { emptyAppData } from '../actions';
 import {
   addItem,
   budgetLineActual,
-  deleteBudgetStructureItem,
-  editBudgetStructureItem,
+  deleteItem,
+  editItem,
 } from '../budget';
 import { clearDue } from '../dues';
 import { deleteHolding } from '../holdingActions';
@@ -20,7 +20,7 @@ describe('budgetMultiAssetLink: multi-budget asset linking and payment attributi
     invested: 10_000,
     value: 12_000,
     valueAsOf: '2026-11-01',
-    entries: [],
+    logs: [],
   };
 
   const planAsset: Holding = {
@@ -37,7 +37,7 @@ describe('budgetMultiAssetLink: multi-budget asset linking and payment attributi
     day: 5,
     startDate: '2026-01-01',
     trackFrom: '2026-01-01',
-    entries: [],
+    logs: [],
   };
 
   const initialData: AppData = {
@@ -202,9 +202,9 @@ describe('budgetMultiAssetLink: multi-budget asset linking and payment attributi
 
     // Verify holding has both entries recorded
     const holding = data.holdings.find((h) => h.id === 'asset-mf');
-    expect(holding?.entries).toHaveLength(2);
-    expect(holding?.entries.find((e) => e.note === 'Diwali Bonus Invest')?.amount).toBe(15_000);
-    expect(holding?.entries.find((e) => e.note === 'Tax Refund Invest')?.amount).toBe(10_000);
+    expect(holding?.logs).toHaveLength(2);
+    expect(holding?.logs.find((e) => e.note === 'Diwali Bonus Invest')?.amount).toBe(15_000);
+    expect(holding?.logs.find((e) => e.note === 'Tax Refund Invest')?.amount).toBe(10_000);
   });
 
   it('supports editing and deleting one linked item while preserving the other', () => {
@@ -231,7 +231,7 @@ describe('budgetMultiAssetLink: multi-budget asset linking and payment attributi
     }, 'following', '2026-11-01');
 
     // Edit item-bonus planned value to 20,000
-    data = editBudgetStructureItem(data, '2026-11', {
+    data = editItem(data, '2026-11', {
       itemId: 'item-bonus',
       patch: { value: 20_000 },
     }, 'following', '2026-11-01');
@@ -241,7 +241,7 @@ describe('budgetMultiAssetLink: multi-budget asset linking and payment attributi
     expect(data.budgetPlan?.items.find((i) => i.id === 'item-tax-refund')?.holdingId).toBe('asset-mf');
 
     // Delete item-bonus
-    data = deleteBudgetStructureItem(data, '2026-11', 'item-bonus', 'following', '2026-11-01');
+    data = deleteItem(data, '2026-11', { itemId: 'item-bonus' }, 'following', '2026-11-01');
     expect(data.budgetPlan?.items.find((i) => i.id === 'item-bonus')).toBeUndefined();
     expect(data.budgetPlan?.items.find((i) => i.id === 'item-tax-refund')?.holdingId).toBe('asset-mf');
 

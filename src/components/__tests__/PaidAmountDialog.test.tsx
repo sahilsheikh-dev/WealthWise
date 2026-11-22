@@ -30,6 +30,17 @@ jest.mock('../TopAnchoredSheet', () => {
 });
 
 describe('PaidAmountDialog', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    act(() => {
+      jest.runAllTimers();
+    });
+    jest.useRealTimers();
+  });
+
   it('renders paid amount and payment date defaulting to today', () => {
     const onPaid = jest.fn();
     const onNotPaid = jest.fn();

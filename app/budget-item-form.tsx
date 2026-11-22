@@ -250,8 +250,12 @@ export default function BudgetItemFormScreen() {
           control={control}
           name="holdingId"
           render={({ field }) => {
+            const isOneTime = frequency === 'once';
             const otherLink = data.budgetPlan?.items.find((candidate) =>
-              candidate.id !== itemId && candidate.holdingId === field.value);
+              candidate.id !== itemId
+              && candidate.holdingId === field.value
+              && (linkedHolding?.kind === 'plan' || !isOneTime || candidate.frequency !== 'once')
+            );
             const options = [
               { value: '', title: 'None' },
               ...data.holdings
