@@ -1516,4 +1516,19 @@ describe('permanent progress ledger', () => {
     expect(openItems).toContain('O75 validated Pass by owner on 2026-11-22');
     expect(openItems).toContain('O76 validated Pass by owner on 2026-11-22');
   });
+
+  it('records owner cancellation of Once-only frequency for investment plans or liabilities under CR-128', () => {
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const roadmap = ledger.split('## 9. Upcoming roadmap')[1]?.split('## 10. Verification matrix')[0] ?? '';
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-128 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-128 |'))).toHaveLength(1);
+    expect(roadmap).toContain('Once-only frequency for investment plans and liabilities was evaluated and');
+    expect(roadmap).toContain('cancelled by owner decision on 2026-11-22 (CR-128)');
+    expect(openItems).toContain('Once-only frequency for investment plans or liabilities cancelled (2026-11-22)');
+    expect(status).toContain('CR-128 (2026-11-22) — Once-only frequency for plans/liabilities cancelled by owner');
+  });
 });
