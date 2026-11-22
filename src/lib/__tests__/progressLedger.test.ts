@@ -97,6 +97,33 @@ describe('permanent progress ledger', () => {
     }
   });
 
+  it('records CR-119 and keeps the release checklist gate identical across policy docs', () => {
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const independentEntities = ledger.split('## 13. Independent entities')[1] ?? '';
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const gate = 'A release must not be built, drafted, tagged or published while any row in ANY section of the device checklist';
+    const policyDocs = [
+      'AGENTS.md',
+      'docs/memory/rules.md',
+      'docs/releases/README.md',
+      'docs/releases/RELEASE_PROMPT.md',
+      'docs/releases/release-config.md',
+      'docs/releases/build-config.md',
+      'docs/releases/device-test-checklist.md',
+    ];
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-119 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-119 |'))).toHaveLength(1);
+    expect(independentEntities.split('\n').filter((line) => line.startsWith('| CR-119 |'))).toHaveLength(1);
+    expect(status).toContain('CR-119');
+    expect(openItems).toContain('O61-O74');
+    for (const policyPath of policyDocs) {
+      expect(readFileSync(join(process.cwd(), policyPath), 'utf8')).toContain(gate);
+    }
+  });
+
   it('records owner-reported physical-device validation as Pass', () => {
     const checklist = readFileSync(
       join(process.cwd(), 'docs/releases/device-test-checklist.md'),
