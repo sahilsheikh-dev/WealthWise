@@ -8,7 +8,11 @@
 - Bumps app version in `app.json`, `package.json`, and `package-lock.json` to `1.3.0`.
 - Places finalized v1.3.0 release note in `docs/releases/published/v1.3.0.md` with 8 owner-supplied screenshots in `docs/releases/screenshots/v1.3.0/` (About and auxiliary settings screens omitted).
 - Retitles device checklist to `## v1.3.0 device checks (next release)` with confirmed metadata; all O1–O76 checks pass.
-- Task branch `task/P28-F-R7-prepare-v1.3.0` off `qa-and-release`.
+- Task branch `task/P28-F-R7-prepare-v1.3.0` merged to `qa-and-release` via PR #210, integrated to `develop` via PR #211 (`afeb987`).
+- `release/v1.3.0` created at candidate commit `afeb987` and pushed to origin.
+- EAS build `c2ec9414-ae63-44cc-b34a-0f67f6cb51cb` (profile `android-apk`, Android `versionCode` 4) completed on 2026-11-22; 107,030,213-byte APK downloaded, privately byte-verified against EAS artifact, and uploaded to GitHub draft release `v1.3.0` as `WealthWise-android-latest-v1.3.0.apk`.
+- Task branch `task/P28-F-R7-record-v1.3.0-build` records the verified build.
+- Publication approval, release merge to `main`, tag creation, and post-publication doc rollover remain pending.
 
 ## P20-Y Budget payment date, multi-asset budget links, and limited expense categories (Done; device check Pass)
 
