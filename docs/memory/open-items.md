@@ -403,7 +403,7 @@ merge commands.
 - A true in-app update check is approved for future planning. The current
   About action remains browser-based after confirmation and makes no
   app-side request; no in-app checker is implemented.
-- Once-only frequency for investment plans or liabilities is approved for future planning;
+- Once-only frequency for investment plans or liabilities is approved for future planning (subsequently cancelled by owner decision on 2026-11-22; see Recently resolved);
   schema v23 and current forms remain unchanged until separately scoped.
 - Public adoption is an approved future project goal; no launch campaign or
   community-response commitment is authorized by this decision.
@@ -431,6 +431,11 @@ Not adopted in CR-106:
 
 ## Recently resolved
 
+- **Once-only frequency for investment plans or liabilities cancelled (2026-11-22):**
+  The owner decided not to implement Once-only frequency for investment plans or
+  liabilities; investment plans retain existing manual (one-time) and recurring
+  plan kinds, and liabilities retain existing one-time and recurring EMI structures.
+  No schema or form changes will be made.
 - **P29-J is resolved for now (2026-11-11):** the owner confirms the current
   actual-days/365 behavior is satisfactory; no statement comparison or
   calculation change is requested. Reopen only if new bank evidence is later
