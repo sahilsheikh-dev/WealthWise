@@ -11,8 +11,9 @@
 - Task branch `task/P28-F-R7-prepare-v1.3.0` merged to `qa-and-release` via PR #210, integrated to `develop` via PR #211 (`afeb987`).
 - `release/v1.3.0` created at candidate commit `afeb987` and pushed to origin.
 - EAS build `c2ec9414-ae63-44cc-b34a-0f67f6cb51cb` (profile `android-apk`, Android `versionCode` 4) completed on 2026-11-22; 107,030,213-byte APK downloaded, privately byte-verified against EAS artifact, and uploaded to GitHub draft release `v1.3.0` as `WealthWise-android-latest-v1.3.0.apk`.
-- Task branch `task/P28-F-R7-record-v1.3.0-build` records the verified build.
-- Publication approval, release merge to `main`, tag creation, and post-publication doc rollover remain pending.
+- Task branch `task/P28-F-R7-record-v1.3.0-build` merged to `qa-and-release` via PR #212, integrated to `develop` via PR #213 (`58d9a26`), and synchronized to `release/v1.3.0`.
+- Task branch `task/P28-F-R7-align-v1.3.0-readme-screenshots-details` updates `README.md` (v1.3.0 Download block and 8-screenshot gallery), aligns `v1.3.0.md` and `v1.2.0.md` download blocks, updates `release-history.md`, and adds release rules in `AGENTS.md` and `rules.md` requiring candidate README and screenshot alignment during staging.
+- Publication approval, release merge to `main`, tag creation, and post-publication sync remain pending.
 
 ## P20-Y Budget payment date, multi-asset budget links, and limited expense categories (Done; device check Pass)
 
