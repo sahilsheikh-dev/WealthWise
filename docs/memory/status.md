@@ -1,6 +1,20 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-22 | Updates: owner and AI agents -->
 
 # Status
+- **P20-X (2026-11-22) — Done; O75 physical-device check remains open.**
+  Implemented sorting for Budget categories and items throughout WealthWise using
+  existing sorting behavior in Transactions, Assets, and Liabilities as reference.
+  Added SortChip in AppHeader filter toggle panel on BudgetScreen using
+  useSort('budgetSpending') with Planned, Actual, Percent used, and Name options;
+  preserved Income at top while sorting its items; sorted spending/investing
+  sections and items within sections; added sorting support to shared Dropdown
+  with SortChip rendered in sheet; connected category dropdowns in
+  TransactionForm and BudgetIncomeForm with persistent budgetSpending sort spec;
+  extended budgetCategoryChoiceSections with pure sortSpec handling. Regression
+  tests: BudgetSorting.test.tsx, Dropdown.test.tsx, RouteRenderSmoke.test.tsx,
+  budgetCategories.test.ts. All six repository gates pass. Protected-file hash
+  for app/(tabs)/budget.tsx updated to 5abbb769d497bd3e4b8606cbd4903a64c4fd648d.
+  O75 remains Not run.
 - **P20-U-R1 (2026-11-21) — Done; O73 physical-device restart check remains open.**
   CONT3 completed the form/store/persistence matrix for reported fields,
   sections, kinds and both scopes, plus non-current viewed months, plain-backup
@@ -689,9 +703,9 @@
   historical records in [PROGRESS.md](../PROGRESS.md).
 - CR-108 baseline: 101 suites, 1317 tests (1316 passed, 1 skipped) on
   2026-11-11; all six CR-108 gates exited 0.
-- Test counts: 105 suites, 1438 tests (1,437 passed, 1 skipped) on
+- Test counts: 106 suites, 1449 tests (1,448 passed, 1 skipped) on
   2026-11-22.
-- Latest validated run: 105 suites, 1438 tests
+- Latest validated run: 106 suites, 1449 tests
   (1,437 passed, 1 skipped) on 2026-11-22 on the documentation task tree, which shares the D3 tree. Gate 1
   coverage was 96.08/92.35/98.22/97.71% statements/branches/functions/lines;
   Gates 1–3 and 5–6 exited 0. Gate 4 exited 1 because `npx` could not resolve

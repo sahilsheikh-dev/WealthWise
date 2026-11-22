@@ -34,6 +34,7 @@ Use only `Pass`, `Fail`, or `Blocked` after running each check. `Not run` remain
 | O72 | Verify Transaction form scrolling, validation, category picker and custom category entry at font scales 1.3 and 2.0 on iOS and Android. | Pass | P20-W; owner-reported physical-device verification, 2026-11-22. |
 | O73 | On a physical device, use Spend, Invest and Income items, including one-time and recurring items where applicable. Edit name, value/amount, start month, frequency and due day; verify both single-month and this-and-following edits. Delete with each scope, restart after each flow, and confirm the changed values and deletions persist. | Pass | P20-U-R1; owner-reported physical-device verification, 2026-11-22. |
 | O74 | On a physical device, create a linked one-time savings Budget item, then mark it Paid from Transactions with a different viewed month and after a month-only edit; verify one holding Deposit, one linked transaction, correct Budget actual, one-write persistence and one-step Undo. | Pass | P20-A-R3; owner-reported physical-device verification, 2026-11-22. |
+| O75 | Verify Budget category and item sorting on iOS and Android: SortChip in filter panel on Budget screen, persistent sort order across app restart, and category dropdown sorting in TransactionForm and BudgetIncomeForm at font scales 1.0, 1.3, and 2.0. | Not run | P20-X; physical-device check required. |
 
 ### Owner follow-up
 

@@ -207,7 +207,7 @@ blob remains unchanged.
 | File | Git blob ID | Rule |
 |---|---|---|
 | `app/(tabs)/index.tsx` | `d3d1e465fe9f5d238d338afeb033e2a54889ddc6` | User-owned; no Copilot edits authorized. |
-| `app/(tabs)/budget.tsx` | `ddc1369da3a9b982e6b377990234c29f4ff051c9` | Updated only for authorized CR-108 Part 2 overview text removal; preserve Opening/Closing balance labels, Cash flow labels, removed controls, no bottom border on Insurance/Transactions balance sections, and Stop/Resume investment labels. |
+| `app/(tabs)/budget.tsx` | `5abbb769d497bd3e4b8606cbd4903a64c4fd648d` | Updated only for authorized CR-108 Part 2 overview text removal and CR-125 / P20-X Budget category and item sorting; preserve Opening/Closing balance labels, Cash flow labels, removed controls, no bottom border on Insurance/Transactions balance sections, and Stop/Resume investment labels. |
 | `src/components/SortChip.tsx` | `837a675af94dd056532bc63fc4697efc905a5af3` | Leave unchanged. |
 | `src/lib/sorting.ts` | `7491663f0987d83d03f3ed72b01de5b376e3572d` | Leave unchanged. |
 | `src/components/form/frozen-manifest.json` | `476418c7084f0774f1b6fb86ddfe08c7a265fc40` | Frozen inputs are governed by this manifest. |
