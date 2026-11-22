@@ -9,7 +9,10 @@
   to v1.3.0. Candidate PR #210 and PR #211 integrated to develop (afeb987);
   release/v1.3.0 created; EAS build c2ec9414-ae63-44cc-b34a-0f67f6cb51cb (profile android-apk,
   versionCode 4) verified and 107,030,213-byte APK uploaded to GitHub release draft.
-  Publication remains pending owner approval. All six repository gates pass.
+  Per owner instruction, updated README.md (Download block and 8-screenshot gallery for v1.3.0),
+  aligned published v1.3.0 and v1.2.0 download blocks and release history, and updated
+  release rules in AGENTS.md and rules.md to mandate aligning README and release docs during
+  candidate staging. Publication remains pending owner approval. All six repository gates pass.
 - **P20-X-R1 / CR-129 (2026-11-22) — Remove transaction sorting & Dropdown search title.**
   Removed sorting option from TransactionForm category dropdowns (Expense, Income, Invest)
   and removed redundant static Search header title from shared Dropdown sheet, keeping

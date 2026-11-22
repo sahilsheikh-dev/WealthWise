@@ -142,7 +142,12 @@
   platform-generated asset digest that cannot be removed by editing the
   release. Keep the README Download block byte-identical to the latest
   published block. Each release updates the README Download and
-  What's new sections and the releases-page link. Verify the latest and every
+  What's new sections and the releases-page link. During release preparation
+  of an approved candidate, update README.md (Download block, What's new, and
+  Screenshots gallery), docs/releases/published/vX.Y.Z.md, and release history
+  to use the newer candidate release's screenshots, download details, and links
+  so the candidate repository state is fully aligned and ready for publication.
+  Verify the latest and every
   affected versioned link with `curl -I -L`; require HTTP 200 and expected
   artifact size. The Builds table records EAS build ID, profile, Android
   `versionCode`, date and status, but no source commit or digest.
@@ -152,7 +157,7 @@
   notes, link thumbnails to absolute `blob/main` URLs and load images from
   matching absolute `raw.githubusercontent.com/.../main/` URLs; the README may
   use equivalent relative paths. Keep the README gallery limited to the
-  latest published release.
+  latest release.
 - No null-silencing `!` or `as` in `app/` or `src/components/`.
 - Format monetary values through `AmountText`/`formatAmount` with an explicit
   display tier.
@@ -174,13 +179,16 @@
   material. GitHub may expose a platform-generated asset digest that cannot
   be removed by editing the release. Keep the README and latest published
   Download blocks identical; update README Download/What's new and the
-  releases-page link for every release. Verify the current latest URL and
+  releases-page link for every release. During release preparation of an
+  approved candidate, update README (Download block, What's new, Screenshots)
+  and release docs to use the newer release assets and screenshots.
+  Verify the current latest URL and
   every affected versioned link with `curl -I -L`, HTTP 200 and expected size.
   Name screenshots `WealthWise-vX.Y.Z-screenshot-<screen>.png`, commit them
   under `docs/releases/screenshots/vX.Y.Z/` with the corresponding release
   note, and reference the repository files in Markdown; only the APK is
   uploaded to the GitHub Release. README screenshots come from the latest
-  published release only.
+  release.
   Record EAS build ID, profile, Android `versionCode`, date and status in
   Builds, omitting source commits and digests.
   Production Android AABs go to Google Play and APKs to GitHub; iOS

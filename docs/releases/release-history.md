@@ -8,7 +8,8 @@ or checksums.
 
 | Version | Date | Type | Android download | Release notes | Status |
 |---|---|---|---|---|---|
-| v1.2.0 | 2026-11-11 | Minor | [APK](https://github.com/sahilsheikh-dev/WealthWise/releases/latest/download/WealthWise-android-latest-v1.2.0.apk) | [v1.2.0 notes](./published/v1.2.0.md) | Published |
+| v1.3.0 | 2026-11-22 | Minor | [APK](https://github.com/sahilsheikh-dev/WealthWise/releases/latest/download/WealthWise-android-latest-v1.3.0.apk) | [v1.3.0 notes](./published/v1.3.0.md) | Published |
+| v1.2.0 | 2026-11-11 | Minor | [APK](https://github.com/sahilsheikh-dev/WealthWise/releases/download/v1.2.0/WealthWise-android-v1.2.0.apk) | [v1.2.0 notes](./published/v1.2.0.md) | Published |
 | v1.1.1 | 2026-11-09 | Patch | [APK](https://github.com/sahilsheikh-dev/WealthWise/releases/download/v1.1.1/WealthWise-android-v1.1.1.apk) | [v1.1.1 notes](./published/v1.1.1.md) | Published |
 | v1.1.0 | 2026-11-08 | Minor | [APK](https://github.com/sahilsheikh-dev/WealthWise/releases/download/v1.1.0/WealthWise-android-v1.1.0.apk) | [v1.1.0 notes](./published/v1.1.0.md) | Published |
 | v1.0.0 | 2026-11-07 | Initial | [APK](https://github.com/sahilsheikh-dev/WealthWise/releases/download/v1.0.0/WealthWise-android-v1.0.0.apk) | [v1.0.0 notes](./published/v1.0.0.md) | Published |
@@ -25,9 +26,14 @@ More versions are listed on the [WealthWise releases page](https://github.com/sa
 | v1.1.0 | Android | `e45392bd-8146-4077-b76b-fe139993b141` | preview | 1 | 2026-11-08 | Published; artifact verified; owner-approved release exceptions |
 | v1.0.0 | Android | `7addde9a-34df-4f00-a54a-b695c1578859` | preview | 1 | 2026-11-07 | Complete; artifact verified |
 
+The v1.3.0 Android APK matched the EAS artifact and is published as
+`WealthWise-android-latest-v1.3.0.apk`. Its latest and versioned URLs return
+HTTP 200 with a content length of 107,030,213 bytes.
+
 The v1.2.0 Android APK matched the EAS artifact and is published as
-`WealthWise-android-latest-v1.2.0.apk`. Its latest and versioned URLs return
-HTTP 200 with a content length of 112,163,081 bytes.
+`WealthWise-android-v1.2.0.apk`. Its versioned URL returns HTTP 200 with a
+content length of 112,163,081 bytes. The latest-named asset was renamed after
+v1.3.0 publication.
 
 The v1.1.1 Android APK matched the owner-supplied EAS artifact and is published
 as `WealthWise-android-v1.1.1.apk`. Its versioned URL returns HTTP 200 with a
