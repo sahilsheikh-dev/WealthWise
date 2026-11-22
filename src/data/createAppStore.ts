@@ -138,8 +138,8 @@ export type AppActions = {
   addInvestmentEntry: (holdingId: string, input: InvestmentEntryInput) => void;
   updateInvestmentEntry: (holdingId: string, entryId: string, patch: InvestmentEntryPatch) => void;
   deleteInvestmentEntry: (holdingId: string, entryId: string) => void;
-  clearDue: (target: ClearDueTarget, rowId?: string, actualAmount?: number, note?: string) => string | undefined;
-  clearDuesThrough: (target: DueTarget, dueDate: ISODate, actualAmount?: number) => string[] | undefined;
+  clearDue: (target: ClearDueTarget, rowId?: string, actualAmount?: number, note?: string, date?: ISODate) => string | undefined;
+  clearDuesThrough: (target: DueTarget, dueDate: ISODate, actualAmount?: number, date?: ISODate) => string[] | undefined;
   clearPastDues: (target: DueTarget, options: {
     mode: 'settle' | 'record';
     balance?: number;
@@ -414,11 +414,11 @@ export function createAppStore(
             'Investment entry deleted.',
           );
         },
-        clearDue(target, rowId, actualAmount, note) {
+        clearDue(target, rowId, actualAmount, note, date) {
           let entryId: string | undefined;
           applyDataAction((data) => {
             const result = clearDue(data, target, {
-              date: deps.today(),
+              date: date ?? deps.today(),
               newId: deps.newId,
               ...(rowId ? { rowId } : {}),
               ...(actualAmount !== undefined ? { actualAmount } : {}),
@@ -429,11 +429,11 @@ export function createAppStore(
           });
           return entryId;
         },
-        clearDuesThrough(target, dueDate, actualAmount) {
+        clearDuesThrough(target, dueDate, actualAmount, date) {
           let entryIds: string[] | undefined;
           applyDataAction((data) => {
             const result = clearDuesThrough(data, target, dueDate, {
-              date: deps.today(),
+              date: date ?? deps.today(),
               newId: deps.newId,
               ...(actualAmount !== undefined ? { actualAmount } : {}),
             });

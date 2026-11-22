@@ -337,7 +337,7 @@ describe('transaction add form', () => {
     expect(renderer.root.findByProps({ label: 'Save' }).props.disabled).toBe(true);
   });
 
-  it.each(['Festival', 'Donation', 'Gifts'] as const)('creates an expense in the %s category', async (category) => {
+  it.each(['Festival', 'Culture', 'Unexpected'] as const)('creates an expense in the %s category', async (category) => {
     let renderer: TestRenderer.ReactTestRenderer | undefined;
     await act(async () => {
       renderer = TestRenderer.create(<TransactionFormScreen />);
@@ -386,13 +386,9 @@ describe('transaction add form', () => {
     const categoryField = renderer.root.findAll((node) => String(node.type) === 'dropdown')[0];
     if (!categoryField) throw new Error('Expense category selector was not rendered.');
     const options = categoryField.props.options as { value: string; title: string; group?: string }[];
-    expect(options.filter((option) => option.value.includes('premium'))).toEqual(expect.arrayContaining([
-      { value: 'Insurance premium', title: 'Insurance premium', group: 'Insurance' },
-      { value: 'Term life premium', title: 'Term life premium', group: 'Insurance' },
+    expect(options.filter((option) => option.value.includes('premium'))).toEqual([
       { value: 'Health premium', title: 'Health premium', group: 'Insurance' },
-      { value: 'Motor premium', title: 'Motor premium', group: 'Insurance' },
-      { value: 'Home premium', title: 'Home premium', group: 'Insurance' },
-    ]));
+    ]);
 
     const linkSwitch = renderer.root.findAll((node) => String(node.type) === 'switchrow')[0];
     if (!linkSwitch) throw new Error('Policy link switch was not rendered.');
@@ -668,7 +664,7 @@ describe('transaction add form', () => {
     }
   });
 
-  it.each(['Festival', 'Donation', 'Gifts'] as const)('edits an expense into the %s category', async (category) => {
+  it.each(['Festival', 'Culture', 'Unexpected'] as const)('edits an expense into the %s category', async (category) => {
     mockData.transactions.push({
       id: 'editing',
       type: 'expense',
@@ -695,5 +691,27 @@ describe('transaction add form', () => {
       type: 'expense',
       category,
     }));
+  });
+
+  it('preserves removed historical category when editing an existing transaction to avoid data loss', async () => {
+    mockData.transactions.push({
+      id: 'editing-historical',
+      type: 'expense',
+      amount: 200,
+      category: 'Gifts',
+      note: 'Birthday gift',
+      date: '2026-10-01',
+    });
+    mockParams = { id: 'editing-historical' };
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    await act(async () => {
+      renderer = TestRenderer.create(<TransactionFormScreen />);
+    });
+    if (!renderer) throw new Error('Transaction form renderer was not created.');
+    const categoryField = renderer.root.findAll((node) => String(node.type) === 'dropdown')[0];
+    if (!categoryField) throw new Error('Expense category selector was not rendered.');
+    const options = (categoryField.props.options as { value: string }[]).map((option) => option.value);
+    expect(options).toContain('Gifts');
+    expect(options).not.toContain('Travel');
   });
 });

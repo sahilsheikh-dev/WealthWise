@@ -2,6 +2,27 @@
 
 # Open items
 
+## P20-Y Budget payment date, multi-asset budget links, and limited expense categories (implementation complete; device check open)
+
+- CR-126 implements three related changes:
+  1. Payment date input (defaulting to today, customizable) when marking scheduled/budgeted
+     items Paid in Transactions and Budget, propagated to `clearDue`, `clearDuesThrough`,
+     and `addTransaction`.
+  2. Support for one asset linking to multiple one-time investment Budget items,
+     attributing holding entries by category/note and updating the correct holding
+     and budget actuals.
+  3. Limiting Transaction form Expense categories to user-created Budget items and
+     applicable scheduled items (due EMIs, policy premium categories, pending dues)
+     plus Custom, while preserving historical removed categories when editing.
+- Full six-gate run passes exit 0. Regression tests pass across components, domain,
+  and smoke suites.
+- Physical-device check O76 remains Not run: verify payment date prompt when marking
+  scheduled/budgeted items Paid in Transactions and Budget (default today, customizable,
+  historical dates preserved), verify linking one asset to multiple one-time investment
+  budgets and paying each updates correct holding and budget actuals, and verify
+  Transaction form Expense category dropdown only displays user-created or applicable
+  scheduled categories while preserving historical removed categories when editing.
+
 ## P20-X Budget category and item sorting (implementation complete; device check open)
 
 - CR-125 adds sorting for Budget categories and items throughout WealthWise using
