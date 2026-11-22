@@ -895,3 +895,15 @@
 - Device model, OS version, and tester details were not supplied and remain blank.
 - All 78 rows across all 5 sections of the device checklist now Pass.
 - The release gate is unblocked for candidate builds.
+
+
+## Current task — docs-device-checklist-metadata-rules (2026-11-22)
+
+- Branch: `task/docs-device-checklist-metadata-rules`; standalone lifecycle branch: `documentation`.
+- Recorded physical device metadata across all 5 sections of `docs/releases/device-test-checklist.md`:
+  - Device model: `realme Narzo 60 Pro 5g`
+  - Android version: `15 Vanilla Ice Cream`
+  - Tester: `sahilsheikh-dev`
+  - Dates: `2026-11-22` (Next release), `2026-11-07` (v1.0.0), `2026-11-08` (v1.1.0), `2026-11-09` (v1.1.1), `2026-11-11` (v1.2.0).
+- Updated Notes across all Pass checks to record owner-reported physical-device verification as of the respective release date.
+- Updated device checklist maintenance rules across all policy documents (`device-test-checklist.md`, `rules.md`, `AGENTS.md`, `README.md`, `RELEASE_PROMPT.md`, `release-config.md`, `build-config.md`) requiring agents to prompt the owner to confirm all metadata fields (Device model, Android version, Tester username, and Date) with suggestions based on previous releases data before making changes.

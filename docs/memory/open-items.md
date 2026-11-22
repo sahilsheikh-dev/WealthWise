@@ -906,7 +906,7 @@ Not adopted in CR-106:
 
 ## Pending owner actions (2026-11-22 reconciliation)
 
-- **Next-release device gate:** O61–O74 were tested and validated on physical devices by the owner on 2026-11-22 and marked Pass. O61–O64 are P20-S-R2; O65–O68 are P21-F; O69–O72 are P20-W; O73 is P20-U-R1; O74 is P20-A-R3. All 78 rows in the device checklist now Pass; the release gate is unblocked for candidate builds.
+- **Next-release device gate:** O61–O74 were tested and validated on physical devices by the owner on 2026-11-22 and marked Pass. O61–O64 are P20-S-R2; O65–O68 are P21-F; O69–O72 are P20-W; O73 is P20-U-R1; O74 is P20-A-R3. All 78 rows in the device checklist now Pass; the release gate is unblocked for candidate builds. Physical device metadata (realme Narzo 60 Pro 5g, Android 15 Vanilla Ice Cream, tester sahilsheikh-dev, respective release dates) is recorded across all 5 sections, and the checklist maintenance confirmation rule with prior release suggestions is documented.
 - **Documentation PR flow:** CR-118's PR #184/#185 and CR-119's PR #186/#187
   merges are confirmed in Git history and terminal session evidence. PR #186
   merged `task/docs-device-checklist-by-release` into `documentation` at
