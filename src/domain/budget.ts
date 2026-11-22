@@ -1265,7 +1265,6 @@ export function editItem(
       const hasSiblings = distinctNames.size > 1;
 
       const matchedEntryIds = new Set<string>();
-      const matchedTxIds = new Set<string>();
 
       for (const tx of nextTransactions) {
         if (tx.source?.kind !== 'holding-entry' || tx.source.parentId !== targetHoldingId) continue;
@@ -1285,15 +1284,11 @@ export function editItem(
         }
 
         if (matches) {
-          matchedTxIds.add(tx.id);
           if (tx.source?.entryId) matchedEntryIds.add(tx.source.entryId);
         }
       }
 
-      if (matchedTxIds.size > 0 || matchedEntryIds.size > 0) {
-        nextTransactions = nextTransactions.map((tx) =>
-          matchedTxIds.has(tx.id) ? { ...tx, note: name } : tx,
-        );
+      if (matchedEntryIds.size > 0) {
         nextHoldings = updatedData.holdings.map((h) => {
           if (h.id !== targetHoldingId) return h;
           return {

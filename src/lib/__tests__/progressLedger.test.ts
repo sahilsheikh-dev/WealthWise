@@ -68,9 +68,10 @@ describe('permanent progress ledger', () => {
       'v1.1.0 device checks',
       'v1.1.1 device checks',
       'v1.2.0 device checks',
+      'v1.3.0 device checks',
     ];
     const ids = [...checklist.matchAll(/^\| ([A-Z]+[0-9]+) \|/gm)].map(([, id]) => id);
-    const expectedIds = ['X1', 'X2', 'X3', 'X4', 'A1', 'A2', 'A3', 'A4', 'B5', 'B6', 'C7', 'C8', 'D9', 'D10', 'D11', 'D12', 'E13', 'E14', 'E15', 'E16', 'E17', 'F18', 'F19', 'F20', 'G21', 'G22', 'G23', 'H24', 'H25', 'H26', 'H27', 'H28', 'I29', 'I30', 'J31', 'J32', 'J33', 'K34', 'K35', 'K36', 'L37', 'M38', 'N39', 'N40', 'N41', 'N42', 'N43', 'N44', 'O45', 'O46', 'O47', 'O48', 'O49', 'O50', 'O51', 'O52', 'O53', 'O54', 'O55', 'O56', 'O57', 'O58', 'O59', 'O60', 'O61', 'O62', 'O63', 'O64', 'O65', 'O66', 'O67', 'O68', 'O69', 'O70', 'O71', 'O72', 'O73', 'O74', 'O75', 'O76'];
+    const expectedIds = ['X1', 'X2', 'X3', 'X4', 'A1', 'A2', 'A3', 'A4', 'B5', 'B6', 'C7', 'C8', 'D9', 'D10', 'D11', 'D12', 'E13', 'E14', 'E15', 'E16', 'E17', 'F18', 'F19', 'F20', 'G21', 'G22', 'G23', 'H24', 'H25', 'H26', 'H27', 'H28', 'I29', 'I30', 'J31', 'J32', 'J33', 'K34', 'K35', 'K36', 'L37', 'M38', 'N39', 'N40', 'N41', 'N42', 'N43', 'N44', 'O45', 'O46', 'O47', 'O48', 'O49', 'O50', 'O51', 'O52', 'O53', 'O54', 'O55', 'O56', 'O57', 'O58', 'O59', 'O60', 'O61', 'O62', 'O63', 'O64', 'O65', 'O66', 'O67', 'O68', 'O69', 'O70', 'O71', 'O72', 'O73', 'O74', 'O75', 'O76', 'O77'];
 
     expect(h1).toEqual(['# WealthWise Android Device Test Checklist']);
     expect(h2[0]).toBe(expectedSections[0]);
@@ -323,8 +324,8 @@ describe('permanent progress ledger', () => {
     expect(p20uR1).toContain('start month, frequency, due day');
     expect(p20uR1).toContain('both scopes');
     expect(p20uR1).toContain('H1–H5 findings are recorded in CONT3');
-    expect(ledger).toMatch(/Overall progress ████████░░ 79% \((?:158\/200|159\/201|160\/202|161\/203)\)/);
-    expect(ledger).toMatch(/P20\s+██████████ 100% \((?:43\/43|44\/44|45\/45|46\/46)\)/);
+    expect(ledger).toMatch(/Overall progress ████████░░ 79% \((?:158\/200|159\/201|160\/202|161\/203|162\/204)\)/);
+    expect(ledger).toMatch(/P20\s+██████████ 100% \((?:43\/43|44\/44|45\/45|46\/46|47\/47)\)/);
     const o73 = checklist.split('\n').find((line) => line.startsWith('| O73 |'));
     expect(o73).toContain('one-time and recurring');
     expect(o73).toContain('Spend, Invest and Income');
@@ -336,7 +337,7 @@ describe('permanent progress ledger', () => {
     expect(register).toContain('| CR-117 |');
     expect(promptLog.split('\n').filter((line) => line.startsWith('| P20-U-R1 |'))).toHaveLength(1);
     expect(roadmap).toContain('P20-U-R1');
-    expect(branchIndex).toMatch(/\| P20 \| `phase\/20-budget` \| `phase-20-complete` \| `eed40750f68bebc9168907f79f74a67c1f301b83` \| (?:43|44|45|46) \|/);
+    expect(branchIndex).toMatch(/\| P20 \| `phase\/20-budget` \| `phase-20-complete` \| `eed40750f68bebc9168907f79f74a67c1f301b83` \| (?:43|44|45|46|47) \|/);
 
     // Entity checks: CR-115 belongs in documentation entity under Section 13
     expect(independentEntities).toContain('| CR-115 |');
@@ -745,8 +746,8 @@ describe('permanent progress ledger', () => {
         expect(count?.done).toBe(0);
         expect(count?.total).toBe(4);
       } else if (phase === 20) {
-        expect(count?.done).toBe(46);
-        expect(count?.total).toBe(46);
+        expect(count?.done).toBe(47);
+        expect(count?.total).toBe(47);
         expect(dashboard.split('\n').find((line) => line.startsWith('| P20-A-R2 |')))
           .toContain('Revised by P20-A-R2-R1 and P20-A-R3');
         expect(dashboard.split('\n').find((line) => line.startsWith('| P20-A-R3 |')))
@@ -1186,9 +1187,9 @@ describe('permanent progress ledger', () => {
     expect(revisionRow).toContain('phase PR #165');
     expect(registerRow).toContain('185a5ea125f64ac104344f00ad013d68cdb7a946');
     expect(registerRow).toContain('6b50a1d');
-    expect(phaseRow).toMatch(/\|\s*(?:43|44|45|46)\s*\|/);
-    expect(ledger).toMatch(/Overall progress ████████░░ 79% \((?:158\/200|159\/201|160\/202|161\/203)\)/);
-    expect(ledger).toMatch(/P20\s+██████████ 100% \((?:43\/43|44\/44|45\/45|46\/46)\)/);
+    expect(phaseRow).toMatch(/\|\s*(?:43|44|45|46|47)\s*\|/);
+    expect(ledger).toMatch(/Overall progress ████████░░ 79% \((?:158\/200|159\/201|160\/202|161\/203|162\/204)\)/);
+    expect(ledger).toMatch(/P20\s+██████████ 100% \((?:43\/43|44\/44|45\/45|46\/46|47\/47)\)/);
     expect(status).toContain('P20-S-R2-R1 records the verified');
   });
 
@@ -1219,9 +1220,9 @@ describe('permanent progress ledger', () => {
     expect(revisionRow).toContain('9e47856f20848e03ac6a4b8e699f47c387d08161');
     expect(registerRow).toContain('CM-2 synchronized local `develop`');
     expect(promptLog.split('\n').filter((line) => line.startsWith('| P20-W-R1 |'))).toHaveLength(1);
-    expect(phaseRow).toMatch(/\|\s*(?:43|44|45|46)\s*\|/);
-    expect(ledger).toMatch(/Overall progress ████████░░ 79% \((?:158\/200|159\/201|160\/202|161\/203)\)/);
-    expect(ledger).toMatch(/P20\s+██████████ 100% \((?:43\/43|44\/44|45\/45|46\/46)\)/);
+    expect(phaseRow).toMatch(/\|\s*(?:43|44|45|46|47)\s*\|/);
+    expect(ledger).toMatch(/Overall progress ████████░░ 79% \((?:158\/200|159\/201|160\/202|161\/203|162\/204)\)/);
+    expect(ledger).toMatch(/P20\s+██████████ 100% \((?:43\/43|44\/44|45\/45|46\/46|47\/47)\)/);
     expect(status).toContain('P20-W-R1 records task PR #174 and phase PR #175');
     expect(openItems).toContain('STOP GATE RESOLVED (DEC-P20W-D3-SCHEMA24');
     expect(openItems).toContain('O69–O72 remain Not run');
@@ -1465,7 +1466,7 @@ describe('permanent progress ledger', () => {
     expect(promptLog.split('\n').find((line) => line.startsWith('| CR-125 |'))).toContain('P20-X');
     expect(register.split('\n').find((line) => line.startsWith('| CR-125 |'))).toBeDefined();
     expect(verification).toContain('### 2026-11-22 — P20-X Budget category and item sorting');
-    expect(branchIndex.split('\n').find((line) => line.startsWith('| P20 |'))).toMatch(/\|\s*(?:43|44|45|46)\s*\|/);
+    expect(branchIndex.split('\n').find((line) => line.startsWith('| P20 |'))).toMatch(/\|\s*(?:43|44|45|46|47)\s*\|/);
     expect(checklist).toContain('| O75 |');
     expect(checklist).toContain('P20-X; owner-reported physical-device verification, 2026-11-22.');
     expect(status).toContain('P20-X');
@@ -1491,7 +1492,7 @@ describe('permanent progress ledger', () => {
     expect(promptLog.split('\n').find((line) => line.startsWith('| CR-126 |'))).toContain('P20-Y');
     expect(register.split('\n').find((line) => line.startsWith('| CR-126 |'))).toBeDefined();
     expect(verification).toContain('### 2026-11-22 — P20-Y Budget payment date, multi-asset budget links, and limited expense categories');
-    expect(branchIndex.split('\n').find((line) => line.startsWith('| P20 |'))).toMatch(/\|\s*(?:43|44|45|46)\s*\|/);
+    expect(branchIndex.split('\n').find((line) => line.startsWith('| P20 |'))).toMatch(/\|\s*(?:43|44|45|46|47)\s*\|/);
     expect(checklist).toContain('| O76 |');
     expect(checklist).toContain('P20-Y; owner-reported physical-device verification, 2026-11-22.');
     expect(status).toContain('P20-Y');
@@ -1640,5 +1641,122 @@ describe('permanent progress ledger', () => {
     expect(matrix).toContain('P20-Y-R3');
     expect(openItems).toContain('P20-Y-R3');
     expect(status).toContain('P20-Y-R3');
+  });
+
+  it('records CR-135 device check O77 and standing rule requiring physical-device checks for all features and fixes', () => {
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const independentEntities = ledger.split('## 13. Independent entities')[1] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const checklist = readFileSync(join(process.cwd(), 'docs/releases/device-test-checklist.md'), 'utf8');
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-135 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-135 |'))).toHaveLength(1);
+    expect(independentEntities.split('\n').filter((line) => line.startsWith('| CR-135 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-135');
+    expect(checklist).toContain('| O77 |');
+    expect(checklist).toContain('Not run');
+    expect(openItems).toContain('O77');
+    expect(status).toContain('CR-135');
+
+    const policyDocs = [
+      'AGENTS.md',
+      'docs/memory/rules.md',
+      'docs/releases/README.md',
+      'docs/releases/RELEASE_PROMPT.md',
+      'docs/releases/release-config.md',
+      'docs/releases/build-config.md',
+      'docs/releases/device-test-checklist.md',
+    ];
+    const ruleSnippet = 'For any new feature, bug fix, behavior change, or revision that modifies user-facing behavior, data integrity, calculations, navigation, or forms, agents must add the corresponding physical-device verification check(s)';
+    for (const p of policyDocs) {
+      const doc = readFileSync(join(process.cwd(), p), 'utf8');
+      expect(doc).toContain(ruleSnippet);
+    }
+  });
+
+  it('records CR-136 device checklist rearrangement and published release checks rule', () => {
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const independentEntities = ledger.split('## 13. Independent entities')[1] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const checklist = readFileSync(join(process.cwd(), 'docs/releases/device-test-checklist.md'), 'utf8');
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-136 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-136 |'))).toHaveLength(1);
+    expect(independentEntities.split('\n').filter((line) => line.startsWith('| CR-136 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-136');
+    expect(checklist).toContain('## v1.3.0 device checks');
+    expect(openItems).toContain('CR-136');
+    expect(status).toContain('CR-136');
+
+    const policyDocs = [
+      'AGENTS.md',
+      'docs/memory/rules.md',
+      'docs/releases/README.md',
+      'docs/releases/RELEASE_PROMPT.md',
+      'docs/releases/release-config.md',
+      'docs/releases/build-config.md',
+      'docs/releases/device-test-checklist.md',
+    ];
+    const ruleSnippet = 'Once a release is published, move all checks verified for that specific version into its own `## vX.Y.Z device checks` section';
+    for (const p of policyDocs) {
+      const doc = readFileSync(join(process.cwd(), p), 'utf8');
+      expect(doc).toContain(ruleSnippet);
+    }
+  });
+
+  it('records CR-137 rule prohibiting app version assignment until release draft finalization', () => {
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const independentEntities = ledger.split('## 13. Independent entities')[1] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const checklist = readFileSync(join(process.cwd(), 'docs/releases/device-test-checklist.md'), 'utf8');
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-137 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-137 |'))).toHaveLength(1);
+    expect(independentEntities.split('\n').filter((line) => line.startsWith('| CR-137 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-137');
+    expect(checklist).toContain('TBD (unassigned until release draft finalization)');
+    expect(openItems).toContain('CR-137');
+    expect(status).toContain('CR-137');
+
+    const policyDocs = [
+      'AGENTS.md',
+      'docs/memory/rules.md',
+      'docs/releases/README.md',
+      'docs/releases/RELEASE_PROMPT.md',
+      'docs/releases/release-config.md',
+      'docs/releases/build-config.md',
+      'docs/releases/device-test-checklist.md',
+    ];
+    const ruleSnippet = 'Agents must never add, bump, or assign a specific application version number in the device checklist, metadata tables, package manifests, or anywhere in the repository until the owner explicitly decides to prepare a release candidate draft';
+    for (const p of policyDocs) {
+      const doc = readFileSync(join(process.cwd(), p), 'utf8');
+      expect(doc).toContain(ruleSnippet);
+    }
+  });
+
+  it('records P20-Y-R4 budget item rename preserve transaction note across all types under CR-138', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-Y-R3 |'))).toContain('| Done; Revised by P20-Y-R4 |');
+    expect(dashboard.split('\n').filter((line) => line.startsWith('| P20-Y-R4 |'))).toHaveLength(1);
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-138 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-138 |'))).toHaveLength(1);
+    expect(matrix).toContain('P20-Y-R4');
+    expect(openItems).toContain('P20-Y-R4');
+    expect(status).toContain('P20-Y-R4');
   });
 });

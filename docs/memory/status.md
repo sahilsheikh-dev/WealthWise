@@ -1,6 +1,33 @@
-<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-22 | Updates: owner and AI agents -->
+<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-23 | Updates: owner and AI agents -->
 
 # Status
+- **P20-Y-R4 / CR-138 (2026-11-23) — Preserve transaction note across all budget item renames.**
+  Fixed budget item rename behavior to strictly preserve transaction notes across all
+  item types (holding-linked investments, expenses, sections, and incomes) even when
+  the note is identical to the old budget item or section name. Removed matchedTxIds
+  transaction note mutation from editItem in src/domain/budget.ts; added historical
+  budget item lookup fallback to budgetItemForTransaction in src/domain/budgetCategories.ts
+  to cleanly resolve sibling holding items. Verified note preservation across all forms
+  and lists. All six repository gates pass with exit 0. Check O77 remains Not run.
+- **CR-137 / Documentation (2026-11-23) — Prohibit premature app version assignment until release draft.**
+  Established standing rule across all repository policy documents prohibiting adding,
+  bumping, or assigning a specific application version number in the device checklist,
+  metadata tables, package manifests, or anywhere in the repository until the owner
+  explicitly decides to prepare a release candidate draft. Updated Next release device
+  checks in docs/releases/device-test-checklist.md to use TBD (unassigned).
+- **CR-136 / Documentation (2026-11-23) — Device checklist rearrangement for published v1.3.0.**
+  Rearranged docs/releases/device-test-checklist.md: moved published checks O61–O76 into
+  dedicated ## v1.3.0 device checks section placed below v1.2.0 in ascending order.
+  Next release device checks at the top retains only unreleased checks (O77) for upcoming
+  version 1.3.1. Established standing rule across all policy documents requiring published
+  release checks to move into their own specific version section below previous releases.
+- **CR-135 / Documentation (2026-11-22) — Device check O77 and feature/fix checklist rule.**
+  Added check O77 to docs/releases/device-test-checklist.md under Next release device
+  checks in Not run status to verify budget item and section rename on physical devices.
+  Confirmed metadata with owner (realme Narzo 60 Pro 5g, Android 15 Vanilla Ice Cream,
+  tester sahilsheikh-dev, 2026-11-22). Established standing repository rule across policy
+  docs requiring physical-device verification check(s) to be added for any feature,
+  fix, bug fix, or revision that modifies user-facing behavior or core logic.
 - **P20-Y-R3 / CR-134 (2026-11-22) — Sync budget category only, preserving transaction note.**
   Refined budget item and section rename behavior to update transaction.category only,
   preserving transaction.note even if it is identical to the old name. Updated editItem,

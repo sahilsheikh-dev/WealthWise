@@ -170,7 +170,15 @@ export function budgetItemForTransaction(
     if (matchingItems.length === 1) return matchingItems[0];
     const holding = data.holdings.find((h) => h.id === transaction.source?.parentId);
     const entry = holding?.logs.find((e) => e.id === transaction.source?.entryId);
-    return matchingItems.find((item) => item.name === entry?.note || item.name === transaction.note);
+    const directMatch = matchingItems.find((item) => item.name === entry?.note || item.name === transaction.note);
+    if (directMatch) return directMatch;
+    const allItems = [...(data.budgetPlan?.items ?? []), ...(data.monthBudgets ?? []).flatMap((m) => m.items)];
+    const matchingOldItems = allItems.filter((item) => item.holdingId === transaction.source?.parentId);
+    const oldMatchedItem = matchingOldItems.find((item) => item.name === entry?.note || item.name === transaction.note);
+    if (oldMatchedItem) {
+      return matchingItems.find((item) => item.id === oldMatchedItem.id);
+    }
+    return undefined;
   }
 
   const direct = budget.items.find((item) => item.name === transaction.category);

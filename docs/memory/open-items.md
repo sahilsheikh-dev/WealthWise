@@ -1,8 +1,37 @@
-<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-22 | Updates: owner and AI agents -->
+<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-23 | Updates: owner and AI agents -->
 
 # Open items
 
-## P20-Y-R3 Sync budget category only, preserving transaction note (Done; CR-134)
+## P20-Y-R4 Strictly preserve transaction note across all budget item renames (Done; CR-138)
+
+- Subtask P20-Y-R4 (CR-138, 2026-11-23): Strictly preserve transaction notes across all budget item, section, and income renames including holding-linked investments, syncing category only.
+- In P20-Y-R3, non-holding budget item renames preserved notes, but holding-linked items in `editItem` still updated transaction notes via `matchedTxIds` when note matched `oldName` or deposit templates.
+- P20-Y-R4 completely removes `matchedTxIds` transaction note modification from `editItem` in `src/domain/budget.ts`.
+- `budgetItemForTransaction` in `src/domain/budgetCategories.ts` is enhanced with a fallback to match sibling holding items using historical budget item records.
+- Transaction notes are strictly preserved across expense, section, holding-linked, and income renames even when note equals old item/section name.
+- Regression tests in `src/domain/__tests__/budgetItemRenameTransactions.test.ts` (15 passing tests).
+- Ordered six gates pass with exit 0. Physical-device check O77 remains Not run.
+
+## CR-137 Prohibit premature app version assignment until release draft (Done)
+
+- Change request CR-137 (2026-11-23): Established standing rule across all policy documents that agents must never add, bump, or assign a specific application version number in the device checklist, metadata tables, package manifests, or anywhere in the repository until the owner explicitly decides to prepare a release candidate draft.
+- Updated `## Next release device checks` in `docs/releases/device-test-checklist.md` to keep App version as `TBD (unassigned until release draft finalization)`.
+- Next release device check O77 remains pending physical-device validation by the owner.
+
+## CR-136 Device checklist rearrangement for published v1.3.0 (Done)
+
+- Change request CR-136 (2026-11-23): Rearranged `docs/releases/device-test-checklist.md` to move published v1.3.0 checks O61–O76 into dedicated `## v1.3.0 device checks` section placed below `v1.2.0` in ascending version order.
+- `## Next release device checks` at the top contains only unreleased checks (O77) for upcoming version 1.3.1.
+- Established standing rule across all policy documents: once a release is published, move all checks verified for that specific version into its own `## vX.Y.Z device checks` section placed below previous release checks in ascending order, keeping each specific version's checks strictly under its own release section.
+- Next release device check O77 remains pending physical-device validation by the owner.
+
+## CR-135 Device check O77 and feature/fix checklist rule (Done)
+
+- Change request CR-135 (2026-11-22): Added physical device check O77 to `docs/releases/device-test-checklist.md` under Next release device checks in `Not run` status for P20-Y-R3 budget item and section rename note preservation.
+- Established standing repository rule across all policy documents requiring physical-device verification check(s) to be added for any feature, fix, bug fix, or revision that modifies user-facing behavior, data integrity, calculations, navigation, or forms.
+- O77 is pending physical-device validation by the owner.
+
+## P20-Y-R3 Sync budget category only, preserving transaction note (Done; Revised by P20-Y-R4; CR-134)
 
 - Subtask P20-Y-R3 (CR-134, 2026-11-22): Refine budget item and section rename to sync transaction category only while preserving transaction note.
 - Previously in P20-Y-R2, if a transaction note matched the old item or section name, the note was also updated.
@@ -1006,7 +1035,7 @@ Not adopted in CR-106:
 
 ## Pending owner actions (2026-11-22 reconciliation)
 
-- **Next-release device gate:** O61–O74 were tested and validated on physical devices by the owner on 2026-11-22 and marked Pass. O61–O64 are P20-S-R2; O65–O68 are P21-F; O69–O72 are P20-W; O73 is P20-U-R1; O74 is P20-A-R3. All 78 rows in the device checklist now Pass; the release gate is unblocked for candidate builds. Physical device metadata (realme Narzo 60 Pro 5g, Android 15 Vanilla Ice Cream, tester sahilsheikh-dev, respective release dates) is recorded across all 5 sections, and the checklist maintenance confirmation rule with prior release suggestions is documented.
+- **Next-release device gate:** O61–O74 and O75–O76 were tested and validated on physical devices by the owner on 2026-11-22 and marked Pass. O77 was added under CR-135 for P20-Y-R3 in Not run status. Next release device checks require owner validation of O77 before candidate release build. Physical device metadata (realme Narzo 60 Pro 5g, Android 15 Vanilla Ice Cream, tester sahilsheikh-dev, respective release dates) is recorded across all 5 sections, and the checklist maintenance confirmation rule with prior release suggestions is documented.
 - **Documentation PR flow:** CR-118's PR #184/#185 and CR-119's PR #186/#187
   merges are confirmed in Git history and terminal session evidence. PR #186
   merged `task/docs-device-checklist-by-release` into `documentation` at
