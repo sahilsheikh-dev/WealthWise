@@ -616,9 +616,13 @@ Not adopted in CR-106:
   edit, and had unsafe migration behavior and a failing migration assertion.
   It conflicts with current `main` and was deleted at the owner's direction;
   no port is needed or authorized.
-- **v1.1.0 release integrity:** the owner explicitly approved the `preview`
-  profile and reused versionCode 1 for this release. For future releases,
-  restore the configured `android-apk` profile and increment versionCode.
+- **v1.0.0 and v1.1.0 preview APK artifacts:** historical releases v1.0.0 and
+  v1.1.0 distribute preview build APKs (built with EAS `preview` profile and
+  versionCode 1) rather than production builds. The owner confirmed keeping
+  these historical releases as-is while explicitly noting in their published
+  release notes, release history, and build configuration that they are preview
+  build APKs. v1.1.1 and v1.2.0 distribute production `android-apk` builds with
+  incremented version codes.
 - **Stale phase tags (owner decision, resolved 2026-11-11):**
   `phase-28-complete` and `phase-29-complete` remain on their historical
   targets by owner direction. No tag was moved.

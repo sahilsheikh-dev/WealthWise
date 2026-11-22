@@ -7,9 +7,9 @@
 | Profile | Purpose | Configuration |
 |---|---|---|
 | `development` | Development-client builds for local development and device testing. | `developmentClient: true`; internal distribution. |
-| `preview` | Internal QA builds before store submission. | Internal distribution. |
+| `preview` | Internal QA builds before store submission. Used for historical v1.0.0 and v1.1.0 preview build APK releases. | Internal distribution. |
 | `production` | Store-ready Android App Bundle (AAB) for Google Play and iOS build for TestFlight/App Store. | Automatic build-number increment enabled. |
-| `android-apk` | Installable APK attached to the GitHub release as a direct Android download. | Extends `production`, sets Android `buildType: apk`; not submitted to a store. |
+| `android-apk` | Installable APK attached to the GitHub release as a direct Android download. Used starting with v1.1.1. | Extends `production`, sets Android `buildType: apk`; not submitted to a store. |
 
 EAS uses `appVersionSource: remote`. The authoritative app build version is
 maintained by EAS rather than committed to the repository. Production

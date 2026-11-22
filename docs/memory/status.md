@@ -453,6 +453,11 @@
   `release/v1.1.0`; v1.1.0 is published with the required README Download
   parity, release notes and build-history record. The owner-approved
   `preview` profile and reused versionCode 1 exceptions are documented.
+- CR-124 historical APK profile documentation: v1.0.0 and v1.1.0 published
+  release notes and release-history records are updated to explicitly identify
+  their direct APK downloads as preview build APKs (built with EAS `preview`
+  profile and versionCode 1) rather than production builds, while v1.1.1 and
+  v1.2.0 distribute production `android-apk` builds with incremented version codes.
 - P28-E archive evidence: 337 direct plus 175 date-fallback mappings; zero
   unmapped hashes, 512 unique original commits, and 131 synthetic archive
   commits. Its tree matched `main` at the original verification point; the
