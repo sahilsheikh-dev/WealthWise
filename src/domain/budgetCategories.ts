@@ -213,7 +213,6 @@ export function reconcileBudgetItemTransactions(data: AppData): AppData {
           return {
             ...tx,
             category: currentItem.name,
-            note: tx.note === tx.category ? currentItem.name : tx.note,
           };
         }
       }

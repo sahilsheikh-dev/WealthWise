@@ -2,7 +2,15 @@
 
 # Open items
 
-## P20-Y-R2 Budget item rename reflects in transaction category item (Done; CR-133)
+## P20-Y-R3 Sync budget category only, preserving transaction note (Done; CR-134)
+
+- Subtask P20-Y-R3 (CR-134, 2026-11-22): Refine budget item and section rename to sync transaction category only while preserving transaction note.
+- Previously in P20-Y-R2, if a transaction note matched the old item or section name, the note was also updated.
+- P20-Y-R3 ensures that `editItem`, `renameSection`, `editBudgetIncome`, and `reconcileBudgetItemTransactions` strictly update `transaction.category` to the new name and leave `transaction.note` untouched.
+- Regression tests added in `src/domain/__tests__/budgetItemRenameTransactions.test.ts`.
+- Ordered six gates pass with exit 0.
+
+## P20-Y-R2 Budget item rename reflects in transaction category item (Done; Revised by P20-Y-R3; CR-133)
 
 - Subtask P20-Y-R2 (CR-133, 2026-11-22): Fix WealthWise bug where renaming an expense or standard budget item did not reflect in transaction category item, leaving transactions showing the old name.
 - In P20-Y-R1, transaction updates were gated behind `targetHoldingId`, preventing expense/spend budget items from updating transactions on rename and leaving `tx.category` as the old name.
