@@ -68,6 +68,7 @@ describe('permanent progress ledger', () => {
       'v1.1.0 device checks',
       'v1.1.1 device checks',
       'v1.2.0 device checks',
+      'v1.3.0 device checks',
     ];
     const ids = [...checklist.matchAll(/^\| ([A-Z]+[0-9]+) \|/gm)].map(([, id]) => id);
     const expectedIds = ['X1', 'X2', 'X3', 'X4', 'A1', 'A2', 'A3', 'A4', 'B5', 'B6', 'C7', 'C8', 'D9', 'D10', 'D11', 'D12', 'E13', 'E14', 'E15', 'E16', 'E17', 'F18', 'F19', 'F20', 'G21', 'G22', 'G23', 'H24', 'H25', 'H26', 'H27', 'H28', 'I29', 'I30', 'J31', 'J32', 'J33', 'K34', 'K35', 'K36', 'L37', 'M38', 'N39', 'N40', 'N41', 'N42', 'N43', 'N44', 'O45', 'O46', 'O47', 'O48', 'O49', 'O50', 'O51', 'O52', 'O53', 'O54', 'O55', 'O56', 'O57', 'O58', 'O59', 'O60', 'O61', 'O62', 'O63', 'O64', 'O65', 'O66', 'O67', 'O68', 'O69', 'O70', 'O71', 'O72', 'O73', 'O74', 'O75', 'O76', 'O77'];
@@ -1670,6 +1671,39 @@ describe('permanent progress ledger', () => {
       'docs/releases/device-test-checklist.md',
     ];
     const ruleSnippet = 'For any new feature, bug fix, behavior change, or revision that modifies user-facing behavior, data integrity, calculations, navigation, or forms, agents must add the corresponding physical-device verification check(s)';
+    for (const p of policyDocs) {
+      const doc = readFileSync(join(process.cwd(), p), 'utf8');
+      expect(doc).toContain(ruleSnippet);
+    }
+  });
+
+  it('records CR-136 device checklist rearrangement and published release checks rule', () => {
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const independentEntities = ledger.split('## 13. Independent entities')[1] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const checklist = readFileSync(join(process.cwd(), 'docs/releases/device-test-checklist.md'), 'utf8');
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-136 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-136 |'))).toHaveLength(1);
+    expect(independentEntities.split('\n').filter((line) => line.startsWith('| CR-136 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-136');
+    expect(checklist).toContain('## v1.3.0 device checks');
+    expect(openItems).toContain('CR-136');
+    expect(status).toContain('CR-136');
+
+    const policyDocs = [
+      'AGENTS.md',
+      'docs/memory/rules.md',
+      'docs/releases/README.md',
+      'docs/releases/RELEASE_PROMPT.md',
+      'docs/releases/release-config.md',
+      'docs/releases/build-config.md',
+      'docs/releases/device-test-checklist.md',
+    ];
+    const ruleSnippet = 'Once a release is published, move all checks verified for that specific version into its own `## vX.Y.Z device checks` section';
     for (const p of policyDocs) {
       const doc = readFileSync(join(process.cwd(), p), 'utf8');
       expect(doc).toContain(ruleSnippet);
