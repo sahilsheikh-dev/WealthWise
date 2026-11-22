@@ -1,5 +1,6 @@
 import { addTransaction, emptyAppData } from '../actions';
 import {
+  addIncomeItem,
   addItem,
   budgetLineActual,
   editBudgetIncome,
@@ -69,7 +70,7 @@ describe('budgetItemRenameTransactions: budget item rename updates linked transa
     }],
   };
 
-  it('updates linked transaction note and holding entry note when budget item is renamed, preserving category and link', () => {
+  it('preserves transaction note and updates holding entry note when budget item is renamed, resolving linked budget item', () => {
     let data = addItem(initialData, '2026-11', {
       id: 'item-bonus',
       sectionId: 'sec-invest',
@@ -118,10 +119,11 @@ describe('budgetItemRenameTransactions: budget item rename updates linked transa
       patch: { name: 'Festival Bonus Invest' },
     }, 'month', '2026-11-01');
 
-    // Item 1 transaction should reflect the new budget item name
+    // Item 1 transaction note is preserved, linked budget item resolves to new name
     const tx1 = data.transactions.find((tx) => tx.source?.entryId === 'entry-bonus-id');
     expect(tx1).toBeDefined();
-    expect(tx1?.note).toBe('Festival Bonus Invest');
+    expect(tx1?.note).toBe('Diwali Bonus Invest'); // preserved
+    expect(budgetItemForTransaction(data, tx1!)?.name).toBe('Festival Bonus Invest');
     // Category, amount, date, and source are preserved
     expect(tx1?.category).toBe('Mutual fund / SIP');
     expect(tx1?.amount).toBe(15_000);
@@ -231,9 +233,10 @@ describe('budgetItemRenameTransactions: budget item rename updates linked transa
       patch: { name: 'November Bonus Invest' },
     }, 'month', '2026-11-01');
 
-    // 2026-11 transaction updated
+    // 2026-11 transaction note preserved, linked budget item resolves to new name
     const novTx = data.transactions.find((tx) => tx.source?.entryId === 'entry-nov-id');
-    expect(novTx?.note).toBe('November Bonus Invest');
+    expect(novTx?.note).toBe('Bonus Invest'); // preserved
+    expect(budgetItemForTransaction(data, novTx!)?.name).toBe('November Bonus Invest');
     expect(novTx?.category).toBe('Mutual fund / SIP');
 
     // 2026-10 transaction remains 'Bonus Invest'
@@ -355,11 +358,12 @@ describe('budgetItemRenameTransactions: budget item rename updates linked transa
     const octTx = data.transactions.find((tx) => tx.source?.entryId === 'entry-oct-id');
     expect(octTx?.note).toBe('Bonus Invest');
 
-    // 2026-11 and 2026-12 are updated
+    // 2026-11 and 2026-12 transaction notes preserved
     const novTx = data.transactions.find((tx) => tx.source?.entryId === 'entry-nov-id');
-    expect(novTx?.note).toBe('Updated Bonus Invest');
+    expect(novTx?.note).toBe('Bonus Invest'); // preserved
+    expect(budgetItemForTransaction(data, novTx!)?.name).toBe('Updated Bonus Invest');
     const decTx = data.transactions.find((tx) => tx.source?.entryId === 'entry-dec-id');
-    expect(decTx?.note).toBe('Updated Bonus Invest');
+    expect(decTx?.note).toBe('Bonus Invest'); // preserved
 
     // Budget actuals
     expect(budgetLineActual(data, '2026-10', 'Bonus Invest')).toBe(15_000);
@@ -399,7 +403,8 @@ describe('budgetItemRenameTransactions: budget item rename updates linked transa
     }, 'month', '2026-11-01');
 
     const txAfter = data.transactions.find((tx) => tx.source?.entryId === 'entry-plan-id');
-    expect(txAfter?.note).toBe('Premier RD Plan');
+    expect(txAfter?.note).toBe('Monthly RD Plan'); // preserved
+    expect(budgetItemForTransaction(data, txAfter!)?.name).toBe('Premier RD Plan');
     expect(txAfter?.category).toBe('Fixed deposit / RD');
     expect(txAfter?.amount).toBe(1_000);
     expect(txAfter?.date).toBe('2026-11-10');
@@ -875,6 +880,76 @@ describe('budgetItemRenameTransactions: budget item rename updates linked transa
     const txSec = data.transactions.find((t) => t.id === 'tx-section-note');
     expect(txSec?.category).toBe('Household Living');
     expect(txSec?.note).toBe('Living'); // note is preserved, NOT changed to new section name
+
+    // Holding-linked budget item where transaction note is identical to item name
+    data = addItem(data, '2026-11', {
+      id: 'item-holding-sip',
+      sectionId: 'sec-invest',
+      holdingId: 'asset-mf',
+      name: 'Monthly SIP',
+      mode: 'amount',
+      value: 5_000,
+      frequency: 'monthly',
+      firstDueMonth: '2026-11',
+    }, 'following', '2026-11-01');
+
+    data = addTransaction(data, {
+      type: 'invest',
+      amount: 5000,
+      category: 'Mutual fund / SIP',
+      note: 'Monthly SIP', // note is identical to budget item name
+      date: '2026-11-15',
+      source: { kind: 'holding-entry', parentId: 'asset-mf', entryId: 'entry-sip-1' },
+    }, () => 'tx-holding-exact-note');
+
+    // Add corresponding holding log entry
+    data = {
+      ...data,
+      holdings: data.holdings.map((h) => h.id === 'asset-mf' ? {
+        ...h,
+        logs: [...h.logs, { id: 'entry-sip-1', date: '2026-11-15', amount: 5000, note: 'Monthly SIP', kind: 'Deposit' as const }],
+      } : h),
+    };
+
+    // Rename holding budget item to 'Premier SIP'
+    data = editItem(data, '2026-11', {
+      itemId: 'item-holding-sip',
+      patch: { name: 'Premier SIP' },
+    }, 'following', '2026-11-01');
+
+    const txHolding = data.transactions.find((t) => t.id === 'tx-holding-exact-note');
+    expect(txHolding?.note).toBe('Monthly SIP'); // note is strictly preserved, NOT changed to 'Premier SIP'
+    expect(budgetItemForTransaction(data, txHolding!)?.name).toBe('Premier SIP');
+
+    // Income item where transaction note is identical to income name
+    let dataIncome = addIncomeItem(data, '2026-11', {
+      id: 'inc-freelance',
+      name: 'Freelance',
+      category: 'Freelance / Consulting',
+      amount: 30_000,
+      frequency: 'monthly',
+      firstDueMonth: '2026-11',
+    }, 'following', '2026-11-01');
+
+    dataIncome = addTransaction(dataIncome, {
+      type: 'income',
+      amount: 30_000,
+      category: 'Freelance / Consulting',
+      note: 'Freelance', // note matches income name
+      date: '2026-11-16',
+    }, () => 'tx-income-note');
+
+    dataIncome = editBudgetIncome(dataIncome, '2026-11', {
+      incomeId: 'inc-freelance',
+      values: {
+        name: 'Consulting Retainer',
+        category: 'Freelance / Consulting',
+        amount: 35_000,
+      },
+    }, 'following', '2026-11-01');
+
+    const txInc = dataIncome.transactions.find((t) => t.id === 'tx-income-note');
+    expect(txInc?.note).toBe('Freelance'); // note is strictly preserved
   });
 
   it('budgetItemForTransaction resolves non-holding budget item for expense transactions', () => {

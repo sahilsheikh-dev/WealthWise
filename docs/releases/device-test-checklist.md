@@ -20,7 +20,7 @@ Use only `Pass`, `Fail`, or `Blocked` after running each check. `Not run` remain
 
 | ID | Test | Result | Notes |
 |---|---|---|---|
-| O77 | Verify budget item and section rename on a physical device: rename an expense, investment, or income budget item and a section across month and following scopes; confirm that linked transactions update to display the new category name in Transactions list, filter, and detail views, while preserving the transaction amount, date, budget link, and custom note (even when the note matches the old item or section name). | Not run | P20-Y-R3; physical-device check required. |
+| O77 | Verify budget item and section rename on a physical device: rename an expense, investment, or income budget item and a section across month and following scopes; confirm that linked transactions update to display the new category name in Transactions list, filter, and detail views, while preserving the transaction amount, date, budget link, and custom note (even when the note matches the old item or section name). | Not run | P20-Y-R4 (revised from P20-Y-R3); physical-device check required. |
 
 ## v1.0.0 device checks
 

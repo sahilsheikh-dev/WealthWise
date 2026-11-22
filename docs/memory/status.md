@@ -1,6 +1,14 @@
-<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-22 | Updates: owner and AI agents -->
+<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-23 | Updates: owner and AI agents -->
 
 # Status
+- **P20-Y-R4 / CR-138 (2026-11-23) — Preserve transaction note across all budget item renames.**
+  Fixed budget item rename behavior to strictly preserve transaction notes across all
+  item types (holding-linked investments, expenses, sections, and incomes) even when
+  the note is identical to the old budget item or section name. Removed matchedTxIds
+  transaction note mutation from editItem in src/domain/budget.ts; added historical
+  budget item lookup fallback to budgetItemForTransaction in src/domain/budgetCategories.ts
+  to cleanly resolve sibling holding items. Verified note preservation across all forms
+  and lists. All six repository gates pass with exit 0. Check O77 remains Not run.
 - **CR-137 / Documentation (2026-11-23) — Prohibit premature app version assignment until release draft.**
   Established standing rule across all repository policy documents prohibiting adding,
   bumping, or assigning a specific application version number in the device checklist,
