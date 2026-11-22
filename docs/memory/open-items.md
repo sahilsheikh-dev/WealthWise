@@ -2,6 +2,14 @@
 
 # Open items
 
+## P28-F-R7 Prepare v1.3.0 release candidate (In progress)
+
+- Subtask P28-F-R7 (CR-130, 2026-11-22): Prepare owner-approved v1.3.0 release candidate.
+- Bumps app version in `app.json`, `package.json`, and `package-lock.json` to `1.3.0`.
+- Places finalized v1.3.0 release note in `docs/releases/published/v1.3.0.md` with 8 owner-supplied screenshots in `docs/releases/screenshots/v1.3.0/` (About and auxiliary settings screens omitted).
+- Retitles device checklist to `## v1.3.0 device checks (next release)` with confirmed metadata; all O1–O76 checks pass.
+- Task branch `task/P28-F-R7-prepare-v1.3.0` off `qa-and-release`.
+
 ## P20-Y Budget payment date, multi-asset budget links, and limited expense categories (Done; device check Pass)
 
 - CR-126 implements three related changes:

@@ -4,11 +4,11 @@ This checklist records owner-run Android physical-device checks for WealthWise r
 
 ## Next release device checks
 
-Version not yet decided
+Version 1.3.0
 
 | Field | Value |
 |---|---|
-| App version | To be decided |
+| App version | 1.3.0 |
 | Device model | realme Narzo 60 Pro 5g |
 | Android version | 15 Vanilla Ice Cream |
 | Tester | sahilsheikh-dev |
