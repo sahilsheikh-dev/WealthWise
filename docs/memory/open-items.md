@@ -2,6 +2,12 @@
 
 # Open items
 
+## CR-137 Prohibit premature app version assignment until release draft (Done)
+
+- Change request CR-137 (2026-11-23): Established standing rule across all policy documents that agents must never add, bump, or assign a specific application version number in the device checklist, metadata tables, package manifests, or anywhere in the repository until the owner explicitly decides to prepare a release candidate draft.
+- Updated `## Next release device checks` in `docs/releases/device-test-checklist.md` to keep App version as `TBD (unassigned until release draft finalization)`.
+- Next release device check O77 remains pending physical-device validation by the owner.
+
 ## CR-136 Device checklist rearrangement for published v1.3.0 (Done)
 
 - Change request CR-136 (2026-11-23): Rearranged `docs/releases/device-test-checklist.md` to move published v1.3.0 checks O61–O76 into dedicated `## v1.3.0 device checks` section placed below `v1.2.0` in ascending version order.
