@@ -2,7 +2,19 @@
 
 # Open items
 
-## P20-Y-R1 Linked transactions update on budget item rename (Done; CR-132)
+## P20-Y-R2 Budget item rename reflects in transaction category item (Done; CR-133)
+
+- Subtask P20-Y-R2 (CR-133, 2026-11-22): Fix WealthWise bug where renaming an expense or standard budget item did not reflect in transaction category item, leaving transactions showing the old name.
+- In P20-Y-R1, transaction updates were gated behind `targetHoldingId`, preventing expense/spend budget items from updating transactions on rename and leaving `tx.category` as the old name.
+- `editItem` in `src/domain/budget.ts` now updates `tx.category` and `tx.note` across matching transactions for all budget items within the specified month/following scope, while preserving amount, date, custom notes, and holding links.
+- `renameSection` and `editBudgetIncome` update matching transactions within scope.
+- `budgetItemForTransaction` dynamically resolves the budget item for non-holding transactions by direct match, note match, or historical rename lookup by item ID.
+- `reconcileBudgetItemTransactions` reconciles existing or backup-imported transactions whose category matches an older budget item name; integrated into store rehydration and backup import.
+- `TransactionsScreen` in `app/(tabs)/transactions.tsx` updates `categoryLabel` to reflect `linkedBudgetItem?.name || item.category`.
+- Regression tests in `src/domain/__tests__/budgetItemRenameTransactions.test.ts` (12 tests) and `src/components/__tests__/TransactionsScreen.test.tsx` (28 tests).
+- Ordered six gates pass with exit 0.
+
+## P20-Y-R1 Linked transactions update on budget item rename (Done; Revised by P20-Y-R2; CR-132)
 
 - Subtask P20-Y-R1 (CR-132, 2026-11-22): Fix WealthWise bug where renaming a budget item or category in one month did not update the name shown by transactions linked to that item.
 - Linked transactions reflect the current budget item name wherever they appear, including existing transactions, while preserving their amount, date, category (e.g. `'Mutual fund / SIP'`), and budget link source.

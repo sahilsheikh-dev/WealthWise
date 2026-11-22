@@ -717,4 +717,56 @@ describe('Transactions sorting', () => {
       date: '2026-10-10',
     }];
   });
+
+  it('displays renamed budget item in categoryLabel and itemTitle for linked transactions', async () => {
+    mockTxMonth = '2026-11';
+    mockData.monthBudgets = [{
+      month: '2026-11',
+      source: 'custom',
+      linkedIncluded: true,
+      incomes: [],
+      sections: [{ id: 'sec-spend', name: 'Living', type: 'spend' }],
+      items: [{
+        id: 'item-food-id',
+        sectionId: 'sec-spend',
+        name: 'Supermarket',
+        mode: 'amount',
+        value: 10_000,
+        frequency: 'monthly',
+      }],
+    }];
+    mockData.transactions = [{
+      id: 'tx-food',
+      type: 'expense',
+      amount: 450,
+      category: 'Supermarket',
+      note: '',
+      date: '2026-11-10',
+    }];
+
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    await act(async () => {
+      renderer = TestRenderer.create(<TransactionsScreen />);
+      await Promise.resolve();
+    });
+    if (!renderer) throw new Error('Transactions renderer was not created.');
+
+    const items = renderer.root.findAll((node) => String(node.type) === 'listitem');
+    expect(items.length).toBeGreaterThan(0);
+    const txItem = items.find((node) => node.props.amount?.includes('450'));
+    expect(txItem).toBeDefined();
+    expect(txItem?.props.title).toBe('Supermarket');
+    expect(txItem?.props.subtitle).toBe('Supermarket');
+
+    mockTxMonth = '2026-10';
+    mockData.transactions = [{
+      id: 'withdrawal',
+      type: 'income',
+      amount: 5_000,
+      category: 'Withdrawal',
+      note: 'Cash withdrawal',
+      date: '2026-10-10',
+    }];
+    mockData.monthBudgets = [];
+  });
 });

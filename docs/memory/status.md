@@ -1,6 +1,17 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-22 | Updates: owner and AI agents -->
 
 # Status
+- **P20-Y-R2 / CR-133 (2026-11-22) — Budget item rename reflects in transaction category item.**
+  Fixed WealthWise bug where renaming an expense or standard budget item did not
+  reflect in transaction category item, leaving transactions showing the old name.
+  In P20-Y-R1, transaction updates were gated behind targetHoldingId. P20-Y-R2
+  updates tx.category and tx.note for matching transactions across month/following
+  scopes for all budget items in editItem, renameSection, and editBudgetIncome. Adds
+  reconcileBudgetItemTransactions in budgetCategories.ts and invokes it on store
+  rehydration and backup import to heal desynced transactions. Updates
+  TransactionsScreen categoryLabel to reflect linkedBudgetItem.name. Regression
+  tests in budgetItemRenameTransactions.test.ts and TransactionsScreen.test.tsx.
+  All six repository gates pass with exit 0.
 - **P20-Y-R1 / CR-132 (2026-11-22) — Linked transactions update on budget item rename.**
   Fixed WealthWise bug where renaming a budget item or category in one month did
   not update the name shown by transactions linked to that item. Linked
