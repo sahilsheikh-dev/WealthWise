@@ -3,15 +3,21 @@ import { useEffect, useMemo, useState } from 'react';
 import { AccessibilityInfo, Platform, Pressable, ScrollView, StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
 
 import { filterAndRankDropdownOptions } from '../lib/dropdownSearch';
+import { sortItems, type SortOption, type SortSpec } from '../lib/sorting';
 import { typography } from '../theme/tokens';
 import { useTheme } from '../theme/useTheme';
 import { AppText } from './ui';
+import { SortChip } from './SortChip';
 import { TopAnchoredSheet } from './TopAnchoredSheet';
 
 export type DropdownOption = {
   value: string;
   title: string;
   group?: string;
+  planned?: number;
+  actual?: number;
+  percentUsed?: number | null;
+  [key: string]: unknown;
 };
 
 export function Dropdown({
@@ -23,6 +29,9 @@ export function Dropdown({
   error,
   accessibilityLabel,
   searchable = true,
+  sortOptions,
+  sortSpec,
+  onSortChange,
 }: {
   label: string;
   value: string;
@@ -32,6 +41,9 @@ export function Dropdown({
   error?: string;
   accessibilityLabel: string;
   searchable?: boolean;
+  sortOptions?: readonly SortOption[];
+  sortSpec?: SortSpec;
+  onSortChange?: (spec: SortSpec) => void;
 }) {
   const { colors } = useTheme();
   const [open, setOpen] = useState(false);
@@ -41,12 +53,45 @@ export function Dropdown({
     () => searchable ? filterAndRankDropdownOptions(options, query) : [...options],
     [options, query, searchable],
   );
-  const customOptions = filteredOptions.filter((option) =>
-    option.title.trim().toLocaleLowerCase() === 'custom' || option.value.toLocaleLowerCase() === 'custom',
-  );
-  const visibleOptions = filteredOptions.filter((option) => !customOptions.includes(option));
-  const groups = [...new Set(visibleOptions.map((option) => option.group).filter((group): group is string => Boolean(group)))];
-  const matchCount = visibleOptions.length;
+  const { customOptions, sortedVisibleOptions } = useMemo(() => {
+    const custom = filteredOptions.filter((option) =>
+      option.title.trim().toLocaleLowerCase() === 'custom' || option.value.toLocaleLowerCase() === 'custom',
+    );
+    const visible = filteredOptions.filter((option) => !custom.includes(option));
+    if (!sortSpec) {
+      return { customOptions: custom, sortedVisibleOptions: visible };
+    }
+    const withMeta = visible.map((option) => ({
+      ...option,
+      name: option.title,
+      percentUsed: typeof option.percentUsed === 'number'
+        ? option.percentUsed
+        : (typeof option.planned === 'number' && option.planned > 0 && typeof option.actual === 'number'
+          ? (option.actual / option.planned) * 100
+          : null),
+    }));
+    return {
+      customOptions: custom,
+      sortedVisibleOptions: sortItems(withMeta, 'budgetSpending', sortSpec),
+    };
+  }, [filteredOptions, sortSpec]);
+
+  const groups = useMemo(() => {
+    const rawGroups = [...new Set(sortedVisibleOptions.map((option) => option.group).filter((group): group is string => Boolean(group)))];
+    if (!sortSpec) return rawGroups;
+    return [...rawGroups].sort((a, b) => {
+      if (sortSpec.key === 'name') {
+        return sortSpec.dir === 'asc' ? a.localeCompare(b) : b.localeCompare(a);
+      }
+      if (sortSpec.key === 'planned' || sortSpec.key === 'actual') {
+        const sumA = sortedVisibleOptions.filter((o) => o.group === a).reduce((s, o) => s + (Number(Reflect.get(o, sortSpec.key)) || 0), 0);
+        const sumB = sortedVisibleOptions.filter((o) => o.group === b).reduce((s, o) => s + (Number(Reflect.get(o, sortSpec.key)) || 0), 0);
+        return sortSpec.dir === 'asc' ? sumA - sumB : sumB - sumA;
+      }
+      return 0;
+    });
+  }, [sortedVisibleOptions, sortSpec]);
+  const matchCount = sortedVisibleOptions.length;
 
   useEffect(() => {
     if (open && searchable && Platform.OS === 'ios') {
@@ -111,6 +156,11 @@ export function Dropdown({
             ) : null}
           </View>
         ) : null}
+        {sortOptions && sortSpec && onSortChange ? (
+          <View style={styles.sortWrap}>
+            <SortChip options={sortOptions} spec={sortSpec} onChange={onSortChange} />
+          </View>
+        ) : null}
         <ScrollView
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator
@@ -124,7 +174,7 @@ export function Dropdown({
                 {groups.map((group) => (
                   <View key={group}>
                     <AppText style={[typography.meta, styles.group, { color: colors.text2 }]}>{group}</AppText>
-                    {visibleOptions.filter((option) => option.group === group).map((option) => (
+                    {sortedVisibleOptions.filter((option) => option.group === group).map((option) => (
                       <DropdownRow
                         key={option.value}
                         option={option}
@@ -137,7 +187,7 @@ export function Dropdown({
                     ))}
                   </View>
                 ))}
-                {visibleOptions.filter((option) => option.group === undefined).map((option) => (
+                {sortedVisibleOptions.filter((option) => option.group === undefined).map((option) => (
                   <DropdownRow
                     key={option.value}
                     option={option}
@@ -150,7 +200,7 @@ export function Dropdown({
                 ))}
               </>
             )
-            : visibleOptions.map((option) => (
+            : sortedVisibleOptions.map((option) => (
               <DropdownRow
                 key={option.value}
                 option={option}
@@ -208,6 +258,7 @@ const styles = StyleSheet.create({
   selectedTitle: { flex: 1 },
   sheet: { paddingHorizontal: 16, paddingBottom: 12, flexShrink: 1 },
   searchWrap: { paddingBottom: 8, gap: 4 },
+  sortWrap: { paddingBottom: 8 },
   searchControl: { minHeight: 44, borderWidth: StyleSheet.hairlineWidth, borderRadius: 10, flexDirection: 'row', alignItems: 'center', paddingLeft: 10 },
   searchInput: { flex: 1, minHeight: 44, paddingVertical: 4 },
   clearButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },

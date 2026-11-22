@@ -55,7 +55,7 @@ runtime synchronization.
   pure utilities and platform helpers in `src/lib/`; demo data in `src/mock/`.
 - Other source groups: `src/hooks/`, `src/theme/`, `src/constants/`, `assets/`
   and `scripts/`.
-- Test counts: 105 suites, 1438 tests (1,437 passed; one skipped) on
+- Test counts: 106 suites, 1449 tests (1,448 passed; one skipped) on
   2026-11-22. The merged D3 task tree Gate 1 coverage was
   96.08/92.35/98.22/97.71% statements/branches/functions/lines. See
   [status.md](status.md) for exact ordered-gate results and local merge SHAs;

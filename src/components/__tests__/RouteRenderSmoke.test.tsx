@@ -4027,6 +4027,7 @@ describe('route render smoke audit', () => {
     ['Goals', () => React.createElement(GoalsScreen)],
     ['Assets', () => React.createElement(AssetsScreen)],
     ['Liabilities', () => React.createElement(LiabilitiesScreen)],
+    ['Budget spending', () => React.createElement(BudgetScreen)],
     ['Investment entries', () => React.createElement(InvestmentEntriesScreen)],
     ['Liability payments', () => React.createElement(LiabilityPaymentsScreen)],
     ['Link missing transactions', () => React.createElement(LinkMissingScreen)],
@@ -4082,6 +4083,7 @@ describe('route render smoke audit', () => {
       Goals: 'goal-filter-panel',
       Assets: 'asset-filter-panel',
       Liabilities: 'liability-filter-panel',
+      'Budget spending': 'budget-filter-panel',
     };
     const panelTestID = filteredScreenPanel[name];
     if (panelTestID) {
@@ -4143,7 +4145,7 @@ describe('route render smoke audit', () => {
       }
       const header = renderer.root.findAllByType('header')[0];
       const headerActionLabels = header?.findAll((node) =>
-        ['Filter', 'Add transaction', 'New goal', 'New investment', 'Add a liability', 'More options']
+        ['Filter', 'Add transaction', 'New goal', 'New investment', 'Add a liability', 'Add category', 'More options']
           .includes(String(node.props.accessibilityLabel)),
       ).map((node) => node.props.accessibilityLabel);
       expect(headerActionLabels?.at(-1)).toBe(name === 'Transactions'
@@ -4152,7 +4154,9 @@ describe('route render smoke audit', () => {
           ? 'New goal'
           : name === 'Assets'
             ? 'New investment'
-            : 'Add a liability');
+            : name === 'Budget spending'
+              ? 'Add category'
+              : 'Add a liability');
       expect(headerActionLabels).toContain('Filter');
       if (name === 'Transactions') {
         expect(headerActionLabels?.slice(0, 2)).toEqual(['More options', 'Filter']);

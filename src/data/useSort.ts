@@ -19,11 +19,13 @@ export function useSort(list: SortList, defaultSpec: SortSpec = resolveDefault(l
 
   useEffect(() => {
     let active = true;
-    void metaStore.getMeta().then((meta) => {
-      if (!active) return;
-      const resolved = resolveSortSpec(meta.sortSpecs?.[list], options, defaultSpec);
-      if (resolved) setStored(resolved);
-    });
+    if (metaStore?.getMeta) {
+      void metaStore.getMeta().then((meta) => {
+        if (!active) return;
+        const resolved = resolveSortSpec(meta?.sortSpecs?.[list], options, defaultSpec);
+        if (resolved) setStored(resolved);
+      });
+    }
     return () => {
       active = false;
     };
@@ -36,10 +38,12 @@ export function useSort(list: SortList, defaultSpec: SortSpec = resolveDefault(l
     }
     const previous = stored;
     setStored(spec);
-    void metaStore.updateSortSpec(list, spec, options).catch((error: unknown) => {
-      setStored(previous);
-      useUIStore.getState().setActionToast({ message: friendlyError(error) });
-    });
+    if (metaStore?.updateSortSpec) {
+      void metaStore.updateSortSpec(list, spec, options).catch((error: unknown) => {
+        setStored(previous);
+        useUIStore.getState().setActionToast({ message: friendlyError(error) });
+      });
+    }
   }, [list, options, stored]);
 
   const sort = useCallback(<T extends object>(items: readonly T[]) =>

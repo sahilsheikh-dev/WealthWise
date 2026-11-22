@@ -16,9 +16,11 @@ import { AppText, Button, EmptyState } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useUIStore } from '../src/data/uiStore';
 import { useAppActions } from '../src/data/useAppData';
+import { useSort } from '../src/data/useSort';
 import { effectiveMonthBudget } from '../src/domain/budget';
 import { EARNED_INCOME_CATEGORIES } from '../src/domain/types';
 import { todayISO } from '../src/lib/clock';
+import { SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
@@ -92,6 +94,7 @@ export default function BudgetIncomeFormScreen() {
   const lastError = useAppStore((state) => state.lastError);
   const actions = useAppActions();
   const setActionToast = useUIStore((state) => state.setActionToast);
+  const budgetSorting = useSort('budgetSpending');
   const today = todayISO();
   const income = editing
     ? effectiveMonthBudget(data, month, today).budget?.incomes.find((item) => item.id === incomeId)
@@ -273,6 +276,9 @@ export default function BudgetIncomeFormScreen() {
             accessibilityLabel="Income category"
             value={field.value}
             options={incomeCategoryOptions}
+            sortOptions={SORT_OPTIONS.budgetSpending}
+            sortSpec={budgetSorting.spec}
+            onSortChange={budgetSorting.setSpec}
             onChange={field.onChange}
             error={errors.category?.message}
           />
