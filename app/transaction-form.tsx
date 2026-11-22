@@ -23,6 +23,7 @@ import { isValidISO, monthKey, shiftMonth } from '../src/domain/dates';
 import { monthEndDate } from '../src/domain/cashFlow';
 import { customBudgetCategories } from '../src/domain/budget';
 import { budgetCategoryChoiceSections, budgetItemCategoriesForTransaction } from '../src/domain/budgetCategories';
+import { budgetGroupFor } from '../src/domain/budgetGroups';
 import { holdingCapabilities } from '../src/domain/holdingCapabilities';
 import { listInstruments } from '../src/domain/instruments';
 import { describeSource, investCategoryFor } from '../src/domain/links';

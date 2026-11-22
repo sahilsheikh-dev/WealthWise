@@ -156,3 +156,5 @@ export function budgetItemCategoriesForTransaction(
   });
   return sections.flatMap((section) => section.categories.map((category) => category.category));
 }
+
+export { budgetGroupFor };
