@@ -69,7 +69,10 @@ jest.mock('expo-router', () => ({
 jest.mock('../../data/store', () => {
   const useAppStore = (selector: (state: typeof mockState) => unknown) => selector(mockState);
   Object.assign(useAppStore, { getState: () => mockState });
-  return { useAppStore };
+  return {
+    useAppStore,
+    metaStore: { getMeta: async () => ({}), updateSortSpec: async () => ({}) },
+  };
 });
 jest.mock('../../data/uiStore', () => ({
   useUIStore: (selector: (state: typeof mockUIState) => unknown) => selector(mockUIState),

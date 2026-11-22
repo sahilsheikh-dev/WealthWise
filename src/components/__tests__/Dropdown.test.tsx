@@ -12,6 +12,7 @@ jest.mock('react-native', () => {
   const node = (name: string) => ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) =>
     ReactModule.createElement(name, props, children);
   return {
+    Modal: node('modal'),
     Pressable: node('pressable'),
     ScrollView: node('scrollview'),
     TextInput: node('input'),
@@ -27,6 +28,8 @@ jest.mock('../ui', () => {
   return {
     AppText: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) =>
       ReactModule.createElement('text', props, children),
+    Chip: ({ label, onPress, ...props }: React.PropsWithChildren<{ label: string; onPress?: () => void }>) =>
+      ReactModule.createElement('chip', { accessibilityLabel: label, onPress, ...props }, label),
   };
 });
 jest.mock('../TopAnchoredSheet', () => {
@@ -244,5 +247,53 @@ describe('Dropdown', () => {
     if (!sheet) throw new Error('Dropdown sheet was not rendered.');
     act(() => sheet.props.onClose());
     expect(renderer.root.findAll((node) => String(node.type) === 'sheet')).toHaveLength(0);
+  });
+
+  it('renders SortChip and sorts options and groups when sortOptions and sortSpec are provided', () => {
+    const sortOptions = [
+      { key: 'name', label: 'Name' },
+      { key: 'planned', label: 'Planned' },
+    ];
+    const onSortChange = jest.fn();
+    const dropdownOptions = [
+      { value: 'rent', title: 'Rent', group: 'Essentials', planned: 2000 },
+      { value: 'food', title: 'Food', group: 'Essentials', planned: 500 },
+      { value: 'pets', title: 'Pets', group: 'Other', planned: 100 },
+      { value: 'custom', title: 'Custom' },
+    ];
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    act(() => {
+      renderer = TestRenderer.create(
+        <Dropdown
+          label="Category"
+          accessibilityLabel="Category"
+          value="food"
+          options={dropdownOptions}
+          onChange={jest.fn()}
+          sortOptions={sortOptions}
+          sortSpec={{ key: 'name', dir: 'asc' }}
+          onSortChange={onSortChange}
+        />,
+      );
+    });
+    if (!renderer) throw new Error('Dropdown renderer was not created.');
+    act(() => renderer?.root.findByProps({ testID: 'dropdown-control' }).props.onPress());
+    const sheet = renderer.root.findAll((node) => String(node.type) === 'sheet')[0];
+    if (!sheet) throw new Error('Dropdown sheet was not rendered.');
+
+    // SortChip chip is present inside sheet
+    const sortChips = renderer.root.findAll((node) =>
+      typeof node.props.accessibilityLabel === 'string' && node.props.accessibilityLabel.startsWith('Sort:'),
+    );
+    expect(sortChips.length).toBeGreaterThanOrEqual(1);
+
+    // Options within Essentials are sorted by name asc: Food before Rent
+    const optionTitles = renderer.root.findAll((node) =>
+      String(node.type) === 'pressable' && node.props.accessibilityRole === 'radio',
+    ).map((node) => node.findAllByType('text').map((t) => t.children.join('')).join(''));
+
+    expect(optionTitles.indexOf('Food')).toBeLessThan(optionTitles.indexOf('Rent'));
+    // Custom option is at the end
+    expect(optionTitles[optionTitles.length - 1]).toBe('Custom');
   });
 });

@@ -171,4 +171,31 @@ describe('budget-aware transaction categories', () => {
     expect(budgetCategoryChoiceSections(systemOnly, '2026-03', '2026-03-15', 'invest')[0]?.id)
       .toBe('other-not-in-budget');
   });
+
+  it('sorts sections and categories inside sections when sortSpec is provided', () => {
+    const data = {
+      ...emptyAppData('2026-03-01'),
+      monthBudgets: [monthBudgetFromLines('2026-03', [
+        { category: 'Rent', planned: 2_000 },
+        { category: 'Food', planned: 500 },
+        { category: 'Movies', planned: 300 },
+      ], {
+        incomes: [{ id: 'salary', name: 'Salary', category: 'Salary' as const, amount: 10_000 }],
+      })],
+      transactions: [
+        { id: 't1', type: 'expense' as const, amount: 400, category: 'Food', note: '', date: '2026-03-05' },
+        { id: 't2', type: 'expense' as const, amount: 1_800, category: 'Rent', note: '', date: '2026-03-06' },
+      ],
+    };
+    // Sort by name ascending
+    const byName = budgetCategoryChoiceSections(data, '2026-03', '2026-03-15', 'expense', { key: 'name', dir: 'asc' });
+    const survivalByName = byName.find((s) => s.id === 'survival');
+    expect(survivalByName?.categories.filter((c) => ['Food', 'Rent'].includes(c.category)).map((c) => c.category))
+      .toEqual(['Food', 'Rent']);
+
+    // Sort by planned descending
+    const byPlannedDesc = budgetCategoryChoiceSections(data, '2026-03', '2026-03-15', 'expense', { key: 'planned', dir: 'desc' });
+    const survivalByPlanned = byPlannedDesc.find((s) => s.id === 'survival');
+    expect(survivalByPlanned?.categories.slice(0, 2).map((c) => c.category)).toEqual(['Rent', 'Food']);
+  });
 });

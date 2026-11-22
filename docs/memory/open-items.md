@@ -2,6 +2,24 @@
 
 # Open items
 
+## P20-X Budget category and item sorting (implementation complete; device check open)
+
+- CR-125 adds sorting for Budget categories and items throughout WealthWise using
+  the existing sorting behavior in Transactions, Assets, and Liabilities as reference.
+- Adds SortChip in AppHeader filter toggle panel on BudgetScreen using
+  `useSort('budgetSpending')` with Planned, Actual, Percent used, and Name options;
+  preserves Income at top while sorting its items; sorts spending/investing
+  sections and items within sections; adds sorting support to shared Dropdown
+  with SortChip rendered in sheet; connects category dropdowns in TransactionForm
+  and BudgetIncomeForm with persistent budgetSpending sort spec; extends
+  `budgetCategoryChoiceSections` with pure sortSpec handling.
+- Full six-gate run passes exit 0. Regression tests: `BudgetSorting.test.tsx`,
+  `Dropdown.test.tsx`, `RouteRenderSmoke.test.tsx`, `budgetCategories.test.ts`.
+- Physical-device check O75 remains Not run: verify Budget category and item
+  sorting on iOS and Android: SortChip in filter panel on Budget screen, persistent
+  sort order across app restart, and category dropdown sorting in TransactionForm
+  and BudgetIncomeForm at font scales 1.0, 1.3, and 2.0.
+
 ## P20-S-R2 searchable Dropdowns (implementation complete; device checks open)
 
 - CR-116 adds a default-visible search field and normalized filtering/ranking to
