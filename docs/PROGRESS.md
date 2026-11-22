@@ -4418,7 +4418,7 @@ evidence for the fixes.
 - Adds SortChip in AppHeader filter toggle panel on BudgetScreen using `useSort('budgetSpending')` with options Planned, Actual, Percent used, and Name; preserves Income at top while sorting items; sorts spending/investing sections and items within sections; adds sorting support to shared Dropdown with SortChip rendered in sheet; connects category dropdowns in TransactionForm and BudgetIncomeForm with persistent budgetSpending sort spec; extends `budgetCategoryChoiceSections` with pure sortSpec handling.
 - Regression tests: `src/components/__tests__/BudgetSorting.test.tsx`, `src/components/__tests__/Dropdown.test.tsx`, `src/components/__tests__/RouteRenderSmoke.test.tsx`, `src/domain/__tests__/budgetCategories.test.ts`.
 - Six gates: Gate 1 exit 0 (106 suites, 1,447 passed, 1 skipped); Gates 2–3 exit 0; Gate 4 exit 0 (21/21 checks passed); Gates 5–6 exit 0.
-- Protected-file hash for `app/(tabs)/budget.tsx` updated to `5abbb769d497bd3e4b8606cbd4903a64c4fd648d`.
+- Protected-file hash for `app/(tabs)/budget.tsx` updated to `eca7607015cb3c8b85dfc7e0d4001235166742a2`.
 - Physical-device check O75 recorded as Not run.
 
 ### 2026-11-21 — P20-U-R1 Budget edit/delete revision
@@ -11549,7 +11549,7 @@ tasks / 5/5 as the revision was added and completed. No assertion was weakened.
 | Protected file | Final Git blob |
 |---|---|
 | `app/(tabs)/index.tsx` | `d3d1e465fe9f5d238d338afeb033e2a54889ddc6` |
-| `app/(tabs)/budget.tsx` | `5abbb769d497bd3e4b8606cbd4903a64c4fd648d` |
+| `app/(tabs)/budget.tsx` | `eca7607015cb3c8b85dfc7e0d4001235166742a2` |
 | `src/components/SortChip.tsx` | `837a675af94dd056532bc63fc4697efc905a5af3` |
 | `src/lib/sorting.ts` | `7491663f0987d83d03f3ed72b01de5b376e3572d` |
 | `src/components/form/frozen-manifest.json` | `476418c7084f0774f1b6fb86ddfe08c7a265fc40` |

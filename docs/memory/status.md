@@ -13,7 +13,7 @@
   extended budgetCategoryChoiceSections with pure sortSpec handling. Regression
   tests: BudgetSorting.test.tsx, Dropdown.test.tsx, RouteRenderSmoke.test.tsx,
   budgetCategories.test.ts. All six repository gates pass. Protected-file hash
-  for app/(tabs)/budget.tsx updated to 5abbb769d497bd3e4b8606cbd4903a64c4fd648d.
+  for app/(tabs)/budget.tsx updated to eca7607015cb3c8b85dfc7e0d4001235166742a2.
   O75 remains Not run.
 - **P20-U-R1 (2026-11-21) — Done; O73 physical-device restart check remains open.**
   CONT3 completed the form/store/persistence matrix for reported fields,
