@@ -252,7 +252,7 @@ export default function TransactionFormScreen() {
         existingCategory: (transaction?.type === 'expense' ? transaction.category : undefined)
           ?? (requestedCategoryParam && requestedCategoryParam !== customExpenseCategory ? requestedCategoryParam : undefined),
       }),
-    [budgetSorting.spec, data, requestedCategoryParam, selectedMonth, selectedType, today, transaction?.category, transaction?.type],
+    [budgetSorting.spec, data, requestedCategoryParam, selectedMonth, selectedType, today, transaction],
   );
   const maxTransactionDate = monthEndDate(shiftMonth(monthKey(today), 24));
   const categoryOptions: DropdownOption[] = categorySections.flatMap((section) =>
