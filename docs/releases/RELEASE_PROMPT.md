@@ -430,6 +430,10 @@ Do not publish at this stage.
 
 ## 11. Mandatory Approval Gate
 
+A release must not be built, drafted, tagged or published while any row in ANY section of the device checklist (the Next release section and every earlier section) has a Result other than Pass. Not run, Fail and Blocked all block. Check the checklist first; if blocked, stop and report the blocking IDs, and do not start the build or the GitHub Release draft. A Pass may only be recorded from an owner-observed or owner-reported device result, never inferred from automated tests or Expo exports. Only an explicit written owner waiver for named IDs lifts the block; record the waiver in the ledger (Owner-run actions log) and in the release note, and leave the row's Result unchanged.
+
+Maintenance rules: new device checks go under Next release device checks (or the decided version's section) with the next free ID, never into a published release's section, never renumbered. When the next version is decided, retitle that section `## vX.Y.Z device checks (next release)` and fill its App version. On publication, retitle it `## vX.Y.Z device checks`, set the published date, move it to the bottom of the version list (ascending order), and create a new empty `## Next release device checks` section at the top. Device-check results the owner reports are recorded under rule R8 (Owner-run actions log) with their evidence.
+
 Present the following to the user:
 
 1. Recommended version.
@@ -463,7 +467,7 @@ After the owner explicitly approves the Markdown release draft:
 6. Verify the final Markdown draft.
 7. Commit the approved release work on its task branch and merge task ->
    phase -> `develop` through pull requests, following the repository branch
-   rules. Run all six gates and complete required device checks before merge.
+   rules. Run all six gates and complete required device checks before merge. A release must not be built, drafted, tagged or published while any row in ANY section of the device checklist (the Next release section and every earlier section) has a Result other than Pass. Not run, Fail and Blocked all block. Check the checklist first; if blocked, stop and report the blocking IDs, and do not start the build or the GitHub Release draft. A Pass may only be recorded from an owner-observed or owner-reported device result, never inferred from automated tests or Expo exports. Only an explicit written owner waiver for named IDs lifts the block; record the waiver in the ledger (Owner-run actions log) and in the release note, and leave the row's Result unchanged.
 8. Create `release/vX.Y.Z` from the merged `develop` commit. Create the
    GitHub Release draft at that exact release-branch commit, attach every
    supplied screenshot and use each absolute asset URL in the draft body.

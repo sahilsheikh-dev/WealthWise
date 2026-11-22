@@ -906,14 +906,19 @@ Not adopted in CR-106:
 
 ## Pending owner actions (2026-11-22 reconciliation)
 
-- **Device checks:** O61–O74 remain Not run: P20-S-R2 O61–O64; P21-F
-  O65–O68; P20-W O69–O72; P20-U-R1 O73; P20-A-R3 O74. The exact owner
-  reproduction details for P20-A-R3 are still unknown.
-- **Documentation PR flow:** push `documentation` and
-  `task/docs-remote-sync-2026-11-22`; create the task PR into `documentation`,
-  merge it with `--merge --delete-branch`, then create the documentation PR
-  into `develop`, merge it with `--merge` (keep the phase/lifecycle branch),
-  and run CM-2. No remote action is performed by this local-only task.
+- **Next-release device gate:** O61–O74 are Not run and block building, drafting,
+  tagging and publishing a release. O61–O64 are P20-S-R2; O65–O68 are P21-F;
+  O69–O72 are P20-W; O73 is P20-U-R1; O74 is P20-A-R3. The exact owner
+  reproduction details for P20-A-R3 are still unknown. A named-ID written
+  waiver must be recorded in the Owner-run actions log and release note; the
+  checklist Result remains unchanged.
+- **Documentation PR flow:** CR-118's PR #184/#185 merges are confirmed by the
+  11:39 snapshot and the local documentation branch is synchronized. For
+  CR-119, the owner must push `documentation` and
+  `task/docs-device-checklist-by-release`, create the task PR into
+  `documentation`, merge it with `--merge --delete-branch`, then create the
+  documentation PR into `develop`, merge it with `--merge` (keep the lifecycle
+  branch), and run CM-2. This task performs no network action.
 
 The supplied snapshot resolves the earlier request for PR/ref/release/issue
 exports and terminal evidence. See the current snapshot reconciliation in

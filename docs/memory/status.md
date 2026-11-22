@@ -807,3 +807,21 @@
   the only closed unmerged PR. O61–O74 remain Not run. The current task is
   `task/docs-device-checklist-by-release` at its Stage 0 sync commit; checklist
   restructuring and release gate work remain in progress.
+
+
+## Current task — CR-119 device checklist by release (2026-11-22)
+
+- Branch: `task/docs-device-checklist-by-release`; local task base is sync
+  commit `25c7b29d8fc3a2e7e6ecfe1660b6b9f32e385098`. Test-first commits are
+  `1d9b574` (expected failure on old versioned H1), `9864859` (pin all 78
+  original IDs), `7221ba5` (CR-119/policy regression), `c7eb5e1` (range punctuation correction), and `26f7a92` (full shared wording checks).
+- The checklist now has Next release O61–O74 first, then published v1.0.0,
+  v1.1.0, v1.1.1 and v1.2.0 sections in ascending order. Every check row's
+  ID, Test, Result and Notes matches the pre-change baseline by ID. The
+  v1.0.0, v1.1.0, v1.1.1 and v1.2.0 assignments follow release-history dates,
+  tags and ledger entries; none is uncertain.
+- The release gate blocks release work for every non-Pass row in every section.
+  O61–O74 remain Not run and block the next release. No owner waiver is
+  recorded. Focused ledger suite passes after the checklist and gate changes.
+- This is local-only work: no network, push, PR, merge, release, tag or build
+  was performed. Six-gate results and protected-file hashes are pending.
