@@ -757,7 +757,7 @@
   for decisions, status, acceptance evidence, gates and device checks.
 
 
-## Current reconciliation (2026-11-22, snapshot exported 11:12:56 IST)
+## Earlier reconciliation (2026-11-22, snapshot exported 11:12:56 IST)
 
 - `develop` is `b3fa175b999f3ae62e2b099a412f5a9e9da5f0db`; `phase/20-budget` is
   `4ee154bab1cbc9b0b491b87c2f8bfb5a843dca7b`. D3 task tip
@@ -785,3 +785,25 @@
   checks and push/open/merge this documentation task through its task PR and
   documentation-to-develop PR, then run CM-2. P20-A-R3's exact device
   reproduction remains unknown.
+
+
+## Current reconciliation (2026-11-22, snapshot exported 11:39:32 IST)
+
+- PR #184 merged the remote task branch into `documentation` at
+  `6c69977fa12bfeb3c979ee6fd415df7deaaf1dea` at 11:34:08 IST / 06:04:08 UTC;
+  `mergedBy` is `sahilsheikh-dev`. PR #185 merged `documentation` into
+  `develop` at `a946baff7793e7485b54cb363048f7906983574c` at 11:34:59 IST /
+  06:04:59 UTC; `mergedBy` is `sahilsheikh-dev`. `origin/develop` agrees with
+  the snapshot develop SHA.
+- PR #184's head OID is `c14fc2a420f0efc791813ab5cc2f42d0a15ef5fc`;
+  `origin/documentation` is `6c69977fa12bfeb3c979ee6fd415df7deaaf1dea`. Exact
+  push actions/times are not in the terminal recording; remote refs and PR
+  head OIDs establish the published tips.
+- The `script` log records a session from 11:13:17 to 11:37:46 IST but contains
+  no Git/PR commands. `gate4-develop-after185.txt` shows 20/21 and the six
+  known SDK 57 patch mismatches; no exit code is printed, so Gate 4 exit is
+  not captured. This agent continuation performed no network action.
+- The snapshot contains 185 PRs, zero open PRs and zero issues; #39 remains
+  the only closed unmerged PR. O61–O74 remain Not run. The current task is
+  `task/docs-device-checklist-by-release` at its Stage 0 sync commit; checklist
+  restructuring and release gate work remain in progress.
