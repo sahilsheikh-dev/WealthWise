@@ -907,3 +907,15 @@
   - Dates: `2026-11-22` (Next release), `2026-11-07` (v1.0.0), `2026-11-08` (v1.1.0), `2026-11-09` (v1.1.1), `2026-11-11` (v1.2.0).
 - Updated Notes across all Pass checks to record owner-reported physical-device verification as of the respective release date.
 - Updated device checklist maintenance rules across all policy documents (`device-test-checklist.md`, `rules.md`, `AGENTS.md`, `README.md`, `RELEASE_PROMPT.md`, `release-config.md`, `build-config.md`) requiring agents to prompt the owner to confirm all metadata fields (Device model, Android version, Tester username, and Date) with suggestions based on previous releases data before making changes.
+
+
+## Current task — P7-plan-cloud-backup (2026-11-22)
+
+- Branch: `task/P7-plan-cloud-backup`; phase branch: `phase/07-cloud-backup`.
+- Recorded Phase P7 — Cloud Backup (Google Drive) as Planned across repository ledgers, memory, and roadmap under Rule R7 (empty slot adjacent to P6 Backup & Security).
+- Planned subtasks (all Planned; Evidence: not started):
+  - P7-A: Research Google Drive REST API (v3) appDataFolder scope, Expo SDK 57 Google OAuth2/Sign-In integration, and background scheduling (expo-background-fetch / Android WorkManager) with Wi-Fi gating.
+  - P7-B: Pure domain model for cloud backup scheduling (frequency: daily / weekly / monthly / manual, retention policy, zero-knowledge local passphrase encryption before upload).
+  - P7-C: UI & settings in Backup / Security screen (Connect/Disconnect Google Drive, last backup status/timestamp, frequency picker, Wi-Fi only toggle, "Back up now", and "Restore from Google Drive" flow).
+  - P7-D: Deterministic demo data, offline fallback, token revocation handling, unit tests, and device checklist rows.
+- Planning-only task: no application code, no dependencies, no schema change.

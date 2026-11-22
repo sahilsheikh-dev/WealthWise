@@ -51,7 +51,7 @@ P27 for accessibility & performance (P26) work; P28 for income
 recurrence / Budget income (P29) work; P32 for project health/community (P31) or
 widgets (P33) work.
 
-- **P7**: backup & security (P6) or investments (P8) work
+- **P7**: backup & security (P6) or investments (P8) work (Filled by Phase P7 — Cloud Backup (Google Drive) under CR-123 per Rule R7 empty slot filling adjacent to P6 Backup & Security; branch `phase/07-cloud-backup`)
 - **P27**: accessibility & performance (P26) work
 - **P28**: income recurrence / Budget income (P29) work
 - **P32**: project health/community (P31) or widgets (P33) work
@@ -128,6 +128,7 @@ physical-device checks as unverified unless they were actually observed.
 - CR-114 audit: P7 moves to `schema-migration` under rule 1; P27-A moves to
   `cleanup` under rule 1; P28 release/QA parts move to `qa-and-release` and docs
   parts move to `documentation` under rule 1; P32-A/B/C move to Cancelled /
-  unassigned under Section 13. P7, P27, P28 and P32 remain Empty (reserved)
+  unassigned under Section 13. CR-123 fills P7 with Cloud Backup (Google Drive)
+  under Rule R7 on branch `phase/07-cloud-backup`; P27, P28 and P32 remain Empty (reserved)
   slots subject to R7 slot-filling adjacency.
 
