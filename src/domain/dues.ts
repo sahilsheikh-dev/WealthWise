@@ -225,7 +225,7 @@ export function clearDue(
     const result = addInvestmentEntry(data, target.id, {
       date: options.date,
       amount: actualAmount,
-      note: '',
+      note: options.note ?? '',
       kind: 'Deposit',
     }, () => {
       const id = options.newId();

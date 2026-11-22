@@ -1103,7 +1103,7 @@ export function editItem(
     .find((item) => item.id === input.itemId);
   if (!requestedItem) throw new BudgetMutationError('item-not-found', 'The budget item no longer exists.');
   const name = input.patch.name === undefined ? undefined : validateBudgetName(input.patch.name);
-  return mutateBudgetStructure(data, month, scope, today, (sections, items) => {
+  const updatedData = mutateBudgetStructure(data, month, scope, today, (sections, items) => {
     const target = items.find((item) => item.id === input.itemId)
       ?? items.find((item) => item.name === requestedItem.name);
     if (!target) throw new BudgetMutationError('item-not-found', 'The budget item no longer exists.');
@@ -1180,6 +1180,69 @@ export function editItem(
       }),
     };
   });
+
+  if (name !== undefined && name !== requestedItem.name) {
+    const oldName = requestedItem.name;
+    const targetHoldingId = input.patch.holdingId === null
+      ? undefined
+      : (input.patch.holdingId ?? requestedItem.holdingId ?? data.budgetPlan?.items.find((i) => i.id === requestedItem.id)?.holdingId);
+    if (targetHoldingId) {
+      const holding = data.holdings.find((h) => h.id === targetHoldingId);
+      const allBudgetItems = [
+        ...(data.budgetPlan?.items ?? []),
+        ...(data.monthBudgets?.flatMap((snapshot) => snapshot.items) ?? []),
+      ];
+      const siblingItems = allBudgetItems.filter((item) => item.holdingId === targetHoldingId);
+      const distinctNames = new Set(siblingItems.map((item) => item.name));
+      const hasSiblings = distinctNames.size > 1;
+
+      const matchedEntryIds = new Set<string>();
+      const matchedTxIds = new Set<string>();
+
+      for (const tx of updatedData.transactions) {
+        if (tx.source?.kind !== 'holding-entry' || tx.source.parentId !== targetHoldingId) continue;
+        const txMonth = monthKey(tx.date);
+        if (scope === 'month' && txMonth !== month) continue;
+        if (scope === 'following' && txMonth < month) continue;
+
+        const entry = holding?.logs.find((e) => e.id === tx.source?.entryId);
+        let matches = false;
+        if (hasSiblings) {
+          matches = entry?.note === oldName || tx.note === oldName;
+        } else {
+          matches = entry?.note === oldName || tx.note === oldName
+            || entry?.note === '' || !entry?.note
+            || tx.note === '' || !tx.note
+            || (holding ? tx.note === `${holding.name} deposit` : false);
+        }
+
+        if (matches) {
+          matchedTxIds.add(tx.id);
+          if (tx.source?.entryId) matchedEntryIds.add(tx.source.entryId);
+        }
+      }
+
+      if (matchedTxIds.size > 0 || matchedEntryIds.size > 0) {
+        const nextTransactions = updatedData.transactions.map((tx) =>
+          matchedTxIds.has(tx.id) ? { ...tx, note: name } : tx,
+        );
+        const nextHoldings = updatedData.holdings.map((h) => {
+          if (h.id !== targetHoldingId) return h;
+          return {
+            ...h,
+            logs: h.logs.map((log) => matchedEntryIds.has(log.id) ? { ...log, note: name } : log),
+          };
+        });
+        return {
+          ...updatedData,
+          holdings: nextHoldings,
+          transactions: nextTransactions,
+        };
+      }
+    }
+  }
+
+  return updatedData;
 }
 
 export function deleteItem(

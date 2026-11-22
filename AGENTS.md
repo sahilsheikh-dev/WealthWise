@@ -39,7 +39,10 @@ apply only that exception and preserve all other rules.
 - **R3 — History, pushes and release approval:** agents do not push unless
   the owner explicitly authorizes it, and never force-push or rewrite history.
   Never publish releases or create, move, or delete release tags without
-  explicit owner approval.
+  explicit owner approval. Only `vX.Y.Z` release tags are maintained in the
+  repository; non-release, phase, and intermediate tags are prohibited and
+  must not be created. Legacy non-release tags were deleted under approved
+  task P43-B.
 - **R4 — Documentation scope:** routine Git documentation is limited to
   `docs/memory/*`, `docs/PROGRESS.md`, `docs/releases/**`, `CONTRIBUTING.md`,
   `SECURITY.md`, and `.github/**`. Change other documentation only when
@@ -241,31 +244,35 @@ local Gradle builds still require explicit authorization.
   The README Download block and latest published release Download block must
   be identical.
   Every release updates the README Download and What's new sections and its
-  releases-page link. Include all screenshots explicitly supplied for a
-  release in its Markdown and GitHub Release body, named
-  `WealthWise-vX.Y.Z-screenshot-<screen>.png`. Commit them under
-  `docs/releases/screenshots/vX.Y.Z/` with the published note; do not attach
-  screenshots as GitHub Release assets. Link each release-note thumbnail to
-  its absolute `blob/main` URL and load the image from its matching absolute
-  `raw.githubusercontent.com/.../main/` URL. The README may use equivalent
-  relative paths. If no screenshots are supplied, reuse the previous release's
-  complete image set under the new version's filenames. The README Screenshots
-  section contains only the latest published release's screenshot set and has
-  no version title. Display images at 150 pixels wide in table rows, with no
-  more than four screenshots per row. Keep capture scripts outside the app and
-  repository. Display categories in this order, omitting unavailable screens:
-  Home, Assets, Liabilities, Emergency Fund, Goals, Insurance, Budget,
-  Transactions. Release notes and GitHub release bodies must not contain a
-  Contributors section. When updating an existing published note, change
-  only its Download block except for screenshot updates and contributor
-  section removal explicitly requested by the owner. Verify every rendered
-  screenshot URL and the current latest URL and every affected
-  versioned URL with `curl -I -L`; each must return HTTP 200 and the expected
-  artifact size. Record EAS build
-  ID, profile, Android `versionCode`, date and status in the release-history
-  Builds table; do not include source commits or digests. Follow
-  `docs/releases/build-config.md`; production Android AABs go to Google Play
-  and APKs to GitHub. iOS distribution is not currently offered.
+  releases-page link. During release preparation of an approved candidate,
+  update `README.md` (Download block, What's new, and Screenshots gallery),
+  `docs/releases/published/vX.Y.Z.md`, and release history to use the newer
+  candidate release's screenshots, download details, and links so the candidate
+  repository state is fully aligned and ready for publication. Include all
+  screenshots explicitly supplied for a release in its Markdown and GitHub
+  Release body, named `WealthWise-vX.Y.Z-screenshot-<screen>.png`. Commit them
+  under `docs/releases/screenshots/vX.Y.Z/` with the published note; do not
+  attach screenshots as GitHub Release assets. Link each release-note
+  thumbnail to its absolute `blob/main` URL and load the image from its
+  matching absolute `raw.githubusercontent.com/.../main/` URL. The README may
+  use equivalent relative paths. If no screenshots are supplied, reuse the
+  previous release's complete image set under the new version's filenames.
+  The README Screenshots section contains only the latest release's
+  screenshot set and has no version title. Display images at 150 pixels wide
+  in table rows, with no more than four screenshots per row. Keep capture
+  scripts outside the app and repository. Display categories in this order,
+  omitting unavailable screens: Home, Assets, Liabilities, Emergency Fund,
+  Goals, Insurance, Budget, Transactions. Release notes and GitHub release
+  bodies must not contain a Contributors section. When updating an existing
+  published note, change only its Download block except for screenshot
+  updates and contributor section removal explicitly requested by the owner.
+  Verify every rendered screenshot URL and the current latest URL and every
+  affected versioned URL with `curl -I -L`; each must return HTTP 200 and the
+  expected artifact size. Record EAS build ID, profile, Android `versionCode`,
+  date and status in the release-history Builds table; do not include source
+  commits or digests. Follow `docs/releases/build-config.md`; production
+  Android AABs go to Google Play and APKs to GitHub. iOS distribution is not
+  currently offered.
 
 ## Schema and verification
 

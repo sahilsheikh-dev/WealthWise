@@ -199,7 +199,11 @@ Follow the shared repository rules in [`AGENTS.md`](../../AGENTS.md),
   - Keep the latest published Download block identical to README; older
     releases use their versioned asset link and versioned download filename.
   - Update the README Download and What's new sections and its releases-page
-    link for every release.
+    link for every release. During release preparation of an approved candidate,
+    update README (Download block, What's new, and Screenshots gallery),
+    docs/releases/published/vX.Y.Z.md, and release history to use the newer
+    candidate release's screenshots, download details, and links so the
+    candidate repository state is fully aligned and ready for publication.
   - Include every supplied screenshot in that version's release Markdown and
     GitHub Release body. Store files as
     `docs/releases/screenshots/vX.Y.Z/WealthWise-vX.Y.Z-screenshot-<screen>.png`
@@ -208,8 +212,8 @@ Follow the shared repository rules in [`AGENTS.md`](../../AGENTS.md),
     absolute `blob/main` URL and load the image from the matching absolute
     `raw.githubusercontent.com/.../main/` URL. README may use equivalent
     relative paths. README's Screenshots section contains only the latest
-    published release's complete image set, without a version title. If no
-    screenshots are supplied, reuse the previous published release's complete
+    release's complete image set, without a version title. If no
+    screenshots are supplied, reuse the previous release's complete
     image set under the new version's filenames. Verify each rendered URL
     after the change is merged to `main`. Render images at 150 pixels wide in
     table rows, with no more than four screenshots per row. Order categories

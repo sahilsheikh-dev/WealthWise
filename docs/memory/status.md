@@ -1,6 +1,27 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-22 | Updates: owner and AI agents -->
 
 # Status
+- **P20-Y-R1 / CR-132 (2026-11-22) — Linked transactions update on budget item rename.**
+  Fixed WealthWise bug where renaming a budget item or category in one month did
+  not update the name shown by transactions linked to that item. Linked
+  transactions now reflect the current budget item name wherever it appears,
+  including existing transactions, while preserving amount, date, category, and
+  budget link. Handles month-specific items and create, edit, display,
+  persistence, migration, and backup-import paths. Added regression tests in
+  `src/domain/__tests__/budgetItemRenameTransactions.test.ts`. All six
+  repository gates pass with exit 0.
+- **P28-F-R7 / CR-130 (2026-11-22) — Prepare v1.3.0 release candidate.**
+  Prepared owner-approved v1.3.0 release candidate: bumped versions in app.json,
+  package.json, and package-lock.json to 1.3.0; moved finalized release note to
+  docs/releases/published/v1.3.0.md with 8 owner-supplied screenshots under
+  docs/releases/screenshots/v1.3.0/; aligned build-config.md and device checklist
+  to v1.3.0. Candidate PR #210 and PR #211 integrated to develop (afeb987);
+  release/v1.3.0 created; EAS build c2ec9414-ae63-44cc-b34a-0f67f6cb51cb (profile android-apk,
+  versionCode 4) verified and 107,030,213-byte APK uploaded to GitHub release draft.
+  Per owner instruction, updated README.md (Download block and 8-screenshot gallery for v1.3.0),
+  aligned published v1.3.0 and v1.2.0 download blocks and release history, and updated
+  release rules in AGENTS.md and rules.md to mandate aligning README and release docs during
+  candidate staging. Publication remains pending owner approval. All six repository gates pass.
 - **P20-X-R1 / CR-129 (2026-11-22) — Remove transaction sorting & Dropdown search title.**
   Removed sorting option from TransactionForm category dropdowns (Expense, Income, Invest)
   and removed redundant static Search header title from shared Dropdown sheet, keeping
@@ -962,3 +983,12 @@
   - P7-C: UI & settings in Backup / Security screen (Connect/Disconnect Google Drive, last backup status/timestamp, frequency picker, Wi-Fi only toggle, "Back up now", and "Restore from Google Drive" flow).
   - P7-D: Deterministic demo data, offline fallback, token revocation handling, unit tests, and device checklist rows.
 - Planning-only task: no application code, no dependencies, no schema change.
+
+
+## Current task — P43-B-delete-non-release-tags (2026-11-22)
+
+- Branch: `task/P43-B-delete-non-release-tags`; phase branch: `phase/43-lifecycle-and-transaction-planning`.
+- Executed P43-B per explicit owner approval: deleted all 47 non-release and legacy phase tags locally and on remote `origin`, keeping exclusively the 5 verified release tags (`v1.0.0`, `v1.1.0`, `v1.1.1`, `v1.2.0`, `v1.3.0`).
+- Updated Rule R3 across `AGENTS.md`, `docs/memory/rules.md`, and `docs/PROGRESS.md` to establish that only `vX.Y.Z` release tags are maintained in the repository and non-release tags are prohibited.
+- Updated `PROGRESS.md`, `open-items.md`, and `progressLedger.test.ts`.
+

@@ -2,6 +2,27 @@
 
 # Open items
 
+## P20-Y-R1 Linked transactions update on budget item rename (Done; CR-132)
+
+- Subtask P20-Y-R1 (CR-132, 2026-11-22): Fix WealthWise bug where renaming a budget item or category in one month did not update the name shown by transactions linked to that item.
+- Linked transactions reflect the current budget item name wherever they appear, including existing transactions, while preserving their amount, date, category (e.g. `'Mutual fund / SIP'`), and budget link source.
+- Handles month-specific items and create, edit, display, persistence, migration, and backup-import paths.
+- Regression tests added in `src/domain/__tests__/budgetItemRenameTransactions.test.ts` (5 tests passing).
+- Ordered six gates pass with exit 0.
+
+## P28-F-R7 Prepare v1.3.0 release candidate (In progress)
+
+- Subtask P28-F-R7 (CR-130, 2026-11-22): Prepare owner-approved v1.3.0 release candidate.
+- Bumps app version in `app.json`, `package.json`, and `package-lock.json` to `1.3.0`.
+- Places finalized v1.3.0 release note in `docs/releases/published/v1.3.0.md` with 8 owner-supplied screenshots in `docs/releases/screenshots/v1.3.0/` (About and auxiliary settings screens omitted).
+- Retitles device checklist to `## v1.3.0 device checks (next release)` with confirmed metadata; all O1–O76 checks pass.
+- Task branch `task/P28-F-R7-prepare-v1.3.0` merged to `qa-and-release` via PR #210, integrated to `develop` via PR #211 (`afeb987`).
+- `release/v1.3.0` created at candidate commit `afeb987` and pushed to origin.
+- EAS build `c2ec9414-ae63-44cc-b34a-0f67f6cb51cb` (profile `android-apk`, Android `versionCode` 4) completed on 2026-11-22; 107,030,213-byte APK downloaded, privately byte-verified against EAS artifact, and uploaded to GitHub draft release `v1.3.0` as `WealthWise-android-latest-v1.3.0.apk`.
+- Task branch `task/P28-F-R7-record-v1.3.0-build` merged to `qa-and-release` via PR #212, integrated to `develop` via PR #213 (`58d9a26`), and synchronized to `release/v1.3.0`.
+- Task branch `task/P28-F-R7-align-v1.3.0-readme-screenshots-details` updates `README.md` (v1.3.0 Download block and 8-screenshot gallery), aligns `v1.3.0.md` and `v1.2.0.md` download blocks, updates `release-history.md`, and adds release rules in `AGENTS.md` and `rules.md` requiring candidate README and screenshot alignment during staging.
+- Publication approval, release merge to `main`, tag creation, and post-publication sync remain pending.
+
 ## P20-Y Budget payment date, multi-asset budget links, and limited expense categories (Done; device check Pass)
 
 - CR-126 implements three related changes:
@@ -163,11 +184,15 @@ the phase branch is retained. Phase PR #147 merged into `develop` at
   `9d914638e50462cbadef84df3294ed07cbf42732`. The old remote refs are absent.
   Historical branch name: `phase/27-cleanup`; historical branch name:
   `phase/28-qa-and-release`. The stale phase tags remain unchanged.
-- **P43-B — Tag and integration audit:** owner approved the cleanup scope and
-  report-only branch/PR/merge audit. Preserve every `vX.Y.Z` release tag and
-  previously retained stale phase tags. Prepare the exact proposed deletion
-  list for owner review; the list has not yet been supplied or approved, so
-  no deletion is authorized. Report the audit in chat or `/tmp`, not Git.
+- **P43-B — Tag and integration audit (Done):** owner explicitly approved
+  deleting all non-release tags while keeping only release tags and enforcing
+  the release-only tag policy in repository rules. All 47 non-release and
+  legacy phase tags (`phase-01-complete` through `phase-30-complete`, and 17
+  intermediate phase tags) were deleted locally and on remote `origin` on
+  2026-11-22. Only the five verified release tags (`v1.0.0`, `v1.1.0`, `v1.1.1`,
+  `v1.2.0`, `v1.3.0`) are retained. Rules in `AGENTS.md`, `rules.md`, and
+  `PROGRESS.md` were updated to prohibit non-release tags. Report the audit in
+  chat or `/tmp`, not Git.
 - **P21-F (Previously: P43-C) — Emergency Fund target editing (Done; Revised by P21-F-R1):**
   the existing persisted Goal.target is reused; schema v23 and backup formats
   remain unchanged. DEC-P21F-FLOOR keeps the effective max(stored target,
