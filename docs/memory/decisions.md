@@ -97,3 +97,4 @@ authoritative rationale and history.
 - [DEC-USER-CHANGES](../PROGRESS.md#4-architecture-and-decisions)
 
 - [DEC-DOCS-R8-OWNER-ACTIONS](../PROGRESS.md#docs-remote-sync-2026-11-22): owner-run and remote-only facts require verifiable evidence, an action log and explicit pending-action reporting.
+- [DEC-DOCS-DEVICE-CHECKLIST-RELEASE-GATE](../PROGRESS.md#dec-docs-device-checklist-release-gate-2026-11-22): keep device results in immutable release sections and block release work until every check passes or a named-ID written waiver is recorded.

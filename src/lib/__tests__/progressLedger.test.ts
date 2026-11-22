@@ -55,6 +55,88 @@ describe('permanent progress ledger', () => {
     expect(status).toContain('is integrated into `develop` at `fd7ba55`');
   });
 
+  it('structures the device checklist by release and blocks incomplete releases', () => {
+    const checklist = readFileSync(
+      join(process.cwd(), 'docs/releases/device-test-checklist.md'),
+      'utf8',
+    );
+    const h1 = [...checklist.matchAll(/^# .+$/gm)].map(([heading]) => heading);
+    const h2 = [...checklist.matchAll(/^## (.+)$/gm)].map(([, heading]) => heading);
+    const expectedSections = [
+      'Next release device checks',
+      'v1.0.0 device checks',
+      'v1.1.0 device checks',
+      'v1.1.1 device checks',
+      'v1.2.0 device checks',
+    ];
+    const ids = [...checklist.matchAll(/^\| ([A-Z]+[0-9]+) \|/gm)].map(([, id]) => id);
+    const expectedIds = ['X1', 'X2', 'X3', 'X4', 'A1', 'A2', 'A3', 'A4', 'B5', 'B6', 'C7', 'C8', 'D9', 'D10', 'D11', 'D12', 'E13', 'E14', 'E15', 'E16', 'E17', 'F18', 'F19', 'F20', 'G21', 'G22', 'G23', 'H24', 'H25', 'H26', 'H27', 'H28', 'I29', 'I30', 'J31', 'J32', 'J33', 'K34', 'K35', 'K36', 'L37', 'M38', 'N39', 'N40', 'N41', 'N42', 'N43', 'N44', 'O45', 'O46', 'O47', 'O48', 'O49', 'O50', 'O51', 'O52', 'O53', 'O54', 'O55', 'O56', 'O57', 'O58', 'O59', 'O60', 'O61', 'O62', 'O63', 'O64', 'O65', 'O66', 'O67', 'O68', 'O69', 'O70', 'O71', 'O72', 'O73', 'O74'];
+
+    expect(h1).toEqual(['# WealthWise Android Device Test Checklist']);
+    expect(h2[0]).toBe(expectedSections[0]);
+    expect(h2.filter((heading) => expectedSections.includes(heading))).toEqual(expectedSections);
+    expect(h2).toContain('Release gate');
+    expect(checklist).toContain('any row in ANY section of the device checklist');
+    expect(new Set(ids).size).toBe(ids.length);
+    expect([...ids].sort()).toEqual([...expectedIds].sort());
+
+    for (const [index, heading] of expectedSections.entries()) {
+      const start = checklist.indexOf(`## ${heading}`);
+      const nextHeading = checklist.indexOf('\n## ', start + 1);
+      const section = checklist.slice(start, nextHeading === -1 ? undefined : nextHeading);
+      expect(section).toContain('| Field | Value |');
+      for (const field of ['App version', 'Device model', 'Android version', 'Tester', 'Date']) {
+        expect(section).toContain(`| ${field} |`);
+      }
+      expect(section).toContain('| ID | Test | Result | Notes |');
+
+      if (index > 0) {
+        const results = [...section.matchAll(/^\| ([A-Z]+[0-9]+) \| .*? \| (.*?) \|/gm)];
+        expect(results.every(([, , result]) => result === 'Pass')).toBe(true);
+      }
+    }
+  });
+
+  it('records CR-119 and keeps the release checklist gate identical across policy docs', () => {
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const independentEntities = ledger.split('## 13. Independent entities')[1] ?? '';
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const gate = [
+      'A release must not be built, drafted, tagged or published while any row in ANY section of the device checklist (the Next release section and every earlier section) has a Result other than Pass.',
+      'Not run, Fail and Blocked all block. Check the checklist first; if blocked, stop and report the blocking IDs, and do not start the build or the GitHub Release draft.',
+      'A Pass may only be recorded from an owner-observed or owner-reported device result, never inferred from automated tests or Expo exports.',
+      "Only an explicit written owner waiver for named IDs lifts the block; record the waiver in the ledger (Owner-run actions log) and in the release note, and leave the row's Result unchanged.",
+    ].join(' ');
+    const maintenance = [
+      "Maintenance rules: new device checks go under Next release device checks (or the decided version's section) with the next free ID, never into a published release's section, never renumbered.",
+      'When the next version is decided, retitle that section `## vX.Y.Z device checks (next release)` and fill its App version.',
+      'On publication, retitle it `## vX.Y.Z device checks`, set the published date, move it to the bottom of the version list (ascending order), and create a new empty `## Next release device checks` section at the top.',
+      'Device-check results the owner reports are recorded under rule R8 (Owner-run actions log) with their evidence.',
+    ].join(' ');
+    const policyDocs = [
+      'AGENTS.md',
+      'docs/memory/rules.md',
+      'docs/releases/README.md',
+      'docs/releases/RELEASE_PROMPT.md',
+      'docs/releases/release-config.md',
+      'docs/releases/build-config.md',
+      'docs/releases/device-test-checklist.md',
+    ];
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-119 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-119 |'))).toHaveLength(1);
+    expect(independentEntities.split('\n').filter((line) => line.startsWith('| CR-119 |'))).toHaveLength(1);
+    expect(status).toContain('CR-119');
+    expect(openItems).toContain('O61–O74');
+    for (const policyPath of policyDocs) {
+      const document = readFileSync(join(process.cwd(), policyPath), 'utf8');
+      expect(document).toContain(gate);
+      if (policyPath !== 'AGENTS.md') expect(document).toContain(maintenance);
+    }
+  });
+
   it('records owner-reported physical-device validation as Pass', () => {
     const checklist = readFileSync(
       join(process.cwd(), 'docs/releases/device-test-checklist.md'),
