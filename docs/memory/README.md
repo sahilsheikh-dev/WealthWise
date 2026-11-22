@@ -1,4 +1,4 @@
-<!-- Purpose: Index and protocol for shared repository AI memory. | Last updated: 2026-11-12 | Updates: owner and AI agents -->
+<!-- Purpose: Index and protocol for shared repository AI memory. | Last updated: 2026-11-22 | Updates: owner and AI agents -->
 
 # Shared AI memory
 
@@ -35,11 +35,46 @@ but does not replace or shorten, the canonical [progress ledger](../PROGRESS.md)
 | [working-style.md](working-style.md) | Owner/AI working agreement |
 | [work-placement.md](work-placement.md) | Work classification, placement rules and branch workflow |
 
-Before work, read this index, the relevant memory files, and the matching
-ledger section. After work, update `status.md` and `open-items.md`; record
+Before work, reconcile remote state using the latest owner snapshot or available
+Git refs as required by R8. Read this index, the relevant memory files, and the
+matching ledger section. After work, update `status.md` and `open-items.md`; record
 decisions, scope, assumptions, replaced assertions, tests, gate exit codes and
 verified commit evidence in `docs/PROGRESS.md`. Update other memory pages only
 when their facts change. Keep the ledger's historical material intact; link to
 it instead of copying its tables. Use repository source as truth over memory,
 and correct stale memory in the same task. Never store personal financial
 data, credentials, tokens or private account information here.
+
+## Remote snapshot export and terminal evidence
+
+Before repository work, the owner should provide a fresh remote snapshot and
+terminal evidence. Keep both under `/tmp/wealthwise-remote-snapshot/`; agents
+must not run the export script when the task prohibits network access. After
+every manual merge, refresh the snapshot before the next agent task so refs,
+PR records, and merge state describe the same point in time.
+
+For manual authenticated terminal work, start a recording session and finish it
+with `exit`:
+
+```bash
+script -a /tmp/wealthwise-remote-snapshot/owner-terminal-$(date +%F).log
+# perform the owner-run GitHub/Git actions in this recorded shell
+exit
+```
+
+`pbpaste` only copies the clipboard. It is not evidence of a terminal session
+unless the complete terminal text was copied first. Preserve terminal output
+for actions that Git refs or the JSON exports cannot establish. If transcript
+text is reconstructed from chat, label it as reconstructed and identify its
+source; do not call it an original terminal capture.
+
+Use the owner's authenticated `export-remote-snapshot.sh` from the repository
+root to export into `/tmp/wealthwise-remote-snapshot/`. The export includes
+`prs.json` fields `number`, `title`, `state`, `base` (`baseRefName`),
+`head` (`headRefName`), `headRefOid`,
+`createdAt`, `updatedAt`, `mergedAt`, `closedAt`, `mergeCommit`, `mergedBy`,
+`url`, `author`, `labels`, and `body`; detail files for the latest 60 PRs;
+releases, tags, issues, remote branches, refs, first-parent logs, all merge
+records, and an export timestamp. Use the supplied snapshot as evidence and
+record its timestamp in the ledger; never infer remote facts from local commit
+subjects alone.

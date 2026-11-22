@@ -1,4 +1,4 @@
-<!-- Purpose: Engineering invariants, protected surfaces and verification commands. | Last updated: 2026-11-12 | Updates: owner and AI agents -->
+<!-- Purpose: Engineering invariants, protected surfaces and verification commands. | Last updated: 2026-11-22 | Updates: owner and AI agents -->
 
 # Rules
 
@@ -56,6 +56,32 @@
   (standalone lifecycle, completed-part revisions, and open-part scope), then
   R7 for new-feature placement into an eligible adjacent empty slot before
   opening a new phase.
+- **R8 — Owner-run and remote-only actions:** Record actions performed outside
+  an agent session (pushes, PR creation/edits/comments/merges, branch deletion,
+  network gates, device checks and release steps) and remote facts (PR numbers,
+  merge SHAs, PR text/comments, tags and releases) in the ledger from
+  verifiable evidence only: owner terminal output, owner-exported remote
+  snapshots, or Git refs. Never infer or invent them. Begin each task by
+  comparing the latest snapshot—or `git fetch --all --prune` plus first-parent
+  merge logs for `develop` and phase branches—with
+  `docs/history/entity-history-map.md` and the ledger; record omissions before
+  new work. Record exact network-gate exit codes when captured, otherwise
+  `not captured`. If a PR description conflicts with Git history, Git wins; add
+  a dated correction without rewriting history. Every final report ends with
+  an `Owner actions pending` list.
+
+  Record manual owner terminal sessions with
+  `script -a /tmp/wealthwise-remote-snapshot/owner-terminal-$(date +%F).log`
+  and finish the session with `exit`. `pbpaste` only copies the clipboard; it
+  is not session evidence unless the full terminal text was copied first.
+  The owner exports the snapshot with `export-remote-snapshot.sh`; its PR
+  records include number, title, state, base (`baseRefName`), head
+  (`headRefName`), headRefOid, createdAt,
+  updatedAt, mergedAt, closedAt, mergeCommit, mergedBy, url, author, labels
+  and body, plus detail files for the latest 60 PRs, releases, tags, issues and
+  remote branches. After every manual merge, refresh the snapshot before the
+  next agent task. Export and capture procedures are maintained in
+  `docs/memory/README.md`.
 - Branching: `main` is stable released code; `develop` is integration and
   must pass all six gates; phase branches use `phase/NN-slug`, task branches
   use `task/ID-slug`, release branches use `release/vX.Y.Z`, hotfix branches

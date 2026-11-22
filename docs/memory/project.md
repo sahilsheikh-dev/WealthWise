@@ -1,4 +1,4 @@
-<!-- Purpose: Stable product and repository facts for AI contributors. | Last updated: 2026-11-21 | Updates: owner and AI agents -->
+<!-- Purpose: Stable product and repository facts for AI contributors. | Last updated: 2026-11-22 | Updates: owner and AI agents -->
 
 # Project
 
@@ -55,12 +55,11 @@ runtime synchronization.
   pure utilities and platform helpers in `src/lib/`; demo data in `src/mock/`.
 - Other source groups: `src/hooks/`, `src/theme/`, `src/constants/`, `assets/`
   and `scripts/`.
-- Test counts: 105 suites, 1437 tests (1,436 passed; one skipped) on
+- Test counts: 105 suites, 1438 tests (1,437 passed; one skipped) on
   2026-11-22. The merged D3 task tree Gate 1 coverage was
-  96.08/92.35/98.22/97.71% statements/branches/functions/lines. Gates 1–3 and
-  5–6 passed; Gate 4 exited 1 because `npx` could not resolve `expo-doctor`
-  from `registry.npmjs.org` (`ENOTFOUND`). See [status.md](status.md) for the
-  exact ordered-gate results and local merge SHAs.
+  96.08/92.35/98.22/97.71% statements/branches/functions/lines. See
+  [status.md](status.md) for exact ordered-gate results and local merge SHAs;
+  the latest Gate 4 exit was not captured.
 - P20-W-D3's pre-merge Gate 1 was 102 suites, 1382 tests (1,381 passed; one
   skipped), coverage 95.97/92.15/98.03/97.64% statements/branches/functions/
   lines; `src/data` 91.12/87.51/94.53/94.21%, `src/domain`
@@ -103,3 +102,8 @@ runtime synchronization.
 
 See the canonical [progress ledger](../PROGRESS.md) for full project history,
 schema migration evidence, feature decisions and test history.
+
+
+## Remote-history reconciliation (2026-11-22)
+
+The owner snapshot exported at `2026-11-22T11:12:56+05:30` records 183 PRs, no open PRs or issues, and #39 as the only closed unmerged PR number from #1–#183. It confirms PR #178–#183 creator/merge metadata, the PR #181 body correction/comment, 42 remote branches, 51 tags, and v1.2.0 as the latest release. D3 task/phase/develop trees match; schema v24 and migration compatibility through v23 are current. The documentation task full Gate 1 completed with 105 suites / 1,438 tests (1,437 passed; one skipped); Gates 2–3 and 5–6 exited 0; Gate 4 was invoked once in the prior run but its exit was not captured and was not rerun. See `/tmp/sync/inventory-cont.md` and the current reconciliation in `status.md`.
