@@ -129,7 +129,6 @@ export function Dropdown({
         contentStyle={styles.sheet}>
         {searchable ? (
           <View style={styles.searchWrap}>
-            <AppText style={[typography.meta, { color: colors.text2 }]}>Search</AppText>
             <View style={[styles.searchControl, { borderColor: colors.border }]}>
               <TextInput
                 accessibilityLabel="Search"

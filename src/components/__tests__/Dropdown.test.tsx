@@ -103,7 +103,7 @@ describe('Dropdown', () => {
     expect(sheet.props.sheetTestID).toBe('dropdown-sheet');
     expect(JSON.stringify(sheet.props.contentStyle)).toContain('"flexShrink":1');
     expect(sheet.findAllByType('text').map((node) => node.children.join(''))).toEqual([
-      'Search', '3 results', 'Essentials', 'Food', 'Rent', 'Other', 'Pets',
+      '3 results', 'Essentials', 'Food', 'Rent', 'Other', 'Pets',
     ]);
     expect(sheet.findByProps({ accessibilityLabel: 'Food' }).props.accessibilityRole).toBe('radio');
     expect(sheet.findByProps({ accessibilityLabel: 'Food' }).props.accessibilityState).toEqual({ selected: true });
@@ -295,5 +295,23 @@ describe('Dropdown', () => {
     expect(optionTitles.indexOf('Food')).toBeLessThan(optionTitles.indexOf('Rent'));
     // Custom option is at the end
     expect(optionTitles[optionTitles.length - 1]).toBe('Custom');
+  });
+
+  it('does not render separate Search title text above the search input', () => {
+    const onChange = jest.fn();
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    act(() => {
+      renderer = TestRenderer.create(
+        <Dropdown label="Category" accessibilityLabel="Category" value="food" options={options} onChange={onChange} />,
+      );
+    });
+    if (!renderer) throw new Error('Dropdown renderer was not created.');
+    act(() => renderer?.root.findByProps({ testID: 'dropdown-control' }).props.onPress());
+    const sheet = renderer.root.findAll((node) => String(node.type) === 'sheet')[0];
+    if (!sheet) throw new Error('Dropdown sheet was not rendered.');
+    const textChildren = sheet.findAllByType('text').map((node) => node.children.join(''));
+    expect(textChildren).not.toContain('Search');
+    const input = renderer.root.findByProps({ accessibilityLabel: 'Search' });
+    expect(input.props.placeholder).toBe('Search');
   });
 });

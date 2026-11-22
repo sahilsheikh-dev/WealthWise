@@ -1,6 +1,11 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-22 | Updates: owner and AI agents -->
 
 # Status
+- **P20-X-R1 / CR-129 (2026-11-22) — Remove transaction sorting & Dropdown search title.**
+  Removed sorting option from TransactionForm category dropdowns (Expense, Income, Invest)
+  and removed redundant static Search header title from shared Dropdown sheet, keeping
+  search placeholder inside the input box. Regression tests in Dropdown.test.tsx and
+  TransactionForm.test.tsx pass. All six repository gates pass.
 - **CR-128 (2026-11-22) — Once-only frequency for plans/liabilities cancelled by owner.**
   The owner decided not to add Once-only frequency to investment plans or liabilities;
   investment plans retain existing manual (one-time) and recurring plan kinds, and

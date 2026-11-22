@@ -714,4 +714,22 @@ describe('transaction add form', () => {
     expect(options).toContain('Gifts');
     expect(options).not.toContain('Travel');
   });
+
+  it('does not configure sorting options on category or investment dropdowns in TransactionForm', async () => {
+    for (const type of ['expense', 'income', 'invest'] as const) {
+      mockParams = { type };
+      let renderer: TestRenderer.ReactTestRenderer | undefined;
+      await act(async () => {
+        renderer = TestRenderer.create(<TransactionFormScreen />);
+      });
+      if (!renderer) throw new Error(`Transaction form renderer was not created for type ${type}.`);
+      const dropdowns = renderer.root.findAll((node) => String(node.type) === 'dropdown');
+      expect(dropdowns.length).toBeGreaterThan(0);
+      for (const dropdown of dropdowns) {
+        expect(dropdown.props.sortOptions).toBeUndefined();
+        expect(dropdown.props.sortSpec).toBeUndefined();
+        expect(dropdown.props.onSortChange).toBeUndefined();
+      }
+    }
+  });
 });
