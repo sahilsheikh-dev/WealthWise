@@ -125,14 +125,17 @@ Work-placement quick start:
   completed phase reopens its existing phase branch from `develop` (R2).
 - Create `task/ID-slug` branches from their phase branch, one per subtask or
   revision. Example: `task/P29-AB-R2-income-rows`.
-- After approved task/phase work is merged to `develop`, create
-  `release/vX.Y.Z` from `develop` and create the GitHub Release draft at that
-  exact candidate commit. Creating the draft may create its version tag; do
-  not retarget it. Then build the APK with EAS using `android-apk`, upload
-  it to the draft, and verify the artifact. Only after separate publication
-  approval, merge the release branch `--no-ff` into `main`, verify the tag
-  target, and back-merge into `develop`. Create `hotfix/vX.Y.Z` from `main`,
-  then merge to `main`, tag, and merge to `develop`.
+- After approved task/phase work is merged to `develop`, apply the device
+  checklist release gate before creating a release branch, draft, tag or build:
+  A release must not be built, drafted, tagged or published while any row in ANY section of the device checklist (the Next release section and every earlier section) has a Result other than Pass. Not run, Fail and Blocked all block. Check the checklist first; if blocked, stop and report the blocking IDs, and do not start the build or the GitHub Release draft. A Pass may only be recorded from an owner-observed or owner-reported device result, never inferred from automated tests or Expo exports. Only an explicit written owner waiver for named IDs lifts the block; record the waiver in the ledger (Owner-run actions log) and in the release note, and leave the row's Result unchanged.
+  See [device checklist maintenance rules](docs/memory/rules.md#device-checklist-release-gate).
+  Then create `release/vX.Y.Z` from `develop` and create the GitHub Release draft
+  at that exact candidate commit. Creating the draft may create its version tag;
+  do not retarget it. Build the APK with EAS using `android-apk`, upload it to
+  the draft, and verify the artifact. Only after separate publication approval,
+  merge the release branch `--no-ff` into `main`, verify the tag target, and
+  back-merge into `develop`. Create `hotfix/vX.Y.Z` from `main`, then merge to
+  `main`, tag, and merge to `develop`.
 - External contributors fork and use `contrib/ISSUE-slug`, submitting a PR
   into `develop`. Contributor PRs are squash-merged with a Conventional
   Commit title.
@@ -150,6 +153,8 @@ Work-placement quick start:
   merged task branches and keep phase branches. Do not push unless asked;
   report merge commands in chat.
 - **CM-2 — Active:** After any merge that lands on a target branch (task->phase, phase->develop, release->main, main->develop): git fetch --all --prune; git switch <target>; git pull --ff-only. Refuse and report if the worktree is dirty, the fast-forward fails or the target has no upstream. This rule never authorizes pushing; R3 is unchanged.
+
+Device checklist policy: see [the release gate](docs/releases/device-test-checklist.md#release-gate) and maintenance rules in `docs/memory/rules.md`.
 
 ### Gates
 

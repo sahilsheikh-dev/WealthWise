@@ -1,4 +1,47 @@
-# WealthWise v1.0.0 Android Device Test Checklist
+# WealthWise Android Device Test Checklist
+
+This checklist records owner-run Android physical-device checks for WealthWise releases. Keep each check with the release it verifies and preserve its result history. Automated tests and Expo exports do not replace physical-device verification.
+
+## Next release device checks
+
+Version not yet decided
+
+| Field | Value |
+|---|---|
+| App version | To be decided |
+| Device model | |
+| Android version | |
+| Tester | |
+| Date | |
+
+Use only `Pass`, `Fail`, or `Blocked` after running each check. `Not run` remains the pending marker.
+
+### Results
+
+| ID | Test | Result | Notes |
+|---|---|---|---|
+| O61 | Verify the searchable Dropdown keyboard remains usable and the sheet stays keyboard-safe on iOS and Android. | Not run | P20-S-R2; physical-device check required. |
+| O62 | Verify screen readers announce the filtered-result count politely on iOS and Android. | Not run | P20-S-R2; physical-device check required. |
+| O63 | Verify the Dropdown clear-search control meets the 44x44 pt tap target on iOS and Android. | Not run | P20-S-R2; physical-device check required. |
+| O64 | Verify searchable Dropdown row layout and operation at real-device font scales 1.3 and 2.0 on iOS and Android. | Not run | P20-S-R2; physical-device check required. |
+| O65 | Edit and save an Emergency Fund target from its screen on a physical device. | Not run | P21-F; device check required. |
+| O66 | Verify Emergency Fund target Undo toast timing and exact one-step restoration on a physical device. | Not run | P21-F; device check required. |
+| O67 | Verify Home and Goals refresh to the edited Emergency Fund target on a physical device. | Not run | P21-F; device check required. |
+| O68 | Verify Emergency Fund target form layout at font scales 1.3 and 2.0 on a physical device. | Not run | P21-F; device check required. |
+| O69 | Verify an Invest transaction shows a neutral category before holding selection, blocks Save without a holding, and derives the category after selection. | Not run | P20-W D1; physical-device check required. |
+| O70 | Verify the expense Budget category picker, derived section context, searchable Custom option and custom category entry on iOS and Android. | Not run | P20-W D2; physical-device check required. |
+| O71 | Verify custom earned-income type entry and persistence in Budget income and Transaction forms, including trimming and reopening the saved value. | Not run | P20-W D3 implemented under schema v24; physical-device check required. |
+| O72 | Verify Transaction form scrolling, validation, category picker and custom category entry at font scales 1.3 and 2.0 on iOS and Android. | Not run | P20-W; physical-device check required. |
+| O73 | On a physical device, use Spend, Invest and Income items, including one-time and recurring items where applicable. Edit name, value/amount, start month, frequency and due day; verify both single-month and this-and-following edits. Delete with each scope, restart after each flow, and confirm the changed values and deletions persist. | Not run | P20-U-R1; device check required. |
+| O74 | On a physical device, create a linked one-time savings Budget item, then mark it Paid from Transactions with a different viewed month and after a month-only edit; verify one holding Deposit, one linked transaction, correct Budget actual, one-write persistence and one-step Undo. | Not run | P20-A-R3; owner’s exact triggering data and steps remain unknown. |
+
+### Owner follow-up
+
+No owner-reported results are recorded for these checks.
+
+## v1.0.0 device checks
+
+Version 1.0.0 · Published 2026-11-07
 
 | Field | Value |
 |---|---|
@@ -8,9 +51,9 @@
 | Tester | |
 | Date | |
 
-## Results
+Use only `Pass`, `Fail`, or `Blocked` after running each check. `Not run` remains the pending marker.
 
-Use only `Pass`, `Fail`, or `Blocked` after running each check.
+### Results
 
 | ID | Test | Result | Notes |
 |---|---|---|---|
@@ -56,22 +99,86 @@ Use only `Pass`, `Fail`, or `Blocked` after running each check.
 | K36 | Restore a backup and compare net worth; verify Erase all clears data. | Pass | |
 | L37 | Load 50-year data from the dev menu and verify smooth use and Undo; confirm larger export is refused with a message. | Pass | |
 | M38 | Verify dark theme, font scales 1.3 and 2.0, Android back, and lock screen. | Pass | |
+
+### Owner follow-up
+
+No additional owner follow-up is recorded for this release.
+
+## v1.1.0 device checks
+
+Version 1.1.0 · Published 2026-11-08
+
+| Field | Value |
+|---|---|
+| App version | 1.1.0 |
+| Device model | |
+| Android version | |
+| Tester | |
+| Date | |
+
+Use only `Pass`, `Fail`, or `Blocked` after running each check. `Not run` remains the pending marker.
+
+### Results
+
+| ID | Test | Result | Notes |
+|---|---|---|---|
 | N39 | Add quarterly and yearly income with a first-due month; check planned income, Received dues, and projected cash flow in due and non-due months. Export a backup, erase all, restore it, and verify frequencies survive. | Pass | |
 | N40 | Edit a value and verify it refreshes immediately without restarting the app. | Pass | |
 | N41 | Verify Budget overview shows the aggregate Pace graph and no stacked bar. | Pass | |
 | N42 | Mark linked recurring-plan dues and liability EMIs as Paid from Transactions, Home, Budget and reminder confirmation; verify linked ledgers update and Undo restores all changes. | Pass | |
 | N43 | Verify recurring investment and liability Entries show completed/pending counts, collapsed paid rows, and no installments after maturity or the final EMI date. | Pass | |
+
+### Owner follow-up
+
+The owner reports N39-N43 passed on 2026-11-08 and N44 passed on 2026-11-09, superseding the earlier Fail/Not run results.
+
+The Release 2 recurrence, edit-refresh, aggregate Pace, paid-sync/Undo, Entries, and linked one-time savings Paid/Undo checks are recorded as passed.
+
+Device model, Android version, and tester fields remain blank.
+
+## v1.1.1 device checks
+
+Version 1.1.1 · Published 2026-11-09
+
+| Field | Value |
+|---|---|
+| App version | 1.1.1 |
+| Device model | |
+| Android version | |
+| Tester | |
+| Date | |
+
+Use only `Pass`, `Fail`, or `Blocked` after running each check. `Not run` remains the pending marker.
+
+### Results
+
+| ID | Test | Result | Notes |
+|---|---|---|---|
 | N44 | Linked one-time savings item marked Paid from Transactions creates a holding entry; Undo removes it. | Pass | Owner-reported physical-device verification, 2026-11-09; P20-A-R2. |
 
-## Owner follow-up
+### Owner follow-up
 
-The owner reports N39-N43 passed on 2026-11-08 and N44 passed on 2026-11-09,
-superseding the earlier Fail/Not run results. The Release 2 recurrence,
-edit-refresh, aggregate Pace, paid-sync/Undo, Entries, and linked one-time
-savings Paid/Undo checks are recorded as passed. Device model, Android
-version, and tester fields remain blank.
+The owner reports N39-N43 passed on 2026-11-08 and N44 passed on 2026-11-09, superseding the earlier Fail/Not run results.
 
-## v1.2.0 release-candidate checks
+The Release 2 recurrence, edit-refresh, aggregate Pace, paid-sync/Undo, Entries, and linked one-time savings Paid/Undo checks are recorded as passed.
+
+Device model, Android version, and tester fields remain blank.
+
+## v1.2.0 device checks
+
+Version 1.2.0 · Published 2026-11-11
+
+| Field | Value |
+|---|---|
+| App version | 1.2.0 |
+| Device model | |
+| Android version | |
+| Tester | |
+| Date | |
+
+Use only `Pass`, `Fail`, or `Blocked` after running each check. `Not run` remains the pending marker.
+
+### Results
 
 | ID | Test | Result | Notes |
 |---|---|---|---|
@@ -91,23 +198,16 @@ version, and tester fields remain blank.
 | O58 | Verify financial flows on device: holding entries/valuations, linked transaction/goal/Emergency Fund updates and Undo, recurring-plan stop/resume, and liability closure/foreclosure. | Pass | Owner-reported, 2026-11-11. |
 | O59 | Verify backup/restore on device: encrypted export/import, wrong-passphrase handling, native file picker/share sheet, and erase-all. | Pass | Owner-reported, 2026-11-11. |
 | O60 | Verify Budget/list layouts: recurring holding/liability summaries, completed/pending counts and date ordering at larger font scales. | Pass | Owner-reported, 2026-11-11. |
-| O61 | Verify the searchable Dropdown keyboard remains usable and the sheet stays keyboard-safe on iOS and Android. | Not run | P20-S-R2; physical-device check required. |
-| O62 | Verify screen readers announce the filtered-result count politely on iOS and Android. | Not run | P20-S-R2; physical-device check required. |
-| O63 | Verify the Dropdown clear-search control meets the 44x44 pt tap target on iOS and Android. | Not run | P20-S-R2; physical-device check required. |
-| O64 | Verify searchable Dropdown row layout and operation at real-device font scales 1.3 and 2.0 on iOS and Android. | Not run | P20-S-R2; physical-device check required. |
-| O65 | Edit and save an Emergency Fund target from its screen on a physical device. | Not run | P21-F; device check required. |
-| O66 | Verify Emergency Fund target Undo toast timing and exact one-step restoration on a physical device. | Not run | P21-F; device check required. |
-| O67 | Verify Home and Goals refresh to the edited Emergency Fund target on a physical device. | Not run | P21-F; device check required. |
-| O68 | Verify Emergency Fund target form layout at font scales 1.3 and 2.0 on a physical device. | Not run | P21-F; device check required. |
-| O69 | Verify an Invest transaction shows a neutral category before holding selection, blocks Save without a holding, and derives the category after selection. | Not run | P20-W D1; physical-device check required. |
-| O70 | Verify the expense Budget category picker, derived section context, searchable Custom option and custom category entry on iOS and Android. | Not run | P20-W D2; physical-device check required. |
-| O71 | Verify custom earned-income type entry and persistence in Budget income and Transaction forms, including trimming and reopening the saved value. | Not run | P20-W D3 implemented under schema v24; physical-device check required. |
-| O72 | Verify Transaction form scrolling, validation, category picker and custom category entry at font scales 1.3 and 2.0 on iOS and Android. | Not run | P20-W; physical-device check required. |
-| O73 | On a physical device, use Spend, Invest and Income items, including one-time and recurring items where applicable. Edit name, value/amount, start month, frequency and due day; verify both single-month and this-and-following edits. Delete with each scope, restart after each flow, and confirm the changed values and deletions persist. | Not run | P20-U-R1; device check required. |
-| O74 | On a physical device, create a linked one-time savings Budget item, then mark it Paid from Transactions with a different viewed month and after a month-only edit; verify one holding Deposit, one linked transaction, correct Budget actual, one-write persistence and one-step Undo. | Not run | P20-A-R3; owner’s exact triggering data and steps remain unknown. |
 
-The owner reports O45-O60 passed on 2026-11-11. Device model, Android
-version, and tester fields were not supplied and remain blank.
+### Owner follow-up
+
+The owner reports O45-O60 passed on 2026-11-11. Device model, Android version, and tester fields were not supplied and remain blank.
+
+## Release gate
+
+A release must not be built, drafted, tagged or published while any row in ANY section of the device checklist (the Next release section and every earlier section) has a Result other than Pass. Not run, Fail and Blocked all block. Check the checklist first; if blocked, stop and report the blocking IDs, and do not start the build or the GitHub Release draft. A Pass may only be recorded from an owner-observed or owner-reported device result, never inferred from automated tests or Expo exports. Only an explicit written owner waiver for named IDs lifts the block; record the waiver in the ledger (Owner-run actions log) and in the release note, and leave the row's Result unchanged.
+
+Maintenance rules: new device checks go under Next release device checks (or the decided version's section) with the next free ID, never into a published release's section, never renumbered. When the next version is decided, retitle that section `## vX.Y.Z device checks (next release)` and fill its App version. On publication, retitle it `## vX.Y.Z device checks`, set the published date, move it to the bottom of the version list (ascending order), and create a new empty `## Next release device checks` section at the top. Device-check results the owner reports are recorded under rule R8 (Owner-run actions log) with their evidence.
 
 ## How to run
 
