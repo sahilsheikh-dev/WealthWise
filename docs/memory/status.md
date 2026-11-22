@@ -817,7 +817,8 @@
   at 12:43:16 IST. Local `develop` and `origin/develop` match at `aeacbfd65e74d0cc5428a9b2460864223e7d9cc6`.
   Gate 4 exits 0 (21/21 checks passed, no issues detected). The prior Gate 4 exit 1 exception on six SDK 57 patch mismatches was cleared by task cleanup-expo-sdk57-patch-align.
   Device checklist is merged to `develop` (78 rows, release gate rule).
-  O61–O74 remain Not run and block releases.
+  The owner reported physical-device validation for O61–O74 on 2026-11-22 as Pass.
+  All 78 rows in the device checklist now Pass; the release gate is unblocked.
 
 
 ## Current task — CR-119 device checklist by release (2026-11-22)
@@ -877,3 +878,20 @@
 - All six gates passed with exit 0; Gate 4 now passes with exit 0 (21/21 checks passed, no issues detected).
 - Six protected-file hashes match. No application code or schema changed.
 - Device checks O61–O74 remain Not run and block releases.
+
+
+## Current task — docs-device-checks-pass-o61-o74 (2026-11-22)
+
+- Branch: `task/docs-device-checks-pass-o61-o74`; standalone lifecycle branch: `documentation`.
+- Recorded owner-reported physical-device validation Pass for checks O61–O74:
+  - O61–O64: Searchable shared Dropdown keyboard usability, polite screen-reader announcements, clear tap target (44x44 pt), and font scale 1.3/2.0 layout (P20-S-R2).
+  - O65–O68: Emergency Fund target edit/save, Undo toast timing, Home/Goals refresh, and font scale 1.3/2.0 layout (P21-F).
+  - O69: Invest transaction neutral category and holding selection derivation (P20-W D1).
+  - O70: Expense Budget category picker, derived section, and custom category entry (P20-W D2).
+  - O71: Custom earned-income type entry, trimming, persistence, and reopening under schema v24 (P20-W D3).
+  - O72: Transaction form scrolling, validation, category picker, and font scale 1.3/2.0 layout (P20-W).
+  - O73: Spend/Invest/Income item edit/delete persistence across single/following scopes and device restart (P20-U-R1).
+  - O74: Linked one-time savings Budget item marked Paid from Transactions, holding deposit, Budget actual, and Undo (P20-A-R3).
+- Device model, OS version, and tester details were not supplied and remain blank.
+- All 78 rows across all 5 sections of the device checklist now Pass.
+- The release gate is unblocked for candidate builds.

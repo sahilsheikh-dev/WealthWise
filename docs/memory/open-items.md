@@ -906,12 +906,7 @@ Not adopted in CR-106:
 
 ## Pending owner actions (2026-11-22 reconciliation)
 
-- **Next-release device gate:** O61–O74 are Not run and block building, drafting,
-  tagging and publishing a release. O61–O64 are P20-S-R2; O65–O68 are P21-F;
-  O69–O72 are P20-W; O73 is P20-U-R1; O74 is P20-A-R3. The exact owner
-  reproduction details for P20-A-R3 are still unknown. A named-ID written
-  waiver must be recorded in the Owner-run actions log and release note; the
-  checklist Result remains unchanged.
+- **Next-release device gate:** O61–O74 were tested and validated on physical devices by the owner on 2026-11-22 and marked Pass. O61–O64 are P20-S-R2; O65–O68 are P21-F; O69–O72 are P20-W; O73 is P20-U-R1; O74 is P20-A-R3. All 78 rows in the device checklist now Pass; the release gate is unblocked for candidate builds.
 - **Documentation PR flow:** CR-118's PR #184/#185 and CR-119's PR #186/#187
   merges are confirmed in Git history and terminal session evidence. PR #186
   merged `task/docs-device-checklist-by-release` into `documentation` at

@@ -12,7 +12,7 @@ Version not yet decided
 | Device model | |
 | Android version | |
 | Tester | |
-| Date | |
+| Date | 2026-11-22 |
 
 Use only `Pass`, `Fail`, or `Blocked` after running each check. `Not run` remains the pending marker.
 
@@ -20,24 +20,24 @@ Use only `Pass`, `Fail`, or `Blocked` after running each check. `Not run` remain
 
 | ID | Test | Result | Notes |
 |---|---|---|---|
-| O61 | Verify the searchable Dropdown keyboard remains usable and the sheet stays keyboard-safe on iOS and Android. | Not run | P20-S-R2; physical-device check required. |
-| O62 | Verify screen readers announce the filtered-result count politely on iOS and Android. | Not run | P20-S-R2; physical-device check required. |
-| O63 | Verify the Dropdown clear-search control meets the 44x44 pt tap target on iOS and Android. | Not run | P20-S-R2; physical-device check required. |
-| O64 | Verify searchable Dropdown row layout and operation at real-device font scales 1.3 and 2.0 on iOS and Android. | Not run | P20-S-R2; physical-device check required. |
-| O65 | Edit and save an Emergency Fund target from its screen on a physical device. | Not run | P21-F; device check required. |
-| O66 | Verify Emergency Fund target Undo toast timing and exact one-step restoration on a physical device. | Not run | P21-F; device check required. |
-| O67 | Verify Home and Goals refresh to the edited Emergency Fund target on a physical device. | Not run | P21-F; device check required. |
-| O68 | Verify Emergency Fund target form layout at font scales 1.3 and 2.0 on a physical device. | Not run | P21-F; device check required. |
-| O69 | Verify an Invest transaction shows a neutral category before holding selection, blocks Save without a holding, and derives the category after selection. | Not run | P20-W D1; physical-device check required. |
-| O70 | Verify the expense Budget category picker, derived section context, searchable Custom option and custom category entry on iOS and Android. | Not run | P20-W D2; physical-device check required. |
-| O71 | Verify custom earned-income type entry and persistence in Budget income and Transaction forms, including trimming and reopening the saved value. | Not run | P20-W D3 implemented under schema v24; physical-device check required. |
-| O72 | Verify Transaction form scrolling, validation, category picker and custom category entry at font scales 1.3 and 2.0 on iOS and Android. | Not run | P20-W; physical-device check required. |
-| O73 | On a physical device, use Spend, Invest and Income items, including one-time and recurring items where applicable. Edit name, value/amount, start month, frequency and due day; verify both single-month and this-and-following edits. Delete with each scope, restart after each flow, and confirm the changed values and deletions persist. | Not run | P20-U-R1; device check required. |
-| O74 | On a physical device, create a linked one-time savings Budget item, then mark it Paid from Transactions with a different viewed month and after a month-only edit; verify one holding Deposit, one linked transaction, correct Budget actual, one-write persistence and one-step Undo. | Not run | P20-A-R3; owner’s exact triggering data and steps remain unknown. |
+| O61 | Verify the searchable Dropdown keyboard remains usable and the sheet stays keyboard-safe on iOS and Android. | Pass | P20-S-R2; owner-reported physical-device verification, 2026-11-22. |
+| O62 | Verify screen readers announce the filtered-result count politely on iOS and Android. | Pass | P20-S-R2; owner-reported physical-device verification, 2026-11-22. |
+| O63 | Verify the Dropdown clear-search control meets the 44x44 pt tap target on iOS and Android. | Pass | P20-S-R2; owner-reported physical-device verification, 2026-11-22. |
+| O64 | Verify searchable Dropdown row layout and operation at real-device font scales 1.3 and 2.0 on iOS and Android. | Pass | P20-S-R2; owner-reported physical-device verification, 2026-11-22. |
+| O65 | Edit and save an Emergency Fund target from its screen on a physical device. | Pass | P21-F; owner-reported physical-device verification, 2026-11-22. |
+| O66 | Verify Emergency Fund target Undo toast timing and exact one-step restoration on a physical device. | Pass | P21-F; owner-reported physical-device verification, 2026-11-22. |
+| O67 | Verify Home and Goals refresh to the edited Emergency Fund target on a physical device. | Pass | P21-F; owner-reported physical-device verification, 2026-11-22. |
+| O68 | Verify Emergency Fund target form layout at font scales 1.3 and 2.0 on a physical device. | Pass | P21-F; owner-reported physical-device verification, 2026-11-22. |
+| O69 | Verify an Invest transaction shows a neutral category before holding selection, blocks Save without a holding, and derives the category after selection. | Pass | P20-W D1; owner-reported physical-device verification, 2026-11-22. |
+| O70 | Verify the expense Budget category picker, derived section context, searchable Custom option and custom category entry on iOS and Android. | Pass | P20-W D2; owner-reported physical-device verification, 2026-11-22. |
+| O71 | Verify custom earned-income type entry and persistence in Budget income and Transaction forms, including trimming and reopening the saved value. | Pass | P20-W D3 implemented under schema v24; owner-reported physical-device verification, 2026-11-22. |
+| O72 | Verify Transaction form scrolling, validation, category picker and custom category entry at font scales 1.3 and 2.0 on iOS and Android. | Pass | P20-W; owner-reported physical-device verification, 2026-11-22. |
+| O73 | On a physical device, use Spend, Invest and Income items, including one-time and recurring items where applicable. Edit name, value/amount, start month, frequency and due day; verify both single-month and this-and-following edits. Delete with each scope, restart after each flow, and confirm the changed values and deletions persist. | Pass | P20-U-R1; owner-reported physical-device verification, 2026-11-22. |
+| O74 | On a physical device, create a linked one-time savings Budget item, then mark it Paid from Transactions with a different viewed month and after a month-only edit; verify one holding Deposit, one linked transaction, correct Budget actual, one-write persistence and one-step Undo. | Pass | P20-A-R3; owner-reported physical-device verification, 2026-11-22. |
 
 ### Owner follow-up
 
-No owner-reported results are recorded for these checks.
+The owner reports O61-O74 passed on 2026-11-22. Device model, Android version, and tester fields were not supplied and remain blank.
 
 ## v1.0.0 device checks
 
