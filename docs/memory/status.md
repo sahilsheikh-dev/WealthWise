@@ -1,6 +1,11 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-22 | Updates: owner and AI agents -->
 
 # Status
+- **CR-128 (2026-11-22) — Once-only frequency for plans/liabilities cancelled by owner.**
+  The owner decided not to add Once-only frequency to investment plans or liabilities;
+  investment plans retain existing manual (one-time) and recurring plan kinds, and
+  liabilities retain existing one-time and recurring EMI structures. No schema or form
+  changes are made. Updated open-items.md, status.md, PROGRESS.md, and ledger tests.
 - **P20-Y (2026-11-22) — Done; O76 physical-device check validated Pass.**
   CR-126 implements three related changes: (1) payment date input (defaulting
   to today, customizable) when marking scheduled/budgeted items Paid in
