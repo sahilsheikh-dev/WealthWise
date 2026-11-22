@@ -1,6 +1,20 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-22 | Updates: owner and AI agents -->
 
 # Status
+- **P20-Y (2026-11-22) — Done; O76 physical-device check remains open.**
+  CR-126 implements three related changes: (1) payment date input (defaulting
+  to today, customizable) when marking scheduled/budgeted items Paid in
+  Transactions and Budget, propagating to clearDue / clearDuesThrough /
+  addTransaction; (2) support for one asset linking to multiple one-time
+  investment Budget items, attributing holding entries by category/note and
+  updating the correct holding and budget actuals; (3) limiting Transaction
+  form Expense categories to user-created Budget items and applicable scheduled
+  items (dues/policies) plus Custom, while preserving historical removed
+  categories when editing existing transactions. Full regression tests pass
+  in PaidAmountDialog.test.tsx, PendingItemActions.paymentDate.test.tsx,
+  budgetMultiAssetLink.test.ts, budgetCategoriesLimited.test.ts, and
+  TransactionForm.test.tsx. All six repository gates pass exit 0. O76 remains
+  Not run.
 - **P20-X (2026-11-22) — Done; O75 physical-device check remains open.**
   Implemented sorting for Budget categories and items throughout WealthWise using
   existing sorting behavior in Transactions, Assets, and Liabilities as reference.
