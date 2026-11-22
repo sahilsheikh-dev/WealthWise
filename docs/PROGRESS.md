@@ -74,13 +74,14 @@ parts count in the numerator and denominator. P1–P14 count as one part
 each.
 
 ```text
-Overall progress ████████░░ 80% (154/193)
+Overall progress ████████░░ 78% (154/197)
 P1          ██████████ 100% (1/1)
 P2          ██████████ 100% (1/1)
 P3          ██████████ 100% (1/1)
 P4          ██████████ 100% (1/1)
 P5          ██████████ 100% (1/1)
 P6          ██████████ 100% (1/1)
+P7          ░░░░░░░░░░ 0% (0/4)
 P8          ██████████ 100% (1/1)
 P9          ██████████ 100% (1/1)
 P10         ██████████ 100% (1/1)
@@ -125,7 +126,10 @@ P44         ░░░░░░░░░░ 0% (0/4)
 | P4 | — | Done (user-confirmed in app, 2026-10-15) | User confirmation; current implementation exists, original phase evidence unavailable. | 2026-10-15 |
 | P5 | — | Done (user-confirmed in app, 2026-10-15) | User confirmation; exact original phase commit/test mapping unavailable. | 2026-10-15 |
 | P6 | — | Done (user-confirmed in app, 2026-10-15) | User confirmation; current plain backup/security features do not prove all original acceptance criteria. | 2026-10-15 |
-| P7 | — | Empty (reserved) | Formerly schema migration; tracking moved to independent entity schema-migration per CR-114. Reserved empty slot eligible for adjacent backup & security (P6) or investments (P8) work per R7. | 2026-11-12 |
+| P7-A | — | Planned | Research Google Drive REST API (v3) appDataFolder scope, Expo SDK 57 Google OAuth2/Sign-In integration, and background scheduling (expo-background-fetch / Android WorkManager) with Wi-Fi gating. Placement: rule 4; searched dashboard, register, memory; related P6 backup; reason: automated cloud backup extends P6 Backup & Security under Rule R7 empty slot. Dependencies: none. Evidence: not started. | 2026-11-22 |
+| P7-B | — | Planned | Pure domain model for cloud backup scheduling (frequency: daily / weekly / monthly / manual, retention policy, zero-knowledge local passphrase encryption before upload). Placement: rule 4; searched dashboard, register, memory; related P7-A; reason: pure domain scheduling and encryption logic. Dependencies: P7-A. Evidence: not started. | 2026-11-22 |
+| P7-C | — | Planned | UI & settings in Backup / Security screen (Connect/Disconnect Google Drive, last backup status/timestamp, frequency picker, Wi-Fi only toggle, "Back up now", and "Restore from Google Drive" flow). Placement: rule 4; searched dashboard, register, memory; related P7-B; reason: user interface and interaction for cloud backup. Dependencies: P7-B. Evidence: not started. | 2026-11-22 |
+| P7-D | — | Planned | Deterministic demo data, offline fallback, token revocation handling, unit tests, and device checklist rows. Placement: rule 4; searched dashboard, register, memory; related P7-C; reason: demo fixtures, offline resilience and device verification for cloud backup. Dependencies: P7-C. Evidence: not started. | 2026-11-22 |
 | P8 | — | Done (user-confirmed in app, 2026-10-15) | User confirmation; current investment features do not prove the original phase report. | 2026-10-15 |
 | P9 | — | Done (user-confirmed in app, 2026-10-15) | User confirmation; current link-management code does not prove the original phase report. | 2026-10-15 |
 | P10 | — | Done (user-confirmed in app, 2026-10-15) | User confirmation; current schedules and virtualized history do not prove original acceptance. | 2026-10-15 |
@@ -3400,6 +3404,7 @@ evidence present in exports/checkpoints.
 | CR-120 | cleanup | — | current | 2026-11-22 | Align Expo SDK 57 patch versions for expo, expo-constants, expo-linking, expo-router, expo-sharing, expo-sqlite to resolve Gate 4. | Done; upgraded six packages to Expo SDK 57 recommended versions; Gate 4 exits 0 (21/21); all six gates pass; no app behavior change. | Dependency upgrade in package.json and package-lock.json; commit `fac699e`. | Old: Gate 4 failed with exit 1 on 6 patch mismatches as an owner-approved exception. New: all packages match SDK 57 requirements, Gate 4 passes exit 0 (21/21). Reason: eliminate dependency patch mismatches and clear Gate 4 exception. Placement: rule 1; searched dashboard, register, memory; related cleanup lifecycle; reason: dependency maintenance is ongoing cleanup lifecycle work. | current request |
 | CR-121 | documentation | — | current | 2026-11-22 | Record owner-reported physical-device validation Pass for O61–O74 across Dropdowns, Emergency Fund, Invest transactions, Budget categories, custom earned income, and Budget items. | Done; O61–O74 marked Pass in Next release device checks; release gate unblocked for candidate builds. | Documentation commits and PR merges on documentation and develop. | Physical-device validation performed and reported Pass by owner on 2026-11-22; device model, OS version and tester details omitted. Placement: rule 1; searched dashboard, register, phase history, roadmap, memory, device checklist and tests; related documentation lifecycle; reason: recording owner-reported physical-device validation is ongoing documentation work. | current request |
 | CR-122 | documentation | — | current | 2026-11-22 | Record physical device details across all release checklist tables, update verification notes, and add checklist maintenance prompting rule with previous release suggestions. | Done; device model (realme Narzo 60 Pro 5g), Android version (15 Vanilla Ice Cream), tester (sahilsheikh-dev), and respective release dates recorded across all 5 checklist sections; Pass notes updated; maintenance rule updated in all policy docs. | Documentation commits on task/docs-device-checklist-metadata-rules, merged into documentation and develop. | Placement: rule 1; searched dashboard, register, phase history, memory, device checklist and policy files; related documentation lifecycle; reason: checklist metadata and maintenance policy updates are ongoing documentation work. | current request |
+| CR-123 | P7 | — | current | 2026-11-22 | Record Phase P7 — Automated Google Drive Cloud Backup as Planned across repository ledgers, memory, and roadmap under Rule R7 (adjacent to P6 Backup & Security). | Planned; subtasks P7-A through P7-D planned across PROGRESS.md, status.md, open-items.md, and work-placement.md. | Planning docs commit; no implementation. | Phase title: P7 — Cloud Backup (Google Drive). Subtasks P7-A to P7-D all Planned; Evidence: not started. Placement: rule 4; searched dashboard, register, phase history, roadmap, memory; related P6 backup; reason: automated cloud backup extends P6 Backup & Security under Rule R7 empty slot. | current request |
 | P21-F-R1 | P21 | P21-F | current | 2026-11-21 | Record verified integration of completed P21-F through task PR #170 and phase PR #171. | Done; exact merge SHAs and CM-2 synchronization are recorded. | Test-first commit `647a0c9`; task merge `c877f6d19e35c0b9fbcba90e9722da7531948c8e`; phase merge `2e5e18a7a2be207387a7462b039547f51b0e4631`. | No app behavior changed; O65–O68 remain Not run. Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and P21-F records; related P21-F and CM-2; reason: record integration evidence as the next revision of completed P21-F. | current request |
 | P20-S-R2 | P20 | P20-S | current | 2026-11-21 | Add a default-visible, accessible Search field to shared Dropdown, with normalized multiword matching, stable ranking, grouping, Custom pinning and no-match feedback. | Done; Revised by P20-S-R2-R1 and P20-S-R2-R2. Gate 1 `npm test -- --coverage` exit 0 (102 suites, 1,342 passed, 1 skipped); Gates 2–3 exit 0; Gate 4 `npx expo-doctor` exit 1 on the required SDK 57 patch mismatch (20/21 checks; DNS attempt and one retry recorded below); Gates 5–6 exit 0. Device checks O61–O64 remain Not run. | Test-first ledger `36e8ba4`; helper tests `a959353`, Custom-order regression `81a4d31`; helper `41bb704`, `f340fca`; component tests `f169bd6`, `3a29c94`; component `70eb82a`; route-mock fix and verification `d69c5cf`; PRs #164/#165 and exact merge SHAs in P20-S-R2-R1. | Assumed: no schema, domain, demo-data or dependency changes; confirmed. Old sheet text assertion listed only group/option labels. New assertion adds Search and the 3-result announcement while preserving those labels. Reason: the sheet now exposes search and result-count feedback. Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and Dropdown source/tests; related P20-S; reason this revises completed shared Dropdown behavior from CR-70. | current request |
 | P20-S-R2-R1 | P20 | P20-S-R2 | current | 2026-11-21 | Record verified integration evidence for the searchable shared Dropdown. | Done; task PR #164 merged into `phase/20-budget` at `185a5ea125f64ac104344f00ad013d68cdb7a946`; phase PR #165 merged into `develop` at `6b50a1dbd36b401352776e71028fc07071c11991`. Focused ledger and memory tests pass; O61–O64 remain Not run. | Test-first commit `cf90f78`; PR merge evidence recorded here. | Old: the task row and memory showed PR integration as pending. New: exact task and phase PRs and merge SHAs are recorded, and local `develop` is synchronized. Reason: make the integrated state auditable. Placement: rule 2; searched dashboard, register, phase history, roadmap, memory and touched records; related P20-S-R2 and CM-2; reason this is the next sequential revision of completed P20-S-R2. | current request |
@@ -3853,6 +3858,7 @@ verification.
 | CR-120 | Align Expo SDK 57 patch dependencies to resolve Gate 4 exception. | Done; upgraded expo (~57.0.32 -> ~57.0.33), expo-constants (~57.0.21 -> ~57.0.24), expo-linking (~57.0.13 -> ~57.0.14), expo-router (~57.0.30 -> ~57.0.31), expo-sharing (~57.0.25 -> ~57.0.26), expo-sqlite (~57.0.4 -> ~57.0.5). All six gates pass; Gate 4 exits 0 (21/21). | Commits: dependency alignment `fac699e` and docs commit. Placement: rule 1; searched dashboard, register, memory; related cleanup lifecycle; reason: dependency maintenance is ongoing cleanup lifecycle work. | 2026-11-22 |
 | CR-121 | Record owner-reported physical-device validation Pass for O61–O74 and unblock next release device gate. | Done; all 14 Next release device checks O61–O74 updated from Not run to Pass based on owner report (2026-11-22). All 78 rows in the device checklist now Pass. | Documentation commits on task/docs-device-checks-pass-o61-o74, merged into documentation and develop via PRs. Placement: rule 1; searched dashboard, register, phase history, memory, device checklist; related documentation lifecycle; reason: recording owner-reported physical-device validation. | 2026-11-22 |
 | CR-122 | Update device checklist with physical device metadata across all releases and add checklist maintenance confirmation rule. | Done; Device model (realme Narzo 60 Pro 5g), Android version (15 Vanilla Ice Cream), Tester (sahilsheikh-dev) and release verification dates populated across all 5 checklist sections; Notes updated for all Pass rows; maintenance rule updated in checklist and policy docs. | Documentation commits on task/docs-device-checklist-metadata-rules, merged into documentation and develop via PRs. Placement: rule 1; searched dashboard, register, memory, device checklist; related documentation lifecycle; reason: checklist metadata and maintenance policy updates. | 2026-11-22 |
+| CR-123 | Record Phase P7 — Automated Google Drive Cloud Backup as Planned across repository ledgers, memory, and roadmap under Rule R7 (adjacent to P6 Backup & Security). | Planned; subtasks P7-A through P7-D planned across PROGRESS.md, status.md, open-items.md, and work-placement.md. | Planning docs commit; no implementation. | Phase title: P7 — Cloud Backup (Google Drive). Subtasks P7-A to P7-D all Planned; Evidence: not started. Placement: rule 4; searched dashboard, register, phase history, roadmap, memory; related P6 backup; reason: automated cloud backup extends P6 Backup & Security under Rule R7 empty slot. | 2026-11-22 |
 ## 8. Known issues and risks
 
 On 2026-10-15 the user confirmed that every item previously marked user-reported, unverified is done, available in the app and working. Items that were never labelled that way keep their own device-check lists.
@@ -4337,6 +4343,27 @@ On 2026-10-15 the user confirmed that every item previously marked user-reported
       category plan overruns. More than three add-ons would bloat v1; the
       recommendation is the heat grid, day detail, weekday summary and
       no-spend streak. Dependencies: P44-C. Evidence: not started.
+23. **P7 — Cloud Backup (Google Drive)** (Planned; Rule R7 slot-filling adjacent to P6 Backup & Security):
+    - **P7-A — Research & prototyping:** research Google Drive REST API (v3)
+      `appDataFolder` scope (`https://www.googleapis.com/auth/drive.appdata`),
+      Expo SDK 57 Google OAuth2/Sign-In integration, and background scheduling
+      (`expo-background-fetch` / Android WorkManager) with Wi-Fi gating.
+      Keep the app serverless, zero-knowledge, and private. Dependencies: none.
+      Evidence: not started.
+    - **P7-B — Pure domain model:** pure domain model for cloud backup
+      scheduling (frequency: daily / weekly / monthly / manual, retention
+      policy: keep latest N backups, zero-knowledge local passphrase
+      encryption before upload using AES-GCM). Pure `src/domain/` logic without
+      clock reads or native imports. Dependencies: P7-A. Evidence: not started.
+    - **P7-C — UI & settings:** UI & settings in Backup / Security screen
+      (Connect/Disconnect Google Drive account, last backup status/timestamp,
+      frequency picker, Wi-Fi only toggle, "Back up now", and "Restore from
+      Google Drive" flow). Accessibility labels, theme consistency, and 44pt tap
+      targets required. Dependencies: P7-B. Evidence: not started.
+    - **P7-D — Fixtures, testing & device verification:** deterministic demo
+      data per DEC-DEMO, offline fallback and token revocation handling, unit
+      and store tests, and device checklist rows. Dependencies: P7-C. Evidence:
+      not started.
 
 ### CM-2 Git sync rule (Active; enforced)
 
@@ -12607,7 +12634,7 @@ are guarded by `progressLedger.test.ts`.
 | P4 | `phase/04-plans-and-liabilities` | `phase-04-complete` | `f3c9daaf66e0df5e2f6f6ff490563d7f1cde5df9` | 1 |
 | P5 | `phase/05-goals-and-holdings` | `phase-05-complete` | `585656c09854d414ada4d2edacb9022e36645bd3` | 1 |
 | P6 | `phase/06-backup-and-security` | `phase-06-complete` | `487759ebe7bc0d423631ed16572afddc19f65ad0` | 1 |
-| P7 | Empty (reserved); `schema-migration` (historical branch name: `phase/07-schema-migration`) | `phase-07-complete` | `487759ebe7bc0d423631ed16572afddc19f65ad0` | 0 |
+| P7 | `phase/07-cloud-backup` | — | — | 4 |
 | P8 | `phase/08-investments` | `phase-08-complete` | `e31782c6452568a5908f987c1b85ec15ef22b0f0` | 1 |
 | P9 | `phase/09-asset-links` | `phase-09-complete` | `e31782c6452568a5908f987c1b85ec15ef22b0f0` | 1 |
 | P10 | `phase/10-schedules-and-dues` | `phase-10-complete` | `e31782c6452568a5908f987c1b85ec15ef22b0f0` | 1 |

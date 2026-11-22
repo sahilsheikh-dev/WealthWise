@@ -322,7 +322,7 @@ describe('permanent progress ledger', () => {
     expect(p20uR1).toContain('start month, frequency, due day');
     expect(p20uR1).toContain('both scopes');
     expect(p20uR1).toContain('H1–H5 findings are recorded in CONT3');
-    expect(ledger).toContain('Overall progress ████████░░ 80% (154/193)');
+    expect(ledger).toContain('Overall progress ████████░░ 78% (154/197)');
     expect(ledger).toContain('P20         ██████████ 100% (40/40)');
     const o73 = checklist.split('\n').find((line) => line.startsWith('| O73 |'));
     expect(o73).toContain('one-time and recurring');
@@ -687,7 +687,7 @@ describe('permanent progress ledger', () => {
     );
     const rowIds = rows.map((row) => row.split('|')[1]?.trim());
     const counts = new Map<number, { done: number; total: number }>();
-    const emptySlots = new Set([7, 27, 28, 32]);
+    const emptySlots = new Set([27, 28, 32]);
 
     expect(rowIds).toHaveLength(new Set(rowIds).size);
     for (const row of rows) {
@@ -737,10 +737,13 @@ describe('permanent progress ledger', () => {
     const phase18 = counts.get(18);
     expect(phase18?.total).toBeGreaterThan(0);
     expect(phase18?.done).toBe(phase18?.total);
-    for (const phase of [20, 21, 22, 23, 25, 30, 31, 43, 44]) {
+    for (const phase of [7, 20, 21, 22, 23, 25, 30, 31, 43, 44]) {
       const count = counts.get(phase);
       expect(count?.total).toBeGreaterThan(0);
-      if (phase === 20) {
+      if (phase === 7) {
+        expect(count?.done).toBe(0);
+        expect(count?.total).toBe(4);
+      } else if (phase === 20) {
         expect(count?.done).toBe(40);
         expect(count?.total).toBe(40);
         expect(dashboard.split('\n').find((line) => line.startsWith('| P20-A-R2 |')))
@@ -778,7 +781,7 @@ describe('permanent progress ledger', () => {
     const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
     const index = ledger.split('## 12. Phase branch index')[1]?.split('## 13. Independent entities')[0] ?? '';
     const counts = new Map<number, number>();
-    const emptySlots = new Set([7, 27, 28, 32]);
+    const emptySlots = new Set([27, 28, 32]);
     for (const line of dashboard.split('\n')) {
       const id = line.split('|')[1]?.trim();
       const phase = id?.match(/^P(\d+)(?:-|$)/);
@@ -792,6 +795,13 @@ describe('permanent progress ledger', () => {
     for (const line of rows) {
       const [, phase, branch, tag, commit, count] = line.split('|').map((cell) => cell.trim().replaceAll('`', ''));
       const number = Number(phase?.match(/^P(\d+)$/)?.[1]);
+      if (number === 7) {
+        expect(branch).toBe('phase/07-cloud-backup');
+        expect(tag).toBe('—');
+        expect(commit).toBe('—');
+        expect(Number(count)).toBe(4);
+        continue;
+      }
       if (number === 41) {
         expect(branch).toBe('phase/41-types-frequency-completion');
         expect(tag).toBe('—');
@@ -823,11 +833,7 @@ describe('permanent progress ledger', () => {
       if (emptySlots.has(number)) {
         expect(branch).toContain('Empty (reserved)');
         expect(Number(count)).toBe(0);
-        if (number === 7) {
-          expect(branch).toContain('schema-migration (historical branch name: phase/07-schema-migration)');
-          expect(tag).toBe('phase-07-complete');
-          expect(commit).toMatch(/^[0-9a-f]{40}$/);
-        } else if (number === 27) {
+        if (number === 27) {
           expect(branch).toContain('cleanup (historical branch name: phase/27-cleanup)');
           expect(tag).toBe('phase-27-complete');
           expect(commit).toMatch(/^[0-9a-f]{40}$/);
@@ -1180,7 +1186,7 @@ describe('permanent progress ledger', () => {
     expect(registerRow).toContain('185a5ea125f64ac104344f00ad013d68cdb7a946');
     expect(registerRow).toContain('6b50a1d');
     expect(phaseRow).toContain('| 40 |');
-    expect(ledger).toContain('Overall progress ████████░░ 80% (154/193)');
+    expect(ledger).toContain('Overall progress ████████░░ 78% (154/197)');
     expect(ledger).toContain('P20         ██████████ 100% (40/40)');
     expect(status).toContain('P20-S-R2-R1 records the verified');
   });
@@ -1213,7 +1219,7 @@ describe('permanent progress ledger', () => {
     expect(registerRow).toContain('CM-2 synchronized local `develop`');
     expect(promptLog.split('\n').filter((line) => line.startsWith('| P20-W-R1 |'))).toHaveLength(1);
     expect(phaseRow).toContain('| 40 |');
-    expect(ledger).toContain('Overall progress ████████░░ 80% (154/193)');
+    expect(ledger).toContain('Overall progress ████████░░ 78% (154/197)');
     expect(ledger).toContain('P20         ██████████ 100% (40/40)');
     expect(status).toContain('P20-W-R1 records task PR #174 and phase PR #175');
     expect(openItems).toContain('STOP GATE RESOLVED (DEC-P20W-D3-SCHEMA24');
@@ -1252,20 +1258,21 @@ describe('permanent progress ledger', () => {
     }
 
     // Empty slots in dashboard
-    for (const phase of [7, 27, 28, 32]) {
+    for (const phase of [27, 28, 32]) {
       const row = dashboard.split('\n').find((line) => line.startsWith(`| P${phase} |`));
       expect(row).toBeDefined();
       expect(row).toContain('Empty (reserved)');
     }
 
     // Empty slots in branch index
-    for (const phase of [7, 27, 28, 32]) {
+    for (const phase of [27, 28, 32]) {
       const row = branchIndex.split('\n').find((line) => line.startsWith(`| P${phase} |`));
       expect(row).toBeDefined();
       expect(row).toContain('Empty (reserved)');
     }
-    expect(branchIndex.split('\n').find((line) => line.startsWith('| P7 |'))).toContain('schema-migration');
-    expect(branchIndex.split('\n').find((line) => line.startsWith('| P7 |'))).toContain('historical branch name: `phase/07-schema-migration`');
+    expect(branchIndex.split('\n').find((line) => line.startsWith('| P7 |'))).toContain('phase/07-cloud-backup');
+    expect(branchIndex).toContain('schema-migration');
+    expect(branchIndex).toContain('historical branch name: `phase/07-schema-migration`');
     expect(branchIndex.split('\n').find((line) => line.startsWith('| P27 |'))).toContain('cleanup');
     expect(branchIndex.split('\n').find((line) => line.startsWith('| P27 |'))).toContain('historical branch name: `phase/27-cleanup`');
     expect(branchIndex.split('\n').find((line) => line.startsWith('| P28 |'))).toContain('qa-and-release');
@@ -1308,7 +1315,7 @@ describe('permanent progress ledger', () => {
       expect(norm).toContain('P28 for income recurrence / Budget income (P29) work');
       expect(norm).toContain('P32 for project health/community (P31) or widgets (P33) work');
     }
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P7 |'))).toContain('adjacent backup & security (P6) or investments (P8) work per R7');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P7-A |'))).toBeDefined();
     expect(dashboard.split('\n').find((line) => line.startsWith('| P27 |'))).toContain('adjacent accessibility & performance (P26) work per R7');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P28 |'))).toContain('adjacent income recurrence / Budget income (P29) work per R7');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P32 |'))).toContain('adjacent project health/community (P31) or widgets (P33) work per R7');
@@ -1323,11 +1330,11 @@ describe('permanent progress ledger', () => {
     const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
     const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
 
-    // (a) Prompt log rows must not have P7/P07/P27/P28/P32 in Phase column
+    // (a) Prompt log rows must not have P27/P28/P32 in Phase column
     const promptLogRows = promptLog.split('\n').filter((l) => l.startsWith('|') && !l.startsWith('| ID') && !l.startsWith('|---'));
     for (const row of promptLogRows) {
       const phaseCol = row.split('|')[2]?.trim();
-      expect(phaseCol).not.toMatch(/^(?:P0?7|P27|P28|P32)$/);
+      expect(phaseCol).not.toMatch(/^(?:P27|P28|P32)$/);
     }
 
     // CR register rows must not have P28 in phase column or stray P28 rows
@@ -1335,7 +1342,7 @@ describe('permanent progress ledger', () => {
     for (const row of crRows) {
       const parts = row.split('|').map((s) => s.trim());
       if (parts.length > 3) {
-        expect(parts[2]).not.toMatch(/^(?:P0?7|P27|P28|P32)$/);
+        expect(parts[2]).not.toMatch(/^(?:P27|P28|P32)$/);
       }
     }
 
@@ -1402,5 +1409,39 @@ describe('permanent progress ledger', () => {
     expect(openItems).not.toContain('/tmp/history_map.md');
     expect(independentEntities).toContain('docs/history/entity-history-map.md');
 
+  });
+
+  it('records CR-123 planned scope and fills P7 slot under Rule R7', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const roadmap = ledger.split('## 9. Upcoming roadmap')[1]?.split('## 10. Verification matrix')[0] ?? '';
+    const branchIndex = ledger.split('## 12. Phase branch index')[1]?.split('## 13. Independent entities')[0] ?? '';
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const placement = readFileSync(join(process.cwd(), 'docs/memory/work-placement.md'), 'utf8');
+
+    expect(dashboard.split('\n').filter((line) => /^\| P7-[A-D] \|/.test(line))).toHaveLength(4);
+    for (const [id, dependency] of [
+      ['P7-A', 'Dependencies: none'],
+      ['P7-B', 'Dependencies: P7-A'],
+      ['P7-C', 'Dependencies: P7-B'],
+      ['P7-D', 'Dependencies: P7-C'],
+    ]) {
+      const row = dashboard.split('\n').find((line) => line.startsWith(`| ${id} |`));
+      expect(row).toBeDefined();
+      expect(row).toContain('| Planned |');
+      expect(row).toContain(dependency);
+      expect(row).toContain('Evidence: not started');
+      expect(row).toMatch(/Placement:\s+rule [1-5]/);
+    }
+
+    expect(promptLog.split('\n').find((line) => line.startsWith('| CR-123 |'))).toContain('P7');
+    expect(register.split('\n').find((line) => line.startsWith('| CR-123 |'))).toBeDefined();
+    expect(roadmap).toContain('**P7 — Cloud Backup (Google Drive)**');
+    expect(branchIndex.split('\n').find((line) => line.startsWith('| P7 |'))).toContain('phase/07-cloud-backup');
+    expect(status).toContain('P7-plan-cloud-backup');
+    expect(openItems).toContain('Phase P7 Google Drive automated backup (planned)');
+    expect(placement).toContain('phase/07-cloud-backup');
   });
 });

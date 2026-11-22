@@ -904,6 +904,15 @@ Not adopted in CR-106:
   old-to-new commit mapping in [PROGRESS.md](../PROGRESS.md).
 
 
+## Phase P7 Google Drive automated backup (planned)
+
+- **Goal:** Provide automated periodic backups to Google Drive using the `appDataFolder` scope, keeping the app serverless and private with zero-knowledge local passphrase encryption before upload.
+- **P7-A (Research & Prototyping):** Research Google Drive REST API (v3) `appDataFolder` scope (`https://www.googleapis.com/auth/drive.appdata`), Expo SDK 57 Google OAuth2/Sign-In integration, and background scheduling (`expo-background-fetch` / Android WorkManager) with Wi-Fi gating. Dependencies: none. Evidence: not started.
+- **P7-B (Pure Domain Model):** Pure domain model for cloud backup scheduling (frequency: daily, weekly, monthly, manual; retention policy: keep latest N backups; zero-knowledge AES-GCM local passphrase encryption before upload). Dependencies: P7-A. Evidence: not started.
+- **P7-C (UI & Settings):** UI & settings in Backup / Security screen (Connect/Disconnect Google Drive account, last backup status/timestamp, frequency picker, Wi-Fi only toggle, "Back up now", and "Restore from Google Drive" flow). Dependencies: P7-B. Evidence: not started.
+- **P7-D (Fixtures, Tests & Device Verification):** Deterministic demo data, offline fallback, token revocation handling, unit tests, and device checklist rows. Dependencies: P7-C. Evidence: not started.
+
+
 ## Pending owner actions (2026-11-22 reconciliation)
 
 - **Next-release device gate:** O61–O74 were tested and validated on physical devices by the owner on 2026-11-22 and marked Pass. O61–O64 are P20-S-R2; O65–O68 are P21-F; O69–O72 are P20-W; O73 is P20-U-R1; O74 is P20-A-R3. All 78 rows in the device checklist now Pass; the release gate is unblocked for candidate builds. Physical device metadata (realme Narzo 60 Pro 5g, Android 15 Vanilla Ice Cream, tester sahilsheikh-dev, respective release dates) is recorded across all 5 sections, and the checklist maintenance confirmation rule with prior release suggestions is documented.
