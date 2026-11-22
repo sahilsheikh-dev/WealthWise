@@ -314,7 +314,7 @@ export default function TransactionsScreen() {
                   ? describeSource(data, item.source)
                   : null;
                 const linkedBudgetItem = budgetItemForTransaction(data, item);
-                const categoryLabel = transactionCategoryLabel(item.category, item.type, budgetCategories);
+                const categoryLabel = transactionCategoryLabel(linkedBudgetItem?.name || item.category, item.type, budgetCategories);
                 const itemTitle = (item.note && (!linked || item.note !== `${linked.label} deposit`))
                   ? item.note
                   : (linkedBudgetItem?.name || item.note || categoryLabel);
