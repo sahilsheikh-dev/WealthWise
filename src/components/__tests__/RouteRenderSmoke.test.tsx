@@ -4027,6 +4027,7 @@ describe('route render smoke audit', () => {
     ['Goals', () => React.createElement(GoalsScreen)],
     ['Assets', () => React.createElement(AssetsScreen)],
     ['Liabilities', () => React.createElement(LiabilitiesScreen)],
+    ['Budget spending', () => React.createElement(BudgetScreen)],
     ['Investment entries', () => React.createElement(InvestmentEntriesScreen)],
     ['Liability payments', () => React.createElement(LiabilityPaymentsScreen)],
     ['Link missing transactions', () => React.createElement(LinkMissingScreen)],
@@ -4082,6 +4083,7 @@ describe('route render smoke audit', () => {
       Goals: 'goal-filter-panel',
       Assets: 'asset-filter-panel',
       Liabilities: 'liability-filter-panel',
+      'Budget spending': 'budget-filter-panel',
     };
     const panelTestID = filteredScreenPanel[name];
     if (panelTestID) {
