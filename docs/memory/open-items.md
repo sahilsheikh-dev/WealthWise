@@ -1,6 +1,16 @@
-<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-22 | Updates: owner and AI agents -->
+<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-23 | Updates: owner and AI agents -->
 
 # Open items
+
+## P20-Y-R4 Strictly preserve transaction note across all budget item renames (Done; CR-138)
+
+- Subtask P20-Y-R4 (CR-138, 2026-11-23): Strictly preserve transaction notes across all budget item, section, and income renames including holding-linked investments, syncing category only.
+- In P20-Y-R3, non-holding budget item renames preserved notes, but holding-linked items in `editItem` still updated transaction notes via `matchedTxIds` when note matched `oldName` or deposit templates.
+- P20-Y-R4 completely removes `matchedTxIds` transaction note modification from `editItem` in `src/domain/budget.ts`.
+- `budgetItemForTransaction` in `src/domain/budgetCategories.ts` is enhanced with a fallback to match sibling holding items using historical budget item records.
+- Transaction notes are strictly preserved across expense, section, holding-linked, and income renames even when note equals old item/section name.
+- Regression tests in `src/domain/__tests__/budgetItemRenameTransactions.test.ts` (15 passing tests).
+- Ordered six gates pass with exit 0. Physical-device check O77 remains Not run.
 
 ## CR-137 Prohibit premature app version assignment until release draft (Done)
 
@@ -21,7 +31,7 @@
 - Established standing repository rule across all policy documents requiring physical-device verification check(s) to be added for any feature, fix, bug fix, or revision that modifies user-facing behavior, data integrity, calculations, navigation, or forms.
 - O77 is pending physical-device validation by the owner.
 
-## P20-Y-R3 Sync budget category only, preserving transaction note (Done; CR-134)
+## P20-Y-R3 Sync budget category only, preserving transaction note (Done; Revised by P20-Y-R4; CR-134)
 
 - Subtask P20-Y-R3 (CR-134, 2026-11-22): Refine budget item and section rename to sync transaction category only while preserving transaction note.
 - Previously in P20-Y-R2, if a transaction note matched the old item or section name, the note was also updated.
