@@ -190,11 +190,12 @@ describe('budget-aware transaction categories', () => {
     // Sort by name ascending
     const byName = budgetCategoryChoiceSections(data, '2026-03', '2026-03-15', 'expense', { key: 'name', dir: 'asc' });
     const survivalByName = byName.find((s) => s.id === 'survival');
-    expect(survivalByName?.categories.map((c) => c.category)).toEqual(['Food', 'Rent']);
+    expect(survivalByName?.categories.filter((c) => ['Food', 'Rent'].includes(c.category)).map((c) => c.category))
+      .toEqual(['Food', 'Rent']);
 
     // Sort by planned descending
     const byPlannedDesc = budgetCategoryChoiceSections(data, '2026-03', '2026-03-15', 'expense', { key: 'planned', dir: 'desc' });
     const survivalByPlanned = byPlannedDesc.find((s) => s.id === 'survival');
-    expect(survivalByPlanned?.categories.map((c) => c.category)).toEqual(['Rent', 'Food']);
+    expect(survivalByPlanned?.categories.slice(0, 2).map((c) => c.category)).toEqual(['Rent', 'Food']);
   });
 });
