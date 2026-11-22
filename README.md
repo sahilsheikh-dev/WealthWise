@@ -9,7 +9,7 @@ requests at runtime.
 - [For users](#for-users)
 - [Features](#features)
 - [Download](#download)
-- [What's new in v1.2.0](#whats-new-in-v120)
+- [What's new in v1.3.0](#whats-new-in-v130)
 - [Screenshots](#screenshots)
 - [Data and privacy](#data-and-privacy)
 - [Limitations and disclaimer](#limitations-and-disclaimer)
@@ -66,14 +66,13 @@ Release date: 2026-11-11
 - [Click here to check older versions](https://github.com/sahilsheikh-dev/WealthWise/releases)
 To install the APK, allow installs from this source in Android settings when prompted. This is a direct APK, not a Google Play Store-signed app.
 
-### What's new in v1.2.0
+### What's new in v1.3.0
 
-The stress-tier picker supports four choices; Budget Overview removes
-redundant summaries while retaining accessible descriptions. WealthWise adds
-Real estate and named Custom financial types, once-only Budget and insurance
-dues, completed-loan and achieved-goal sections, and an About page with a
-confirmed browser link to the latest release. See the
-[v1.2.0 release notes](docs/releases/published/v1.2.0.md).
+Enjoy searchable, categorized dropdown pickers throughout the app, flexible
+Budget category and item sorting, custom earned-income categories, direct
+Emergency Fund target editing, customizable payment dates for dues, and
+support for linking multiple investment budgets to a single asset. See the
+[v1.3.0 release notes](docs/releases/published/v1.3.0.md).
 
 ### Screenshots
 

@@ -1379,7 +1379,7 @@ describe('permanent progress ledger', () => {
       'P28-F-R3-R3', 'P28-F-R3-R3-R1', 'P28-F-R4', 'P28-F-R4-R1', 'P28-F-R4-R1-R1', 'P28-F-R4-R1-R1-R1',
       'P28-F-R4-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1', 'P28-F-R4-R1-R1-R1-R1-R1-R1',
       'P28-F-R4-R1-R1-R1-R1-R1-R1-R1', 'P28-F-R5', 'P28-F-R6', 'P28-F-R6-R1', 'P28-F-R6-R2',
-      'P28-F-R6-R3', 'P28-F-R6-R3-R1',
+      'P28-F-R6-R3', 'P28-F-R6-R3-R1', 'P28-F-R7',
     ];
     for (const part of p28fParts) {
       expect(entityMap.get(part)).toBe('qa-and-release');
@@ -1547,5 +1547,21 @@ describe('permanent progress ledger', () => {
     expect(matrix).toContain('P20-X-R1 Remove sorting from TransactionForm category dropdowns');
     expect(openItems).toContain('P20-X-R1 (CR-129)');
     expect(status).toContain('P20-X-R1 / CR-129');
+  });
+
+  it('records P28-F-R7 preparation of v1.3.0 release candidate under CR-130', () => {
+    const independentEntities = ledger.split('## 13. Independent entities')[1] ?? '';
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(independentEntities.split('\n').filter((line) => line.startsWith('| P28-F-R7 |'))).toHaveLength(1);
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-130 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-130 |'))).toHaveLength(1);
+    expect(matrix).toContain('P28-F-R7 Prepare v1.3.0 release candidate');
+    expect(openItems).toContain('P28-F-R7 (CR-130');
+    expect(status).toContain('P28-F-R7 / CR-130');
   });
 });

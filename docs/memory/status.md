@@ -1,6 +1,12 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-22 | Updates: owner and AI agents -->
 
 # Status
+- **P28-F-R7 / CR-130 (2026-11-22) — Prepare v1.3.0 release candidate.**
+  Prepared owner-approved v1.3.0 release candidate: bumped versions in app.json,
+  package.json, and package-lock.json to 1.3.0; moved finalized release note to
+  docs/releases/published/v1.3.0.md with 8 owner-supplied screenshots under
+  docs/releases/screenshots/v1.3.0/; aligned build-config.md and device checklist
+  to v1.3.0. All six repository gates pass.
 - **P20-X-R1 / CR-129 (2026-11-22) — Remove transaction sorting & Dropdown search title.**
   Removed sorting option from TransactionForm category dropdowns (Expense, Income, Invest)
   and removed redundant static Search header title from shared Dropdown sheet, keeping
