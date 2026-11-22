@@ -55,6 +55,45 @@ describe('permanent progress ledger', () => {
     expect(status).toContain('is integrated into `develop` at `fd7ba55`');
   });
 
+  it('structures the device checklist by release and blocks incomplete releases', () => {
+    const checklist = readFileSync(
+      join(process.cwd(), 'docs/releases/device-test-checklist.md'),
+      'utf8',
+    );
+    const h1 = [...checklist.matchAll(/^# .+$/gm)].map(([heading]) => heading);
+    const h2 = [...checklist.matchAll(/^## (.+)$/gm)].map(([, heading]) => heading);
+    const expectedSections = [
+      'Next release device checks',
+      'v1.0.0 device checks',
+      'v1.1.0 device checks',
+      'v1.1.1 device checks',
+      'v1.2.0 device checks',
+    ];
+    const ids = [...checklist.matchAll(/^\| ([A-Z]+[0-9]+) \|/gm)].map(([, id]) => id);
+
+    expect(h1).toEqual(['# WealthWise Android Device Test Checklist']);
+    expect(h2[0]).toBe(expectedSections[0]);
+    expect(h2.filter((heading) => expectedSections.includes(heading))).toEqual(expectedSections);
+    expect(h2).toContain('Release gate');
+    expect(new Set(ids).size).toBe(ids.length);
+
+    for (const [index, heading] of expectedSections.entries()) {
+      const start = checklist.indexOf(`## ${heading}`);
+      const nextHeading = checklist.indexOf('\n## ', start + 1);
+      const section = checklist.slice(start, nextHeading === -1 ? undefined : nextHeading);
+      expect(section).toContain('| Field | Value |');
+      for (const field of ['App version', 'Device model', 'Android version', 'Tester', 'Date']) {
+        expect(section).toContain(`| ${field} |`);
+      }
+      expect(section).toContain('| ID | Test | Result | Notes |');
+
+      if (index > 0) {
+        const results = [...section.matchAll(/^\| ([A-Z]+[0-9]+) \| .*? \| (.*?) \|/gm)];
+        expect(results.every(([, , result]) => result === 'Pass')).toBe(true);
+      }
+    }
+  });
+
   it('records owner-reported physical-device validation as Pass', () => {
     const checklist = readFileSync(
       join(process.cwd(), 'docs/releases/device-test-checklist.md'),
