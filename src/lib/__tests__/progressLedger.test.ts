@@ -1466,7 +1466,7 @@ describe('permanent progress ledger', () => {
     expect(verification).toContain('### 2026-11-22 — P20-X Budget category and item sorting');
     expect(branchIndex.split('\n').find((line) => line.startsWith('| P20 |'))).toContain('| 42 |');
     expect(checklist).toContain('| O75 |');
-    expect(checklist).toContain('P20-X; physical-device check required.');
+    expect(checklist).toContain('P20-X; owner-reported physical-device verification, 2026-11-22.');
     expect(status).toContain('P20-X');
     expect(openItems).toContain('P20-X Budget category and item sorting');
   });
@@ -1492,8 +1492,28 @@ describe('permanent progress ledger', () => {
     expect(verification).toContain('### 2026-11-22 — P20-Y Budget payment date, multi-asset budget links, and limited expense categories');
     expect(branchIndex.split('\n').find((line) => line.startsWith('| P20 |'))).toContain('| 42 |');
     expect(checklist).toContain('| O76 |');
-    expect(checklist).toContain('P20-Y; physical-device check required.');
+    expect(checklist).toContain('P20-Y; owner-reported physical-device verification, 2026-11-22.');
     expect(status).toContain('P20-Y');
     expect(openItems).toContain('P20-Y Budget payment date, multi-asset budget links, and limited expense categories');
+  });
+
+  it('records owner-reported physical-device validation Pass for O75 and O76 under CR-127', () => {
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const checklist = readFileSync(join(process.cwd(), 'docs/releases/device-test-checklist.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-127 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-127 |'))).toHaveLength(1);
+    expect(checklist).toContain('| O75 |');
+    expect(checklist).toContain('| O76 |');
+    expect(checklist).toContain('| Pass | P20-X; owner-reported physical-device verification, 2026-11-22. |');
+    expect(checklist).toContain('| Pass | P20-Y; owner-reported physical-device verification, 2026-11-22. |');
+    expect(checklist).toContain('The owner reports O75 and O76 passed on 2026-11-22.');
+    expect(status).toContain('O75 physical-device check validated Pass');
+    expect(status).toContain('O76 physical-device check validated Pass');
+    expect(openItems).toContain('O75 validated Pass by owner on 2026-11-22');
+    expect(openItems).toContain('O76 validated Pass by owner on 2026-11-22');
   });
 });
