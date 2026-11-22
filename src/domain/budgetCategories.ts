@@ -11,7 +11,7 @@ import { isInsuranceBudgetCategory } from './policyCategories';
 import { pendingItems, pendingTransactionType } from './pending';
 import { normalizeMoney } from './cashFlow';
 import { sortItems, type SortSpec } from '../lib/sorting';
-import type { AppData, BudgetSection, ISODate } from './types';
+import type { AppData, BudgetItem, BudgetSection, ISODate, Transaction } from './types';
 
 export type BudgetCategoryChoice = {
   category: string;
@@ -155,6 +155,22 @@ export function budgetItemCategoriesForTransaction(
     limitExpenseToCreatedOrApplicable: type === 'expense',
   });
   return sections.flatMap((section) => section.categories.map((category) => category.category));
+}
+
+export function budgetItemForTransaction(
+  data: AppData,
+  transaction: Transaction,
+): BudgetItem | undefined {
+  if (transaction.source?.kind !== 'holding-entry') return undefined;
+  const month = transaction.date.slice(0, 7);
+  const { budget } = effectiveMonthBudget(data, month, transaction.date);
+  if (!budget) return undefined;
+  const matchingItems = budget.items.filter((item) => item.holdingId === transaction.source?.parentId);
+  if (matchingItems.length === 0) return undefined;
+  if (matchingItems.length === 1) return matchingItems[0];
+  const holding = data.holdings.find((h) => h.id === transaction.source?.parentId);
+  const entry = holding?.logs.find((e) => e.id === transaction.source?.entryId);
+  return matchingItems.find((item) => item.name === entry?.note || item.name === transaction.note);
 }
 
 export { budgetGroupFor };

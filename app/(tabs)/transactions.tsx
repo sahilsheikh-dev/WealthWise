@@ -24,6 +24,7 @@ import { useUIStore } from '../../src/data/uiStore';
 import { useAppData } from '../../src/data/useAppData';
 import { useSort } from '../../src/data/useSort';
 import { customBudgetCategories } from '../../src/domain/budget';
+import { budgetItemForTransaction } from '../../src/domain/budgetCategories';
 import { availableBalance } from '../../src/domain/cashFlow';
 import { shiftMonth } from '../../src/domain/dates';
 import { findUnlinkedEntries } from '../../src/domain/instruments';
@@ -312,14 +313,18 @@ export default function TransactionsScreen() {
                 const linked = item.source
                   ? describeSource(data, item.source)
                   : null;
+                const linkedBudgetItem = budgetItemForTransaction(data, item);
                 const categoryLabel = transactionCategoryLabel(item.category, item.type, budgetCategories);
+                const itemTitle = (item.note && (!linked || item.note !== `${linked.label} deposit`))
+                  ? item.note
+                  : (linkedBudgetItem?.name || item.note || categoryLabel);
                 return (
                   <ListItem
                     key={item.id}
-                    title={item.note || categoryLabel}
+                    title={itemTitle}
                     subtitle={linked ? `${categoryLabel}\n→ ${linked.label}` : categoryLabel}
                     amount={`${tone.symbol}${formatAmount(item.amount, 'row', fontScale)}`}
-                    accessibilityLabel={`${item.note || categoryLabel}, ${categoryLabel}, ${tone.symbol}${formatAmount(item.amount, 'exact', 1)}`}
+                    accessibilityLabel={`${itemTitle}, ${categoryLabel}, ${tone.symbol}${formatAmount(item.amount, 'exact', 1)}`}
                     tone={tone.tone}
                     icon={item.type === 'income' ? 'arrow-down-left' : item.type === 'expense' ? 'arrow-up-right' : 'trending-up'}
                     onPress={() => router.push({ pathname: '/transaction-form', params: { id: item.id } })}

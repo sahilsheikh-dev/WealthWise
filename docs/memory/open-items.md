@@ -2,6 +2,14 @@
 
 # Open items
 
+## P20-Y-R1 Linked transactions update on budget item rename (Done; CR-132)
+
+- Subtask P20-Y-R1 (CR-132, 2026-11-22): Fix WealthWise bug where renaming a budget item or category in one month did not update the name shown by transactions linked to that item.
+- Linked transactions reflect the current budget item name wherever they appear, including existing transactions, while preserving their amount, date, category (e.g. `'Mutual fund / SIP'`), and budget link source.
+- Handles month-specific items and create, edit, display, persistence, migration, and backup-import paths.
+- Regression tests added in `src/domain/__tests__/budgetItemRenameTransactions.test.ts` (5 tests passing).
+- Ordered six gates pass with exit 0.
+
 ## P28-F-R7 Prepare v1.3.0 release candidate (In progress)
 
 - Subtask P28-F-R7 (CR-130, 2026-11-22): Prepare owner-approved v1.3.0 release candidate.

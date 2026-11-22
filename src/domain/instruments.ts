@@ -210,6 +210,7 @@ export function updateLinkedTransaction(
     const updatedData = updateInvestmentEntry(data, source.parentId, source.entryId, {
       amount: nextAmount,
       date: nextDate,
+      ...(patch.note === undefined ? {} : { note: patch.note }),
     }, options.today);
     return replaceTransaction(updatedData, {
       ...transaction,
