@@ -1709,4 +1709,37 @@ describe('permanent progress ledger', () => {
       expect(doc).toContain(ruleSnippet);
     }
   });
+
+  it('records CR-137 rule prohibiting app version assignment until release draft finalization', () => {
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const independentEntities = ledger.split('## 13. Independent entities')[1] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const checklist = readFileSync(join(process.cwd(), 'docs/releases/device-test-checklist.md'), 'utf8');
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-137 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-137 |'))).toHaveLength(1);
+    expect(independentEntities.split('\n').filter((line) => line.startsWith('| CR-137 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-137');
+    expect(checklist).toContain('TBD (unassigned until release draft finalization)');
+    expect(openItems).toContain('CR-137');
+    expect(status).toContain('CR-137');
+
+    const policyDocs = [
+      'AGENTS.md',
+      'docs/memory/rules.md',
+      'docs/releases/README.md',
+      'docs/releases/RELEASE_PROMPT.md',
+      'docs/releases/release-config.md',
+      'docs/releases/build-config.md',
+      'docs/releases/device-test-checklist.md',
+    ];
+    const ruleSnippet = 'Agents must never add, bump, or assign a specific application version number in the device checklist, metadata tables, package manifests, or anywhere in the repository until the owner explicitly decides to prepare a release candidate draft';
+    for (const p of policyDocs) {
+      const doc = readFileSync(join(process.cwd(), p), 'utf8');
+      expect(doc).toContain(ruleSnippet);
+    }
+  });
 });

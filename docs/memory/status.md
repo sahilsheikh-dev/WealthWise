@@ -1,6 +1,12 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-22 | Updates: owner and AI agents -->
 
 # Status
+- **CR-137 / Documentation (2026-11-23) — Prohibit premature app version assignment until release draft.**
+  Established standing rule across all repository policy documents prohibiting adding,
+  bumping, or assigning a specific application version number in the device checklist,
+  metadata tables, package manifests, or anywhere in the repository until the owner
+  explicitly decides to prepare a release candidate draft. Updated Next release device
+  checks in docs/releases/device-test-checklist.md to use TBD (unassigned).
 - **CR-136 / Documentation (2026-11-23) — Device checklist rearrangement for published v1.3.0.**
   Rearranged docs/releases/device-test-checklist.md: moved published checks O61–O76 into
   dedicated ## v1.3.0 device checks section placed below v1.2.0 in ascending order.
