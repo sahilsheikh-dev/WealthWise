@@ -912,13 +912,12 @@ Not adopted in CR-106:
   reproduction details for P20-A-R3 are still unknown. A named-ID written
   waiver must be recorded in the Owner-run actions log and release note; the
   checklist Result remains unchanged.
-- **Documentation PR flow:** CR-118's PR #184/#185 merges are confirmed by the
-  11:39 snapshot and the local documentation branch is synchronized. For
-  CR-119, the owner must push `documentation` and
-  `task/docs-device-checklist-by-release`, create the task PR into
-  `documentation`, merge it with `--merge --delete-branch`, then create the
-  documentation PR into `develop`, merge it with `--merge` (keep the lifecycle
-  branch), and run CM-2. This task performs no network action.
+- **Documentation PR flow:** CR-118's PR #184/#185 and CR-119's PR #186/#187
+  merges are confirmed in Git history and terminal session evidence. PR #186
+  merged `task/docs-device-checklist-by-release` into `documentation` at
+  `001df8b812e0b2c990137f22747be4d0e5cfd2a1`; PR #187 merged `documentation`
+  into `develop` at `aeacbfd65e74d0cc5428a9b2460864223e7d9cc6`. Local `develop`
+  was synchronized by CM-2.
 
 The supplied snapshot resolves the earlier request for PR/ref/release/issue
 exports and terminal evidence. See the current snapshot reconciliation in

@@ -810,12 +810,14 @@
   reconstructed terminal paste shows exit 1 at 11:40:11 IST, while the file
   has no exit code because the command had an unterminated quote. This agent
   continuation performed no network action.
-- The snapshot contains 185 PRs, zero open PRs and zero issues; #39 remains
-  the only closed unmerged PR. O61–O74 remain Not run. The current task is
-  `task/docs-device-checklist-by-release` at its Stage 0 sync commit; checklist
-  restructuring and release gate work remain in progress. Correction (2026-11-22):
-  CR-119 is complete locally; DOCS-R8-LOG-CORRECTIONS is the active local-only
-  evidence-log correction task on this branch.
+- The repository contains 187 PRs, zero open PRs and zero issues; #39 remains
+  the only closed unmerged PR. PR #186 merged `task/docs-device-checklist-by-release`
+  into `documentation` at `001df8b812e0b2c990137f22747be4d0e5cfd2a1` at 12:42:48 IST;
+  PR #187 merged `documentation` into `develop` at `aeacbfd65e74d0cc5428a9b2460864223e7d9cc6`
+  at 12:43:16 IST. Local `develop` and `origin/develop` match at `aeacbfd65e74d0cc5428a9b2460864223e7d9cc6`.
+  Gate 4 on `develop` exits 1 (20/21 checks, six known SDK 57 patch mismatches).
+  Device checklist is merged to `develop` (78 rows, release gate rule).
+  O61–O74 remain Not run and block releases.
 
 
 ## Current task — CR-119 device checklist by release (2026-11-22)
@@ -866,3 +868,12 @@
   Protected hashes match and package/config diff against `develop` is empty.
 - Local only: no network, push, PR or merge. O61–O74 remain Not run and block
   the next release; owner PR flow remains pending.
+
+
+## Current task — DOCS-R8-PUBLISH-LOG (2026-11-22)
+
+- Branch: `task/docs-r8-publish-log`; task base is `001df8b812e0b2c990137f22747be4d0e5cfd2a1`.
+- Records owner-authorized publishing of the device checklist by release (CR-119).
+- Logs Stages 1–4 actions (pushes, PR creations #186/#187, merges, CM-2 syncs, Gate 4) in the Owner-run actions log.
+- develop HEAD is `aeacbfd65e74d0cc5428a9b2460864223e7d9cc6`; open PR count is 0; checklist is merged to develop.
+- Device checks O61–O74 remain Not run and block releases.
