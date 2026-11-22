@@ -823,5 +823,13 @@
 - The release gate blocks release work for every non-Pass row in every section.
   O61–O74 remain Not run and block the next release. No owner waiver is
   recorded. Focused ledger suite passes after the checklist and gate changes.
+- Final six gates: Gate 1 exit 0 (105 suites, 1,439 passed, 1 skipped); its
+  initial Watchman attempt exited 1, then passed with `--watchman=false`. Gates
+  2–3 exit 0. Gate 4 is not captured because local-only forbids network; the
+  supplied post-#185 owner output is 20/21 with six known SDK 57 patch
+  mismatches, but no exit code was captured. Gates 5–6 exit 0. All six
+  protected-file hashes match; `package.json`, `package-lock.json` and
+  `app.json` have no diff against `develop`.
 - This is local-only work: no network, push, PR, merge, release, tag or build
-  was performed. Six-gate results and protected-file hashes are pending.
+  was performed. Device checks O61–O74 remain Not run and block the next
+  release.
