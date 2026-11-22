@@ -974,3 +974,12 @@
   - P7-C: UI & settings in Backup / Security screen (Connect/Disconnect Google Drive, last backup status/timestamp, frequency picker, Wi-Fi only toggle, "Back up now", and "Restore from Google Drive" flow).
   - P7-D: Deterministic demo data, offline fallback, token revocation handling, unit tests, and device checklist rows.
 - Planning-only task: no application code, no dependencies, no schema change.
+
+
+## Current task — P43-B-delete-non-release-tags (2026-11-22)
+
+- Branch: `task/P43-B-delete-non-release-tags`; phase branch: `phase/43-lifecycle-and-transaction-planning`.
+- Executed P43-B per explicit owner approval: deleted all 47 non-release and legacy phase tags locally and on remote `origin`, keeping exclusively the 5 verified release tags (`v1.0.0`, `v1.1.0`, `v1.1.1`, `v1.2.0`, `v1.3.0`).
+- Updated Rule R3 across `AGENTS.md`, `docs/memory/rules.md`, and `docs/PROGRESS.md` to establish that only `vX.Y.Z` release tags are maintained in the repository and non-release tags are prohibited.
+- Updated `PROGRESS.md`, `open-items.md`, and `progressLedger.test.ts`.
+

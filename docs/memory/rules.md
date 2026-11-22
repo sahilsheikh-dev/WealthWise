@@ -23,7 +23,9 @@
 - **R3 — History and release approval:** never push, amend or rewrite history
   unless the owner explicitly authorizes a push; never force-push. Release
   publication and tag creation, movement or deletion require explicit owner
-  approval.
+  approval. Only `vX.Y.Z` release tags are maintained in the repository;
+  non-release, phase, and intermediate tags are prohibited and must not be
+  created. Legacy non-release tags were deleted under approved task P43-B.
 - **R4 — Documentation scope:** routine documentation committed to Git is
   limited to `docs/memory/*`, `docs/PROGRESS.md`, `docs/releases/**`,
   `CONTRIBUTING.md`, `SECURITY.md`, and `.github/**`. Other documentation
