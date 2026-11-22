@@ -1,6 +1,11 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-22 | Updates: owner and AI agents -->
 
 # Status
+- **P20-Y-R3 / CR-134 (2026-11-22) — Sync budget category only, preserving transaction note.**
+  Refined budget item and section rename behavior to update transaction.category only,
+  preserving transaction.note even if it is identical to the old name. Updated editItem,
+  renameSection, editBudgetIncome, and reconcileBudgetItemTransactions. Added regression
+  tests verifying note preservation. All six repository gates pass with exit 0.
 - **P20-Y-R2 / CR-133 (2026-11-22) — Budget item rename reflects in transaction category item.**
   Fixed WealthWise bug where renaming an expense or standard budget item did not
   reflect in transaction category item, leaving transactions showing the old name.

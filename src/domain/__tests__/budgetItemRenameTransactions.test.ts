@@ -824,8 +824,57 @@ describe('budgetItemRenameTransactions: budget item rename updates linked transa
 
     const tx = updated.transactions.find((t) => t.id === 'tx-income-1');
     expect(tx?.category).toBe('Consulting');
-    expect(tx?.note).toBe('Design Studio');
+    expect(tx?.note).toBe('Freelance Design');
     expect(tx?.amount).toBe(50_000);
+  });
+
+  it('renaming budget item or section updates transaction category only and preserves note identical to old name', () => {
+    let data = addItem(initialData, '2026-11', {
+      id: 'item-food-groceries',
+      sectionId: 'sec-spend',
+      name: 'Groceries',
+      mode: 'amount',
+      value: 10_000,
+      frequency: 'monthly',
+      firstDueMonth: '2026-11',
+    }, 'following', '2026-11-01');
+
+    // Transaction where note is identical to category name 'Groceries'
+    data = addTransaction(data, {
+      type: 'expense',
+      amount: 1500,
+      category: 'Groceries',
+      note: 'Groceries',
+      date: '2026-11-12',
+    }, () => 'tx-exact-note');
+
+    // Rename item to 'Food & Groceries'
+    data = editItem(data, '2026-11', {
+      itemId: 'item-food-groceries',
+      patch: { name: 'Food & Groceries' },
+    }, 'following', '2026-11-01');
+
+    const txItem = data.transactions.find((t) => t.id === 'tx-exact-note');
+    expect(txItem?.category).toBe('Food & Groceries');
+    expect(txItem?.note).toBe('Groceries'); // note is preserved, NOT changed to new name
+
+    // Transaction where note is identical to section name 'Living'
+    data = addTransaction(data, {
+      type: 'expense',
+      amount: 2000,
+      category: 'Living',
+      note: 'Living',
+      date: '2026-11-14',
+    }, () => 'tx-section-note');
+
+    data = renameSection(data, '2026-11', {
+      sectionId: 'sec-spend',
+      name: 'Household Living',
+    }, 'following', '2026-11-01');
+
+    const txSec = data.transactions.find((t) => t.id === 'tx-section-note');
+    expect(txSec?.category).toBe('Household Living');
+    expect(txSec?.note).toBe('Living'); // note is preserved, NOT changed to new section name
   });
 
   it('budgetItemForTransaction resolves non-holding budget item for expense transactions', () => {
