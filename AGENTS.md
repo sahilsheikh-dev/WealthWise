@@ -128,7 +128,7 @@ Work-placement quick start:
 - After approved task/phase work is merged to `develop`, apply the device
   checklist release gate before creating a release branch, draft, tag or build:
   A release must not be built, drafted, tagged or published while any row in ANY section of the device checklist (the Next release section and every earlier section) has a Result other than Pass. Not run, Fail and Blocked all block. Check the checklist first; if blocked, stop and report the blocking IDs, and do not start the build or the GitHub Release draft. A Pass may only be recorded from an owner-observed or owner-reported device result, never inferred from automated tests or Expo exports. Only an explicit written owner waiver for named IDs lifts the block; record the waiver in the ledger (Owner-run actions log) and in the release note, and leave the row's Result unchanged.
-  See [device checklist maintenance rules](docs/memory/rules.md#device-checklist-release-gate).
+  See [device checklist maintenance rules](docs/memory/rules.md#device-checklist-release-gate). When updating the device checklist, agents must prompt the owner to confirm all metadata fields before making changes: Device model, Android version, Tester (always record the tester username, e.g., sahilsheikh-dev), and verification Date, providing suggestions based on previous releases data (e.g., realme Narzo 60 Pro 5g, 15 Vanilla Ice Cream, sahilsheikh-dev).
   Then create `release/vX.Y.Z` from `develop` and create the GitHub Release draft
   at that exact candidate commit. Creating the draft may create its version tag;
   do not retarget it. Build the APK with EAS using `android-apk`, upload it to
