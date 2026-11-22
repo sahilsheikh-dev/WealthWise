@@ -58,15 +58,15 @@ Restructuring of work tracking completed under CR-114 and merged into `develop` 
 - Git history map committed at `docs/history/entity-history-map.md`.
 - PR #161 merged into `develop` with merge commit `9058386`.
 
-## Cleanup lifecycle planned work
+## Cleanup lifecycle work
 
-- **SDK 57 patch alignment (Planned):** align Expo SDK 57 patch dependencies
+- **SDK 57 patch alignment (Done):** aligned Expo SDK 57 patch dependencies
   (`expo ~57.0.33`, `expo-constants ~57.0.24`, `expo-linking ~57.0.14`,
-  `expo-router ~57.0.31`, `expo-sharing ~57.0.26`, `expo-sqlite ~57.0.5`),
-  then re-run all six gates. Placement: rule 1; searched dashboard, register,
-  memory; related cleanup lifecycle; reason: dependency maintenance is ongoing
-  repository lifecycle work. Gate 4 exit 1 was recorded as an owner-approved
-  exception on PR #161 pending this alignment.
+  `expo-router ~57.0.31`, `expo-sharing ~57.0.26`, `expo-sqlite ~57.0.5`);
+  all six gates passed, with Gate 4 exiting 0 (21/21 checks passed).
+  Placement: rule 1; searched dashboard, register, memory; related cleanup
+  lifecycle; reason: dependency maintenance is ongoing repository lifecycle work.
+  The prior Gate 4 exit 1 owner-approved exception is now cleared.
 
 ## CR-113 owner-approved planning (2026-11-12)
 

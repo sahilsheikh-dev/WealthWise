@@ -815,7 +815,7 @@
   into `documentation` at `001df8b812e0b2c990137f22747be4d0e5cfd2a1` at 12:42:48 IST;
   PR #187 merged `documentation` into `develop` at `aeacbfd65e74d0cc5428a9b2460864223e7d9cc6`
   at 12:43:16 IST. Local `develop` and `origin/develop` match at `aeacbfd65e74d0cc5428a9b2460864223e7d9cc6`.
-  Gate 4 on `develop` exits 1 (20/21 checks, six known SDK 57 patch mismatches).
+  Gate 4 exits 0 (21/21 checks passed, no issues detected). The prior Gate 4 exit 1 exception on six SDK 57 patch mismatches was cleared by task cleanup-expo-sdk57-patch-align.
   Device checklist is merged to `develop` (78 rows, release gate rule).
   O61–O74 remain Not run and block releases.
 
@@ -870,10 +870,10 @@
   the next release; owner PR flow remains pending.
 
 
-## Current task — DOCS-R8-PUBLISH-LOG (2026-11-22)
+## Current task — cleanup-expo-sdk57-patch-align (2026-11-22)
 
-- Branch: `task/docs-r8-publish-log`; task base is `001df8b812e0b2c990137f22747be4d0e5cfd2a1`.
-- Records owner-authorized publishing of the device checklist by release (CR-119).
-- Logs Stages 1–4 actions (pushes, PR creations #186/#187, merges, CM-2 syncs, Gate 4) in the Owner-run actions log.
-- develop HEAD is `aeacbfd65e74d0cc5428a9b2460864223e7d9cc6`; open PR count is 0; checklist is merged to develop.
+- Branch: `task/cleanup-expo-sdk57-patch-align`; standalone lifecycle: `cleanup`.
+- Aligned Expo SDK 57 patch dependencies: `expo ~57.0.33`, `expo-constants ~57.0.24`, `expo-linking ~57.0.14`, `expo-router ~57.0.31`, `expo-sharing ~57.0.26`, `expo-sqlite ~57.0.5`.
+- All six gates passed with exit 0; Gate 4 now passes with exit 0 (21/21 checks passed, no issues detected).
+- Six protected-file hashes match. No application code or schema changed.
 - Device checks O61–O74 remain Not run and block releases.
