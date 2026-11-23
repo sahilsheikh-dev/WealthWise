@@ -4,19 +4,21 @@
 - **P29-U-R1 / CR-147 (2026-11-23) — Dynamic asset valuation inputs and calculations, and owner-reported O80 Pass.**
   Implemented dynamic asset valuation inputs and calculations depending on the selected valuation type
   across both recurring and one-time assets in `app/investment-form.tsx` and `app/holding-valuation-form.tsx`:
-  1. *Manual:* Form displays manual value and date inputs.
-  2. *Interest-based (`accrual`):* Form collects annual interest rate (%), compounding frequency (yearly/quarterly/monthly/simple),
-     and optional maturity date; calculates value automatically from elapsed days (`actual-days / 365`) without manual value entry.
-  3. *Unit-based (`unitsPrice`):* Form collects purchase amount, unit price, and units purchased with 2-way auto-calculation:
-     entering Units and Unit Price calculates Purchase Amount / Total Value; entering Purchase Amount and Unit Price derives Units Purchased.
-  4. *Balance-based (`balance`):* Form collects opening balance; current balance is dynamically derived and displayed from
-     `opening + deposits - withdrawals`; manual value input is hidden/read-only.
-  5. *Holding valuation update route (`app/holding-valuation-form.tsx`):* Displays type-specific screen title, input label,
+  1. *Recurring asset form (`app/investment-form.tsx` -> `PlanFields`):* Placed `<FormSection title="Valuation">`
+     immediately below `<FormSection title="Basics">` (which contains `Name`, `Holding type`, and optional `Custom type name`),
+     ahead of `Contribution` and `Dates`. Inside `Valuation`, dynamically renders fields for `manual` (opening, actual value,
+     date, worked example modal), `accrual` (opening, annual rate, compounding, maturity date), `unitsPrice` (purchase amount,
+     unit price, units purchased, 2-way auto-calculation, live total value), and `balance` (opening balance, dynamic calculated
+     current balance display). Moved `Frequency` to `Contribution`; omitted `Annual return` when `accrual` is selected.
+  2. *One-time asset form (`app/investment-form.tsx` -> `ManualFields`):* Renders type-dependent inputs for manual, accrual,
+     unitsPrice, and balance with 2-way unit calculation.
+  3. *Holding valuation update route (`app/holding-valuation-form.tsx`):* Displays type-specific screen title, input label,
      live calculated total value for unit-based holdings, and calls appropriate store action (`updateHoldingPrice` vs `updateHoldingValue`).
-  6. *Domain purity & schema v24:* Injected date handling in `src/domain/schemas.ts`; schema remains version 24 (additive `unitCount?: number` optional field).
+  4. *Domain purity & schema v24:* Injected date handling in `src/domain/schemas.ts`; schema remains version 24 (additive `unitCount?: number` optional field).
   Recorded owner-reported physical-device validation for check O80 as Pass on realme Narzo 60 Pro 5g running Android 15 Vanilla Ice Cream (sahilsheikh-dev, 2026-11-23).
   Added physical-device check O81 under Next release device checks in `Not run` status.
-  Verified with regression tests in `src/domain/__tests__/valuation.test.ts`, `src/domain/__tests__/schemas.test.ts`,
+  Verified with regression tests in `src/components/__tests__/InvestmentFormRecurringValuation.test.tsx`,
+  `src/domain/__tests__/valuation.test.ts`, `src/domain/__tests__/schemas.test.ts`,
   `src/components/__tests__/HoldingValuationDynamic.test.tsx`, and `src/components/__tests__/RouteRenderSmoke.test.tsx`.
   Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
 - **P17-C-R1 / CR-146 (2026-11-23) — Persistent sorting preferences across screens and sections.**
