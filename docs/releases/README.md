@@ -164,10 +164,12 @@ Maintenance rules: new device checks go under Next release device checks (or the
   develop-to-main PR #132 (`b678493`) and main-to-develop PR #133 (`eedff48`).
   The `main` and `develop` trees match, and the v1.2.0 tag remains at its
   verified build candidate.
-- v1.3.0 candidate release: EAS build `c2ec9414-ae63-44cc-b34a-0f67f6cb51cb`
+- v1.3.0 release: EAS build `c2ec9414-ae63-44cc-b34a-0f67f6cb51cb`
   completed with profile `android-apk` and Android `versionCode` 4 on
-  2026-11-22. The 107,030,213-byte APK is uploaded to the GitHub release draft
-  and byte-verified against EAS. Publication remains pending.
+  2026-11-22. The 107,030,213-byte APK was uploaded to the GitHub release
+  and byte-verified against EAS. Publication completed; release/v1.3.0 merged
+  to main via PR #216 (341dbcb), tagged v1.3.0, and back-merged to develop via
+  PR #217 (97c6d02).
 - O45-O53 are owner-reported Pass; device model, Android version and tester
   details were not supplied.
 - Production AAB: not verified.
