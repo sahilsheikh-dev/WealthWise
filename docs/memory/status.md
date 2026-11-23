@@ -1,6 +1,14 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-23 | Updates: owner and AI agents -->
 
 # Status
+- **P31 / CR-149 (2026-11-24) — Community and project health deliverables (P31-A, P31-B, P31-C, P31-D).**
+  Delivered all four planned repository documents for project health, community, accessibility, and privacy:
+  1. *P31-A (Community guidelines):* Added `CODE_OF_CONDUCT.md` at repository root establishing standards for respectful collaboration, privacy protection, and private reporting procedures to maintainers.
+  2. *P31-B (Issue forms):* Upgraded `.github/ISSUE_TEMPLATE/` to YAML issue forms: `bug_report.yml`, `feature_request.yml`, `question.yml`, and `config.yml`. Explicit warnings against submitting financial data; required privacy confirmation checkboxes; legacy `.md` templates removed; blank issues disabled.
+  3. *P31-C (Accessibility documentation):* Added `docs/accessibility/accessibility-statement.md` declaring WCAG 2.1 AA targets, 44x44 pt touch targets, dynamic font scaling (1.0x, 1.3x, 2.0x), high contrast, and TalkBack/VoiceOver semantics. Added `docs/accessibility/audit-checklist.md` with practical verification criteria.
+  4. *P31-D (Privacy statement):* Added `PRIVACY.md` at root derived strictly from verified P39-C audit facts: 100% offline-first, local SQLite/AsyncStorage storage in private app sandbox, zero network requests, zero telemetry, local notifications only, biometric authentication via OS Secure Enclave with passcode fallback, scoped SAF file access, AES-256-GCM backup encryption, `allowBackup: false`, and clear disclosure that local storage is unencrypted at rest at the app layer.
+  Pure documentation scope; schema version remains 24.
+  Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
 - **P39-C / CR-148 (2026-11-24) — Report-first permissions and privacy trace.**
   Completed permissions and privacy trace across declarations, runtime requests, and usage:
   1. *Network & Analytics:* 100% offline; zero network calls (`fetch`, `XMLHttpRequest`, `WebSocket`) verified by `src/lib/__tests__/offlineRuntime.test.ts`; zero telemetry or analytics SDKs.

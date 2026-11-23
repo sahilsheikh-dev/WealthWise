@@ -324,7 +324,7 @@ describe('permanent progress ledger', () => {
     expect(p20uR1).toContain('start month, frequency, due day');
     expect(p20uR1).toContain('both scopes');
     expect(p20uR1).toContain('H1–H5 findings are recorded in CONT3');
-    expect(ledger).toMatch(/Overall progress ████████░░ (?:79|80)% \((?:158\/200|159\/201|160\/202|161\/203|162\/204|163\/205|163\/207|164\/207|165\/208|166\/209|167\/209|168\/209)\)/);
+    expect(ledger).toMatch(/Overall progress ████████░░ (?:79|80|82)% \((?:158\/200|159\/201|160\/202|161\/203|162\/204|163\/205|163\/207|164\/207|165\/208|166\/209|167\/209|168\/209|172\/209)\)/);
     expect(ledger).toMatch(/P20\s+██████████ (?:100%|98%) \((?:43\/43|44\/44|45\/45|46\/46|47\/47|48\/48|48\/49|49\/49|50\/50)\)/);
     const o73 = checklist.split('\n').find((line) => line.startsWith('| O73 |'));
     expect(o73).toContain('one-time and recurring');
@@ -575,7 +575,6 @@ describe('permanent progress ledger', () => {
     const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
     const roadmap = ledger.split('## 9. Upcoming roadmap')[1]?.split('## 10. Verification matrix')[0] ?? '';
     const plannedPartIds = [
-      'P31-A', 'P31-B', 'P31-C', 'P31-D',
       'P33-A', 'P33-B', 'P33-C',
       'P34-A', 'P34-B', 'P34-C',
       'P35-A', 'P35-B', 'P35-C',
@@ -773,7 +772,7 @@ describe('permanent progress ledger', () => {
         expect(dashboard.split('\n').find((line) => line.startsWith('| P29-U-R1 |')))
           .toContain('| Planned |');
       } else if (phase === 31) {
-        expect(count?.done).toBe(0);
+        expect(count?.done).toBe(4);
         expect(count?.total).toBe(4);
       } else if (phase === 43) {
         expect(count?.done).toBe(6);
@@ -1199,7 +1198,7 @@ describe('permanent progress ledger', () => {
     expect(registerRow).toContain('185a5ea125f64ac104344f00ad013d68cdb7a946');
     expect(registerRow).toContain('6b50a1d');
     expect(phaseRow).toMatch(/\|\s*(?:43|44|45|46|47|48|49|50)\s*\|/);
-    expect(ledger).toMatch(/Overall progress ████████░░ (?:79|80)% \((?:158\/200|159\/201|160\/202|161\/203|162\/204|163\/205|163\/207|164\/207|165\/208|166\/209|167\/209|168\/209)\)/);
+    expect(ledger).toMatch(/Overall progress ████████░░ (?:79|80|82)% \((?:158\/200|159\/201|160\/202|161\/203|162\/204|163\/205|163\/207|164\/207|165\/208|166\/209|167\/209|168\/209|172\/209)\)/);
     expect(ledger).toMatch(/P20\s+██████████ (?:100%|98%) \((?:43\/43|44\/44|45\/45|46\/46|47\/47|48\/48|48\/49|49\/49|50\/50)\)/);
     expect(status).toContain('P20-S-R2-R1 records the verified');
   });
@@ -1232,7 +1231,7 @@ describe('permanent progress ledger', () => {
     expect(registerRow).toContain('CM-2 synchronized local `develop`');
     expect(promptLog.split('\n').filter((line) => line.startsWith('| P20-W-R1 |'))).toHaveLength(1);
     expect(phaseRow).toMatch(/\|\s*(?:43|44|45|46|47|48|49|50)\s*\|/);
-    expect(ledger).toMatch(/Overall progress ████████░░ (?:79|80)% \((?:158\/200|159\/201|160\/202|161\/203|162\/204|163\/205|163\/207|164\/207|165\/208|166\/209|167\/209|168\/209)\)/);
+    expect(ledger).toMatch(/Overall progress ████████░░ (?:79|80|82)% \((?:158\/200|159\/201|160\/202|161\/203|162\/204|163\/205|163\/207|164\/207|165\/208|166\/209|167\/209|168\/209|172\/209)\)/);
     expect(ledger).toMatch(/P20\s+██████████ (?:100%|98%) \((?:43\/43|44\/44|45\/45|46\/46|47\/47|48\/48|48\/49|49\/49|50\/50)\)/);
     expect(status).toContain('P20-W-R1 records task PR #174 and phase PR #175');
     expect(openItems).toContain('STOP GATE RESOLVED (DEC-P20W-D3-SCHEMA24');
@@ -2034,5 +2033,74 @@ describe('permanent progress ledger', () => {
     expect(openItems).toContain('P39-C Report-first permissions and privacy trace');
     expect(status).toContain('CR-148');
     expect(status).toContain('P39-C');
+  });
+
+  it('records P31 community and project health deliverables under CR-149', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const roadmap = ledger.split('## 9. Upcoming roadmap')[1]?.split('## 10. Verification matrix')[0] ?? '';
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-149 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-149 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-149');
+
+    const p31a = dashboard.split('\n').find((line) => line.startsWith('| P31-A |'));
+    const p31b = dashboard.split('\n').find((line) => line.startsWith('| P31-B |'));
+    const p31c = dashboard.split('\n').find((line) => line.startsWith('| P31-C |'));
+    const p31d = dashboard.split('\n').find((line) => line.startsWith('| P31-D |'));
+
+    expect(p31a).toBeDefined();
+    expect(p31a).toContain('| Done |');
+    expect(p31b).toBeDefined();
+    expect(p31b).toContain('| Done |');
+    expect(p31c).toBeDefined();
+    expect(p31c).toContain('| Done |');
+    expect(p31d).toBeDefined();
+    expect(p31d).toContain('| Done |');
+
+    expect(roadmap).toContain('P31 — Project health and community');
+    expect(roadmap).toContain('Done; CR-149');
+
+    // Deliverable files existence and content checks
+    const cocPath = join(process.cwd(), 'CODE_OF_CONDUCT.md');
+    expect(existsSync(cocPath)).toBe(true);
+    const coc = readFileSync(cocPath, 'utf8');
+    expect(coc).toContain('WealthWise Community Guidelines');
+
+    const bugYml = join(process.cwd(), '.github/ISSUE_TEMPLATE/bug_report.yml');
+    const featYml = join(process.cwd(), '.github/ISSUE_TEMPLATE/feature_request.yml');
+    const questYml = join(process.cwd(), '.github/ISSUE_TEMPLATE/question.yml');
+    const configYml = join(process.cwd(), '.github/ISSUE_TEMPLATE/config.yml');
+
+    expect(existsSync(bugYml)).toBe(true);
+    expect(existsSync(featYml)).toBe(true);
+    expect(existsSync(questYml)).toBe(true);
+    expect(existsSync(configYml)).toBe(true);
+    expect(existsSync(join(process.cwd(), '.github/ISSUE_TEMPLATE/bug_report.md'))).toBe(false);
+    expect(existsSync(join(process.cwd(), '.github/ISSUE_TEMPLATE/feature_request.md'))).toBe(false);
+
+    const bugContent = readFileSync(bugYml, 'utf8');
+    expect(bugContent).toMatch(/financial|sensitive|credentials/i);
+
+    const a11yStatement = join(process.cwd(), 'docs/accessibility/accessibility-statement.md');
+    const a11yChecklist = join(process.cwd(), 'docs/accessibility/audit-checklist.md');
+    expect(existsSync(a11yStatement)).toBe(true);
+    expect(existsSync(a11yChecklist)).toBe(true);
+
+    const privacyPath = join(process.cwd(), 'PRIVACY.md');
+    expect(existsSync(privacyPath)).toBe(true);
+    const privacy = readFileSync(privacyPath, 'utf8');
+    expect(privacy).toContain('offline-first');
+    expect(privacy).toContain('unencrypted');
+    expect(privacy).toContain('AES-256-GCM');
+    expect(privacy).toContain('allowBackup');
+
+    expect(openItems).toContain('P31 Community and project health');
+    expect(status).toContain('CR-149');
+    expect(status).toContain('P31');
   });
 });
