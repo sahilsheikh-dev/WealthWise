@@ -2,6 +2,7 @@ import { addTransaction, emptyAppData } from '../actions';
 import {
   addIncomeItem,
   addItem,
+  addSection,
   budgetLineActual,
   editBudgetIncome,
   editItem,
@@ -950,6 +951,54 @@ describe('budgetItemRenameTransactions: budget item rename updates linked transa
 
     const txInc = dataIncome.transactions.find((t) => t.id === 'tx-income-note');
     expect(txInc?.note).toBe('Freelance'); // note is strictly preserved
+
+    // User scenario: budget item is 'Bills', transaction category selected as 'Bills' and note is 'Bills' (or note is empty)
+    // Rename budget item to 'Credit Card Bills':
+    // category changes to 'Credit Card Bills', but note remains 'Bills'
+    let dataBills = addSection(initialData, '2026-11', {
+      id: 'survival',
+      name: 'Survival (Needs)',
+      type: 'spend',
+    }, 'following', '2026-11-01');
+
+    dataBills = addItem(dataBills, '2026-11', {
+      id: 'item-bills-id',
+      sectionId: 'survival',
+      name: 'Bills',
+      mode: 'amount',
+      value: 5_000,
+      frequency: 'monthly',
+      firstDueMonth: '2026-11',
+    }, 'following', '2026-11-01');
+
+    dataBills = addTransaction(dataBills, {
+      type: 'expense',
+      amount: 1200,
+      category: 'Bills',
+      note: 'Bills', // name/note is 'Bills'
+      date: '2026-11-18',
+    }, () => 'tx-bills-with-note');
+
+    dataBills = addTransaction(dataBills, {
+      type: 'expense',
+      amount: 800,
+      category: 'Bills',
+      note: '', // note was left empty, transaction name was 'Bills'
+      date: '2026-11-19',
+    }, () => 'tx-bills-empty-note');
+
+    dataBills = editItem(dataBills, '2026-11', {
+      itemId: 'item-bills-id',
+      patch: { name: 'Credit Card Bills' },
+    }, 'following', '2026-11-01');
+
+    const txWithNote = dataBills.transactions.find((t) => t.id === 'tx-bills-with-note');
+    expect(txWithNote?.category).toBe('Credit Card Bills'); // budget category item updated
+    expect(txWithNote?.note).toBe('Bills'); // name/note preserved as before
+
+    const txEmptyNote = dataBills.transactions.find((t) => t.id === 'tx-bills-empty-note');
+    expect(txEmptyNote?.category).toBe('Credit Card Bills'); // budget category item updated
+    expect(txEmptyNote?.note).toBe('Bills'); // previously set name preserved in note
   });
 
   it('budgetItemForTransaction resolves non-holding budget item for expense transactions', () => {

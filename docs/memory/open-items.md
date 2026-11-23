@@ -2,7 +2,16 @@
 
 # Open items
 
-## P20-Y-R4 Strictly preserve transaction note across all budget item renames (Done; CR-138)
+## P20-Y-R5 Preserve transaction name/note on budget category item rename (Done; CR-139)
+
+- Subtask P20-Y-R5 (CR-139, 2026-11-23): Strictly preserve the transaction name/note as previously set when a budget category item is renamed, updating only the transaction budget category item.
+- User reported: when renaming a budget category item (e.g. from 'Bills' to 'Credit Card Bills'), if the transaction budget category item was selected as 'Bills' and name/note was also 'Bills', the transaction budget category item updated to 'Credit Card Bills' (which was wanted) but the transaction name/note also changed to 'Credit Card Bills' (which was unwanted); the transaction name/note must remain as previously set ('Bills').
+- Root cause: in `app/(tabs)/transactions.tsx`, `itemTitle` fell back to `linkedBudgetItem?.name` for empty-note transactions, causing the transaction title to dynamically change to the new budget item name; additionally, if note was empty at creation, the original category name was not persisted in note when renamed.
+- P20-Y-R5 removes `linkedBudgetItem?.name` fallback from `itemTitle` in `transactions.tsx` (keeping `(item.note || categoryLabel)`), and updates `editItem`, `renameSection`, `editBudgetIncome`, and `reconcileBudgetItemTransactions` to set `note: tx.note ? tx.note : oldName` when renaming, ensuring the transaction's previously set name/note is permanently preserved across both domain and display layers.
+- Regression tests in `src/domain/__tests__/budgetItemRenameTransactions.test.ts` and `src/components/__tests__/TransactionsScreen.test.tsx`.
+- Ordered six gates pass with exit 0. Physical-device check O77 remains Not run.
+
+## P20-Y-R4 Strictly preserve transaction note across all budget item renames (Done; Revised by P20-Y-R5; CR-138)
 
 - Subtask P20-Y-R4 (CR-138, 2026-11-23): Strictly preserve transaction notes across all budget item, section, and income renames including holding-linked investments, syncing category only.
 - In P20-Y-R3, non-holding budget item renames preserved notes, but holding-linked items in `editItem` still updated transaction notes via `matchedTxIds` when note matched `oldName` or deposit templates.

@@ -221,6 +221,7 @@ export function reconcileBudgetItemTransactions(data: AppData): AppData {
           return {
             ...tx,
             category: currentItem.name,
+            note: tx.note ? tx.note : tx.category,
           };
         }
       }
