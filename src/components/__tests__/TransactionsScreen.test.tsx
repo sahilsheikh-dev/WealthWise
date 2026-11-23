@@ -769,4 +769,55 @@ describe('Transactions sorting', () => {
     }];
     mockData.monthBudgets = [];
   });
+
+  it('preserves transaction title note when budget category item is renamed', async () => {
+    mockTxMonth = '2026-11';
+    mockData.monthBudgets = [{
+      month: '2026-11',
+      source: 'custom',
+      linkedIncluded: true,
+      incomes: [],
+      sections: [{ id: 'sec-spend', name: 'Living', type: 'spend' }],
+      items: [{
+        id: 'item-bills-id',
+        sectionId: 'sec-spend',
+        name: 'Credit Card Bills',
+        mode: 'amount',
+        value: 5_000,
+        frequency: 'monthly',
+      }],
+    }];
+    mockData.transactions = [{
+      id: 'tx-bills',
+      type: 'expense',
+      amount: 1_200,
+      category: 'Credit Card Bills',
+      note: 'Bills', // preserved name/note
+      date: '2026-11-18',
+    }];
+
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    await act(async () => {
+      renderer = TestRenderer.create(<TransactionsScreen />);
+      await Promise.resolve();
+    });
+    if (!renderer) throw new Error('Transactions renderer was not created.');
+
+    const items = renderer.root.findAll((node) => String(node.type) === 'listitem');
+    const txItem = items.find((node) => node.props.amount?.includes('1,200'));
+    expect(txItem).toBeDefined();
+    expect(txItem?.props.title).toBe('Bills'); // name/note is preserved as 'Bills'
+    expect(txItem?.props.subtitle).toBe('Credit Card Bills'); // budget category item is updated to 'Credit Card Bills'
+
+    mockTxMonth = '2026-10';
+    mockData.transactions = [{
+      id: 'withdrawal',
+      type: 'income',
+      amount: 5_000,
+      category: 'Withdrawal',
+      note: 'Cash withdrawal',
+      date: '2026-10-10',
+    }];
+    mockData.monthBudgets = [];
+  });
 });

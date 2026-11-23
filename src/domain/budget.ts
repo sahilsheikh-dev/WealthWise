@@ -1000,7 +1000,13 @@ export function editBudgetIncome(
         txUpdated = true;
       }
 
-      return txUpdated ? { ...tx, category: nextCategory } : tx;
+      return txUpdated
+        ? {
+          ...tx,
+          category: nextCategory,
+          note: tx.note ? tx.note : (oldIncomeName !== name ? oldIncomeName : oldIncomeCategory),
+        }
+        : tx;
     });
     return { ...updatedData, transactions: nextTransactions };
   }
@@ -1056,6 +1062,7 @@ export function renameSection(
         return {
           ...tx,
           category: name,
+          note: tx.note ? tx.note : oldSectionName,
         };
       }
       return tx;
@@ -1246,7 +1253,11 @@ export function editItem(
       if (scope === 'following' && txMonth < month) return tx;
 
       if (tx.category === oldName) {
-        return { ...tx, category: name };
+        return {
+          ...tx,
+          category: name,
+          note: tx.note ? tx.note : oldName,
+        };
       }
 
       return tx;
