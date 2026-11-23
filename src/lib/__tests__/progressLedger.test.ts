@@ -1776,4 +1776,23 @@ describe('permanent progress ledger', () => {
     expect(openItems).toContain('P20-Y-R5');
     expect(status).toContain('P20-Y-R5');
   });
+
+  it('records CR-140 owner-reported physical-device validation Pass for O77', () => {
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const independentEntities = ledger.split('## 13. Independent entities')[1] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const checklist = readFileSync(join(process.cwd(), 'docs/releases/device-test-checklist.md'), 'utf8');
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-140 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-140 |'))).toHaveLength(1);
+    expect(independentEntities.split('\n').filter((line) => line.startsWith('| CR-140 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-140');
+    expect(checklist).toMatch(/\|\s*O77\s*\|[^|]+\|\s*Pass\s*\|/);
+    expect(checklist).toContain('The owner reports O77 passed on 2026-11-23.');
+    expect(openItems).toContain('O77');
+    expect(status).toContain('CR-140');
+  });
 });
