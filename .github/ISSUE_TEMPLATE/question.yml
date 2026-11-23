@@ -1,0 +1,29 @@
+name: Question
+description: Ask a question about using or contributing to WealthWise
+title: "[Question]: "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### Privacy Reminder
+        Never share real account details, transactions, balances, or private data when asking questions.
+  - type: textarea
+    id: question
+    attributes:
+      label: Your Question
+      description: What would you like to know or clarify about WealthWise?
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Provide any relevant context or documentation you have already reviewed.
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Confirmation
+      options:
+        - label: I confirm no private financial details or credentials are included in this question.
+          required: true

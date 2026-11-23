@@ -2,6 +2,17 @@
 
 # Open items
 
+## P31 Community and project health deliverables (Done; CR-149)
+
+- Subtasks P31-A, P31-B, P31-C, P31-D (CR-149, 2026-11-24): Completed repository deliverables for project health, community, accessibility, and privacy:
+  1. **P31-A (Community guidelines):** Added `CODE_OF_CONDUCT.md` at repository root establishing standards of mutual respect, constructive collaboration, strict confidentiality of financial records, prohibited behaviors, and private maintainer reporting procedures.
+  2. **P31-B (Issue forms):** Upgraded `.github/ISSUE_TEMPLATE/` to structured YAML forms: `bug_report.yml`, `feature_request.yml`, `question.yml`, and `config.yml`. Explicit privacy banners and required confirmation checkboxes ensure contributors do not disclose real financial data, balances, account numbers, credentials, or backups. Removed legacy markdown templates (`bug_report.md`, `feature_request.md`). Configured `config.yml` with `blank_issues_enabled: false` and maintainer security contact links.
+  3. **P31-C (Accessibility documentation):** Added accessibility statement (`docs/accessibility/accessibility-statement.md`) establishing WCAG 2.1 AA conformance targets, 44x44 pt touch targets, dynamic typography (1.0x, 1.3x, 2.0x), high contrast ratios, and screen reader semantic mappings. Added practical audit checklist (`docs/accessibility/audit-checklist.md`) detailing verification steps across target sizes, scaling, color contrast, and assistive technologies.
+  4. **P31-D (Privacy statement):** Added `PRIVACY.md` at repository root derived strictly from verified facts established during the P39-C audit trace: 100% offline-first architecture, local SQLite (`wealthwise-state.db`) and AsyncStorage (`wealthwise.app.v1`) sandboxing, zero network calls (`fetch`, `XMLHttpRequest`, `WebSocket`), zero analytics/telemetry, local notifications only on channel `'reminders'`, biometric authentication evaluated locally via OS Secure Enclave with passcode fallback, scoped file access via SAF, optional AES-256-GCM + PBKDF2 (100k iterations) backup export encryption, `android:allowBackup="false"`, and explicit disclosure that local data on device storage is unencrypted at rest at the app layer.
+- Pure documentation scope; schema version remains 24; no runtime behavior changed.
+- Physical-device checks: none required (no user-facing application behavior changed).
+- Ordered six gates pass: Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
+
 ## CR-143 Plan Budget category filter (P20-Z) and Dynamic asset valuation (P29-U-R1) (Planned)
 
 - Change request CR-143 (2026-11-23): Recorded two feature requests as Planned work only across repository ledgers, memory, and roadmap:
