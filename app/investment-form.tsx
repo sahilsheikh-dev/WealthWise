@@ -44,11 +44,11 @@ import { useTheme } from '../src/theme/useTheme';
 const frequencies: Frequency[] = ['daily', 'weekly', 'monthly', 'yearly'];
 const compoundingOptions = ['monthly', 'quarterly', 'halfYearly', 'yearly', 'simple'] as const;
 const valuationMethodOptions = [
-  { value: 'balance', title: 'Balance' },
-  { value: 'balanceInterest', title: 'Balance plus interest' },
-  { value: 'accrual', title: 'Accrual estimate' },
   { value: 'manual', title: 'Manual value' },
-  { value: 'unitsPrice', title: 'Units × price' },
+  { value: 'accrual', title: 'Interest-based' },
+  { value: 'unitsPrice', title: 'Unit-based' },
+  { value: 'balance', title: 'Balance-based' },
+  { value: 'balanceInterest', title: 'Balance plus interest' },
 ];
 const openingBalanceHint = 'Money you had already put in before you started tracking here. It counts towards your invested amount.';
 const actualValueHint = "Today's value from your statement or investment app. Leave it blank and we will use our estimate.";
@@ -141,13 +141,17 @@ function PlanEditor({
         ratePct: String(plan.ratePct), stepUpPct: String(plan.stepUpPct), tenureYears: String(plan.tenureYears),
         startDate: plan.startDate, trackFrom: plan.trackFrom, opening: String(plan.opening),
         actualValue: plan.actualValue === null ? '' : String(plan.actualValue), actualValueDate: plan.actualValueDate ?? '',
-        valuationMethod: plan.valuationMethod ?? 'manual',
+        valuationMethod: plan.valuationMethod ?? suggestedValuationMethod(plan.type, false, plan.ratePct),
         compounding: plan.compounding ?? 'yearly',
         maturityDate: plan.maturityDate ?? '',
+        unitCount: plan.unitCount === undefined ? '' : String(plan.unitCount),
+        latestPrice: plan.latestPrice === undefined ? '' : String(plan.latestPrice),
+        priceAsOf: plan.priceAsOf ?? '',
       } : {
         name: nameSeed, type: 'Mutual fund / SIP', customTypeName: '', frequency: 'monthly', amount: '', ratePct: '',
         stepUpPct: '', tenureYears: '', startDate: today, trackFrom: today, opening: '',
         actualValue: '', actualValueDate: '', valuationMethod: 'manual', compounding: 'yearly', maturityDate: '',
+        unitCount: '', latestPrice: '', priceAsOf: '',
       },
     });
   const amount = useWatch({ control, name: 'amount' });
@@ -306,26 +310,30 @@ function ManualEditor({
   const schema = useMemo(() => makeHoldingFormSchema({
     otherNames: data.holdings.filter((item) => item.id !== holding?.id).map((item) => item.name),
     entriesExist: Boolean(holding?.logs.length),
-  }), [data.holdings, holding?.id, holding?.logs.length]);
-  const { control, handleSubmit, formState: { errors, isDirty, isSubmitting, dirtyFields } } = useForm<HoldingFormInput, undefined, HoldingFormOutput>({
+    today,
+  }), [data.holdings, holding?.id, holding?.logs.length, today]);
+  const { control, handleSubmit, setValue, formState: { errors, isDirty, isSubmitting, dirtyFields } } = useForm<HoldingFormInput, undefined, HoldingFormOutput>({
     resolver: zodResolver(schema), mode: 'onTouched', reValidateMode: 'onChange',
     defaultValues: holding ? {
       name: holding.name, type: holding.type, customTypeName: holding.customTypeName ?? '', invested: String(holding.invested), value: String(holding.value),
-      valuationMethod: holding.valuationMethod ?? 'manual',
+      valuationMethod: holding.valuationMethod ?? suggestedValuationMethod(holding.type, holding.logs.some((entry) => entry.price !== undefined), holding.ratePct),
       ratePct: holding.ratePct === undefined ? '' : String(holding.ratePct),
       compounding: holding.compounding ?? 'yearly',
       maturityDate: holding.maturityDate ?? '',
+      unitCount: holding.unitCount === undefined ? '' : String(holding.unitCount),
+      latestPrice: holding.latestPrice === undefined ? '' : String(holding.latestPrice),
+      priceAsOf: holding.priceAsOf ?? '',
     } : {
       name: nameSeed, type: 'EPFO / PF', customTypeName: '', invested: '', value: '',
       valuationMethod: 'manual', ratePct: '', compounding: 'yearly', maturityDate: '',
+      unitCount: '', latestPrice: '', priceAsOf: '',
     },
   });
   const invested = useWatch({ control, name: 'invested' });
   const value = useWatch({ control, name: 'value' });
   const holdingType = useWatch({ control, name: 'type' });
-  const ratePct = useWatch({ control, name: 'ratePct' });
   const keepsEarlierEntries = Boolean(holding?.logs.length) && !holdingCapabilities(holdingType).entries;
-  const numeric = (raw: string) => Number(raw.replaceAll(',', ''));
+  const numeric = (raw: string | undefined) => Number((raw ?? '').replaceAll(',', ''));
   const belowCost = Number.isFinite(numeric(invested)) && Number.isFinite(numeric(value)) && numeric(value) < numeric(invested);
   const save = (values: HoldingFormOutput) => {
     const configuredValues = !holding && !dirtyFields.valuationMethod
@@ -370,51 +378,11 @@ function ManualEditor({
       <ManualFields
         control={control}
         errors={errors}
+        setValue={setValue}
+        holding={holding}
+        today={today}
         onNameChange={onNameChange}
       />
-      <FormSection title="Valuation">
-        <Controller control={control} name="valuationMethod" render={({ field }) => <Dropdown
-          label="Valuation method"
-          accessibilityLabel="Valuation method"
-          options={valuationMethodOptions}
-          value={field.value ?? 'manual'}
-          onChange={field.onChange}
-          error={errors.valuationMethod?.message}
-        />} />
-        <Controller control={control} name="ratePct" render={({ field }) => (
-          <FieldTitle title="Annual rate">
-            <PercentField
-              label="Annual rate"
-              accessibilityLabel="Annual accrual rate"
-              value={field.value ?? ''}
-              onChangeText={field.onChange}
-              onBlur={field.onBlur}
-              error={errors.ratePct?.message}
-            />
-          </FieldTitle>
-        )} />
-        <Controller control={control} name="compounding" render={({ field }) => <Dropdown
-          label="Compounding"
-          accessibilityLabel="Compounding"
-          options={compoundingOptions.map((option) => ({ value: option, title: option }))}
-          value={field.value ?? 'yearly'}
-          onChange={field.onChange}
-          error={errors.compounding?.message}
-        />} />
-        <Controller control={control} name="maturityDate" render={({ field }) => (
-          <FieldTitle title="Maturity date">
-            <TextField
-              label="Maturity date (YYYY-MM-DD)"
-              accessibilityLabel="Maturity date"
-              value={field.value ?? ''}
-              onChangeText={field.onChange}
-              onBlur={field.onBlur}
-              error={errors.maturityDate?.message}
-            />
-          </FieldTitle>
-        )} />
-        <HelperText>Suggested: {suggestedValuationMethod(holdingType, Boolean(holding?.logs.some((entry) => entry.price)), ratePct === '' ? undefined : Number(ratePct))}. Changing the suggestion configures this method.</HelperText>
-      </FormSection>
       {keepsEarlierEntries ? <HelperText>Entries from earlier are kept.</HelperText> : null}
       {holding ? <Button label="Value is still correct today" variant="soft" disabled={holding.valueAsOf === today} onPress={() => actions.confirmHoldingValue(holding.id)} /> : null}
       {belowCost ? <HelperText tone="warning">Value is below what you invested</HelperText> : null}
@@ -445,6 +413,7 @@ function PlanFields({
 }) {
   const [infoOpen, setInfoOpen] = useState(false);
   const { colors } = useTheme();
+  const valuationMethod = useWatch({ control, name: 'valuationMethod' }) ?? 'manual';
   return (
     <>
       <FormSection title="Basics">
@@ -518,56 +487,60 @@ function PlanFields({
           </FieldTitle>
         )} />
         <HelperText accessibilityHint={openingBalanceHint}>{openingBalanceHint}</HelperText>
-        <Controller control={control} name="actualValue" render={({ field }) => (
-          <FieldTitle title="Latest actual value">
-            <MoneyField
-              label="Latest actual value"
-              accessibilityLabel="Latest actual value"
-              value={field.value ?? ''}
-              onChangeText={(value) => {
-                field.onChange(value);
-                if (value.trim()) onActualValueEntered();
-              }}
-              onBlur={field.onBlur}
-              error={errors.actualValue?.message}
+        {valuationMethod === 'manual' ? (
+          <>
+            <Controller control={control} name="actualValue" render={({ field }) => (
+              <FieldTitle title="Latest actual value">
+                <MoneyField
+                  label="Latest actual value"
+                  accessibilityLabel="Latest actual value"
+                  value={field.value ?? ''}
+                  onChangeText={(value) => {
+                    field.onChange(value);
+                    if (value.trim()) onActualValueEntered();
+                  }}
+                  onBlur={field.onBlur}
+                  error={errors.actualValue?.message}
+                />
+              </FieldTitle>
+            )} />
+            <HelperText accessibilityHint={actualValueHint}>{actualValueHint}</HelperText>
+            <Controller control={control} name="actualValueDate" render={({ field }) => <DateField
+              label="Actual value date"
+              accessibilityLabel="Actual value date"
+              accessibilityHint={actualValueDateHint}
+              value={field.value || today}
+              onChange={field.onChange}
+              maximumDate={today}
+              error={errors.actualValueDate?.message}
+            />} />
+            <HelperText accessibilityHint={actualValueDateHint}>{actualValueDateHint}</HelperText>
+            <Button
+              label="Investment value example"
+              icon="info"
+              accessibilityHint="Opens a worked example for the investment value fields."
+              onPress={() => setInfoOpen(true)}
             />
-          </FieldTitle>
-        )} />
-        <HelperText accessibilityHint={actualValueHint}>{actualValueHint}</HelperText>
-        <Controller control={control} name="actualValueDate" render={({ field }) => <DateField
-          label="Actual value date"
-          accessibilityLabel="Actual value date"
-          accessibilityHint={actualValueDateHint}
-          value={field.value || today}
-          onChange={field.onChange}
-          maximumDate={today}
-          error={errors.actualValueDate?.message}
-        />} />
-        <HelperText accessibilityHint={actualValueDateHint}>{actualValueDateHint}</HelperText>
-        <Button
-          label="Investment value example"
-          icon="info"
-          accessibilityHint="Opens a worked example for the investment value fields."
-          onPress={() => setInfoOpen(true)}
-        />
-        <Modal visible={infoOpen} transparent animationType="slide" onRequestClose={() => setInfoOpen(false)}>
-          <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: '#0008' }}>
-            <View
-              accessibilityViewIsModal
-              style={{ padding: 20, paddingBottom: 34, gap: 12, borderTopLeftRadius: 20, borderTopRightRadius: 20, backgroundColor: colors.surface }}>
-              <AppText weight="bold">Investment value example</AppText>
-              <AppText
-                accessibilityLabel={`For example, you had ${formatAmount(10_000, 'exact', 1)} put in before tracking. This counts toward invested amount. Your statement now shows ${formatAmount(11_000, 'exact', 1)} on the date you checked it.`}>
-                For example, you had <AmountText value={10_000} tier="row" /> put in before tracking. This counts toward invested amount. Your statement now shows <AmountText value={11_000} tier="row" /> on the date you checked it.
-              </AppText>
-              <Button
-                label="Close investment value example"
-                icon="x"
-                onPress={() => setInfoOpen(false)}
-              />
-            </View>
-          </View>
-        </Modal>
+            <Modal visible={infoOpen} transparent animationType="slide" onRequestClose={() => setInfoOpen(false)}>
+              <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: '#0008' }}>
+                <View
+                  accessibilityViewIsModal
+                  style={{ padding: 20, paddingBottom: 34, gap: 12, borderTopLeftRadius: 20, borderTopRightRadius: 20, backgroundColor: colors.surface }}>
+                  <AppText weight="bold">Investment value example</AppText>
+                  <AppText
+                    accessibilityLabel={`For example, you had ${formatAmount(10_000, 'exact', 1)} put in before tracking. This counts toward invested amount. Your statement now shows ${formatAmount(11_000, 'exact', 1)} on the date you checked it.`}>
+                    For example, you had <AmountText value={10_000} tier="row" /> put in before tracking. This counts toward invested amount. Your statement now shows <AmountText value={11_000} tier="row" /> on the date you checked it.
+                  </AppText>
+                  <Button
+                    label="Close investment value example"
+                    icon="x"
+                    onPress={() => setInfoOpen(false)}
+                  />
+                </View>
+              </View>
+            </Modal>
+          </>
+        ) : null}
       </FormSection>
       <FormSection title="Valuation">
         <Controller control={control} name="valuationMethod" render={({ field }) => <Dropdown
@@ -578,29 +551,59 @@ function PlanFields({
           onChange={field.onChange}
           error={errors.valuationMethod?.message}
         />} />
-        <Controller control={control} name="compounding" render={({ field }) => <Dropdown
-          label="Compounding"
-          accessibilityLabel="Compounding"
-          options={compoundingOptions.map((option) => ({ value: option, title: option }))}
-          value={field.value ?? 'yearly'}
-          onChange={field.onChange}
-          error={errors.compounding?.message}
-        />} />
-        <Controller control={control} name="maturityDate" render={({ field }) => (
-          <FieldTitle title="Maturity date">
-            <TextField
-              label="Maturity date (YYYY-MM-DD)"
-              accessibilityLabel="Maturity date"
-              value={field.value ?? ''}
-              onChangeText={field.onChange}
-              onBlur={field.onBlur}
-              error={errors.maturityDate?.message}
-            />
-          </FieldTitle>
-        )} />
-        <HelperText>
-          Accrual uses this plan&apos;s annual return rate. Suggested: {suggestedMethod}.
-        </HelperText>
+        {valuationMethod === 'accrual' ? (
+          <>
+            <Controller control={control} name="compounding" render={({ field }) => <Dropdown
+              label="Compounding"
+              accessibilityLabel="Compounding"
+              options={compoundingOptions.map((option) => ({ value: option, title: option }))}
+              value={field.value ?? 'yearly'}
+              onChange={field.onChange}
+              error={errors.compounding?.message}
+            />} />
+            <Controller control={control} name="maturityDate" render={({ field }) => (
+              <FieldTitle title="Maturity date">
+                <TextField
+                  label="Maturity date (YYYY-MM-DD)"
+                  accessibilityLabel="Maturity date"
+                  value={field.value ?? ''}
+                  onChangeText={field.onChange}
+                  onBlur={field.onBlur}
+                  error={errors.maturityDate?.message}
+                />
+              </FieldTitle>
+            )} />
+            <HelperText>
+              Accrual uses this plan&apos;s annual return rate and compounding. Suggested: {suggestedMethod}.
+            </HelperText>
+          </>
+        ) : valuationMethod === 'unitsPrice' ? (
+          <>
+            <Controller control={control} name="latestPrice" render={({ field }) => (
+              <FieldTitle title="Unit price">
+                <MoneyField
+                  label="Unit price"
+                  accessibilityLabel="Latest price per unit"
+                  value={field.value ?? ''}
+                  onChangeText={field.onChange}
+                  onBlur={field.onBlur}
+                  error={errors.latestPrice?.message}
+                />
+              </FieldTitle>
+            )} />
+            <HelperText>
+              Unit-based recurring investment: value is calculated from contributions and unit price. Suggested: {suggestedMethod}.
+            </HelperText>
+          </>
+        ) : valuationMethod === 'balance' ? (
+          <HelperText>
+            Balance is tracked automatically from contributions and withdrawals. Suggested: {suggestedMethod}.
+          </HelperText>
+        ) : (
+          <HelperText>
+            Manual valuation: statement values can be entered when checking the plan. Suggested: {suggestedMethod}.
+          </HelperText>
+        )}
       </FormSection>
     </>
   );
@@ -609,41 +612,231 @@ function PlanFields({
 function ManualFields({
   control,
   errors,
+  setValue,
+  holding,
+  today: _today,
   onNameChange,
 }: {
   control: Control<HoldingFormInput, undefined, HoldingFormOutput>;
   errors: FieldErrors<HoldingFormInput>;
+  setValue: (name: keyof HoldingFormInput, value: any, options?: any) => void;
+  holding?: ManualHolding;
+  today: string;
   onNameChange: (name: string) => void;
 }) {
+  const valuationMethod = useWatch({ control, name: 'valuationMethod' }) ?? 'manual';
+  const holdingType = useWatch({ control, name: 'type' });
+  const ratePct = useWatch({ control, name: 'ratePct' });
+  const invested = useWatch({ control, name: 'invested' });
+  const unitCount = useWatch({ control, name: 'unitCount' });
+  const latestPrice = useWatch({ control, name: 'latestPrice' });
+
   return (
-    <FormSection title="Investment">
-      <Controller control={control} name="name" render={({ field }) => (
-        <FieldTitle title="Name">
-          <TextField label="Name" accessibilityLabel="Holding name" maxLength={40} value={field.value} onChangeText={(value) => { field.onChange(value); onNameChange(value); }} onBlur={field.onBlur} error={errors.name?.message} />
-        </FieldTitle>
-      )} />
-      <Controller control={control} name="type" render={({ field }) => (
-        <>
-          <Dropdown label="Holding type" accessibilityLabel="Holding type" options={HOLDING_TYPES.map((type) => ({ value: type, title: type }))} value={field.value} onChange={field.onChange} error={errors.type?.message} />
-          {field.value === 'Custom' ? (
-            <Controller control={control} name="customTypeName" render={({ field: customField }) => (
-              <FieldTitle title="Custom type name">
-                <TextField label="Custom type name" accessibilityLabel="Custom holding type name" maxLength={30} value={customField.value ?? ''} onChangeText={customField.onChange} onBlur={customField.onBlur} error={errors.customTypeName?.message} />
+    <>
+      <FormSection title="Investment">
+        <Controller control={control} name="name" render={({ field }) => (
+          <FieldTitle title="Name">
+            <TextField label="Name" accessibilityLabel="Holding name" maxLength={40} value={field.value} onChangeText={(value) => { field.onChange(value); onNameChange(value); }} onBlur={field.onBlur} error={errors.name?.message} />
+          </FieldTitle>
+        )} />
+        <Controller control={control} name="type" render={({ field }) => (
+          <>
+            <Dropdown label="Holding type" accessibilityLabel="Holding type" options={HOLDING_TYPES.map((type) => ({ value: type, title: type }))} value={field.value} onChange={field.onChange} error={errors.type?.message} />
+            {field.value === 'Custom' ? (
+              <Controller control={control} name="customTypeName" render={({ field: customField }) => (
+                <FieldTitle title="Custom type name">
+                  <TextField label="Custom type name" accessibilityLabel="Custom holding type name" maxLength={30} value={customField.value ?? ''} onChangeText={customField.onChange} onBlur={customField.onBlur} error={errors.customTypeName?.message} />
+                </FieldTitle>
+              )} />
+            ) : null}
+          </>
+        )} />
+      </FormSection>
+      <FormSection title="Valuation">
+        <Controller control={control} name="valuationMethod" render={({ field }) => <Dropdown
+          label="Valuation method"
+          accessibilityLabel="Valuation method"
+          options={valuationMethodOptions}
+          value={field.value ?? 'manual'}
+          onChange={field.onChange}
+          error={errors.valuationMethod?.message}
+        />} />
+        {valuationMethod === 'manual' ? (
+          <>
+            <Controller control={control} name="invested" render={({ field }) => (
+              <FieldTitle title="Invested">
+                <MoneyField label="Invested" accessibilityLabel="Holding invested amount" value={field.value ?? ''} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.invested?.message} />
               </FieldTitle>
             )} />
-          ) : null}
-        </>
-      )} />
-      <Controller control={control} name="invested" render={({ field }) => (
-        <FieldTitle title="Invested">
-          <MoneyField label="Invested" accessibilityLabel="Holding invested amount" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.invested?.message} />
-        </FieldTitle>
-      )} />
-      <Controller control={control} name="value" render={({ field }) => (
-        <FieldTitle title="Current value">
-          <MoneyField label="Current value" accessibilityLabel="Holding current value" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.value?.message} />
-        </FieldTitle>
-      )} />
-    </FormSection>
+            <Controller control={control} name="value" render={({ field }) => (
+              <FieldTitle title="Current value">
+                <MoneyField label="Current value" accessibilityLabel="Holding current value" value={field.value ?? ''} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.value?.message} />
+              </FieldTitle>
+            )} />
+            <HelperText>Manual valuation: enter and update the asset value manually.</HelperText>
+          </>
+        ) : valuationMethod === 'accrual' ? (
+          <>
+            <Controller control={control} name="invested" render={({ field }) => (
+              <FieldTitle title="Principal invested">
+                <MoneyField label="Principal invested" accessibilityLabel="Holding invested amount" value={field.value ?? ''} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.invested?.message} />
+              </FieldTitle>
+            )} />
+            <Controller control={control} name="ratePct" render={({ field }) => (
+              <FieldTitle title="Annual rate">
+                <PercentField
+                  label="Annual rate"
+                  accessibilityLabel="Annual accrual rate"
+                  value={field.value ?? ''}
+                  onChangeText={field.onChange}
+                  onBlur={field.onBlur}
+                  error={errors.ratePct?.message}
+                />
+              </FieldTitle>
+            )} />
+            <Controller control={control} name="compounding" render={({ field }) => <Dropdown
+              label="Compounding"
+              accessibilityLabel="Compounding"
+              options={compoundingOptions.map((option) => ({ value: option, title: option }))}
+              value={field.value ?? 'yearly'}
+              onChange={field.onChange}
+              error={errors.compounding?.message}
+            />} />
+            <Controller control={control} name="maturityDate" render={({ field }) => (
+              <FieldTitle title="Maturity date">
+                <TextField
+                  label="Maturity date (YYYY-MM-DD)"
+                  accessibilityLabel="Maturity date"
+                  value={field.value ?? ''}
+                  onChangeText={field.onChange}
+                  onBlur={field.onBlur}
+                  error={errors.maturityDate?.message}
+                />
+              </FieldTitle>
+            )} />
+            <HelperText>Interest-based valuation: accrued value is calculated automatically from annual rate and elapsed days.</HelperText>
+          </>
+        ) : valuationMethod === 'unitsPrice' ? (
+          <>
+            <Controller control={control} name="invested" render={({ field }) => (
+              <FieldTitle title="Purchase amount">
+                <MoneyField
+                  label="Purchase amount"
+                  accessibilityLabel="Holding invested amount"
+                  value={field.value ?? ''}
+                  onChangeText={(val) => {
+                    field.onChange(val);
+                    const numInvested = Number(val.replaceAll(',', ''));
+                    const numPrice = Number((latestPrice ?? '').replaceAll(',', ''));
+                    if (Number.isFinite(numInvested) && numPrice > 0) {
+                      setValue('unitCount', String(Math.round((numInvested / numPrice) * 1000000) / 1000000), { shouldDirty: true });
+                    }
+                    setValue('value', val, { shouldDirty: true });
+                  }}
+                  onBlur={field.onBlur}
+                  error={errors.invested?.message}
+                />
+              </FieldTitle>
+            )} />
+            <Controller control={control} name="latestPrice" render={({ field }) => (
+              <FieldTitle title="Unit price">
+                <MoneyField
+                  label="Unit price"
+                  accessibilityLabel="Latest price per unit"
+                  value={field.value ?? ''}
+                  onChangeText={(val) => {
+                    field.onChange(val);
+                    const numPrice = Number(val.replaceAll(',', ''));
+                    const numUnits = Number((unitCount ?? '').replaceAll(',', ''));
+                    const numInvested = Number((invested ?? '').replaceAll(',', ''));
+                    if (Number.isFinite(numPrice) && numPrice > 0) {
+                      if (Number.isFinite(numUnits) && numUnits > 0) {
+                        const total = String(Math.round(numUnits * numPrice * 100) / 100);
+                        setValue('invested', total, { shouldDirty: true });
+                        setValue('value', total, { shouldDirty: true });
+                      } else if (Number.isFinite(numInvested) && numInvested > 0) {
+                        setValue('unitCount', String(Math.round((numInvested / numPrice) * 1000000) / 1000000), { shouldDirty: true });
+                      }
+                    }
+                  }}
+                  onBlur={field.onBlur}
+                  error={errors.latestPrice?.message}
+                />
+              </FieldTitle>
+            )} />
+            <Controller control={control} name="unitCount" render={({ field }) => (
+              <FieldTitle title="Units purchased">
+                <TextField
+                  label="Units purchased"
+                  accessibilityLabel="Units purchased"
+                  value={field.value ?? ''}
+                  onChangeText={(val) => {
+                    field.onChange(val);
+                    const numUnits = Number(val.replaceAll(',', ''));
+                    const numPrice = Number((latestPrice ?? '').replaceAll(',', ''));
+                    if (Number.isFinite(numUnits) && numPrice > 0) {
+                      const total = String(Math.round(numUnits * numPrice * 100) / 100);
+                      setValue('invested', total, { shouldDirty: true });
+                      setValue('value', total, { shouldDirty: true });
+                    }
+                  }}
+                  onBlur={field.onBlur}
+                  error={errors.unitCount?.message}
+                />
+              </FieldTitle>
+            )} />
+            <HelperText>Unit-based valuation: calculates total value from units purchased and unit price.</HelperText>
+          </>
+        ) : valuationMethod === 'balance' ? (
+          <>
+            <Controller control={control} name="invested" render={({ field }) => (
+              <FieldTitle title="Opening balance">
+                <MoneyField
+                  label="Opening balance"
+                  accessibilityLabel="Holding invested amount"
+                  value={field.value ?? ''}
+                  onChangeText={(val) => {
+                    field.onChange(val);
+                    setValue('value', val, { shouldDirty: true });
+                  }}
+                  onBlur={field.onBlur}
+                  error={errors.invested?.message}
+                />
+              </FieldTitle>
+            )} />
+            <HelperText>Balance-based valuation: balance is calculated from opening balance plus deposits minus withdrawals.</HelperText>
+          </>
+        ) : (
+          <>
+            <Controller control={control} name="invested" render={({ field }) => (
+              <FieldTitle title="Opening balance">
+                <MoneyField
+                  label="Opening balance"
+                  accessibilityLabel="Holding invested amount"
+                  value={field.value ?? ''}
+                  onChangeText={field.onChange}
+                  onBlur={field.onBlur}
+                  error={errors.invested?.message}
+                />
+              </FieldTitle>
+            )} />
+            <Controller control={control} name="ratePct" render={({ field }) => (
+              <FieldTitle title="Annual rate">
+                <PercentField
+                  label="Annual rate"
+                  accessibilityLabel="Annual accrual rate"
+                  value={field.value ?? ''}
+                  onChangeText={field.onChange}
+                  onBlur={field.onBlur}
+                  error={errors.ratePct?.message}
+                />
+              </FieldTitle>
+            )} />
+            <HelperText>Balance plus interest: tracks balance with interest accrued.</HelperText>
+          </>
+        )}
+        <HelperText>Suggested: {suggestedValuationMethod(holdingType, Boolean(holding?.logs.some((entry) => entry.price)), ratePct === '' ? undefined : Number(ratePct))}. Changing the suggestion configures this method.</HelperText>
+      </FormSection>
+    </>
   );
 }
