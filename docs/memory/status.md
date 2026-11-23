@@ -1,6 +1,17 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-23 | Updates: owner and AI agents -->
 
 # Status
+- **P39-C / CR-148 (2026-11-24) — Report-first permissions and privacy trace.**
+  Completed permissions and privacy trace across declarations, runtime requests, and usage:
+  1. *Network & Analytics:* 100% offline; zero network calls (`fetch`, `XMLHttpRequest`, `WebSocket`) verified by `src/lib/__tests__/offlineRuntime.test.ts`; zero telemetry or analytics SDKs.
+  2. *Android allowBackup:* Explicitly configured `allowBackup: false` in `app.json`, disabling automatic cloud upload of financial records to Google Drive.
+  3. *Notifications:* Local scheduling only under channel `'reminders'`; no remote push tokens or remote servers.
+  4. *Biometrics:* Used for optional app lock; evaluated locally in OS Secure Enclave / Keystore; no biometric data captured or stored; passcode fallback available.
+  5. *Storage & File Intents:* Scoped SAF file picker (`expo-document-picker`) and system share sheet (`expo-sharing`); no broad external storage permissions requested at runtime.
+  6. *Data at Rest & Backup Encryption:* SQLite database (`wealthwise-state.db`) and AsyncStorage stored unencrypted at rest within OS app sandbox; exported backups support strong AES-256-GCM + PBKDF2 encryption.
+  7. *Unverifiable items:* Marked root/jailbreak kernel bypass and custom vendor OEM intent quirks as unverifiable at application level.
+  Detailed audit report written to `/tmp/wealthwise-p39-c-permissions-privacy-trace.md`; findings directly feed P31-D privacy statement.
+  Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
 - **P29-U-R1 / CR-147 (2026-11-23) — Dynamic asset valuation inputs and calculations, and owner-reported O80 Pass.**
   Implemented dynamic asset valuation inputs and calculations depending on the selected valuation type
   across both recurring and one-time assets in `app/investment-form.tsx` and `app/holding-valuation-form.tsx`:
