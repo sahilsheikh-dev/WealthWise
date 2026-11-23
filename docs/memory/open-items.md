@@ -2,6 +2,13 @@
 
 # Open items
 
+## CR-143 Plan Budget category filter (P20-Z) and Dynamic asset valuation (P29-U-R1) (Planned)
+
+- Change request CR-143 (2026-11-23): Recorded two feature requests as Planned work only across repository ledgers, memory, and roadmap:
+  1. **P20-Z (Budget Category Filter):** Add a dynamic category filter alongside the existing Budget sorting option. It should default to "All", list available categories (including Income, Expenses, Needs, Wants, Debt, Assets, and Liabilities), and automatically include newly created categories, following the Transactions section's behavior. Placed in Phase P20 (`phase/20-budget`) under Rule 4 (new part in existing feature area).
+  2. **P29-U-R1 (Dynamic Asset Valuation):** Make valuation inputs and calculations depend on the selected valuation type (manual value input, interest-based rate calculation, unit-based purchase amount/unit price/units purchased calculation, balance-based current balance) across recurring and one-time assets. Placed in Phase P29 (`phase/29-income-recurrence`) under Rule 2 (adjustment to completed subtask P29-U valuation methods).
+- Recorded explicit open product questions for both features without inventing decisions. No application code, schema, dependency, version, release, or device checklist changes made. Ordered six gates pass with exit 0.
+
 ## P20-Y-R5 Preserve transaction name/note on budget category item rename (Done; CR-139)
 
 - Subtask P20-Y-R5 (CR-139, 2026-11-23): Strictly preserve the transaction name/note as previously set when a budget category item is renamed, updating only the transaction budget category item.
@@ -1058,17 +1065,19 @@ Not adopted in CR-106:
 The remaining tasks recorded as Planned on `develop` across dashboard, roadmap, and memory are:
 
 1. **P7 (Cloud Backup — Google Drive):** Research, pure domain scheduling model, Settings UI, Wi-Fi gating, offline handling, and tests (P7-A through P7-D).
-2. **P31 (Project Health & Community):** Community guidelines, issue templates, accessibility statement/audit, and privacy statement (P31-A through P31-D).
-3. **P33 (Widgets):** Platform widget research and implementation planning for Android and iOS (P33-A through P33-C).
-4. **P34 (Quick Capture):** Quick-capture platform research, home-screen shortcuts, and gesture features (P34-A through P34-C).
-5. **P35 (Transaction Auto-Detection):** SMS/notification transaction detection permissions/platform research, scope validation, and implementation planning (P35-A through P35-C).
-6. **P36 (Notes):** Notes design and implementation, media, storage, backup compatibility, and demo data (P36-A through P36-D).
-7. **P37 (Tutorials):** Accessible, replayable in-app walkthroughs and feature introductions (P37-A through P37-C).
-8. **P38 (Skeleton Loaders):** Identify real asynchronous loading states, then implement and verify skeleton loaders (P38-A through P38-C).
-9. **P39 (Hardening & Audits):** Project audit covering security, privacy, permissions, recovery, dependencies, test debt, and onboarding, followed by remediation plan (P39-A through P39-H).
-10. **P40 (Context Hygiene):** Measure documentation size/read costs, then archive completed-phase narrative from main ledger (P40-A through P40-B).
-11. **P43-E (GitHub Issue Management):** Verify GitHub issue inventory and assess batching, API limits, and noise before separately tracked issue-creation work.
-12. **P44 (Spending Heat Map):** Transactions spending heat map with selector, screen, demo data, accessibility, and device checks (P44-A through P44-D).
+2. **P20-Z (Budget Category Filter):** Dynamic category filter alongside existing Budget sorting option, defaulting to "All", listing available categories (Income, Expenses, Needs, Wants, Debt, Assets, Liabilities), and dynamically including newly created categories following Transactions behavior (Planned; CR-143).
+3. **P29-U-R1 (Dynamic Asset Valuation):** Type-dependent dynamic valuation inputs and calculations for manual, interest-based, unit-based, and balance-based holdings across recurring and one-time assets (Planned; CR-143).
+4. **P31 (Project Health & Community):** Community guidelines, issue templates, accessibility statement/audit, and privacy statement (P31-A through P31-D).
+5. **P33 (Widgets):** Platform widget research and implementation planning for Android and iOS (P33-A through P33-C).
+6. **P34 (Quick Capture):** Quick-capture platform research, home-screen shortcuts, and gesture features (P34-A through P34-C).
+7. **P35 (Transaction Auto-Detection):** SMS/notification transaction detection permissions/platform research, scope validation, and implementation planning (P35-A through P35-C).
+8. **P36 (Notes):** Notes design and implementation, media, storage, backup compatibility, and demo data (P36-A through P36-D).
+9. **P37 (Tutorials):** Accessible, replayable in-app walkthroughs and feature introductions (P37-A through P37-C).
+10. **P38 (Skeleton Loaders):** Identify real asynchronous loading states, then implement and verify skeleton loaders (P38-A through P38-C).
+11. **P39 (Hardening & Audits):** Project audit covering security, privacy, permissions, recovery, dependencies, test debt, and onboarding, followed by remediation plan (P39-A through P39-H).
+12. **P40 (Context Hygiene):** Measure documentation size/read costs, then archive completed-phase narrative from main ledger (P40-A through P40-B).
+13. **P43-E (GitHub Issue Management):** Verify GitHub issue inventory and assess batching, API limits, and noise before separately tracked issue-creation work.
+14. **P44 (Spending Heat Map):** Transactions spending heat map with selector, screen, demo data, accessibility, and device checks (P44-A through P44-D).
 
 *(Note: P21-F and P43-B were previously completed, verified, and released; all checklist rows O1–O77 are Pass; no release candidate or release lifecycle work is pending.)*
 
@@ -1079,6 +1088,41 @@ The remaining tasks recorded as Planned on `develop` across dashboard, roadmap, 
 - **P7-B (Pure Domain Model):** Pure domain model for cloud backup scheduling (frequency: daily, weekly, monthly, manual; retention policy: keep latest N backups; zero-knowledge AES-GCM local passphrase encryption before upload). Dependencies: P7-A. Evidence: not started.
 - **P7-C (UI & Settings):** UI & settings in Backup / Security screen (Connect/Disconnect Google Drive account, last backup status/timestamp, frequency picker, Wi-Fi only toggle, "Back up now", and "Restore from Google Drive" flow). Dependencies: P7-B. Evidence: not started.
 - **P7-D (Fixtures, Tests & Device Verification):** Deterministic demo data, offline fallback, token revocation handling, unit tests, and device checklist rows. Dependencies: P7-C. Evidence: not started.
+
+## P20-Z Dynamic budget category filter (Planned; CR-143)
+
+- **Goal:** Add a dynamic category filter alongside the existing Budget sorting option in the Budget screen.
+- **Scope & Requirements:**
+  - Default selection to "All".
+  - List available categories (including Income, Expenses, Needs, Wants, Debt, Assets, and Liabilities).
+  - Automatically include newly created categories dynamically, following the Transactions section's category filter behavior (`categoryFilter` in `app/(tabs)/transactions.tsx`).
+- **Placement:** Rule 4 (new part in existing Phase P20 Monthly Budget feature area); searched dashboard, register, phase history, roadmap, memory, and `app/(tabs)/budget.tsx`; related P20, P20-X, and P17-C; reason: category filtering alongside sorting extends the existing Phase P20 Budget feature area.
+- **Branch:** `phase/20-budget` (reopened from `develop`), task branch `task/P20-Z-budget-category-filter`.
+- **Open Questions / Unresolved Product Details (no decisions invented):**
+  1. *Filter granularity:* In WealthWise, "Needs", "Wants", and "Debt" are expense groups (`BudgetGroup`), whereas items belong to individual categories under those groups. Does the category filter operate at the group level, individual category level, or a hierarchical/multi-section dropdown?
+  2. *Summary impact:* When a category filter is active, does it filter visible line items only, or does it also recompute the Budget summary cards (Planned vs Actual, Cash Flow summary, Pace chart) for the filtered category?
+  3. *Persistence:* Does the selected category filter persist across app restarts/sessions (e.g., via `metaStore` like sorting in P20-X), or does it reset to "All" whenever the Budget screen mounts?
+  4. *UI layout:* How should the CategoryFilter chip/dropdown and SortChip be arranged in the AppHeader/Budget filter bar without crowding on compact screens or at 2.0x accessibility font scale?
+
+## P29-U-R1 Dynamic asset valuation inputs and calculations (Planned; CR-143)
+
+- **Goal:** Make valuation inputs and calculations depend dynamically on the selected valuation type for both recurring and one-time assets.
+- **Scope & Requirements:**
+  - *Manual valuation:* Allow users to enter and update a current valuation amount.
+  - *Interest-based valuation:* Collect an interest rate (percentage) and calculate asset value.
+  - *Unit-based valuation:* Collect purchase amount, unit price, and units purchased, and calculate total value.
+  - *Balance-based valuation:* Display the current balance derived from entries/transactions.
+  - Define exact application and behavior across recurring plans (e.g. SIPs, recurring deposits) and one-time/manual assets (e.g. stocks, gold, real estate, cash).
+- **Placement:** Rule 2 (adjustment to completed P29-U valuation methods on existing holding model); searched dashboard, register, phase history, roadmap, memory, `valuation.ts`, `holding-valuation-form.tsx`, and `investment-form.tsx`; related P29-U, P8, and P29-S; reason: adjusts the valuation method mechanics and dynamic form inputs established by completed subtask P29-U.
+- **Branch:** `phase/29-income-recurrence` (reopened from `develop`), task branch `task/P29-U-R1-dynamic-asset-valuation`.
+- **Open Questions / Unresolved Product Details (no decisions invented):**
+  1. *Unit-based input calculation:* When collecting purchase amount, unit price, and units purchased, is there a 2-way or 3-way auto-calculation (e.g., entering purchase amount and unit price automatically computes units; or entering units and price computes total purchase amount)?
+  2. *Total value vs purchase amount:* For unit-based valuation, how is current total value distinguished from historical purchase amount? Does total value equal `units * latest unit price`, with `purchase amount` stored as cost basis?
+  3. *Recurring investments with variable unit prices:* For recurring assets (e.g., monthly SIPs in mutual funds/stocks), the unit price varies each month. How are units and purchase amounts tracked per recurring installment? Does each installment entry record its own price and units, or is an average NAV/unit price maintained?
+  4. *Interest compounding options:* For interest-based valuation, which compounding frequencies are supported (simple, monthly, quarterly, half-yearly, yearly)? Does it reuse P29-U's `Compounding` enum and formula, or introduce custom interest accrual schedules?
+  5. *Balance-based valuation for recurring vs one-time:* For recurring assets, does balance-based valuation derive balance from `opening + sum(deposit logs) - sum(withdrawal logs)`? How does it differ from manual holdings?
+  6. *Schema migration:* Does dynamic valuation require additional persisted fields on `Holding` / `PlanHolding` / `ManualHolding` (e.g., `unitsPurchased`, `unitPrice`, `purchaseAmount`), and will that necessitate a schema bump to v25 with migration from v24?
+  7. *Type switching on existing holdings:* When an existing holding changes valuation type (e.g. from manual to unit-based or balance-based), how are historical logs and snapshots preserved or converted?
 
 
 ## Pending owner actions (2026-11-22 reconciliation)
