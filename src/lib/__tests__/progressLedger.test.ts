@@ -1795,4 +1795,26 @@ describe('permanent progress ledger', () => {
     expect(openItems).toContain('O77');
     expect(status).toContain('CR-140');
   });
+
+  it('records CR-141 reconciliation of completed v1.3.0 publication', () => {
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const independentEntities = ledger.split('## 13. Independent entities')[1] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const releaseHistory = readFileSync(join(process.cwd(), 'docs/releases/release-history.md'), 'utf8');
+    const releaseReadme = readFileSync(join(process.cwd(), 'docs/releases/README.md'), 'utf8');
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-141 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-141 |'))).toHaveLength(1);
+    expect(independentEntities.split('\n').filter((line) => line.startsWith('| CR-141 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-141');
+    expect(releaseHistory).toContain('| v1.3.0 | Android | `c2ec9414-ae63-44cc-b34a-0f67f6cb51cb` | android-apk | 4 | 2026-11-22 | Published; artifact verified against EAS (107,030,213 bytes) |');
+    expect(releaseReadme).toContain('Publication completed; release/v1.3.0 merged');
+    expect(openItems).toContain('CR-141');
+    expect(openItems).toContain('P28-F-R7 Prepare and publish v1.3.0 release candidate (Done');
+    expect(status).toContain('CR-141');
+    expect(status).toContain('P28-F-R7 / CR-130 (2026-11-22) — Prepare and publish v1.3.0 release candidate.');
+  });
 });

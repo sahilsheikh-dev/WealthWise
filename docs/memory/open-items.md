@@ -74,7 +74,7 @@
 - Regression tests added in `src/domain/__tests__/budgetItemRenameTransactions.test.ts` (5 tests passing).
 - Ordered six gates pass with exit 0.
 
-## P28-F-R7 Prepare v1.3.0 release candidate (In progress)
+## P28-F-R7 Prepare and publish v1.3.0 release candidate (Done; CR-130)
 
 - Subtask P28-F-R7 (CR-130, 2026-11-22): Prepare owner-approved v1.3.0 release candidate.
 - Bumps app version in `app.json`, `package.json`, and `package-lock.json` to `1.3.0`.
@@ -85,7 +85,12 @@
 - EAS build `c2ec9414-ae63-44cc-b34a-0f67f6cb51cb` (profile `android-apk`, Android `versionCode` 4) completed on 2026-11-22; 107,030,213-byte APK downloaded, privately byte-verified against EAS artifact, and uploaded to GitHub draft release `v1.3.0` as `WealthWise-android-latest-v1.3.0.apk`.
 - Task branch `task/P28-F-R7-record-v1.3.0-build` merged to `qa-and-release` via PR #212, integrated to `develop` via PR #213 (`58d9a26`), and synchronized to `release/v1.3.0`.
 - Task branch `task/P28-F-R7-align-v1.3.0-readme-screenshots-details` updates `README.md` (v1.3.0 Download block and 8-screenshot gallery), aligns `v1.3.0.md` and `v1.2.0.md` download blocks, updates `release-history.md`, and adds release rules in `AGENTS.md` and `rules.md` requiring candidate README and screenshot alignment during staging.
-- Publication approval, release merge to `main`, tag creation, and post-publication sync remain pending.
+- Publication approved and completed on 2026-11-22; release/v1.3.0 merged to main via PR #216 (341dbcb); tag v1.3.0 created at 51523b8; GitHub Release v1.3.0 published as Latest by sahilsheikh-dev; post-publication sync merged main to develop via PR #217 (97c6d02); release candidate and publication lifecycle complete.
+
+## CR-141 Reconcile documentation to reflect completed v1.3.0 publication (Done)
+
+- Change request CR-141 (2026-11-23): Reconciled documentation across repository docs to accurately reflect completed v1.3.0 publication.
+- Updated release-history.md, docs/releases/README.md, memory status, open items, and PROGRESS.md to document that v1.3.0 publication, merge to main (PR #216 at 341dbcb), tag v1.3.0 (51523b8), and post-publication sync to develop (PR #217 at 97c6d02) are fully completed.
 
 ## P20-Y Budget payment date, multi-asset budget links, and limited expense categories (Done; device check Pass)
 

@@ -1,6 +1,11 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-23 | Updates: owner and AI agents -->
 
 # Status
+- **CR-141 / Documentation (2026-11-23) — Reconcile documentation to reflect completed v1.3.0 publication.**
+  Reconciled release documentation across release-history.md, docs/releases/README.md,
+  docs/PROGRESS.md, status.md, and open-items.md to accurately record completed v1.3.0 publication,
+  merge to main via PR #216 (341dbcb), tag v1.3.0 (51523b8), and post-publication sync to develop
+  via PR #217 (97c6d02). All six repository gates pass with exit 0.
 - **CR-140 / Documentation (2026-11-23) — Owner-reported physical-device validation Pass for check O77.**
   Recorded owner physical-device verification for check O77 (verifying budget item and
   section rename on physical device preserves transaction name/note while updating category item)
@@ -71,8 +76,8 @@
   persistence, migration, and backup-import paths. Added regression tests in
   `src/domain/__tests__/budgetItemRenameTransactions.test.ts`. All six
   repository gates pass with exit 0.
-- **P28-F-R7 / CR-130 (2026-11-22) — Prepare v1.3.0 release candidate.**
-  Prepared owner-approved v1.3.0 release candidate: bumped versions in app.json,
+- **P28-F-R7 / CR-130 (2026-11-22) — Prepare and publish v1.3.0 release candidate.**
+  Prepared and published owner-approved v1.3.0 release candidate: bumped versions in app.json,
   package.json, and package-lock.json to 1.3.0; moved finalized release note to
   docs/releases/published/v1.3.0.md with 8 owner-supplied screenshots under
   docs/releases/screenshots/v1.3.0/; aligned build-config.md and device checklist
@@ -82,7 +87,10 @@
   Per owner instruction, updated README.md (Download block and 8-screenshot gallery for v1.3.0),
   aligned published v1.3.0 and v1.2.0 download blocks and release history, and updated
   release rules in AGENTS.md and rules.md to mandate aligning README and release docs during
-  candidate staging. Publication remains pending owner approval. All six repository gates pass.
+  candidate staging. Publication approved and completed on 2026-11-22; release/v1.3.0 merged
+  to main via PR #216 (341dbcb); tag v1.3.0 created; GitHub Release v1.3.0 published as Latest
+  by sahilsheikh-dev; post-publication back-merge to develop completed via PR #217 (97c6d02).
+  All six repository gates pass.
 - **P20-X-R1 / CR-129 (2026-11-22) — Remove transaction sorting & Dropdown search title.**
   Removed sorting option from TransactionForm category dropdowns (Expense, Income, Invest)
   and removed redundant static Search header title from shared Dropdown sheet, keeping
