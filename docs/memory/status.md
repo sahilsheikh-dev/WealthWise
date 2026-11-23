@@ -1,6 +1,18 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-23 | Updates: owner and AI agents -->
 
 # Status
+- **P20-Y-R5 / CR-139 (2026-11-23) — Preserve transaction name/note on budget category item rename.**
+  Fixed budget category item rename behavior to strictly preserve the transaction name/note
+  as previously set when a budget item is renamed, updating only the transaction budget category
+  item. In TransactionsScreen (`app/(tabs)/transactions.tsx`), removed the dynamic
+  `linkedBudgetItem?.name` fallback from `itemTitle` so that the transaction's displayed title
+  strictly preserves its note or original category name without changing to the new budget item
+  name. In `editItem`, `renameSection`, `editBudgetIncome`, and `reconcileBudgetItemTransactions`,
+  set `note: tx.note ? tx.note : oldName` when updating `tx.category`, permanently preserving the
+  original transaction name/note across both domain storage and UI display layers. Verified with
+  regression tests in `src/domain/__tests__/budgetItemRenameTransactions.test.ts` and
+  `src/components/__tests__/TransactionsScreen.test.tsx`. All six repository gates pass with
+  exit 0. Check O77 remains Not run.
 - **P20-Y-R4 / CR-138 (2026-11-23) — Preserve transaction note across all budget item renames.**
   Fixed budget item rename behavior to strictly preserve transaction notes across all
   item types (holding-linked investments, expenses, sections, and incomes) even when
