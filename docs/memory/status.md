@@ -1,6 +1,14 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-23 | Updates: owner and AI agents -->
 
 # Status
+- **P20-Z-R1 / CR-145 (2026-11-23) — Remove dot on Budget filter icon on default view and preserve owner margins.**
+  Refined Budget filter icon indicator in `app/(tabs)/budget.tsx` to set `filterActive = selectedCategory !== 'All'`,
+  removing sort comparison conditions. When viewing Budget on default ('All'), the filter icon renders clean
+  without a dot indicator, matching the appearance of Assets, Liabilities, and Transactions. The indicator
+  dot is activated only when a specific category is filtered. Preserved owner margin edits removing
+  `marginHorizontal: 20` from `styles.filterPanel`. Added physical-device check O79 in `Not run` status.
+  Verified with regression tests in `src/components/__tests__/BudgetCategoryFilter.test.tsx`.
+  Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
 - **P20-Z / CR-144 (2026-11-23) — Implement dynamic Budget category filter.**
   Implemented dynamic Budget category filter alongside existing Budget sorting option in
   `app/(tabs)/budget.tsx`. Adds `categoryOptions` memo calculating base categories (`All`, `Income`,

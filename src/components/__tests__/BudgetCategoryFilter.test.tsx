@@ -311,8 +311,9 @@ describe('P20-Z: Dynamic Budget category filter', () => {
     if (!renderer) throw new Error('Renderer not initialized');
 
     const filterButton = renderer.root.findByProps({ accessibilityLabel: 'Filter' });
-    // Initially "All" is active, so filter indicator is false
+    // Initially "All" is active, so filter indicator is false and no dot is rendered
     expect(filterButton.props.accessibilityState).toEqual({ expanded: false });
+    expect(renderer.root.findAll((node) => String(node.type) === 'view' && node.props.testID === 'header-action-indicator')).toHaveLength(0);
 
     // Open filter panel
     act(() => {
@@ -333,8 +334,26 @@ describe('P20-Z: Dynamic Budget category filter', () => {
       filterButton.props.onPress();
     });
 
-    // Filter indicator should now be active
+    // Filter indicator dot should now be active
     const updatedFilterButton = renderer.root.findByProps({ accessibilityLabel: 'Filter' });
     expect(updatedFilterButton.props.accessibilityState).toEqual({ expanded: false });
+    expect(renderer.root.findAll((node) => String(node.type) === 'view' && node.props.testID === 'header-action-indicator')).toHaveLength(1);
+
+    // Reopen panel and select "All"
+    act(() => {
+      updatedFilterButton.props.onPress();
+    });
+    const reopenedPanel = renderer.root.findByProps({ testID: 'budget-filter-panel' });
+    const allChip = reopenedPanel.findAllByProps({ accessibilityRole: 'button' })
+      .find((c) => c.props.accessibilityLabel === 'All');
+    act(() => {
+      allChip?.props.onPress();
+    });
+    act(() => {
+      updatedFilterButton.props.onPress();
+    });
+
+    // Filter indicator dot should be removed (clean filter icon like other screens)
+    expect(renderer.root.findAll((node) => String(node.type) === 'view' && node.props.testID === 'header-action-indicator')).toHaveLength(0);
   });
 });

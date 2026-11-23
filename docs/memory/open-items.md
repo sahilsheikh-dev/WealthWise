@@ -1088,7 +1088,7 @@ The remaining tasks recorded as Planned on `develop` across dashboard, roadmap, 
 - **P7-C (UI & Settings):** UI & settings in Backup / Security screen (Connect/Disconnect Google Drive account, last backup status/timestamp, frequency picker, Wi-Fi only toggle, "Back up now", and "Restore from Google Drive" flow). Dependencies: P7-B. Evidence: not started.
 - **P7-D (Fixtures, Tests & Device Verification):** Deterministic demo data, offline fallback, token revocation handling, unit tests, and device checklist rows. Dependencies: P7-C. Evidence: not started.
 
-## P20-Z Dynamic budget category filter (Done; CR-144)
+## P20-Z Dynamic budget category filter (Done; Revised by P20-Z-R1; CR-144)
 
 - **Goal:** Add a dynamic category filter alongside the existing Budget sorting option in the Budget screen.
 - **Scope & Delivery:**
@@ -1102,6 +1102,19 @@ The remaining tasks recorded as Planned on `develop` across dashboard, roadmap, 
 - **Branch:** `phase/20-budget` (reopened from `develop`), task branch `task/P20-Z-budget-category-filter`.
 - **Verification:** Regression test suite `src/components/__tests__/BudgetCategoryFilter.test.tsx` (4 tests passing). Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
 - **Device check:** Physical-device check row O78 added in `docs/releases/device-test-checklist.md` under Next release device checks in `Not run` status.
+
+## P20-Z-R1 Budget filter icon indicator dot and margin refinement (Done; CR-145)
+
+- **Goal:** Remove unwanted dot indicator on Budget filter icon on default view to match other screens (Assets, Liabilities, Transactions), and preserve owner margin changes in filterPanel.
+- **Scope & Delivery:**
+  - In `app/(tabs)/budget.tsx`, updated `filterActive` to `selectedCategory !== 'All'`, decoupling sort comparison conditions from filter indicator dot.
+  - When category is "All" (default), filter icon renders clean without dot indicator, matching Assets, Liabilities, and Transactions.
+  - Activates indicator dot only when a specific category filter is active (`selectedCategory !== 'All'`).
+  - Preserved owner edit removing `marginHorizontal: 20` from `styles.filterPanel`.
+- **Placement:** Rule 2 (revision to completed part in Phase P20); searched dashboard, register, phase history, roadmap, memory, and `app/(tabs)/budget.tsx`; related P20-Z; reason: revise Budget category filter active indicator logic and preserve owner margin changes.
+- **Branch:** `phase/20-budget` (reopened from `develop`), task branch `task/P20-Z-R1-budget-filter-icon-indicator`.
+- **Verification:** Regression test suite `src/components/__tests__/BudgetCategoryFilter.test.tsx` (4 tests passing). Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
+- **Device check:** Physical-device check row O79 added in `docs/releases/device-test-checklist.md` under Next release device checks in `Not run` status.
 
 ## P29-U-R1 Dynamic asset valuation inputs and calculations (Planned; CR-143)
 
