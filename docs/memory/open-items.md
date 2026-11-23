@@ -1143,6 +1143,22 @@ The remaining tasks recorded as Planned on `develop` across dashboard, roadmap, 
 - **Verification:** Regression test suites `src/components/__tests__/InvestmentFormRecurringValuation.test.tsx`, `src/domain/__tests__/valuation.test.ts`, `src/domain/__tests__/schemas.test.ts`, `src/components/__tests__/HoldingValuationDynamic.test.tsx`, and `src/components/__tests__/RouteRenderSmoke.test.tsx` pass. Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
 - **Device check:** Physical-device check row O81 added in `docs/releases/device-test-checklist.md` under Next release device checks in `Not run` status. Physical-device check O80 marked Pass based on owner report on 2026-11-23.
 
+## P39-C Report-first permissions and privacy trace (Done; CR-148)
+
+- **Goal:** Trace privacy-sensitive permissions from declaration to request to use (notifications, biometrics, file/share/document picker, SQLite, data-at-rest encryption boundary, allowBackup=false, offline boundary), verifying denial/revocation behavior and marking unverifiable items unverified.
+- **Scope & Delivery:**
+  - *Network & Analytics:* Zero network calls (`fetch`, `XMLHttpRequest`, `WebSocket`) verified by `src/lib/__tests__/offlineRuntime.test.ts`; zero telemetry or analytics SDKs.
+  - *Android allowBackup:* Explicitly configured `allowBackup: false` in `app.json`, disabling automatic cloud upload of financial records to Google Drive.
+  - *Notifications:* Local scheduling only under channel `'reminders'`; no remote push tokens or remote servers; denial/blocked states gracefully mapped in `reminderPermissions.ts`.
+  - *Biometrics:* Used for optional app lock; evaluated locally in OS Secure Enclave / Keystore; no biometric data captured or stored; passcode fallback available in `authenticate.ts`.
+  - *Storage & File Intents:* Scoped SAF file picker (`expo-document-picker`) and system share sheet (`expo-sharing`); no broad external storage permissions requested at runtime.
+  - *Data at Rest & Backup Encryption:* SQLite database (`wealthwise-state.db`) and AsyncStorage stored unencrypted at rest within OS app sandbox; exported backups support strong AES-256-GCM + PBKDF2 encryption in `backupCrypto.ts`.
+  - *Unverifiable items:* Marked root/jailbreak kernel bypass and custom vendor OEM intent quirks as unverifiable at application level.
+- **Detailed Audit Report:** `/tmp/wealthwise-p39-c-permissions-privacy-trace.md`.
+- **Placement:** Rule 5 (kept in Phase P39 per owner decision CR-113); searched dashboard, register, memory, app.json, permissions code; related P39, P31-D; reason: release audit and hardening permissions trace.
+- **Branch:** `phase/39-release-audit-and-hardening`, task branch `task/P39-C-permissions-privacy-trace`.
+- **Verification:** `src/lib/__tests__/offlineRuntime.test.ts`, all six ordered gates pass. Findings directly unblock and feed P31-D privacy statement.
+
 ## Pending owner actions (2026-11-23 reconciliation)
 
 - **Next-release device gate:** O61–O74 and O75–O76 were tested and validated on physical devices by the owner on 2026-11-22 and marked Pass (now under ## v1.3.0 device checks). O77, O78, O79, and O80 were tested and validated Pass on physical device by the owner on 2026-11-23. Physical-device check O81 (verifying dynamic asset valuation inputs and calculations on a physical device) is added under Next release device checks in Not run status. Physical device metadata (realme Narzo 60 Pro 5g, Android 15 Vanilla Ice Cream, tester sahilsheikh-dev, respective release dates) is recorded across all sections, and the checklist maintenance confirmation rule with prior release suggestions is documented.
