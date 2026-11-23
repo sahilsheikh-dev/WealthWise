@@ -1,6 +1,18 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-23 | Updates: owner and AI agents -->
 
 # Status
+- **P17-C-R1 / CR-146 (2026-11-23) — Persistent sorting preferences across screens and sections.**
+  Implemented persistent sorting preferences across every WealthWise screen and section that offers
+  sorting (Transactions, Assets, Liabilities, Budget, Goals, Investment Entries, Link Missing).
+  In `src/data/metaStore.ts`, added in-memory `cachedMeta` and `writeQueue` serialization to `createMetaStore`
+  to guarantee atomic writes during rapid or concurrent sort updates and eliminate mount delays.
+  In `src/data/useSort.ts`, initialized `stored` synchronously from `metaStore.getCachedMeta()` and subscribed
+  to `metaStore.subscribe` so that sort preference updates propagate immediately across mounted components in real time.
+  Preserved complete separation between sort preferences and filter selections (changing or restoring sort does not affect filters).
+  Recorded owner-reported physical-device validation for checks O78 and O79 as Pass on realme Narzo 60 Pro 5g
+  running Android 15 Vanilla Ice Cream (sahilsheikh-dev, 2026-11-23). Added physical-device check O80 under Next release
+  device checks in `Not run` status. Verified with regression tests in `src/data/__tests__/useSort.test.tsx` (6 tests passing).
+  Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
 - **P20-Z-R1 / CR-145 (2026-11-23) — Remove dot on Budget filter icon on default view and preserve owner margins.**
   Refined Budget filter icon indicator in `app/(tabs)/budget.tsx` to set `filterActive = selectedCategory !== 'All'`,
   removing sort comparison conditions. When viewing Budget on default ('All'), the filter icon renders clean
