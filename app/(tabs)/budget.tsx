@@ -24,7 +24,7 @@ import { formatAmount } from '../../src/lib/amountDisplay';
 import { todayISO } from '../../src/lib/clock';
 import { confirmAsync } from '../../src/lib/confirm';
 import { formatDate, formatMonth } from '../../src/lib/format';
-import { DEFAULT_SORTS, SORT_OPTIONS } from '../../src/lib/sorting';
+import { SORT_OPTIONS } from '../../src/lib/sorting';
 import { swipeIntent } from '../../src/lib/swipe';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
@@ -104,9 +104,7 @@ export default function BudgetScreen() {
   const sorting = useSort('budgetSpending');
   const [categoryOverride, setCategoryOverride] = useState<string | null>(null);
   const selectedCategory = categoryOverride ?? (routeCategory || 'All');
-  const filterActive = selectedCategory !== 'All'
-    || sorting.spec.key !== DEFAULT_SORTS.budgetSpending.key
-    || sorting.spec.dir !== DEFAULT_SORTS.budgetSpending.dir;
+  const filterActive = selectedCategory !== 'All';
   const data = useAppData();
   const actions = useAppActions();
   const setActionToast = useUIStore((state) => state.setActionToast);
@@ -865,7 +863,7 @@ function OverviewMetricRow({
 const styles = StyleSheet.create({
   gestureSurface: { flex: 1 },
   content: { paddingBottom: 28, gap: 16 },
-  filterPanel: { marginHorizontal: 20, marginBottom: 8 },
+  filterPanel: { marginBottom: 8 },
   monthHeader: { marginHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 42 },
   todayButton: { minWidth: 44, minHeight: 44, paddingHorizontal: 10, alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth, borderRadius: 22 },
   disabled: { opacity: 0.45 },
