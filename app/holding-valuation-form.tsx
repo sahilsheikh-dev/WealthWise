@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useRef } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import { View } from 'react-native';
 
@@ -15,9 +15,10 @@ import { Button, EmptyState } from '../src/components/ui';
 import { useAppStore } from '../src/data/store';
 import { useAppActions } from '../src/data/useAppData';
 import { holdingValue } from '../src/domain/portfolio';
-import { suggestedValuationMethod } from '../src/domain/valuation';
+import { holdingUnits, suggestedValuationMethod } from '../src/domain/valuation';
 import { makeHoldingValuationFormSchema } from '../src/domain/schemas';
 import type { ValuationMethod } from '../src/domain/types';
+import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
@@ -43,16 +44,23 @@ export default function HoldingValuationFormScreen() {
     resolver: zodResolver(valueFormSchema),
     mode: 'onTouched',
     defaultValues: {
-      value: holding && method !== 'unitsPrice' ? String(holdingValue(holding, today)) : '',
+      value: holding && method !== 'unitsPrice' ? String(holdingValue(holding, today)) : (holding?.latestPrice ? String(holding.latestPrice) : ''),
       date: today,
     },
   });
+  const enteredValue = useWatch({ control: form.control, name: 'value' });
 
   if (!holding || !method) {
     return <FormScreen title="Update holding value" onClose={() => router.back()} isDirty={false} footer={null}>
       <EmptyState title="Holding not found" />
     </FormScreen>;
   }
+
+  const units = method === 'unitsPrice' ? holdingUnits(holding, today) : 0;
+  const numericPrice = Number((enteredValue ?? '').replaceAll(',', ''));
+  const calculatedTotal = method === 'unitsPrice' && Number.isFinite(numericPrice) && numericPrice > 0
+    ? Math.round(units * numericPrice * 100) / 100
+    : 0;
 
   const save = (values: z.output<typeof valueFormSchema>) => {
     if (submitting.current) return;
@@ -66,8 +74,28 @@ export default function HoldingValuationFormScreen() {
     }
   };
 
+  const screenTitle = method === 'unitsPrice'
+    ? 'Update unit price'
+    : method === 'accrual'
+      ? 'Update interest valuation'
+      : method === 'balance'
+        ? 'Reconcile balance'
+        : 'Update value';
+
+  const valueLabel = method === 'unitsPrice'
+    ? 'Latest price per unit'
+    : method === 'balance'
+      ? 'Reconciled balance'
+      : 'Confirmed value';
+
+  const dateLabel = method === 'unitsPrice'
+    ? 'Price date'
+    : method === 'balance'
+      ? 'Reconciliation date'
+      : 'Value date';
+
   return (
-    <FormScreen title={method === 'unitsPrice' ? 'Update price' : 'Update value'}
+    <FormScreen title={screenTitle}
       onClose={() => router.back()} isDirty={form.formState.isDirty}
       footer={<View style={{ flexDirection: 'row' }}>
         <Button
@@ -81,9 +109,9 @@ export default function HoldingValuationFormScreen() {
       </View>}>
       <FormErrorBanner message={error} />
       <Controller control={form.control} name="value" render={({ field }) => (
-        <FieldTitle title={method === 'unitsPrice' ? 'Latest price per unit' : 'Confirmed value'}>
+        <FieldTitle title={valueLabel}>
           <MoneyField
-            label={method === 'unitsPrice' ? 'Latest price per unit' : 'Confirmed value'}
+            label={valueLabel}
             accessibilityLabel={method === 'unitsPrice' ? 'Latest price per unit' : 'Confirmed holding value'}
             value={field.value}
             onChangeText={field.onChange}
@@ -93,18 +121,25 @@ export default function HoldingValuationFormScreen() {
         </FieldTitle>
       )} />
       <Controller control={form.control} name="date" render={({ field }) => <DateField
-        label={method === 'unitsPrice' ? 'Price date' : 'Value date'}
+        label={dateLabel}
         accessibilityLabel={method === 'unitsPrice' ? 'Price date' : 'Value date'}
         value={field.value}
         onChange={field.onChange}
         maximumDate={today}
         error={form.formState.errors.date?.message}
       />} />
-      {method === 'accrual' ? (
+      {method === 'unitsPrice' ? (
+        <>
+          <HelperText>Units held: {Math.round(units * 1000000) / 1000000}. Calculated total value: {formatAmount(calculatedTotal, 'row', 1)}.</HelperText>
+          <HelperText>Prices are entered by hand and stay on this phone. No live prices are fetched.</HelperText>
+        </>
+      ) : method === 'accrual' ? (
         <HelperText>Future values are estimates using {holding.ratePct ?? 0}% p.a., {holding.compounding ?? 'yearly'} compounding, and actual days / 365. A confirmation restarts accrual from this date.</HelperText>
-      ) : method === 'unitsPrice' ? (
-        <HelperText>Prices are entered by hand and stay on this phone. No live prices are fetched.</HelperText>
-      ) : null}
+      ) : method === 'balance' ? (
+        <HelperText>Balance is tracked automatically from deposits and withdrawals. Enter a reconciled amount to adjust the current balance.</HelperText>
+      ) : (
+        <HelperText>Enter the confirmed value of this asset from your statement.</HelperText>
+      )}
     </FormScreen>
   );
 }

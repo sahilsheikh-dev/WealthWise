@@ -218,7 +218,7 @@ describe('persistent sorting preferences across screens and sections', () => {
       React.useEffect(() => {
         onValue(sort);
       }, [onValue, sort]);
-      return <mock-filter filter={filter} />;
+      return React.createElement('mock-filter', { filter });
     }
 
     let capturedSort: HookVal = {} as HookVal;
