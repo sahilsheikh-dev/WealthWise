@@ -9,7 +9,13 @@
 - Root cause: in `app/(tabs)/transactions.tsx`, `itemTitle` fell back to `linkedBudgetItem?.name` for empty-note transactions, causing the transaction title to dynamically change to the new budget item name; additionally, if note was empty at creation, the original category name was not persisted in note when renamed.
 - P20-Y-R5 removes `linkedBudgetItem?.name` fallback from `itemTitle` in `transactions.tsx` (keeping `(item.note || categoryLabel)`), and updates `editItem`, `renameSection`, `editBudgetIncome`, and `reconcileBudgetItemTransactions` to set `note: tx.note ? tx.note : oldName` when renaming, ensuring the transaction's previously set name/note is permanently preserved across both domain and display layers.
 - Regression tests in `src/domain/__tests__/budgetItemRenameTransactions.test.ts` and `src/components/__tests__/TransactionsScreen.test.tsx`.
-- Ordered six gates pass with exit 0. Physical-device check O77 remains Not run.
+- Ordered six gates pass with exit 0. Physical-device check O77 marked Pass following owner physical-device verification on 2026-11-23.
+
+## CR-140 Owner-reported physical-device validation Pass for O77 (Done)
+
+- Change request CR-140 (2026-11-23): Recorded owner physical-device verification for check O77 as Pass in docs/releases/device-test-checklist.md.
+- Tested and validated by sahilsheikh-dev on physical device realme Narzo 60 Pro 5g running Android 15 Vanilla Ice Cream on 2026-11-23.
+- Device checklist release gate is unblocked for candidate builds.
 
 ## P20-Y-R4 Strictly preserve transaction note across all budget item renames (Done; Revised by P20-Y-R5; CR-138)
 

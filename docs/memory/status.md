@@ -1,6 +1,12 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-23 | Updates: owner and AI agents -->
 
 # Status
+- **CR-140 / Documentation (2026-11-23) — Owner-reported physical-device validation Pass for check O77.**
+  Recorded owner physical-device verification for check O77 (verifying budget item and
+  section rename on physical device preserves transaction name/note while updating category item)
+  as Pass in docs/releases/device-test-checklist.md under Next release device checks.
+  Confirmed metadata with owner (realme Narzo 60 Pro 5g, Android 15 Vanilla Ice Cream,
+  tester sahilsheikh-dev, 2026-11-23). All six repository gates pass with exit 0.
 - **P20-Y-R5 / CR-139 (2026-11-23) — Preserve transaction name/note on budget category item rename.**
   Fixed budget category item rename behavior to strictly preserve the transaction name/note
   as previously set when a budget item is renamed, updating only the transaction budget category
@@ -12,7 +18,7 @@
   original transaction name/note across both domain storage and UI display layers. Verified with
   regression tests in `src/domain/__tests__/budgetItemRenameTransactions.test.ts` and
   `src/components/__tests__/TransactionsScreen.test.tsx`. All six repository gates pass with
-  exit 0. Check O77 remains Not run.
+  exit 0. Check O77 marked Pass (owner-reported 2026-11-23).
 - **P20-Y-R4 / CR-138 (2026-11-23) — Preserve transaction note across all budget item renames.**
   Fixed budget item rename behavior to strictly preserve transaction notes across all
   item types (holding-linked investments, expenses, sections, and incomes) even when
