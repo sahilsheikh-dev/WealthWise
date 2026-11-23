@@ -49,6 +49,7 @@ import { addIncomeItem, applyBudgetPlanToMonth, editBudgetIncome as editBudgetIn
 import { pendingItems } from '../../domain/pending';
 import { clearDue as clearDueDomain, duesThroughPreview, undoClearDue as undoClearDueDomain } from '../../domain/dues';
 import { liabilitySchedule, planSchedule } from '../../domain/schedule';
+import { suggestedValuationMethod } from '../../domain/valuation';
 import { emptyAppData } from '../../domain/actions';
 import { createBackup } from '../../domain/backup';
 import { encryptBackup, isEncryptedBackup } from '../../domain/backupCrypto';
@@ -5421,7 +5422,8 @@ describe('route render smoke audit', () => {
         renderer = renderScreen(React.createElement(InvestmentFormScreen));
         expect(renderer.root.findAllByProps({ label: 'Save' })).toHaveLength(1);
         expect(renderer.root.findAllByType(Dropdown).some((field) => field.props.label === 'Valuation method')).toBe(true);
-        expect(renderer.root.findAllByType(Dropdown).some((field) => field.props.label === 'Compounding')).toBe(true);
+        const isAccrual = (holding.valuationMethod ?? suggestedValuationMethod(holding.type, false, holding.ratePct)) === 'accrual';
+        expect(renderer.root.findAllByType(Dropdown).some((field) => field.props.label === 'Compounding')).toBe(isAccrual);
         if (holding.kind === 'plan') {
           expect(renderer.root.findAllByType(Dropdown).some((field) => field.props.label === 'Holding type')).toBe(true);
         } else {

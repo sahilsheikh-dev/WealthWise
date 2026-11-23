@@ -51,6 +51,7 @@ const valuationFields = {
   maturityDate: isoDateSchema.optional(),
   latestPrice: moneySchema.positive().optional(),
   priceAsOf: isoDateSchema.optional(),
+  unitCount: moneySchema.min(0).optional(),
 };
 const investmentEntrySchema = z.object({
   id: idSchema,
@@ -772,6 +773,16 @@ export function makePlanFormSchema(
     opening: moneyInputSchema({ minimum: 0, maximum: 10_000_000_000, optional: true }),
     actualValue: moneyInputSchema({ minimum: 0, maximum: Number.MAX_SAFE_INTEGER, optional: true }),
     actualValueDate: z.string().trim(),
+    latestPrice: z.union([z.literal(''), moneyInputSchema({ minimum: 0.0001, maximum: 10_000_000_000 })])
+      .default('').transform((val) => val === '' ? undefined : val),
+    priceAsOf: z.string().trim().default(''),
+    unitCount: z.union([
+      z.literal(''),
+      z.string().trim()
+        .refine((v) => /^\d+(\.\d{1,6})?$/.test(v), 'Enter a valid unit count')
+        .transform(Number)
+        .refine((v) => v >= 0 && v <= 10_000_000_000, 'Unit count is out of range'),
+    ]).default('').transform((val) => val === '' ? undefined : val),
   }).transform((value) => ({
     ...value,
     customTypeName: value.type === 'Custom' && value.customTypeName ? value.customTypeName : undefined,
@@ -780,6 +791,9 @@ export function makePlanFormSchema(
     actualValue: value.actualValue ?? null,
     actualValueDate: value.actualValueDate || null,
     maturityDate: value.maturityDate || undefined,
+    latestPrice: value.latestPrice,
+    priceAsOf: value.latestPrice !== undefined ? (value.priceAsOf || today) : undefined,
+    unitCount: value.unitCount,
   })).superRefine((value, context) => {
     if (value.type === 'Custom' && !value.customTypeName) {
       context.addIssue({ code: 'custom', path: ['customTypeName'], message: 'Enter a custom type name up to 30 characters' });
@@ -1009,19 +1023,31 @@ export function makeEmergencyFundTargetFormSchema(minimumTarget: number) {
   });
 }
 
-export function makeHoldingFormSchema(ctx: { otherNames: string[]; entriesExist?: boolean }) {
+export function makeHoldingFormSchema(ctx: { otherNames: string[]; entriesExist?: boolean; today?: ISODate }) {
   return z.object({
     name: z.string().trim().min(1, 'Enter a name up to 40 characters').max(40, 'Enter a name up to 40 characters')
       .refine((name) => !ctx.otherNames.some((other) => other.toLocaleLowerCase() === name.toLocaleLowerCase()), 'A holding with this name already exists'),
     type: holdingTypeFormSchema,
     customTypeName: customTypeNameFormSchema,
-    invested: moneyInputSchema({ minimum: 0, maximum: 10_000_000_000 }),
-    value: moneyInputSchema({ minimum: 0, maximum: 10_000_000_000 }),
+    invested: moneyInputSchema({ minimum: 0, maximum: 10_000_000_000, optional: true }),
+    value: moneyInputSchema({ minimum: 0, maximum: 10_000_000_000, optional: true }),
     valuationMethod: valuationMethodFormSchema.default('manual'),
     ratePct: z.union([z.literal(''), optionalRate(100, 'Enter a rate between 0 and 100')])
       .default('').transform((value) => value === '' ? undefined : value),
     compounding: compoundingFormSchema.default('yearly'),
     maturityDate: z.string().trim().default('').transform((value) => value || undefined),
+    unitCount: z.union([
+      z.literal(''),
+      z.string().trim()
+        .refine((v) => /^\d+(\.\d{1,6})?$/.test(v), 'Enter a valid unit count')
+        .transform(Number)
+        .refine((v) => v >= 0 && v <= 10_000_000_000, 'Unit count is out of range'),
+    ]).default('').transform((val) => val === '' ? undefined : val),
+    latestPrice: z.union([
+      z.literal(''),
+      moneyInputSchema({ minimum: 0.0001, maximum: 10_000_000_000 }),
+    ]).default('').transform((val) => val === '' ? undefined : val),
+    priceAsOf: z.string().trim().default('').transform((val) => val || undefined),
   }).superRefine((value, context) => {
     if (value.type === 'Custom' && !value.customTypeName) {
       context.addIssue({ code: 'custom', path: ['customTypeName'], message: 'Enter a custom type name up to 30 characters' });
@@ -1039,10 +1065,53 @@ export function makeHoldingFormSchema(ctx: { otherNames: string[]; entriesExist?
     if (value.valuationMethod === 'accrual' && value.ratePct === undefined) {
       context.addIssue({ code: 'custom', path: ['ratePct'], message: 'Enter an annual rate for accrual valuation' });
     }
-  }).transform(({ customTypeName, ...value }) => ({
-    ...value,
-    ...(value.type === 'Custom' && customTypeName ? { customTypeName } : {}),
-  }));
+    if (value.valuationMethod === 'manual' && value.value === undefined) {
+      context.addIssue({ code: 'custom', path: ['value'], message: 'Enter a value' });
+    }
+    if (value.valuationMethod === 'unitsPrice') {
+      if (value.latestPrice === undefined) {
+        context.addIssue({ code: 'custom', path: ['latestPrice'], message: 'Enter unit price' });
+      }
+      if (value.unitCount === undefined && value.invested === undefined) {
+        context.addIssue({ code: 'custom', path: ['unitCount'], message: 'Enter units purchased or purchase amount' });
+      }
+    }
+  }).transform(({ customTypeName, value, invested, valuationMethod, ratePct, compounding, maturityDate, unitCount, latestPrice, priceAsOf, ...rest }) => {
+    let resolvedValue = value;
+    let resolvedInvested = invested;
+    let resolvedUnitCount = unitCount;
+
+    if (valuationMethod === 'unitsPrice') {
+      if (latestPrice !== undefined) {
+        if (resolvedUnitCount !== undefined && (resolvedInvested === undefined || resolvedInvested === 0)) {
+          resolvedInvested = Math.round(resolvedUnitCount * latestPrice * 100) / 100;
+        } else if (resolvedInvested !== undefined && resolvedUnitCount === undefined && latestPrice > 0) {
+          resolvedUnitCount = Math.round((resolvedInvested / latestPrice) * 1000000) / 1000000;
+        }
+        if (resolvedValue === undefined && resolvedUnitCount !== undefined) {
+          resolvedValue = Math.round(resolvedUnitCount * latestPrice * 100) / 100;
+        }
+      }
+    } else if (valuationMethod === 'balance' || valuationMethod === 'accrual') {
+      if (resolvedValue === undefined) {
+        resolvedValue = resolvedInvested;
+      }
+    }
+
+    return {
+      ...rest,
+      invested: resolvedInvested ?? 0,
+      value: resolvedValue ?? resolvedInvested ?? 0,
+      valuationMethod,
+      ratePct,
+      compounding,
+      maturityDate,
+      unitCount: resolvedUnitCount,
+      latestPrice,
+      priceAsOf: latestPrice !== undefined ? (priceAsOf || ctx.today) : undefined,
+      ...(rest.type === 'Custom' && customTypeName ? { customTypeName } : {}),
+    };
+  });
 }
 
 export function makeLiabilityPaymentFormSchema(

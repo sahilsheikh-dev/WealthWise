@@ -1065,20 +1065,19 @@ Not adopted in CR-106:
 The remaining tasks recorded as Planned on `develop` across dashboard, roadmap, and memory are:
 
 1. **P7 (Cloud Backup — Google Drive):** Research, pure domain scheduling model, Settings UI, Wi-Fi gating, offline handling, and tests (P7-A through P7-D).
-2. **P29-U-R1 (Dynamic Asset Valuation):** Type-dependent dynamic valuation inputs and calculations for manual, interest-based, unit-based, and balance-based holdings across recurring and one-time assets (Planned; CR-143).
-3. **P31 (Project Health & Community):** Community guidelines, issue templates, accessibility statement/audit, and privacy statement (P31-A through P31-D).
-4. **P33 (Widgets):** Platform widget research and implementation planning for Android and iOS (P33-A through P33-C).
-5. **P34 (Quick Capture):** Quick-capture platform research, home-screen shortcuts, and gesture features (P34-A through P34-C).
-6. **P35 (Transaction Auto-Detection):** SMS/notification transaction detection permissions/platform research, scope validation, and implementation planning (P35-A through P35-C).
-7. **P36 (Notes):** Notes design and implementation, media, storage, backup compatibility, and demo data (P36-A through P36-D).
-8. **P37 (Tutorials):** Accessible, replayable in-app walkthroughs and feature introductions (P37-A through P37-C).
-9. **P38 (Skeleton Loaders):** Identify real asynchronous loading states, then implement and verify skeleton loaders (P38-A through P38-C).
-10. **P39 (Hardening & Audits):** Project audit covering security, privacy, permissions, recovery, dependencies, test debt, and onboarding, followed by remediation plan (P39-A through P39-H).
-11. **P40 (Context Hygiene):** Measure documentation size/read costs, then archive completed-phase narrative from main ledger (P40-A through P40-B).
-12. **P43-E (GitHub Issue Management):** Verify GitHub issue inventory and assess batching, API limits, and noise before separately tracked issue-creation work.
-13. **P44 (Spending Heat Map):** Transactions spending heat map with selector, screen, demo data, accessibility, and device checks (P44-A through P44-D).
+2. **P31 (Project Health & Community):** Community guidelines, issue templates, accessibility statement/audit, and privacy statement (P31-A through P31-D).
+3. **P33 (Widgets):** Platform widget research and implementation planning for Android and iOS (P33-A through P33-C).
+4. **P34 (Quick Capture):** Quick-capture platform research, home-screen shortcuts, and gesture features (P34-A through P34-C).
+5. **P35 (Transaction Auto-Detection):** SMS/notification transaction detection permissions/platform research, scope validation, and implementation planning (P35-A through P35-C).
+6. **P36 (Notes):** Notes design and implementation, media, storage, backup compatibility, and demo data (P36-A through P36-D).
+7. **P37 (Tutorials):** Accessible, replayable in-app walkthroughs and feature introductions (P37-A through P37-C).
+8. **P38 (Skeleton Loaders):** Identify real asynchronous loading states, then implement and verify skeleton loaders (P38-A through P38-C).
+9. **P39 (Hardening & Audits):** Project audit covering security, privacy, permissions, recovery, dependencies, test debt, and onboarding, followed by remediation plan (P39-A through P39-H).
+10. **P40 (Context Hygiene):** Measure documentation size/read costs, then archive completed-phase narrative from main ledger (P40-A through P40-B).
+11. **P43-E (GitHub Issue Management):** Verify GitHub issue inventory and assess batching, API limits, and noise before separately tracked issue-creation work.
+12. **P44 (Spending Heat Map):** Transactions spending heat map with selector, screen, demo data, accessibility, and device checks (P44-A through P44-D).
 
-*(Note: P21-F and P43-B were previously completed, verified, and released; all checklist rows O1–O77 are Pass; no release candidate or release lifecycle work is pending.)*
+*(Note: P21-F and P43-B were previously completed, verified, and released; P29-U-R1 is completed under CR-147; device check O80 is Pass; O81 is Not run; no release candidate or release lifecycle work is pending.)*
 
 ## Phase P7 Google Drive automated backup (planned)
 
@@ -1129,32 +1128,26 @@ The remaining tasks recorded as Planned on `develop` across dashboard, roadmap, 
 - **Placement:** Rule 2 (revision to completed part in Phase P17 Cash flow, budgets, and sorting); searched dashboard, register, phase history, roadmap, memory, and sorting files; related P17-C; reason: revise completed sorting persistence in Phase P17 to ensure reliable persistence across all screens and sections.
 - **Branch:** `phase/17-cash-flow-budgets-sorting` (reopened from `develop`), task branch `task/P17-C-R1-persistent-sorting-preferences`.
 - **Verification:** Regression test suite `src/data/__tests__/useSort.test.tsx` (6 tests passing). Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
-- **Device check:** Physical-device check row O80 added in `docs/releases/device-test-checklist.md` under Next release device checks in `Not run` status. Physical-device checks O78 and O79 verified as Pass based on owner report on 2026-11-23.
+- **Device check:** Physical-device check row O80 verified as Pass by owner on physical device realme Narzo 60 Pro 5g running Android 15 Vanilla Ice Cream on 2026-11-23.
 
-## P29-U-R1 Dynamic asset valuation inputs and calculations (Planned; CR-143)
+## P29-U-R1 Dynamic asset valuation inputs and calculations (Done; CR-147)
 
 - **Goal:** Make valuation inputs and calculations depend dynamically on the selected valuation type for both recurring and one-time assets.
-- **Scope & Requirements:**
-  - *Manual valuation:* Allow users to enter and update a current valuation amount.
-  - *Interest-based valuation:* Collect an interest rate (percentage) and calculate asset value.
-  - *Unit-based valuation:* Collect purchase amount, unit price, and units purchased, and calculate total value.
-  - *Balance-based valuation:* Display the current balance derived from entries/transactions.
-  - Define exact application and behavior across recurring plans (e.g. SIPs, recurring deposits) and one-time/manual assets (e.g. stocks, gold, real estate, cash).
+- **Scope & Delivery:**
+  - *Manual valuation:* Form provides manual value and date inputs.
+  - *Interest-based valuation (`accrual`):* Form collects annual interest rate (%), compounding frequency (yearly/quarterly/monthly/simple), and optional maturity date; calculates value automatically from elapsed days (`actual-days / 365`) without manual value entry.
+  - *Unit-based valuation (`unitsPrice`):* Form collects purchase amount, unit price, and units purchased with 2-way auto-calculation: entering Units and Unit Price calculates Purchase Amount / Total Value; entering Purchase Amount and Unit Price derives Units Purchased.
+  - *Balance-based valuation (`balance`):* Form collects opening balance; current balance is dynamically derived and displayed from `opening + deposits - withdrawals`; manual value entry is hidden/read-only.
+  - *Holding valuation update route (`app/holding-valuation-form.tsx`):* Displays type-specific screen title, input label, live calculated total value for unit-based, and dispatches appropriate action (`updateHoldingPrice` for `unitsPrice`; `updateHoldingValue` for `accrual` and `balance`).
+  - *Domain purity & schema v24:* Injected dates into form schema builders in `src/domain/schemas.ts`; schema remains v24 (additive `unitCount?: number` optional field on domain type and schema).
 - **Placement:** Rule 2 (adjustment to completed P29-U valuation methods on existing holding model); searched dashboard, register, phase history, roadmap, memory, `valuation.ts`, `holding-valuation-form.tsx`, and `investment-form.tsx`; related P29-U, P8, and P29-S; reason: adjusts the valuation method mechanics and dynamic form inputs established by completed subtask P29-U.
 - **Branch:** `phase/29-income-recurrence` (reopened from `develop`), task branch `task/P29-U-R1-dynamic-asset-valuation`.
-- **Open Questions / Unresolved Product Details (no decisions invented):**
-  1. *Unit-based input calculation:* When collecting purchase amount, unit price, and units purchased, is there a 2-way or 3-way auto-calculation (e.g., entering purchase amount and unit price automatically computes units; or entering units and price computes total purchase amount)?
-  2. *Total value vs purchase amount:* For unit-based valuation, how is current total value distinguished from historical purchase amount? Does total value equal `units * latest unit price`, with `purchase amount` stored as cost basis?
-  3. *Recurring investments with variable unit prices:* For recurring assets (e.g., monthly SIPs in mutual funds/stocks), the unit price varies each month. How are units and purchase amounts tracked per recurring installment? Does each installment entry record its own price and units, or is an average NAV/unit price maintained?
-  4. *Interest compounding options:* For interest-based valuation, which compounding frequencies are supported (simple, monthly, quarterly, half-yearly, yearly)? Does it reuse P29-U's `Compounding` enum and formula, or introduce custom interest accrual schedules?
-  5. *Balance-based valuation for recurring vs one-time:* For recurring assets, does balance-based valuation derive balance from `opening + sum(deposit logs) - sum(withdrawal logs)`? How does it differ from manual holdings?
-  6. *Schema migration:* Does dynamic valuation require additional persisted fields on `Holding` / `PlanHolding` / `ManualHolding` (e.g., `unitsPurchased`, `unitPrice`, `purchaseAmount`), and will that necessitate a schema bump to v25 with migration from v24?
-  7. *Type switching on existing holdings:* When an existing holding changes valuation type (e.g. from manual to unit-based or balance-based), how are historical logs and snapshots preserved or converted?
+- **Verification:** Regression test suites `src/domain/__tests__/valuation.test.ts`, `src/domain/__tests__/schemas.test.ts`, `src/components/__tests__/HoldingValuationDynamic.test.tsx`, and `src/components/__tests__/RouteRenderSmoke.test.tsx` pass. Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
+- **Device check:** Physical-device check row O81 added in `docs/releases/device-test-checklist.md` under Next release device checks in `Not run` status. Physical-device check O80 marked Pass based on owner report on 2026-11-23.
 
+## Pending owner actions (2026-11-23 reconciliation)
 
-## Pending owner actions (2026-11-22 reconciliation)
-
-- **Next-release device gate:** O61–O74 and O75–O76 were tested and validated on physical devices by the owner on 2026-11-22 and marked Pass (now under ## v1.3.0 device checks). O77, O78, and O79 were tested and validated Pass on physical device by the owner on 2026-11-23. Physical-device check O80 (verifying persistent sorting preferences across screens on a physical device) is added under Next release device checks in Not run status. Physical device metadata (realme Narzo 60 Pro 5g, Android 15 Vanilla Ice Cream, tester sahilsheikh-dev, respective release dates) is recorded across all sections, and the checklist maintenance confirmation rule with prior release suggestions is documented.
+- **Next-release device gate:** O61–O74 and O75–O76 were tested and validated on physical devices by the owner on 2026-11-22 and marked Pass (now under ## v1.3.0 device checks). O77, O78, O79, and O80 were tested and validated Pass on physical device by the owner on 2026-11-23. Physical-device check O81 (verifying dynamic asset valuation inputs and calculations on a physical device) is added under Next release device checks in Not run status. Physical device metadata (realme Narzo 60 Pro 5g, Android 15 Vanilla Ice Cream, tester sahilsheikh-dev, respective release dates) is recorded across all sections, and the checklist maintenance confirmation rule with prior release suggestions is documented.
 - **Documentation PR flow:** CR-118's PR #184/#185 and CR-119's PR #186/#187
   merges are confirmed in Git history and terminal session evidence. PR #186
   merged `task/docs-device-checklist-by-release` into `documentation` at

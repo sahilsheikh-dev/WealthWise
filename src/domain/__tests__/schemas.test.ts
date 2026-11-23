@@ -13,6 +13,8 @@ import {
   makeHoldingFormSchema,
   makeLiabilityFormSchema,
   makeLiabilityPaymentFormSchema,
+  makeLiabilityClosureFormSchema,
+  makeLiabilityClosureNoteSchema,
   makeOnboardingFormSchema,
   makeProfileFormSchema,
   makePlanFormSchema,
@@ -1089,6 +1091,104 @@ describe('makeTransactionFormSchema', () => {
       expect(holdingSchema.safeParse({ ...holding, name: 'pf' }).success).toBe(false);
       expect(holdingSchema.safeParse({ ...holding, invested: '10000000000.01' }).success).toBe(false);
 
+      // P29-U-R1: Dynamic valuation fields on holding schema
+      const unitBasedHolding = holdingSchema.parse({
+        name: 'TCS Shares',
+        type: 'Stocks / ETF',
+        valuationMethod: 'unitsPrice',
+        latestPrice: '3500',
+        unitCount: '10',
+      });
+      expect(unitBasedHolding).toMatchObject({
+        valuationMethod: 'unitsPrice',
+        latestPrice: 3500,
+        unitCount: 10,
+        invested: 35000,
+        value: 35000,
+      });
+
+      const balanceBasedHolding = holdingSchema.parse({
+        name: 'Wallet Cash',
+        type: 'Cash',
+        valuationMethod: 'balance',
+        invested: '5000',
+      });
+      expect(balanceBasedHolding).toMatchObject({
+        valuationMethod: 'balance',
+        invested: 5000,
+        value: 5000,
+      });
+
+      // Unit-based with invested + latestPrice deriving unitCount
+      const derivedUnitsHolding = holdingSchema.parse({
+        name: 'Wipro Shares',
+        type: 'Stocks / ETF',
+        valuationMethod: 'unitsPrice',
+        latestPrice: '500',
+        invested: '10000',
+        priceAsOf: '2026-11-20',
+      });
+      expect(derivedUnitsHolding).toMatchObject({
+        valuationMethod: 'unitsPrice',
+        latestPrice: 500,
+        unitCount: 20,
+        invested: 10000,
+        value: 10000,
+        priceAsOf: '2026-11-20',
+      });
+
+      // Unit-based validation errors
+      expect(holdingSchema.safeParse({
+        name: 'Stock', type: 'Stocks / ETF', valuationMethod: 'unitsPrice', latestPrice: '100',
+      }).success).toBe(false);
+      expect(holdingSchema.safeParse({
+        name: 'Stock', type: 'Stocks / ETF', valuationMethod: 'unitsPrice', unitCount: '10',
+      }).success).toBe(false);
+      expect(holdingSchema.safeParse({
+        name: 'Stock', type: 'Stocks / ETF', valuationMethod: 'unitsPrice', latestPrice: '100', unitCount: 'invalid',
+      }).success).toBe(false);
+      expect(holdingSchema.safeParse({
+        name: 'Stock', type: 'Stocks / ETF', valuationMethod: 'unitsPrice', latestPrice: '100', unitCount: '10000000001',
+      }).success).toBe(false);
+      expect(holdingSchema.safeParse({
+        name: 'Stock', type: 'Stocks / ETF', valuationMethod: 'manual', invested: '1000',
+      }).success).toBe(false);
+
+      // Plan form schema with dynamic valuation fields
+      const planSchema = makePlanFormSchema('2026-11-23', { otherNames: [], earliestLogDate: null });
+      const planWithUnits = planSchema.parse({
+        ...planValues,
+        valuationMethod: 'unitsPrice',
+        latestPrice: '150',
+        unitCount: '100',
+      });
+      expect(planWithUnits).toMatchObject({
+        valuationMethod: 'unitsPrice',
+        latestPrice: 150,
+        unitCount: 100,
+        priceAsOf: '2026-11-23',
+      });
+
+      // Liability closure form schemas
+      const closureSchema = makeLiabilityClosureFormSchema('2026-11-23', '2026-01-01');
+      expect(closureSchema.parse({
+        date: '2026-11-01',
+        amountPaid: '50000',
+        note: 'Full settlement',
+      })).toMatchObject({ date: '2026-11-01', amountPaid: 50000, note: 'Full settlement' });
+      expect(closureSchema.safeParse({
+        date: '2026-11-25',
+        amountPaid: '50000',
+        note: '',
+      }).success).toBe(false);
+      expect(closureSchema.safeParse({
+        date: '2025-12-01',
+        amountPaid: '50000',
+        note: '',
+      }).success).toBe(false);
+
+      const closureNoteSchema = makeLiabilityClosureNoteSchema();
+      expect(closureNoteSchema.parse({ note: 'Closed early' })).toEqual({ note: 'Closed early' });
     });
   });
 
