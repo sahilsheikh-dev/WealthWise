@@ -1817,4 +1817,23 @@ describe('permanent progress ledger', () => {
     expect(status).toContain('CR-141');
     expect(status).toContain('P28-F-R7 / CR-130 (2026-11-22) — Prepare and publish v1.3.0 release candidate.');
   });
+
+  it('records CR-142 reconciliation of planned and unimplemented roadmap items', () => {
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const independentEntities = ledger.split('## 13. Independent entities')[1] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-142 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-142 |'))).toHaveLength(1);
+    expect(independentEntities.split('\n').filter((line) => line.startsWith('| CR-142 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-142');
+    expect(openItems).toContain('CR-142');
+    expect(openItems).toContain('P21-F (Done):** Emergency Fund target editing was completed');
+    expect(openItems).toContain('P43-B (Done):** tag-cleanup scope');
+    expect(openItems).toContain('Active Planned and Unimplemented Roadmap Items');
+    expect(status).toContain('CR-142');
+  });
 });
