@@ -4,6 +4,7 @@ import HoldingValuationFormScreen from '../../../app/holding-valuation-form';
 import { useAppStore } from '../../data/store';
 import { emptyAppData } from '../../domain/actions';
 import type { AppData, ManualHolding } from '../../domain/types';
+import { todayISO } from '../../lib/clock';
 
 jest.mock('@react-native-async-storage/async-storage', () => ({ __esModule: true, default: {} }));
 jest.mock('../../components/form/FormScreen', () => {
@@ -42,7 +43,7 @@ jest.mock('../../theme/useTheme', () => ({
 }));
 
 describe('HoldingValuationFormScreen dynamic forms', () => {
-  const today = '2026-11-23';
+  const today = todayISO();
 
   function setupHolding(holding: ManualHolding) {
     const data: AppData = { ...emptyAppData(today), holdings: [holding] };
