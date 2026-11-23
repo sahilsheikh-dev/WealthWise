@@ -1065,19 +1065,18 @@ Not adopted in CR-106:
 The remaining tasks recorded as Planned on `develop` across dashboard, roadmap, and memory are:
 
 1. **P7 (Cloud Backup — Google Drive):** Research, pure domain scheduling model, Settings UI, Wi-Fi gating, offline handling, and tests (P7-A through P7-D).
-2. **P20-Z (Budget Category Filter):** Dynamic category filter alongside existing Budget sorting option, defaulting to "All", listing available categories (Income, Expenses, Needs, Wants, Debt, Assets, Liabilities), and dynamically including newly created categories following Transactions behavior (Planned; CR-143).
-3. **P29-U-R1 (Dynamic Asset Valuation):** Type-dependent dynamic valuation inputs and calculations for manual, interest-based, unit-based, and balance-based holdings across recurring and one-time assets (Planned; CR-143).
-4. **P31 (Project Health & Community):** Community guidelines, issue templates, accessibility statement/audit, and privacy statement (P31-A through P31-D).
-5. **P33 (Widgets):** Platform widget research and implementation planning for Android and iOS (P33-A through P33-C).
-6. **P34 (Quick Capture):** Quick-capture platform research, home-screen shortcuts, and gesture features (P34-A through P34-C).
-7. **P35 (Transaction Auto-Detection):** SMS/notification transaction detection permissions/platform research, scope validation, and implementation planning (P35-A through P35-C).
-8. **P36 (Notes):** Notes design and implementation, media, storage, backup compatibility, and demo data (P36-A through P36-D).
-9. **P37 (Tutorials):** Accessible, replayable in-app walkthroughs and feature introductions (P37-A through P37-C).
-10. **P38 (Skeleton Loaders):** Identify real asynchronous loading states, then implement and verify skeleton loaders (P38-A through P38-C).
-11. **P39 (Hardening & Audits):** Project audit covering security, privacy, permissions, recovery, dependencies, test debt, and onboarding, followed by remediation plan (P39-A through P39-H).
-12. **P40 (Context Hygiene):** Measure documentation size/read costs, then archive completed-phase narrative from main ledger (P40-A through P40-B).
-13. **P43-E (GitHub Issue Management):** Verify GitHub issue inventory and assess batching, API limits, and noise before separately tracked issue-creation work.
-14. **P44 (Spending Heat Map):** Transactions spending heat map with selector, screen, demo data, accessibility, and device checks (P44-A through P44-D).
+2. **P29-U-R1 (Dynamic Asset Valuation):** Type-dependent dynamic valuation inputs and calculations for manual, interest-based, unit-based, and balance-based holdings across recurring and one-time assets (Planned; CR-143).
+3. **P31 (Project Health & Community):** Community guidelines, issue templates, accessibility statement/audit, and privacy statement (P31-A through P31-D).
+4. **P33 (Widgets):** Platform widget research and implementation planning for Android and iOS (P33-A through P33-C).
+5. **P34 (Quick Capture):** Quick-capture platform research, home-screen shortcuts, and gesture features (P34-A through P34-C).
+6. **P35 (Transaction Auto-Detection):** SMS/notification transaction detection permissions/platform research, scope validation, and implementation planning (P35-A through P35-C).
+7. **P36 (Notes):** Notes design and implementation, media, storage, backup compatibility, and demo data (P36-A through P36-D).
+8. **P37 (Tutorials):** Accessible, replayable in-app walkthroughs and feature introductions (P37-A through P37-C).
+9. **P38 (Skeleton Loaders):** Identify real asynchronous loading states, then implement and verify skeleton loaders (P38-A through P38-C).
+10. **P39 (Hardening & Audits):** Project audit covering security, privacy, permissions, recovery, dependencies, test debt, and onboarding, followed by remediation plan (P39-A through P39-H).
+11. **P40 (Context Hygiene):** Measure documentation size/read costs, then archive completed-phase narrative from main ledger (P40-A through P40-B).
+12. **P43-E (GitHub Issue Management):** Verify GitHub issue inventory and assess batching, API limits, and noise before separately tracked issue-creation work.
+13. **P44 (Spending Heat Map):** Transactions spending heat map with selector, screen, demo data, accessibility, and device checks (P44-A through P44-D).
 
 *(Note: P21-F and P43-B were previously completed, verified, and released; all checklist rows O1–O77 are Pass; no release candidate or release lifecycle work is pending.)*
 
@@ -1089,20 +1088,20 @@ The remaining tasks recorded as Planned on `develop` across dashboard, roadmap, 
 - **P7-C (UI & Settings):** UI & settings in Backup / Security screen (Connect/Disconnect Google Drive account, last backup status/timestamp, frequency picker, Wi-Fi only toggle, "Back up now", and "Restore from Google Drive" flow). Dependencies: P7-B. Evidence: not started.
 - **P7-D (Fixtures, Tests & Device Verification):** Deterministic demo data, offline fallback, token revocation handling, unit tests, and device checklist rows. Dependencies: P7-C. Evidence: not started.
 
-## P20-Z Dynamic budget category filter (Planned; CR-143)
+## P20-Z Dynamic budget category filter (Done; CR-144)
 
 - **Goal:** Add a dynamic category filter alongside the existing Budget sorting option in the Budget screen.
-- **Scope & Requirements:**
-  - Default selection to "All".
-  - List available categories (including Income, Expenses, Needs, Wants, Debt, Assets, and Liabilities).
-  - Automatically include newly created categories dynamically, following the Transactions section's category filter behavior (`categoryFilter` in `app/(tabs)/transactions.tsx`).
+- **Scope & Delivery:**
+  - Added dynamic category filter inside `budget-filter-panel` in `app/(tabs)/budget.tsx` alongside `SortChip`.
+  - Filter defaults to "All".
+  - Lists base categories: "All", "Income", "Expenses", "Needs", "Wants", "Debt", "Assets", "Liabilities".
+  - Dynamically computes and displays chips for newly created and custom sections (e.g. "Freelance Expenses", "Insurance", etc.) from both active budget definitions and overview sections.
+  - Selecting a category filters the displayed Budget sections using `matchesCategory`, and renders an accessible `EmptyState` card ("No categories found") if no budget items match the selected category.
+  - Maintains `categoryOverride` state with `routeCategory` search param fallback, and activates the filter indicator when `selectedCategory !== 'All'`.
 - **Placement:** Rule 4 (new part in existing Phase P20 Monthly Budget feature area); searched dashboard, register, phase history, roadmap, memory, and `app/(tabs)/budget.tsx`; related P20, P20-X, and P17-C; reason: category filtering alongside sorting extends the existing Phase P20 Budget feature area.
 - **Branch:** `phase/20-budget` (reopened from `develop`), task branch `task/P20-Z-budget-category-filter`.
-- **Open Questions / Unresolved Product Details (no decisions invented):**
-  1. *Filter granularity:* In WealthWise, "Needs", "Wants", and "Debt" are expense groups (`BudgetGroup`), whereas items belong to individual categories under those groups. Does the category filter operate at the group level, individual category level, or a hierarchical/multi-section dropdown?
-  2. *Summary impact:* When a category filter is active, does it filter visible line items only, or does it also recompute the Budget summary cards (Planned vs Actual, Cash Flow summary, Pace chart) for the filtered category?
-  3. *Persistence:* Does the selected category filter persist across app restarts/sessions (e.g., via `metaStore` like sorting in P20-X), or does it reset to "All" whenever the Budget screen mounts?
-  4. *UI layout:* How should the CategoryFilter chip/dropdown and SortChip be arranged in the AppHeader/Budget filter bar without crowding on compact screens or at 2.0x accessibility font scale?
+- **Verification:** Regression test suite `src/components/__tests__/BudgetCategoryFilter.test.tsx` (4 tests passing). Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
+- **Device check:** Physical-device check row O78 added in `docs/releases/device-test-checklist.md` under Next release device checks in `Not run` status.
 
 ## P29-U-R1 Dynamic asset valuation inputs and calculations (Planned; CR-143)
 

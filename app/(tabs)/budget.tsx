@@ -7,7 +7,7 @@ import { AmountText } from '../../src/components/AmountText';
 import { AppHeader, type AppHeaderAction } from '../../src/components/AppHeader';
 import { PaceLine } from '../../src/components/BudgetCharts';
 import { SortChip } from '../../src/components/SortChip';
-import { AppText, Button, Card, ChipRow, Screen } from '../../src/components/ui';
+import { AppText, Button, Card, Chip, ChipRow, EmptyState, Screen } from '../../src/components/ui';
 import { useAppStore } from '../../src/data/store';
 import { useUIStore } from '../../src/data/uiStore';
 import { useAppActions, useAppData } from '../../src/data/useAppData';
@@ -42,10 +42,48 @@ function isMonthKey(value: string): boolean {
   return /^\d{4}-(0[1-9]|1[0-2])$/.test(value);
 }
 
+function matchesCategory(
+  section: { id: string; name: string },
+  definition: { type: 'spend' | 'invest'; system?: 'income' | 'debt' | 'insurance' } | undefined,
+  category: string,
+  incomeSectionId: string,
+): boolean {
+  if (category === 'All') return true;
+  const nameLower = section.name.toLowerCase();
+  const idLower = section.id.toLowerCase();
+  const system = definition?.system;
+  const type = definition?.type ?? 'spend';
+  if (category === 'Income') {
+    return section.id === incomeSectionId || system === 'income' || nameLower === 'income';
+  }
+  if (category === 'Expenses') {
+    return type === 'spend' && system !== 'income' && section.id !== incomeSectionId;
+  }
+  if (category === 'Needs') {
+    return idLower === 'survival' || nameLower.includes('needs');
+  }
+  if (category === 'Wants') {
+    return idLower === 'wants' || nameLower.includes('wants');
+  }
+  if (category === 'Debt') {
+    return idLower === 'debt-repayments' || system === 'debt' || nameLower.includes('debt');
+  }
+  if (category === 'Assets') {
+    return idLower === 'savings-investments' || type === 'invest' || nameLower.includes('invest') || nameLower.includes('asset') || nameLower.includes('saving');
+  }
+  if (category === 'Liabilities') {
+    return idLower === 'debt-repayments' || system === 'debt' || nameLower.includes('liabilit') || nameLower.includes('debt');
+  }
+  const catLower = category.toLowerCase();
+  const rawLabel = section.id === 'other-not-in-budget' ? 'unbudgeted' : nameLower;
+  return rawLabel === catLower || idLower === catLower;
+}
+
 export default function BudgetScreen() {
-  const params = useLocalSearchParams<{ month?: string; apply?: string }>();
+  const params = useLocalSearchParams<{ month?: string; apply?: string; category?: string }>();
   const routeParam = typeof params.month === 'string' ? params.month : '';
   const routeMonth = isMonthKey(routeParam) ? routeParam : null;
+  const routeCategory = typeof params.category === 'string' ? params.category : '';
   const routeKey = routeParam;
   const routeApply = params.apply === '1';
   const [routeState, setRouteState] = useState(() => ({
@@ -64,7 +102,10 @@ export default function BudgetScreen() {
   const [recurringIncomeExpanded, setRecurringIncomeExpanded] = useState(false);
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const sorting = useSort('budgetSpending');
-  const filterActive = sorting.spec.key !== DEFAULT_SORTS.budgetSpending.key
+  const [categoryOverride, setCategoryOverride] = useState<string | null>(null);
+  const selectedCategory = categoryOverride ?? (routeCategory || 'All');
+  const filterActive = selectedCategory !== 'All'
+    || sorting.spec.key !== DEFAULT_SORTS.budgetSpending.key
     || sorting.spec.dir !== DEFAULT_SORTS.budgetSpending.dir;
   const data = useAppData();
   const actions = useAppActions();
@@ -73,6 +114,42 @@ export default function BudgetScreen() {
   const { fontScale } = useWindowDimensions();
   const today = todayISO();
   const overview = useMemo(() => budgetOverview(data, month, today), [data, month, today]);
+  const activeBudget = useMemo(
+    () => effectiveMonthBudget(data, month, today).budget,
+    [data, month, today],
+  );
+  const categoryOptions = useMemo(() => {
+    const base = ['All', 'Income', 'Expenses', 'Needs', 'Wants', 'Debt', 'Assets', 'Liabilities'];
+    const baseLower = new Set(base.map((c) => c.toLowerCase()));
+    const knownAliases = new Set([
+      'income',
+      'survival (needs)',
+      'needs',
+      'wants',
+      'savings and investments',
+      'assets',
+      'debt repayments',
+      'debt',
+      'liabilities',
+    ]);
+    const customNames: string[] = [];
+    const allSections = [
+      ...(activeBudget?.sections ?? []),
+      ...overview.sections,
+    ];
+    for (const section of allSections) {
+      const rawName = section.id === 'other-not-in-budget' ? 'Unbudgeted' : section.name;
+      const trimmed = rawName.trim();
+      if (!trimmed) continue;
+      if (knownAliases.has(trimmed.toLowerCase()) || baseLower.has(trimmed.toLowerCase())) {
+        continue;
+      }
+      if (!customNames.includes(trimmed)) {
+        customNames.push(trimmed);
+      }
+    }
+    return [...base, ...customNames];
+  }, [activeBudget?.sections, overview.sections]);
   const overviewAccessibility = [
     `Income ${formatAmount(overview.stacked.income.actual, 'exact', 1)} actual and ${formatAmount(overview.stacked.income.planned, 'exact', 1)} planned`,
     `Spending ${formatAmount(overview.stacked.spend.actual, 'exact', 1)} actual and ${formatAmount(overview.stacked.spend.planned, 'exact', 1)} planned`,
@@ -251,7 +328,6 @@ export default function BudgetScreen() {
     );
   };
 
-  const activeBudget = effectiveMonthBudget(data, month, today).budget;
   const nonSpendingSectionIds = activeBudget?.sections
     .filter((section) => section.type === 'invest' || section.system === 'income')
     .map((section) => section.id) ?? [];
@@ -305,13 +381,26 @@ export default function BudgetScreen() {
             );
           })()}
           {filterPanelOpen ? (
-            <View testID="budget-filter-panel" style={styles.filterPanel}>
+            <View
+              testID="budget-filter-panel"
+              onTouchStart={() => setTouchingHeader(true)}
+              onTouchEnd={() => setTouchingHeader(false)}
+              onTouchCancel={() => setTouchingHeader(false)}
+              style={styles.filterPanel}>
               <ChipRow>
                 <SortChip
                   options={SORT_OPTIONS.budgetSpending}
                   spec={sorting.spec}
                   onChange={sorting.setSpec}
                 />
+                {categoryOptions.map((cat) => (
+                  <Chip
+                    key={cat}
+                    label={cat}
+                    selected={selectedCategory === cat}
+                    onPress={() => setCategoryOverride(cat)}
+                  />
+                ))}
               </ChipRow>
             </View>
           ) : null}
@@ -444,7 +533,23 @@ export default function BudgetScreen() {
                   }));
                   const sortedOther = sorting.sort(otherWithMeta);
                   const sortedSections = incomeSec ? [incomeSec, ...sortedOther] : sortedOther;
-                  return sortedSections.map((section) => {
+                  const displayedSections = selectedCategory === 'All'
+                    ? sortedSections
+                    : sortedSections.filter((sec) => {
+                      const def = activeBudget?.sections.find((candidate) => candidate.id === sec.id);
+                      return matchesCategory(sec, def, selectedCategory, incomeSecId);
+                    });
+                  if (displayedSections.length === 0) {
+                    return (
+                      <Card style={styles.sectionCard}>
+                        <EmptyState
+                          title="No categories found"
+                          subtitle="No budget items match this category."
+                        />
+                      </Card>
+                    );
+                  }
+                  return displayedSections.map((section) => {
                     const definition = activeBudget?.sections.find((candidate) => candidate.id === section.id);
                     const label = section.id === 'other-not-in-budget' ? 'Unbudgeted' : section.name;
                     const isPast = overview.mode === 'past';
