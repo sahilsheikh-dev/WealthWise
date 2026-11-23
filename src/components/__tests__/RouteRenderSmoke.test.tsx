@@ -5256,11 +5256,13 @@ describe('route render smoke audit', () => {
   it('explains the first scheduled deposit and deposit tracking dates', () => {
     const renderer = renderScreen(React.createElement(InvestmentFormScreen));
     const dates = renderer.root.findAll((node) => String(node.type) === 'datefield');
-    expect(dates[0]?.props).toMatchObject({
+    const firstDate = dates.find((node) => node.props.accessibilityLabel === 'First scheduled contribution date');
+    const trackDate = dates.find((node) => node.props.accessibilityLabel === 'Scheduled deposit tracking start date');
+    expect(firstDate?.props).toMatchObject({
       accessibilityLabel: 'First scheduled contribution date',
       accessibilityHint: 'The first date on your recurring investment schedule.',
     });
-    expect(dates[1]?.props).toMatchObject({
+    expect(trackDate?.props).toMatchObject({
       accessibilityLabel: 'Scheduled deposit tracking start date',
       accessibilityHint: 'Only deposits due on or after this date count toward missed contributions.',
     });

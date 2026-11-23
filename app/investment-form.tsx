@@ -32,7 +32,7 @@ import {
   type PlanFormInput,
   type PlanFormOutput,
 } from '../src/domain/schemas';
-import { projection } from '../src/domain/sip';
+import { planValue, projection } from '../src/domain/sip';
 import { HOLDING_TYPES, type Frequency, type ManualHolding, type PlanHolding } from '../src/domain/types';
 import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
@@ -254,6 +254,8 @@ function PlanEditor({
       <PlanFields
         control={control}
         errors={errors}
+        setValue={setValue}
+        plan={plan}
         today={today}
         onNameChange={onNameChange}
         onActualValueEntered={() => {
@@ -397,6 +399,8 @@ function ReadOnlyInvestmentKind({ label, value }: { label: string; value: string
 function PlanFields({
   control,
   errors,
+  setValue,
+  plan,
   today,
   maximumDate,
   onNameChange,
@@ -405,6 +409,8 @@ function PlanFields({
 }: {
   control: Control<PlanFormInput, undefined, PlanFormOutput>;
   errors: FieldErrors<PlanFormInput>;
+  setValue: (name: keyof PlanFormInput, value: any, options?: any) => void;
+  plan?: PlanHolding;
   today: string;
   maximumDate: string;
   onNameChange: (name: string) => void;
@@ -414,6 +420,10 @@ function PlanFields({
   const [infoOpen, setInfoOpen] = useState(false);
   const { colors } = useTheme();
   const valuationMethod = useWatch({ control, name: 'valuationMethod' }) ?? 'manual';
+  const opening = useWatch({ control, name: 'opening' });
+  const unitCount = useWatch({ control, name: 'unitCount' });
+  const latestPrice = useWatch({ control, name: 'latestPrice' });
+
   return (
     <>
       <FormSection title="Basics">
@@ -434,61 +444,24 @@ function PlanFields({
             ) : null}
           </>
         )} />
-        <Controller control={control} name="frequency" render={({ field }) => <Dropdown label="Frequency" accessibilityLabel="Frequency" options={frequencies.map((frequency) => ({ value: frequency, title: frequency }))} value={field.value} onChange={field.onChange} error={errors.frequency?.message} />} />
       </FormSection>
-      <FormSection title="Contribution">
-        <Controller control={control} name="amount" render={({ field }) => (
-          <FieldTitle title="Contribution amount">
-            <MoneyField label="Contribution amount" accessibilityLabel="Contribution amount" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.amount?.message} />
-          </FieldTitle>
-        )} />
-        <Controller control={control} name="ratePct" render={({ field }) => (
-          <FieldTitle title="Annual return">
-            <PercentField label="Annual return" accessibilityLabel="Annual return percentage" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.ratePct?.message} />
-          </FieldTitle>
-        )} />
-        <Controller control={control} name="stepUpPct" render={({ field }) => (
-          <FieldTitle title="Annual step-up">
-            <PercentField label="Annual step-up" accessibilityLabel="Annual step-up percentage" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.stepUpPct?.message} />
-          </FieldTitle>
-        )} />
-        <Controller control={control} name="tenureYears" render={({ field }) => (
-          <FieldTitle title="Tenure (years)">
-            <IntegerField label="Tenure (years)" accessibilityLabel="Tenure in years" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.tenureYears?.message} icon="calendar-outline" />
-          </FieldTitle>
-        )} />
-      </FormSection>
-      <FormSection title="Dates">
-        <Controller control={control} name="startDate" render={({ field }) => <DateField
-          label="First scheduled contribution"
-          accessibilityLabel="First scheduled contribution date"
-          accessibilityHint="The first date on your recurring investment schedule."
-          value={field.value}
+      <FormSection title="Valuation">
+        <Controller control={control} name="valuationMethod" render={({ field }) => <Dropdown
+          label="Valuation method"
+          accessibilityLabel="Valuation method"
+          options={valuationMethodOptions}
+          value={field.value ?? 'manual'}
           onChange={field.onChange}
-          maximumDate={maximumDate}
-          error={errors.startDate?.message}
+          error={errors.valuationMethod?.message}
         />} />
-        <HelperText>The plan schedule starts on this date.</HelperText>
-        <Controller control={control} name="trackFrom" render={({ field }) => <DateField
-          label="Count scheduled deposits from"
-          accessibilityLabel="Scheduled deposit tracking start date"
-          accessibilityHint="Only deposits due on or after this date count toward missed contributions."
-          value={field.value || today}
-          onChange={field.onChange}
-          maximumDate={maximumDate}
-          error={errors.trackFrom?.message}
-        />} />
-        <HelperText>For an existing SIP, choose when you want WealthWise to start counting expected deposits.</HelperText>
-      </FormSection>
-      <FormSection title="Opening and value">
-        <Controller control={control} name="opening" render={({ field }) => (
-          <FieldTitle title="Opening balance">
-            <MoneyField label="Opening balance" accessibilityLabel="Opening balance" value={field.value ?? ''} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.opening?.message} />
-          </FieldTitle>
-        )} />
-        <HelperText accessibilityHint={openingBalanceHint}>{openingBalanceHint}</HelperText>
         {valuationMethod === 'manual' ? (
           <>
+            <Controller control={control} name="opening" render={({ field }) => (
+              <FieldTitle title="Opening balance">
+                <MoneyField label="Opening balance" accessibilityLabel="Opening balance" value={field.value ?? ''} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.opening?.message} />
+              </FieldTitle>
+            )} />
+            <HelperText accessibilityHint={openingBalanceHint}>{openingBalanceHint}</HelperText>
             <Controller control={control} name="actualValue" render={({ field }) => (
               <FieldTitle title="Latest actual value">
                 <MoneyField
@@ -539,20 +512,27 @@ function PlanFields({
                 </View>
               </View>
             </Modal>
+            <HelperText>Manual valuation: statement values can be entered when checking the plan. Suggested: {suggestedMethod}.</HelperText>
           </>
-        ) : null}
-      </FormSection>
-      <FormSection title="Valuation">
-        <Controller control={control} name="valuationMethod" render={({ field }) => <Dropdown
-          label="Valuation method"
-          accessibilityLabel="Valuation method"
-          options={valuationMethodOptions}
-          value={field.value ?? 'manual'}
-          onChange={field.onChange}
-          error={errors.valuationMethod?.message}
-        />} />
-        {valuationMethod === 'accrual' ? (
+        ) : valuationMethod === 'accrual' ? (
           <>
+            <Controller control={control} name="opening" render={({ field }) => (
+              <FieldTitle title="Opening balance">
+                <MoneyField label="Opening balance" accessibilityLabel="Opening balance" value={field.value ?? ''} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.opening?.message} />
+              </FieldTitle>
+            )} />
+            <Controller control={control} name="ratePct" render={({ field }) => (
+              <FieldTitle title="Annual rate">
+                <PercentField
+                  label="Annual rate"
+                  accessibilityLabel="Annual accrual rate"
+                  value={field.value ?? ''}
+                  onChangeText={field.onChange}
+                  onBlur={field.onBlur}
+                  error={errors.ratePct?.message}
+                />
+              </FieldTitle>
+            )} />
             <Controller control={control} name="compounding" render={({ field }) => <Dropdown
               label="Compounding"
               accessibilityLabel="Compounding"
@@ -574,36 +554,160 @@ function PlanFields({
               </FieldTitle>
             )} />
             <HelperText>
-              Accrual uses this plan&apos;s annual return rate and compounding. Suggested: {suggestedMethod}.
+              Interest-based valuation: accrued value is calculated automatically from annual rate and elapsed days. Suggested: {suggestedMethod}.
             </HelperText>
           </>
         ) : valuationMethod === 'unitsPrice' ? (
           <>
+            <Controller control={control} name="opening" render={({ field }) => (
+              <FieldTitle title="Purchase amount">
+                <MoneyField
+                  label="Purchase amount"
+                  accessibilityLabel="Opening balance"
+                  value={field.value ?? ''}
+                  onChangeText={(val) => {
+                    field.onChange(val);
+                    const numOpening = Number(val.replaceAll(',', ''));
+                    const numPrice = Number((latestPrice ?? '').replaceAll(',', ''));
+                    if (Number.isFinite(numOpening) && numPrice > 0) {
+                      setValue('unitCount', String(Math.round((numOpening / numPrice) * 1000000) / 1000000), { shouldDirty: true });
+                    }
+                    setValue('actualValue', val, { shouldDirty: true });
+                  }}
+                  onBlur={field.onBlur}
+                  error={errors.opening?.message}
+                />
+              </FieldTitle>
+            )} />
             <Controller control={control} name="latestPrice" render={({ field }) => (
               <FieldTitle title="Unit price">
                 <MoneyField
                   label="Unit price"
                   accessibilityLabel="Latest price per unit"
                   value={field.value ?? ''}
-                  onChangeText={field.onChange}
+                  onChangeText={(val) => {
+                    field.onChange(val);
+                    const numPrice = Number(val.replaceAll(',', ''));
+                    const numUnits = Number((unitCount ?? '').replaceAll(',', ''));
+                    const numOpening = Number((opening ?? '').replaceAll(',', ''));
+                    if (Number.isFinite(numPrice) && numPrice > 0) {
+                      if (Number.isFinite(numUnits) && numUnits > 0) {
+                        const total = String(Math.round(numUnits * numPrice * 100) / 100);
+                        setValue('opening', total, { shouldDirty: true });
+                        setValue('actualValue', total, { shouldDirty: true });
+                      } else if (Number.isFinite(numOpening) && numOpening > 0) {
+                        setValue('unitCount', String(Math.round((numOpening / numPrice) * 1000000) / 1000000), { shouldDirty: true });
+                      }
+                    }
+                  }}
                   onBlur={field.onBlur}
                   error={errors.latestPrice?.message}
                 />
               </FieldTitle>
             )} />
+            <Controller control={control} name="unitCount" render={({ field }) => (
+              <FieldTitle title="Units purchased">
+                <TextField
+                  label="Units purchased"
+                  accessibilityLabel="Units purchased"
+                  value={field.value ?? ''}
+                  onChangeText={(val) => {
+                    field.onChange(val);
+                    const numUnits = Number(val.replaceAll(',', ''));
+                    const numPrice = Number((latestPrice ?? '').replaceAll(',', ''));
+                    if (Number.isFinite(numUnits) && numPrice > 0) {
+                      const total = String(Math.round(numUnits * numPrice * 100) / 100);
+                      setValue('opening', total, { shouldDirty: true });
+                      setValue('actualValue', total, { shouldDirty: true });
+                    }
+                  }}
+                  onBlur={field.onBlur}
+                  error={errors.unitCount?.message}
+                />
+              </FieldTitle>
+            )} />
+            {Number(opening) > 0 ? (
+              <ReadOnlyRow label="Total value" value={formatAmount(Number(opening), 'exact', 1)} />
+            ) : null}
             <HelperText>
-              Unit-based recurring investment: value is calculated from contributions and unit price. Suggested: {suggestedMethod}.
+              Unit-based valuation: calculates total value from units purchased and unit price. Suggested: {suggestedMethod}.
             </HelperText>
           </>
         ) : valuationMethod === 'balance' ? (
-          <HelperText>
-            Balance is tracked automatically from contributions and withdrawals. Suggested: {suggestedMethod}.
-          </HelperText>
+          <>
+            <Controller control={control} name="opening" render={({ field }) => (
+              <FieldTitle title="Opening balance">
+                <MoneyField
+                  label="Opening balance"
+                  accessibilityLabel="Opening balance"
+                  value={field.value ?? ''}
+                  onChangeText={field.onChange}
+                  onBlur={field.onBlur}
+                  error={errors.opening?.message}
+                />
+              </FieldTitle>
+            )} />
+            {plan ? (
+              <ReadOnlyRow label="Current balance" value={formatAmount(planValue(plan, today), 'exact', 1)} />
+            ) : Number(opening) > 0 ? (
+              <ReadOnlyRow label="Current balance" value={formatAmount(Number(opening), 'exact', 1)} />
+            ) : null}
+            <HelperText>
+              Balance is tracked automatically from contributions and withdrawals. Suggested: {suggestedMethod}.
+            </HelperText>
+          </>
         ) : (
           <HelperText>
-            Manual valuation: statement values can be entered when checking the plan. Suggested: {suggestedMethod}.
+            Suggested: {suggestedMethod}.
           </HelperText>
         )}
+      </FormSection>
+      <FormSection title="Contribution">
+        <Controller control={control} name="frequency" render={({ field }) => <Dropdown label="Frequency" accessibilityLabel="Frequency" options={frequencies.map((frequency) => ({ value: frequency, title: frequency }))} value={field.value} onChange={field.onChange} error={errors.frequency?.message} />} />
+        <Controller control={control} name="amount" render={({ field }) => (
+          <FieldTitle title="Contribution amount">
+            <MoneyField label="Contribution amount" accessibilityLabel="Contribution amount" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.amount?.message} />
+          </FieldTitle>
+        )} />
+        {valuationMethod !== 'accrual' ? (
+          <Controller control={control} name="ratePct" render={({ field }) => (
+            <FieldTitle title="Annual return">
+              <PercentField label="Annual return" accessibilityLabel="Annual return percentage" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.ratePct?.message} />
+            </FieldTitle>
+          )} />
+        ) : null}
+        <Controller control={control} name="stepUpPct" render={({ field }) => (
+          <FieldTitle title="Annual step-up">
+            <PercentField label="Annual step-up" accessibilityLabel="Annual step-up percentage" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.stepUpPct?.message} />
+          </FieldTitle>
+        )} />
+        <Controller control={control} name="tenureYears" render={({ field }) => (
+          <FieldTitle title="Tenure (years)">
+            <IntegerField label="Tenure (years)" accessibilityLabel="Tenure in years" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.tenureYears?.message} icon="calendar-outline" />
+          </FieldTitle>
+        )} />
+      </FormSection>
+      <FormSection title="Dates">
+        <Controller control={control} name="startDate" render={({ field }) => <DateField
+          label="First scheduled contribution"
+          accessibilityLabel="First scheduled contribution date"
+          accessibilityHint="The first date on your recurring investment schedule."
+          value={field.value}
+          onChange={field.onChange}
+          maximumDate={maximumDate}
+          error={errors.startDate?.message}
+        />} />
+        <HelperText>The plan schedule starts on this date.</HelperText>
+        <Controller control={control} name="trackFrom" render={({ field }) => <DateField
+          label="Count scheduled deposits from"
+          accessibilityLabel="Scheduled deposit tracking start date"
+          accessibilityHint="Only deposits due on or after this date count toward missed contributions."
+          value={field.value || today}
+          onChange={field.onChange}
+          maximumDate={maximumDate}
+          error={errors.trackFrom?.message}
+        />} />
+        <HelperText>For an existing SIP, choose when you want WealthWise to start counting expected deposits.</HelperText>
       </FormSection>
     </>
   );
