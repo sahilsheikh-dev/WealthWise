@@ -1,6 +1,16 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-23 | Updates: owner and AI agents -->
 
 # Status
+- **P20-Z / CR-144 (2026-11-23) — Implement dynamic Budget category filter.**
+  Implemented dynamic Budget category filter alongside existing Budget sorting option in
+  `app/(tabs)/budget.tsx`. Adds `categoryOptions` memo calculating base categories (`All`, `Income`,
+  `Expenses`, `Needs`, `Wants`, `Debt`, `Assets`, `Liabilities`) and active custom section names,
+  renders `<Chip>` components inside `<ChipRow>` in `budget-filter-panel` alongside `<SortChip>`,
+  maintains `categoryOverride` state with `routeCategory` fallback, filters `sortedSections` into
+  `displayedSections` with `<EmptyState>` when no sections match, and sets `filterActive` indicator
+  when category is filtered. Added physical-device check O78 under Next release device checks in
+  `Not run` status. Verified with regression tests in `src/components/__tests__/BudgetCategoryFilter.test.tsx`.
+  Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
 - **CR-143 / Documentation (2026-11-23) — Plan Budget category filter (P20-Z) and Dynamic asset valuation (P29-U-R1).**
   Recorded two feature requests as Planned work only across repository ledgers, memory, and roadmap:
   P20-Z (Budget category filter, Rule 4 under Phase P20) and P29-U-R1 (Dynamic asset valuation, Rule 2 under Phase P29).
