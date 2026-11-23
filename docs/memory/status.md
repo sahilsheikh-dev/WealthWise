@@ -1,6 +1,11 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-23 | Updates: owner and AI agents -->
 
 # Status
+- **CR-143 / Documentation (2026-11-23) — Plan Budget category filter (P20-Z) and Dynamic asset valuation (P29-U-R1).**
+  Recorded two feature requests as Planned work only across repository ledgers, memory, and roadmap:
+  P20-Z (Budget category filter, Rule 4 under Phase P20) and P29-U-R1 (Dynamic asset valuation, Rule 2 under Phase P29).
+  Documented placement rationale, branch targets (`phase/20-budget` and `phase/29-income-recurrence`), and explicit
+  open product questions without inventing decisions. All six repository gates pass with exit 0.
 - **CR-142 / Documentation (2026-11-23) — Reconcile planned and unimplemented roadmap items.**
   Corrected historical open-items and plan notes to resolve stale references: confirmed
   that P21-F (Emergency Fund target editing) and P43-B (non-release tag cleanup) are Done
