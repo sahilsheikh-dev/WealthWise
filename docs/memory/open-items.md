@@ -1101,7 +1101,7 @@ The remaining tasks recorded as Planned on `develop` across dashboard, roadmap, 
 - **Placement:** Rule 4 (new part in existing Phase P20 Monthly Budget feature area); searched dashboard, register, phase history, roadmap, memory, and `app/(tabs)/budget.tsx`; related P20, P20-X, and P17-C; reason: category filtering alongside sorting extends the existing Phase P20 Budget feature area.
 - **Branch:** `phase/20-budget` (reopened from `develop`), task branch `task/P20-Z-budget-category-filter`.
 - **Verification:** Regression test suite `src/components/__tests__/BudgetCategoryFilter.test.tsx` (4 tests passing). Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
-- **Device check:** Physical-device check row O78 added in `docs/releases/device-test-checklist.md` under Next release device checks in `Not run` status.
+- **Device check:** Physical-device check row O78 verified as Pass by owner on physical device realme Narzo 60 Pro 5g running Android 15 Vanilla Ice Cream on 2026-11-23.
 
 ## P20-Z-R1 Budget filter icon indicator dot and margin refinement (Done; CR-145)
 
@@ -1114,7 +1114,22 @@ The remaining tasks recorded as Planned on `develop` across dashboard, roadmap, 
 - **Placement:** Rule 2 (revision to completed part in Phase P20); searched dashboard, register, phase history, roadmap, memory, and `app/(tabs)/budget.tsx`; related P20-Z; reason: revise Budget category filter active indicator logic and preserve owner margin changes.
 - **Branch:** `phase/20-budget` (reopened from `develop`), task branch `task/P20-Z-R1-budget-filter-icon-indicator`.
 - **Verification:** Regression test suite `src/components/__tests__/BudgetCategoryFilter.test.tsx` (4 tests passing). Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
-- **Device check:** Physical-device check row O79 added in `docs/releases/device-test-checklist.md` under Next release device checks in `Not run` status.
+- **Device check:** Physical-device check row O79 verified as Pass by owner on physical device realme Narzo 60 Pro 5g running Android 15 Vanilla Ice Cream on 2026-11-23.
+
+## P17-C-R1 Persistent sorting preferences across screens and sections (Done; CR-146)
+
+- **Goal:** Implement persistent sorting preferences across every WealthWise screen or section offering sorting (Transactions, Assets, Liabilities, Budget, Goals, Investment Entries, Link Missing).
+- **Scope & Delivery:**
+  - Remember selected sort field and direction independently for each screen or section.
+  - In `src/data/metaStore.ts`, added in-memory `cachedMeta` and `writeQueue` serialization to `createMetaStore` to guarantee atomic writes during rapid or concurrent sort updates and eliminate mount delays.
+  - In `src/data/useSort.ts`, initialized `stored` synchronously from `metaStore.getCachedMeta()` and subscribed to `metaStore.subscribe` so that sort preference updates propagate immediately to all active screens/components in real time.
+  - Restore each preference when the user returns to that screen and after app restart.
+  - Persist new choices immediately on user selection.
+  - Keep sorting preferences separate from filters without clearing or overwriting them.
+- **Placement:** Rule 2 (revision to completed part in Phase P17 Cash flow, budgets, and sorting); searched dashboard, register, phase history, roadmap, memory, and sorting files; related P17-C; reason: revise completed sorting persistence in Phase P17 to ensure reliable persistence across all screens and sections.
+- **Branch:** `phase/17-cash-flow-budgets-sorting` (reopened from `develop`), task branch `task/P17-C-R1-persistent-sorting-preferences`.
+- **Verification:** Regression test suite `src/data/__tests__/useSort.test.tsx` (6 tests passing). Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
+- **Device check:** Physical-device check row O80 added in `docs/releases/device-test-checklist.md` under Next release device checks in `Not run` status. Physical-device checks O78 and O79 verified as Pass based on owner report on 2026-11-23.
 
 ## P29-U-R1 Dynamic asset valuation inputs and calculations (Planned; CR-143)
 
@@ -1139,7 +1154,7 @@ The remaining tasks recorded as Planned on `develop` across dashboard, roadmap, 
 
 ## Pending owner actions (2026-11-22 reconciliation)
 
-- **Next-release device gate:** O61–O74 and O75–O76 were tested and validated on physical devices by the owner on 2026-11-22 and marked Pass (now under ## v1.3.0 device checks). O77 was tested and validated Pass on physical device by the owner on 2026-11-23 (CR-140). All checklist rows across all sections (O1–O77) are Pass. The device checklist release gate is unblocked for candidate builds. Physical device metadata (realme Narzo 60 Pro 5g, Android 15 Vanilla Ice Cream, tester sahilsheikh-dev, respective release dates) is recorded across all 5 sections, and the checklist maintenance confirmation rule with prior release suggestions is documented.
+- **Next-release device gate:** O61–O74 and O75–O76 were tested and validated on physical devices by the owner on 2026-11-22 and marked Pass (now under ## v1.3.0 device checks). O77, O78, and O79 were tested and validated Pass on physical device by the owner on 2026-11-23. Physical-device check O80 (verifying persistent sorting preferences across screens on a physical device) is added under Next release device checks in Not run status. Physical device metadata (realme Narzo 60 Pro 5g, Android 15 Vanilla Ice Cream, tester sahilsheikh-dev, respective release dates) is recorded across all sections, and the checklist maintenance confirmation rule with prior release suggestions is documented.
 - **Documentation PR flow:** CR-118's PR #184/#185 and CR-119's PR #186/#187
   merges are confirmed in Git history and terminal session evidence. PR #186
   merged `task/docs-device-checklist-by-release` into `documentation` at
