@@ -1,6 +1,11 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-23 | Updates: owner and AI agents -->
 
 # Status
+- **CR-142 / Documentation (2026-11-23) — Reconcile planned and unimplemented roadmap items.**
+  Corrected historical open-items and plan notes to resolve stale references: confirmed
+  that P21-F (Emergency Fund target editing) and P43-B (non-release tag cleanup) are Done
+  and released, and documented the authoritative 12 active planned roadmap areas (P7, P31,
+  P33, P34, P35, P36, P37, P38, P39, P40, P43-E, P44). All six repository gates pass with exit 0.
 - **CR-141 / Documentation (2026-11-23) — Reconcile documentation to reflect completed v1.3.0 publication.**
   Reconciled release documentation across release-history.md, docs/releases/README.md,
   docs/PROGRESS.md, status.md, and open-items.md to accurately record completed v1.3.0 publication,

@@ -87,6 +87,13 @@
 - Task branch `task/P28-F-R7-align-v1.3.0-readme-screenshots-details` updates `README.md` (v1.3.0 Download block and 8-screenshot gallery), aligns `v1.3.0.md` and `v1.2.0.md` download blocks, updates `release-history.md`, and adds release rules in `AGENTS.md` and `rules.md` requiring candidate README and screenshot alignment during staging.
 - Publication approved and completed on 2026-11-22; release/v1.3.0 merged to main via PR #216 (341dbcb); tag v1.3.0 created at 51523b8; GitHub Release v1.3.0 published as Latest by sahilsheikh-dev; post-publication sync merged main to develop via PR #217 (97c6d02); release candidate and publication lifecycle complete.
 
+## CR-142 Reconcile planned and unimplemented roadmap items (Done)
+
+- Change request CR-142 (2026-11-23): Reconciled documentation across repository docs to resolve stale historical plan notes and establish the authoritative inventory of active planned and unimplemented roadmap items.
+- Corrected historical CR-113 and CR-110-R1 notes in open-items.md to confirm that P21-F (Emergency Fund target editing) and P43-B (non-release tag cleanup) are Done and released, not planned.
+- Confirmed that physical-device checks O1–O77 are all Pass, and the release gate is unblocked.
+- The 12 active planned roadmap areas on develop are: P7, P31, P33, P34, P35, P36, P37, P38, P39, P40, P43-E, and P44.
+
 ## CR-141 Reconcile documentation to reflect completed v1.3.0 publication (Done)
 
 - Change request CR-141 (2026-11-23): Reconciled documentation across repository docs to accurately reflect completed v1.3.0 publication.
@@ -201,8 +208,10 @@ The owner approved planning/research and the decisions below. All affected
 feature parts remain **Planned**; this update starts no research,
 implementation, tag deletion or GitHub issue creation.
 
-- **P21-F:** explicit authorization is granted to edit the user-owned
-  `app/(tabs)/index.tsx` if needed. The feature remains unimplemented.
+- **P21-F (Done):** Emergency Fund target editing was completed and merged
+  on 2026-11-21 (PR #170 / #171; revised by P21-F-R1 via PR #172);
+  physical-device checks O65–O68 validated Pass on 2026-11-22 and released
+  in v1.3.0. No Home edit was needed.
 - **P33-A–C:** widgets are reactivated and platform research is approved.
   Android implementation is approved after research/scope confirmation;
   iOS implementation still depends on iOS distribution. No research has
@@ -212,10 +221,10 @@ implementation, tag deletion or GitHub issue creation.
 - **P35-A–C:** permission/platform/policy research is approved, and the owner
   has given a Go for implementation after that research. P35-A research is a
   prerequisite; no research or implementation has started.
-- **P43-B:** tag-cleanup scope and the report-only branch/PR/merge audit are
-  approved. The exact proposed deletion list has not been supplied or
-  approved, so no tag deletion is authorized yet. Preserve every release tag
-  and the stale phase tags already directed.
+- **P43-B (Done):** tag-cleanup scope and the report-only branch/PR/merge audit were
+  approved under CR-113. The exact proposed deletion list has not been supplied or
+  approved at the time of CR-113; subsequently all 47 non-release tags were deleted
+  and release-only tag policy was enforced under approved task P43-B / CR-131 on 2026-11-22.
 - **P43-E:** GitHub issue scope, strategy and batching direction are approved,
   including issue creation. No issues are created in this planning-only task;
   verify the ledger inventory and use a separate execution task.
@@ -236,8 +245,8 @@ completed after both merges.
 
 CR-110's original planned-only row is retained and marked **Revised by
 CR-110-R1**. Its original five P43 rows are preserved as evidence; P43-C/D
-were relocated to P21-F/P20-W, and P43-A is Done. P43-B/E remain
-Planned with dependencies and `Evidence: not started`.
+were relocated to P21-F/P20-W (both Done), and P43-A and P43-B are
+Done. Only P43-E remains Planned with dependencies and `Evidence: not started`.
 The authorized local phase `phase/43-lifecycle-and-transaction-planning` and
 task `task/P43-A-plan-cr110` were created from `develop` for the PR flow.
 Task PR #146 merged into the phase at
@@ -1044,6 +1053,25 @@ Not adopted in CR-106:
   old-to-new commit mapping in [PROGRESS.md](../PROGRESS.md).
 
 
+## Active Planned and Unimplemented Roadmap Items
+
+The remaining tasks recorded as Planned on `develop` across dashboard, roadmap, and memory are:
+
+1. **P7 (Cloud Backup — Google Drive):** Research, pure domain scheduling model, Settings UI, Wi-Fi gating, offline handling, and tests (P7-A through P7-D).
+2. **P31 (Project Health & Community):** Community guidelines, issue templates, accessibility statement/audit, and privacy statement (P31-A through P31-D).
+3. **P33 (Widgets):** Platform widget research and implementation planning for Android and iOS (P33-A through P33-C).
+4. **P34 (Quick Capture):** Quick-capture platform research, home-screen shortcuts, and gesture features (P34-A through P34-C).
+5. **P35 (Transaction Auto-Detection):** SMS/notification transaction detection permissions/platform research, scope validation, and implementation planning (P35-A through P35-C).
+6. **P36 (Notes):** Notes design and implementation, media, storage, backup compatibility, and demo data (P36-A through P36-D).
+7. **P37 (Tutorials):** Accessible, replayable in-app walkthroughs and feature introductions (P37-A through P37-C).
+8. **P38 (Skeleton Loaders):** Identify real asynchronous loading states, then implement and verify skeleton loaders (P38-A through P38-C).
+9. **P39 (Hardening & Audits):** Project audit covering security, privacy, permissions, recovery, dependencies, test debt, and onboarding, followed by remediation plan (P39-A through P39-H).
+10. **P40 (Context Hygiene):** Measure documentation size/read costs, then archive completed-phase narrative from main ledger (P40-A through P40-B).
+11. **P43-E (GitHub Issue Management):** Verify GitHub issue inventory and assess batching, API limits, and noise before separately tracked issue-creation work.
+12. **P44 (Spending Heat Map):** Transactions spending heat map with selector, screen, demo data, accessibility, and device checks (P44-A through P44-D).
+
+*(Note: P21-F and P43-B were previously completed, verified, and released; all checklist rows O1–O77 are Pass; no release candidate or release lifecycle work is pending.)*
+
 ## Phase P7 Google Drive automated backup (planned)
 
 - **Goal:** Provide automated periodic backups to Google Drive using the `appDataFolder` scope, keeping the app serverless and private with zero-knowledge local passphrase encryption before upload.
@@ -1055,7 +1083,7 @@ Not adopted in CR-106:
 
 ## Pending owner actions (2026-11-22 reconciliation)
 
-- **Next-release device gate:** O61–O74 and O75–O76 were tested and validated on physical devices by the owner on 2026-11-22 and marked Pass. O77 was added under CR-135 for P20-Y-R3 in Not run status. Next release device checks require owner validation of O77 before candidate release build. Physical device metadata (realme Narzo 60 Pro 5g, Android 15 Vanilla Ice Cream, tester sahilsheikh-dev, respective release dates) is recorded across all 5 sections, and the checklist maintenance confirmation rule with prior release suggestions is documented.
+- **Next-release device gate:** O61–O74 and O75–O76 were tested and validated on physical devices by the owner on 2026-11-22 and marked Pass (now under ## v1.3.0 device checks). O77 was tested and validated Pass on physical device by the owner on 2026-11-23 (CR-140). All checklist rows across all sections (O1–O77) are Pass. The device checklist release gate is unblocked for candidate builds. Physical device metadata (realme Narzo 60 Pro 5g, Android 15 Vanilla Ice Cream, tester sahilsheikh-dev, respective release dates) is recorded across all 5 sections, and the checklist maintenance confirmation rule with prior release suggestions is documented.
 - **Documentation PR flow:** CR-118's PR #184/#185 and CR-119's PR #186/#187
   merges are confirmed in Git history and terminal session evidence. PR #186
   merged `task/docs-device-checklist-by-release` into `documentation` at
