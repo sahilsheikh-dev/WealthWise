@@ -2,6 +2,17 @@
 
 # Open items
 
+## P39-D Silent failures and recovery-state audit (Done; CR-153)
+
+- Subtask P39-D (CR-153, 2026-11-24): Completed report-first audit extending P30 across storage, backup import/export, notification scheduling, and SQLite fallback visibility:
+  1. **SQLite fallback visibility:** Identified P2 finding that SQLite read/write-verification failure falls back to legacy AsyncStorage silently in `src/data/stateStorage.native.ts` (logs `console.warn`, but shows no user-facing degradation banner).
+  2. **Backup corruption and recovery:** Defensive parsing and AES-256-GCM verification confirmed clean error returns for corrupted or tampered files; `undoImport` store action provides instant recovery.
+  3. **Notification scheduling:** Non-blocking error handling ensures reminder failures never interrupt transaction creation.
+  4. **Report artifact:** Persisted detailed analysis in `/tmp/wealthwise-p39-d-recovery-audit.md`.
+- Pure audit/documentation scope; schema remains version 24; no runtime behavior changed.
+- Physical-device checks: none required (no user-facing application behavior changed).
+- Ordered six gates pass: Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
+
 ## P39-B Security, network boundary, and debug residue audit (Done; CR-152)
 
 - Subtask P39-B (CR-152, 2026-11-24): Completed security, network boundary, and debug residue verification:

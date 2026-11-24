@@ -1,6 +1,14 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-24 | Updates: owner and AI agents -->
 
 # Status
+- **P39-D / CR-153 (2026-11-24) — Silent failures and recovery-state audit.**
+  Completed deep audit of silent failure modes and recovery states across storage, backup import/export, notifications, and SQLite fallback:
+  1. *Storage & SQLite fallback:* Identified P2 finding in `src/data/stateStorage.native.ts` where `onSQLiteFailure` is undefined, causing automatic fallback to AsyncStorage to log a `console.warn` without a user-facing degradation banner in `StorageErrorBanner`.
+  2. *Backup import/export recovery:* Confirmed robust handling of corrupted JSON, tampered AES-256-GCM ciphertext, incorrect passphrases, and 25MB/35MB size boundaries; `undoImport` single-tap recovery verified.
+  3. *Notification scheduling:* Scheduling failures are logged gracefully without interrupting financial transactions or corrupting reminder state.
+  4. *Detailed report:* `/tmp/wealthwise-p39-d-recovery-audit.md`.
+  Pure audit/documentation scope; schema remains version 24.
+  Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
 - **P39-B / CR-152 (2026-11-24) — Security, network boundary, and debug residue audit.**
   Verified secrets, network behavior, debug residue, EAS config, bundle reachability, and source maps:
   1. *Secrets & config:* Zero secrets or private keys tracked; no `.env` files present; EAS config verified clean.
