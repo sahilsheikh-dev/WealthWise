@@ -1,6 +1,14 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-24 | Updates: owner and AI agents -->
 
 # Status
+- **P39-H / CR-157 (2026-11-24) — Release audit remediation plan.**
+  Synthesized findings from P39-A through P39-G into 3 prioritized remediation batches:
+  1. *Batch 1 (Containment & Storage Fallback):* Route `onSQLiteFailure` to `StorageErrorBanner` when SQLite degrades to AsyncStorage; rollback: revert handler.
+  2. *Batch 2 (Bundle Treeshaking & Routes):* Treeshake demo/stress fixtures out of Hermes bytecode in `createAppStore.ts` via dynamic import; register 5 missing modal forms in `_layout.tsx`.
+  3. *Batch 3 (Dependencies):* Monitor upstream Expo SDK for `decode-uri-component` patch under `DEC-P39-DEPS-01`.
+  4. *Detailed report:* `/tmp/wealthwise-p39-h-remediation-plan.md`.
+  Pure planning scope; schema remains version 24. Phase P39 is 100% complete (8/8 subtasks Done).
+  Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
 - **P39-G / CR-156 (2026-11-24) — Clean-install and first-launch walkthrough.**
   Completed architectural walkthrough and failure mode analysis for fresh installations:
   1. *Boot & Onboarding:* Verified splash screen hold until font and store hydration, clean hardware back exit on onboarding screen, and atomic transition to tab stack.
