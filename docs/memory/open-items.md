@@ -2,6 +2,18 @@
 
 # Open items
 
+## GitHub issue reconciliation and test-enforced tracking (Done; CR-160)
+
+- Subtask CR-160 (2026-11-24): Reconciled complete GitHub issue history backfill and established test-enforced ongoing tracking:
+  1. **Semantic standard labels:** Assigned `enhancement` (features), `bug` (defects/fixes), and `documentation` (process/documentation) across all 261 issues.
+  2. **Detailed planned issues:** Enriched all 29 open planned roadmap issues with explicit scope, dependencies, and current state under milestone `Planned`.
+  3. **Preserved retrospective closures:** Preserved all 232 closed issues with original verifiable evidence and zero backdating.
+  4. **Test-enforced workflow:** Updated `AGENTS.md`, `rules.md`, `working-style.md`, and added automated test assertions to `src/lib/__tests__/progressLedger.test.ts`.
+  5. **Public safety:** Verified zero personal financial amounts, account numbers, secrets, tokens, or private audit findings in any issue.
+- Pure documentation and repository-process scope; schema remains version 24; no runtime behavior changed.
+- Physical-device checks: none required (repository documentation/process only).
+- Ordered six gates pass.
+
 ## GitHub issue history backfill and ongoing tracking setup (Done; CR-159)
 
 - Subtask CR-159 (2026-11-24): Executed complete GitHub issue history backfill approved under P43-E / CR-150:

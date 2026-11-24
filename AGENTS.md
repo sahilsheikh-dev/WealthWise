@@ -276,9 +276,11 @@ local Gradle builds still require explicit authorization.
 - **GitHub issue tracking:** Every approved ledger subtask and standalone Change
   Request maps 1:1 to a GitHub issue under Model A. When work is approved into
   the ledger, create or link its issue with phase/lifecycle (`phase:pNN` or
-  `lifecycle:*`), type (`type:*`), status (`status:planned`), and milestone
+  `lifecycle:*`), type (`type:*`), status (`status:planned`), semantic standard
+  label (`enhancement`, `bug`, `documentation`), and milestone
   (`v1.0.0`–`v1.3.0`, `v1.3.1`, `Planned`). Leave it open during planning and
-  implementation. Once merged to `develop` via PR and verified by all six ordered
+  implementation, updating the issue body with task commit links and PR references
+  as work progresses. Once merged to `develop` via PR and verified by all six ordered
   gates, update the status label to `status:done`, post a retrospective completion
   comment with commits, PRs, merge SHAs, and gates, and close the issue. Never
   create speculative issues for unapproved work; never include personal financial
