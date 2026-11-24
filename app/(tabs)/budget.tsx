@@ -104,7 +104,6 @@ export default function BudgetScreen() {
   const sorting = useSort('budgetSpending');
   const [categoryOverride, setCategoryOverride] = useState<string | null>(null);
   const selectedCategory = categoryOverride ?? (routeCategory || 'All');
-  const filterActive = selectedCategory !== 'All';
   const data = useAppData();
   const actions = useAppActions();
   const setActionToast = useUIStore((state) => state.setActionToast);
@@ -366,7 +365,6 @@ export default function BudgetScreen() {
                 label: 'Filter',
                 onPress: () => setFilterPanelOpen((open) => !open),
                 expanded: filterPanelOpen,
-                showIndicator: filterActive,
               },
               ...(overview.mode === 'past' ? [] : [addCategoryAction]),
             ];

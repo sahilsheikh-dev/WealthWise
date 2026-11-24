@@ -16,3 +16,4 @@
   rewrite history.
 
 - Maintain the **Owner-run actions log** in `docs/PROGRESS.md` from verifiable terminal output, owner snapshots, or Git refs; mark absent exit codes `not captured`. End reports with an **Owner actions pending** list.
+- Maintain **GitHub issue tracking** under Model A: every ledger item has a corresponding GitHub issue. Record verified PRs, merge commits, and test evidence upon retrospective closure. Never invent or open speculative issues for unapproved ideas.

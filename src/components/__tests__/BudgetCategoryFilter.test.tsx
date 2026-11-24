@@ -334,10 +334,10 @@ describe('P20-Z: Dynamic Budget category filter', () => {
       filterButton.props.onPress();
     });
 
-    // Filter indicator dot should now be active
+    // Filter indicator dot remains absent across all screens
     const updatedFilterButton = renderer.root.findByProps({ accessibilityLabel: 'Filter' });
     expect(updatedFilterButton.props.accessibilityState).toEqual({ expanded: false });
-    expect(renderer.root.findAll((node) => String(node.type) === 'view' && node.props.testID === 'header-action-indicator')).toHaveLength(1);
+    expect(renderer.root.findAll((node) => String(node.type) === 'view' && node.props.testID === 'header-action-indicator')).toHaveLength(0);
 
     // Reopen panel and select "All"
     act(() => {
