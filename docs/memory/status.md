@@ -1,6 +1,14 @@
-<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-23 | Updates: owner and AI agents -->
+<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-24 | Updates: owner and AI agents -->
 
 # Status
+- **P43-E / CR-150 (2026-11-24) — GitHub issue inventory and execution planning.**
+  Completed comprehensive inventory of ledger work and concrete execution plan for GitHub issues as a pure documentation and repository-process deliverable (zero GitHub issues created, edited, commented on, or closed):
+  1. *Ledger inventory & deduplication:* Audited 209 active dashboard subtasks (173 Done, 36 Planned; P27, P28, P32 reserved slots excluded) and 145 Change Requests (CR-1–CR-150; 94 mapped to subtasks, 51 standalone lifecycle). Evaluated mapping models and recommended Model A (Atomic Ledger Mapping) yielding 260 discrete issues (209 subtasks + 51 standalone lifecycle CRs; 224 retrospective closed, 36 open planned).
+  2. *Metadata & labeling schema:* Defined structured label taxonomy: `phase/*`, `type/*` (`feature`, `fix`, `docs`, `chore`, `debt`, `test`), `status/*` (`planned`, `in-progress`, `completed`), and release milestones (`v1.0.0`–`v1.3.0`, `Future`). Issue bodies strictly reference verified commits, PRs, merge SHAs, and original dates; GitHub creation timestamps are preserved without backdating attempts.
+  3. *Rate limits & execution schedule:* Designed 7 sequential batches of 35–40 issues with 2–3s delays (~4.5 min per batch, ~32 min total run) to safely remain well within GitHub API limits (5,000 req/hr) and prevent secondary abuse triggers.
+  4. *Report artifact:* Persisted detailed findings and execution specifications in `/tmp/wealthwise-p43-e-issue-inventory-plan.md`.
+  Pure documentation and repository-process scope; schema remains version 24; no runtime behavior changed.
+  Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
 - **P31 / CR-149 (2026-11-24) — Community and project health deliverables (P31-A, P31-B, P31-C, P31-D).**
   Delivered all four planned repository documents for project health, community, accessibility, and privacy:
   1. *P31-A (Community guidelines):* Added `CODE_OF_CONDUCT.md` at repository root establishing standards for respectful collaboration, privacy protection, and private reporting procedures to maintainers.
