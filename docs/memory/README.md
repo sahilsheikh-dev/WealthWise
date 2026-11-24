@@ -39,11 +39,12 @@ Before work, reconcile remote state using the latest owner snapshot or available
 Git refs as required by R8. Read this index, the relevant memory files, and the
 matching ledger section. After work, update `status.md` and `open-items.md`; record
 decisions, scope, assumptions, replaced assertions, tests, gate exit codes and
-verified commit evidence in `docs/PROGRESS.md`. Update other memory pages only
-when their facts change. Keep the ledger's historical material intact; link to
-it instead of copying its tables. Use repository source as truth over memory,
-and correct stale memory in the same task. Never store personal financial
-data, credentials, tokens or private account information here.
+verified commit evidence in `docs/PROGRESS.md`. Align corresponding GitHub issues
+under Model A (open planned issues; retrospective closure for completed work).
+Update other memory pages only when their facts change. Keep the ledger's
+historical material intact; link to it instead of copying its tables. Use repository
+source as truth over memory, and correct stale memory in the same task. Never store
+personal financial data, credentials, tokens or private account information here.
 
 ## Remote snapshot export and terminal evidence
 

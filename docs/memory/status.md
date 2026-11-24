@@ -1,6 +1,14 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-24 | Updates: owner and AI agents -->
 
 # Status
+- **CR-159 (2026-11-24) — GitHub issue history backfill and ongoing issue tracking.**
+  Executed complete GitHub issue history backfill and ongoing issue-tracking setup approved under P43-E / CR-150:
+  1. *Metadata setup:* Created 7 release milestones (`v1.0.0`, `v1.1.0`, `v1.1.1`, `v1.2.0`, `v1.3.0`, `v1.3.1`, `Planned`) and 54 labels across types, statuses, lifecycles, and phases (`phase:p01`–`phase:p44`).
+  2. *Issue backfill (Model A):* Generated 261 discrete GitHub issues mapping 1:1 to 210 active subtasks and 51 standalone lifecycle Change Requests.
+  3. *Retrospective closures:* 232 completed issues closed with standardized retrospective summaries capturing original dates, delivered state, PRs, and merge SHAs; server timestamps preserved.
+  4. *Open roadmap issues:* 29 planned roadmap items created open in `status:planned` under milestone `Planned` (Phases P7, P33–P38, P40, P44).
+  5. *Ongoing issue-tracking policy:* Documented in `AGENTS.md`, `rules.md`, `working-style.md`, and `README.md`.
+  Pure documentation and repository-process scope; schema remains version 24.
 - **P20-L-R1 / CR-158 (2026-11-24) — Consistent filter panels and header dot removal.**
   Implemented consistent filter panels across all screens that display a header filter icon:
   1. *Goals screen (`app/(tabs)/goals.tsx`):* Added filtering controls alongside existing `SortChip` supporting status (`All`, `In progress`, `Achieved`) and dynamic target year chips; automatic expansion of achieved goals when `Achieved` is selected; `EmptyState` displayed when no goals match the filter.

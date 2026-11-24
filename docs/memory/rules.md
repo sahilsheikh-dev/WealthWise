@@ -234,6 +234,31 @@ Every reported/recorded commit hash must
 be copied from `git log` and verified with `git cat-file -t`. Record assumptions
 as `Assumed: ...`; state superseded assertions and the replacement/reason.
 
+## GitHub issue tracking
+
+- **Atomic issue mapping (Model A):** Every approved ledger subtask and standalone
+  Change Request maintains an exact 1:1 GitHub issue mapping.
+- **Taxonomy:**
+  - Milestones: `v1.0.0`–`v1.3.0` for published historical releases, `v1.3.1`
+    for the next release candidate, and `Planned` for future roadmap items.
+  - Phase/Lifecycle labels: `phase:p01`–`phase:p44` (excluding reserved slots
+    P27, P28, P32) or `lifecycle:documentation`, `lifecycle:cleanup`,
+    `lifecycle:qa-and-release`, `lifecycle:schema-migration`.
+  - Type labels: `type:feat`, `type:fix`, `type:docs`, `type:chore`,
+    `type:test`, `type:audit`.
+  - Status labels: `status:planned`, `status:done`, `status:superseded`,
+    `status:cancelled`.
+- **Issue protocol:**
+  - Create issue when a subtask or standalone CR enters the ledger (`status:planned`,
+    open).
+  - Transition to `status:done` and close only after merge to `develop` via PR and
+    all six ordered gates pass.
+  - Issue body captures original ledger date, owning phase/lifecycle, deliverable
+    description, and verifiable commits/PRs. Server timestamps are never backdated.
+  - Public safety: Zero user financial amounts, account numbers, secrets,
+    credentials, tokens, or private audit findings in issue titles or bodies.
+  - No speculative issues: Agents never open GitHub issues for unapproved ideas.
+
 ## Gates
 
 Run sequentially, retaining actual exit codes:

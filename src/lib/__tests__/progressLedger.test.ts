@@ -2380,4 +2380,28 @@ describe('permanent progress ledger', () => {
     expect(status).toContain('CR-158');
     expect(status).toContain('P20-L-R1');
   });
+
+  it('records GitHub issue history backfill and ongoing issue tracking under CR-159', () => {
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+    const agents = readFileSync(join(process.cwd(), 'AGENTS.md'), 'utf8');
+    const rules = readFileSync(join(process.cwd(), 'docs/memory/rules.md'), 'utf8');
+    const workingStyle = readFileSync(join(process.cwd(), 'docs/memory/working-style.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-159 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-159 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-159');
+
+    expect(agents).toContain('GitHub issue tracking:');
+    expect(agents).toContain('Model A');
+    expect(rules).toContain('GitHub issue tracking');
+    expect(rules).toContain('Atomic issue mapping (Model A)');
+    expect(workingStyle).toContain('GitHub issue tracking');
+
+    expect(openItems).toContain('CR-159');
+    expect(status).toContain('CR-159');
+  });
 });

@@ -273,6 +273,16 @@ local Gradle builds still require explicit authorization.
   commits or digests. Follow `docs/releases/build-config.md`; production
   Android AABs go to Google Play and APKs to GitHub. iOS distribution is not
   currently offered.
+- **GitHub issue tracking:** Every approved ledger subtask and standalone Change
+  Request maps 1:1 to a GitHub issue under Model A. When work is approved into
+  the ledger, create or link its issue with phase/lifecycle (`phase:pNN` or
+  `lifecycle:*`), type (`type:*`), status (`status:planned`), and milestone
+  (`v1.0.0`–`v1.3.0`, `v1.3.1`, `Planned`). Leave it open during planning and
+  implementation. Once merged to `develop` via PR and verified by all six ordered
+  gates, update the status label to `status:done`, post a retrospective completion
+  comment with commits, PRs, merge SHAs, and gates, and close the issue. Never
+  create speculative issues for unapproved work; never include personal financial
+  data, tokens, secrets, or private audit findings in issue titles or bodies.
 
 ## Schema and verification
 
