@@ -4139,10 +4139,10 @@ describe('route render smoke audit', () => {
         )).toHaveLength(1);
       }
       if (name === 'Transactions' || name === 'Assets' || name === 'Liabilities') {
-        expect(renderer.root.findByProps({ accessibilityLabel: 'Filter' }).props.showIndicator).toBe(true);
+        expect(renderer.root.findByProps({ accessibilityLabel: 'Filter' }).props.showIndicator).toBeFalsy();
         expect(renderer.root.findAll((node) =>
           String(node.type) === 'view' && node.props.testID === 'header-action-indicator',
-        )).toHaveLength(1);
+        )).toHaveLength(0);
       }
       const header = renderer.root.findAllByType('header')[0];
       const headerActionLabels = header?.findAll((node) =>

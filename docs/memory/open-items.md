@@ -2,6 +2,16 @@
 
 # Open items
 
+## P20-L-R1 Consistent filter panels and dot removal (Done; CR-158)
+
+- Subtask P20-L-R1 (CR-158, 2026-11-24):
+  1. **Consistent filter panels:** Added status chips (`All`, `In progress`, `Achieved`) and dynamic target year filter chips to Goals screen alongside `SortChip`. Audited all 5 screens with a header filter icon (Goals, Assets, Liabilities, Transactions, Budget); confirmed filter selections and persistent sorting preferences operate independently.
+  2. **Header filter dot indicator removal:** Removed `showIndicator: filterActive` across all 5 screens; the filter icon never displays a dot indicator initially or after changing sorting or filtering.
+  3. **Regression tests:** Added `src/components/__tests__/ConsistentFilterPanels.test.tsx` (10/10 passing); updated `RouteRenderSmoke.test.tsx` and `BudgetCategoryFilter.test.tsx` to expect dot indicator absence.
+  4. **Physical-device check:** Check `O82` added in `Not run` status under `## Next release device checks` in `docs/releases/device-test-checklist.md` (metadata: realme Narzo 60 Pro 5g, 15 Vanilla Ice Cream, sahilsheikh-dev, 2026-11-24).
+- Schema version 24 preserved.
+- Ordered six gates pass.
+
 ## P39-H Release audit remediation plan (Done; CR-157)
 
 - Subtask P39-H (CR-157, 2026-11-24): Synthesized all findings from P39-A through P39-G into three prioritized independent remediation batches:
@@ -1260,7 +1270,7 @@ The remaining tasks recorded as Planned on `develop` across dashboard, roadmap, 
 
 ## Pending owner actions (2026-11-23 reconciliation)
 
-- **Next-release device gate:** O61–O74 and O75–O76 were tested and validated on physical devices by the owner on 2026-11-22 and marked Pass (now under ## v1.3.0 device checks). O77, O78, O79, and O80 were tested and validated Pass on physical device by the owner on 2026-11-23. Physical-device check O81 (verifying dynamic asset valuation inputs and calculations on a physical device) is added under Next release device checks in Not run status. Physical device metadata (realme Narzo 60 Pro 5g, Android 15 Vanilla Ice Cream, tester sahilsheikh-dev, respective release dates) is recorded across all sections, and the checklist maintenance confirmation rule with prior release suggestions is documented.
+- **Next-release device gate:** O61–O74 and O75–O76 were tested and validated on physical devices by the owner on 2026-11-22 and marked Pass (now under ## v1.3.0 device checks). O77, O78, O79, and O80 were tested and validated Pass on physical device by the owner on 2026-11-23. Physical-device check O81 (verifying dynamic asset valuation inputs and calculations on a physical device) and check O82 (verifying consistent filter panels and absence of filter icon dot indicator on a physical device) are added under Next release device checks in Not run status. Physical device metadata (realme Narzo 60 Pro 5g, Android 15 Vanilla Ice Cream, tester sahilsheikh-dev, respective release dates) is recorded across all sections, and the checklist maintenance confirmation rule with prior release suggestions is documented.
 - **Documentation PR flow:** CR-118's PR #184/#185 and CR-119's PR #186/#187
   merges are confirmed in Git history and terminal session evidence. PR #186
   merged `task/docs-device-checklist-by-release` into `documentation` at

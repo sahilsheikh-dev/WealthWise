@@ -12,7 +12,7 @@ Next release (TBD)
 | Device model | realme Narzo 60 Pro 5g |
 | Android version | 15 Vanilla Ice Cream |
 | Tester | sahilsheikh-dev |
-| Date | 2026-11-23 |
+| Date | 2026-11-24 |
 
 Use only `Pass`, `Fail`, or `Blocked` after running each check. `Not run` remains the pending marker.
 
@@ -25,6 +25,7 @@ Use only `Pass`, `Fail`, or `Blocked` after running each check. `Not run` remain
 | O79 | Verify Budget filter icon indicator dot behavior and margin on a physical device: confirm that the filter icon in Budget does not show a dot indicator when category filter is "All" (default), matching Assets, Liabilities, and Transactions filter icon appearance; confirm that the dot indicator appears only when a specific category is filtered; confirm that the filter panel margin aligns with the screen layout. | Pass | P20-Z-R1; owner-reported physical-device verification, 2026-11-23. |
 | O80 | Verify persistent sorting preferences across screens on a physical device: change sort order on Transactions, Assets, Liabilities, and Budget; verify preferences persist when switching between screens and after app close and reopen; confirm filters remain separate and unchanged. | Pass | P17-C-R1; owner-reported physical-device verification, 2026-11-23. |
 | O81 | Verify dynamic asset valuation inputs and calculations on a physical device: create and edit one-time and recurring assets with Manual, Interest-based, Unit-based, and Balance-based valuation methods; verify form inputs adjust dynamically for each method (e.g., auto-calculation of units and total value for unit-based, interest rate and compounding for interest-based, read-only calculated balance for balance-based); verify holding value calculation, value update route, and persistence across app restart. | Not run | P29-U-R1; physical-device check required. |
+| O82 | Verify consistent filter panels and absence of filter icon dot indicator on a physical device: open filter panel across Goals, Assets, Liabilities, Transactions, and Budget; verify Goals offers status (All, In progress, Achieved) and target year filter chips alongside SortChip; verify selecting filters and changing sort orders across all 5 screens keeps sort and filter states independent; verify that the header filter icon never displays a dot indicator initially or after changing sorting or filtering on any screen. | Not run | P20-L-R1; physical-device check required. |
 
 The owner reports O77 passed on 2026-11-23. Tested and validated by sahilsheikh-dev on physical device realme Narzo 60 Pro 5g running Android 15 Vanilla Ice Cream.
 
