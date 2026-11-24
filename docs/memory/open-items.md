@@ -2,6 +2,17 @@
 
 # Open items
 
+## GitHub issue history backfill and ongoing tracking setup (Done; CR-159)
+
+- Subtask CR-159 (2026-11-24): Executed complete GitHub issue history backfill approved under P43-E / CR-150:
+  1. **Metadata configuration:** Created 7 milestones (`v1.0.0` through `v1.3.1`, `Planned`) and 54 labels across types, statuses, lifecycles, and phases (`phase:p01`–`phase:p44`).
+  2. **Model A backfill:** 261 discrete GitHub issues created: 232 completed retrospective issues closed with verifiable evidence, 29 open planned roadmap issues.
+  3. **Ongoing tracking protocol:** Rules and invariants documented in `AGENTS.md`, `rules.md`, `working-style.md`, and `README.md`.
+  4. **Public safety:** Verified zero personal financial data, tokens, secrets, or private audit findings in any issue.
+- Pure documentation and repository-process scope; schema remains version 24; no runtime behavior changed.
+- Physical-device checks: none required (repository documentation/process only).
+- Ordered six gates pass.
+
 ## P20-L-R1 Consistent filter panels and dot removal (Done; CR-158)
 
 - Subtask P20-L-R1 (CR-158, 2026-11-24):
