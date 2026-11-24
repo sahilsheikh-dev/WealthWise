@@ -1,6 +1,14 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-24 | Updates: owner and AI agents -->
 
 # Status
+- **P20-L-R1 / CR-158 (2026-11-24) — Consistent filter panels and header dot removal.**
+  Implemented consistent filter panels across all screens that display a header filter icon:
+  1. *Goals screen (`app/(tabs)/goals.tsx`):* Added filtering controls alongside existing `SortChip` supporting status (`All`, `In progress`, `Achieved`) and dynamic target year chips; automatic expansion of achieved goals when `Achieved` is selected; `EmptyState` displayed when no goals match the filter.
+  2. *Audited all 5 screens with filter icon:* Goals, Assets, Liabilities, Transactions, and Budget; confirmed sorting preferences and filter selections operate independently.
+  3. *Header filter dot indicator removal:* Removed `showIndicator: filterActive` across all 5 screens; the filter icon never displays a dot indicator initially or after changing sorting or filtering.
+  4. *Regression tests:* Added `ConsistentFilterPanels.test.tsx` (10/10 passing); updated `RouteRenderSmoke.test.tsx` and `BudgetCategoryFilter.test.tsx` assertions to expect dot indicator absence.
+  5. *Device verification check:* Check `O82` added in `Not run` status under `## Next release device checks` in `docs/releases/device-test-checklist.md` (metadata: realme Narzo 60 Pro 5g, Android 15 Vanilla Ice Cream, tester sahilsheikh-dev, 2026-11-24).
+  Schema remains version 24.
 - **P39-H / CR-157 (2026-11-24) — Release audit remediation plan.**
   Synthesized findings from P39-A through P39-G into 3 prioritized remediation batches:
   1. *Batch 1 (Containment & Storage Fallback):* Route `onSQLiteFailure` to `StorageErrorBanner` when SQLite degrades to AsyncStorage; rollback: revert handler.

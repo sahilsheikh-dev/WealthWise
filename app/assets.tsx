@@ -34,7 +34,7 @@ import { HOLDING_TYPES } from '../src/domain/types';
 import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
 import { choiceAsync } from '../src/lib/confirm';
-import { DEFAULT_SORTS, SORT_OPTIONS } from '../src/lib/sorting';
+import { SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
@@ -98,10 +98,6 @@ export default function AssetsScreen() {
     ? sipSorting.sort(searchedRows)
     : assetSorting.sort(searchedRows);
   const activeSorting = filter === 'Recurring' ? sipSorting : assetSorting;
-  const activeSortDefault = filter === 'Recurring' ? DEFAULT_SORTS.sips : DEFAULT_SORTS.assets;
-  const filterActive = filter !== 'All'
-    || activeSorting.spec.key !== activeSortDefault.key
-    || activeSorting.spec.dir !== activeSortDefault.dir;
   const cardModels = useMemo(
     () => new Map(rows.map((row) => [row.id, buildInstrumentCardModel(row, {
       asOf,
@@ -123,7 +119,6 @@ export default function AssetsScreen() {
             label: 'Filter',
             onPress: () => setFilterPanelOpen((open) => !open),
             expanded: filterPanelOpen,
-            showIndicator: filterActive,
           },
           { icon: 'plus', label: 'New investment', onPress: () => router.push('/investment-form' as Href) },
         ]}
