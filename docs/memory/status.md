@@ -1,6 +1,15 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-24 | Updates: owner and AI agents -->
 
 # Status
+- **P39-B / CR-152 (2026-11-24) — Security, network boundary, and debug residue audit.**
+  Verified secrets, network behavior, debug residue, EAS config, bundle reachability, and source maps:
+  1. *Secrets & config:* Zero secrets or private keys tracked; no `.env` files present; EAS config verified clean.
+  2. *Offline runtime boundary:* Verified zero network calls; extended `offlineRuntime.test.ts` to assert prohibition of `EventSource` and `sendBeacon` alongside `fetch`, `XMLHttpRequest`, and `WebSocket`.
+  3. *Debug residue & bundle reachability:* Zero `debugger` statements; exactly 3 intentional/DEV-guarded console calls; dev menu unreachable in production builds (`__DEV__ === false`); identified P2 finding that statically imported demo/stress fixtures are compiled into Hermes bytecode bundle.
+  4. *Source maps:* Zero `.map` files exported in production distribution.
+  5. *Detailed report:* `/tmp/wealthwise-p39-b-security-debug-audit.md`.
+  Pure audit/documentation scope with boundary regression test; schema remains version 24.
+  Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
 - **P39-A / CR-151 (2026-11-24) — Master read-only codebase audit.**
   Completed master read-only audit across 12 focus areas: dead code, secrets/config, app lock, notification response routes, deep links, silent failures, performance, dependencies, debug residue, TODO debt, permissions, and first launch.
   1. *Zero P0/P1 blockers:* No active vulnerabilities, data loss risks, or hard crash bugs detected.

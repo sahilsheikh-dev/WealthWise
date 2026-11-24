@@ -2,6 +2,17 @@
 
 # Open items
 
+## P39-B Security, network boundary, and debug residue audit (Done; CR-152)
+
+- Subtask P39-B (CR-152, 2026-11-24): Completed security, network boundary, and debug residue verification:
+  1. **Secrets & EAS configuration:** Verified zero API keys, credentials, or private keys across codebase, Git history, and EAS configuration; `.env*` files properly ignored.
+  2. **Offline runtime boundary:** Verified zero network calls in `app/` and `src/`; added regression test assertions for `EventSource` and `sendBeacon` to `src/lib/__tests__/offlineRuntime.test.ts`.
+  3. **Debug residue & Hermes bytecode:** Proved dev menu unreachable at runtime in production (`__DEV__ === false`); confirmed static imports of mock/stress fixtures in `createAppStore.ts` bundle fixtures into production Hermes binary (P2 finding).
+  4. **Detailed report:** Persisted to `/tmp/wealthwise-p39-b-security-debug-audit.md`.
+- Pure audit/documentation scope with boundary regression test; schema version remains 24.
+- Physical-device checks: none required (no user-facing application behavior changed).
+- Ordered six gates pass: Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
+
 ## P39-A Master read-only codebase audit (Done; CR-151)
 
 - Subtask P39-A (CR-151, 2026-11-24): Completed master read-only codebase audit across 12 areas (dead code, secrets/config, app lock, notification-response routes, deep links, silent failures, performance, dependencies, debug residue, TODO debt, permissions, first launch):
