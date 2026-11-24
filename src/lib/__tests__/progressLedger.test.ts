@@ -1996,8 +1996,8 @@ describe('permanent progress ledger', () => {
 
     expect(roadmap).toContain('P29-U-R1 — Dynamic asset valuation inputs and calculations');
     expect(checklist).toMatch(/\|\s*O80\s*\|[^|]+\|\s*Pass\s*\|/);
-    expect(checklist).toMatch(/\|\s*O81\s*\|[^|]+\|\s*Not run\s*\|/);
-    expect(checklist).toContain('P29-U-R1; physical-device check required.');
+    expect(checklist).toMatch(/\|\s*O81\s*\|[^|]+\|\s*Pass\s*\|/);
+    expect(checklist).toContain('P29-U-R1; owner-reported physical-device verification, 2026-11-24.');
     expect(openItems).toContain('P29-U-R1 Dynamic asset valuation inputs and calculations');
     expect(openItems).toContain('O81');
     expect(status).toContain('CR-147');
@@ -2374,7 +2374,7 @@ describe('permanent progress ledger', () => {
     expect(p20lR1).toContain('| Done |');
     expect(p20lR1).toMatch(/Placement:\s+rule 2/);
 
-    expect(checklist).toMatch(/\|\s*O82\s*\|[^|]+\|\s*Not run\s*\|/);
+    expect(checklist).toMatch(/\|\s*O82\s*\|[^|]+\|\s*Pass\s*\|/);
     expect(openItems).toContain('P20-L-R1');
     expect(openItems).toContain('O82');
     expect(status).toContain('CR-158');
@@ -2453,5 +2453,27 @@ describe('permanent progress ledger', () => {
 
     expect(openItems).toContain('CR-161');
     expect(status).toContain('CR-161');
+  });
+
+  it('records owner-reported physical-device validation Pass for O81 and O82 under CR-162', () => {
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const independentEntities = ledger.split('## 13. Independent entities')[1] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const checklist = readFileSync(join(process.cwd(), 'docs/releases/device-test-checklist.md'), 'utf8');
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-162 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-162 |'))).toHaveLength(1);
+    expect(independentEntities.split('\n').filter((line) => line.startsWith('| CR-162 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-162');
+
+    expect(checklist).toMatch(/\|\s*O81\s*\|[^|]+\|\s*Pass\s*\|/);
+    expect(checklist).toMatch(/\|\s*O82\s*\|[^|]+\|\s*Pass\s*\|/);
+    expect(checklist).toContain('The owner reports O81 and O82 passed on 2026-11-24.');
+    expect(openItems).toContain('O81');
+    expect(openItems).toContain('O82');
+    expect(status).toContain('CR-162');
   });
 });
