@@ -1,6 +1,12 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-24 | Updates: owner and AI agents -->
 
 # Status
+- **CR-162 (2026-11-24) — Record physical-device checks O81 and O82 as Pass.**
+  Recorded owner-reported physical-device validation for checks O81 and O82 as Pass in `docs/releases/device-test-checklist.md`:
+  1. *O81:* Dynamic asset valuation inputs and calculations (P29-U-R1) tested and validated Pass on physical device.
+  2. *O82:* Consistent filter panels and absence of filter icon dot indicator (P20-L-R1) tested and validated Pass on physical device.
+  Metadata confirmed by owner: realme Narzo 60 Pro 5g, Android 15 Vanilla Ice Cream, tester sahilsheikh-dev, 2026-11-24.
+  All device checks in the Next release section are now Pass; zero device checks pending. Pure documentation lifecycle; schema remains version 24.
 - **CR-161 (2026-11-24) — PR #39 reconciliation, PR/issue label policy, and future tracking.**
   Reconciled PR #39, PR/issue label policies, release records, and future tracking:
   1. *PR #39 verified disposition:* Truthfully verified PR #39 (`DO_NOT_MERGE-...`) as Closed Unmerged; applied labels `phase:p01`, `type:chore`, `status:superseded`, `wontfix` and updated body with verified facts; commit `b779c21` was brought into repository ancestry in P28-E-R3 and released in `v1.1.1`.
