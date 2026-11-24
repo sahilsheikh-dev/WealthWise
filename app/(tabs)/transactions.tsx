@@ -35,7 +35,7 @@ import type { Transaction } from '../../src/domain/types';
 import { formatAmount } from '../../src/lib/amountDisplay';
 import { todayISO } from '../../src/lib/clock';
 import { formatDate, formatMonth } from '../../src/lib/format';
-import { DEFAULT_SORTS, SORT_OPTIONS } from '../../src/lib/sorting';
+import { SORT_OPTIONS } from '../../src/lib/sorting';
 import { swipeIntent } from '../../src/lib/swipe';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
@@ -110,9 +110,6 @@ export default function TransactionsScreen() {
   );
   const groups = useMemo(() => groupByDate(rows), [rows]);
   const hasMonthTransactions = data.transactions.some((item) => item.date.startsWith(month));
-  const filterActive = filter !== 'all' || categoryFilter !== ''
-    || sorting.spec.key !== DEFAULT_SORTS.transactions.key
-    || sorting.spec.dir !== DEFAULT_SORTS.transactions.dir;
   return (
     <Screen scroll={false}>
       <View style={styles.gestureSurface} {...monthPanResponder.panHandlers}>
@@ -126,7 +123,6 @@ export default function TransactionsScreen() {
               label: 'Filter',
               onPress: () => setFilterPanelOpen((open) => !open),
               expanded: filterPanelOpen,
-              showIndicator: filterActive,
             },
             { icon: 'plus', label: 'Add transaction', onPress: () => router.push('/transaction-form') },
           ]}
