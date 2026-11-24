@@ -38,7 +38,9 @@ v1.3.0 publication.
 The v1.1.1 Android APK matched the owner-supplied EAS artifact and is published
 as `WealthWise-android-v1.1.1.apk`. Its versioned URL returns HTTP 200 with a
 content length of 112,150,605 bytes. The latest-named asset was renamed after
-v1.2.0 publication.
+v1.2.0 publication. Release v1.1.1 also incorporated historical ancestry from
+P28-E-R3 (PR #47 / PR #48), connecting historical PR #39 ancestry without
+including coverage artifacts.
 
 The v1.1.0 Android APK matched the EAS artifact and is published as
 `WealthWise-android-v1.1.0.apk`. Its versioned URL returns HTTP 200 with a

@@ -1,6 +1,12 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-24 | Updates: owner and AI agents -->
 
 # Status
+- **CR-161 (2026-11-24) — PR #39 reconciliation, PR/issue label policy, and future tracking.**
+  Reconciled PR #39, PR/issue label policies, release records, and future tracking:
+  1. *PR #39 verified disposition:* Truthfully verified PR #39 (`DO_NOT_MERGE-...`) as Closed Unmerged; applied labels `phase:p01`, `type:chore`, `status:superseded`, `wontfix` and updated body with verified facts; commit `b779c21` was brought into repository ancestry in P28-E-R3 and released in `v1.1.1`.
+  2. *Audit of 273 PRs & 261 Issues:* Audited all 273 PRs (272 merged, 1 closed unmerged [#39], 0 open); proposed taxonomy mapping generated in `/tmp/wealthwise-pr-issue-audit-report.md` and `/tmp/wealthwise-pr-label-audit.json`.
+  3. *Policy & test enforcement:* Established mandatory PR and issue labeling in `AGENTS.md`, `rules.md`, `working-style.md`, and test-enforced in `progressLedger.test.ts`.
+  Pure documentation and repository-process scope; schema remains version 24.
 - **CR-160 (2026-11-24) — GitHub issue reconciliation and test-enforced tracking.**
   Reconciled complete GitHub issue history backfill and established test-enforced ongoing tracking:
   1. *Semantic standard labels:* Added standard GitHub labels (`enhancement`, `bug`, `documentation`) across all 261 issues (#270–#531) based on item type and lifecycle.

@@ -238,6 +238,8 @@ as `Assumed: ...`; state superseded assertions and the replacement/reason.
 
 - **Atomic issue mapping (Model A):** Every approved ledger subtask and standalone
   Change Request maintains an exact 1:1 GitHub issue mapping.
+- **PR labeling & alignment:** Every pull request requires phase/lifecycle, type,
+  status, and semantic standard labels matching its underlying task.
 - **Taxonomy:**
   - Milestones: `v1.0.0`–`v1.3.0` for published historical releases, `v1.3.1`
     for the next release candidate, and `Planned` for future roadmap items.
@@ -247,20 +249,23 @@ as `Assumed: ...`; state superseded assertions and the replacement/reason.
   - Type labels: `type:feat`, `type:fix`, `type:docs`, `type:chore`,
     `type:test`, `type:audit`.
   - Semantic standard labels: `enhancement` (for new capabilities/features),
-    `bug` (for defects/fixes), `documentation` (for documentation/policies).
+    `bug` (for defects/fixes), `documentation` (for documentation/policies),
+    `wontfix` (for unmerged/rejected changes like PR #39).
   - Status labels: `status:planned`, `status:done`, `status:superseded`,
     `status:cancelled`.
-- **Issue protocol:**
+- **Issue and PR protocol:**
   - Create issue when a subtask or standalone CR enters the ledger (`status:planned`,
     open).
-  - Update issue body with task commit links and PR references as implementation proceeds.
+  - Update issue and PR bodies with task commit links and PR references as implementation proceeds.
   - Transition to `status:done` and close only after merge to `develop` via PR and
     all six ordered gates pass.
-  - Issue body captures original ledger date, owning phase/lifecycle, deliverable
+  - Issue and PR bodies capture original ledger date, owning phase/lifecycle, deliverable
     description, dependencies, and verifiable commits/PRs. Server timestamps are never backdated.
   - Public safety: Zero user financial amounts, account numbers, secrets,
-    credentials, tokens, or private audit findings in issue titles or bodies.
+    credentials, tokens, or private audit findings in issue or PR titles or bodies.
   - No speculative issues: Agents never open GitHub issues for unapproved ideas.
+  - Historical PR #39 is verified Closed Unmerged (`status:superseded`, `wontfix`); its
+    commit `b779c21` was connected as ancestry in P28-E-R3 and released in `v1.1.1`.
 - **Test enforcement:** Workflow is test-enforced by `progressLedger.test.ts`,
   asserting 1:1 issue coverage and policy invariants.
 
