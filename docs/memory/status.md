@@ -1,6 +1,14 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-24 | Updates: owner and AI agents -->
 
 # Status
+- **P39-A / CR-151 (2026-11-24) — Master read-only codebase audit.**
+  Completed master read-only audit across 12 focus areas: dead code, secrets/config, app lock, notification response routes, deep links, silent failures, performance, dependencies, debug residue, TODO debt, permissions, and first launch.
+  1. *Zero P0/P1 blockers:* No active vulnerabilities, data loss risks, or hard crash bugs detected.
+  2. *Identified P2 hardening findings:* Statically imported demo/stress fixtures present in production Hermes bundle; silent SQLite fallback to legacy AsyncStorage without UI indication; deep links into internal modal forms.
+  3. *Clean postures:* Zero secrets tracked; zero TODO/FIXME markers; zero `debugger` statements; 3 intentional/DEV-guarded console calls; clean onboarding and notification response routes.
+  4. *Detailed report:* `/tmp/wealthwise-p39-a-master-audit.md`.
+  Pure audit/documentation scope; schema remains version 24; no runtime behavior changed.
+  Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
 - **P43-E / CR-150 (2026-11-24) — GitHub issue inventory and execution planning.**
   Completed comprehensive inventory of ledger work and concrete execution plan for GitHub issues as a pure documentation and repository-process deliverable (zero GitHub issues created, edited, commented on, or closed):
   1. *Ledger inventory & deduplication:* Audited 209 active dashboard subtasks (173 Done, 36 Planned; P27, P28, P32 reserved slots excluded) and 145 Change Requests (CR-1–CR-150; 94 mapped to subtasks, 51 standalone lifecycle). Evaluated mapping models and recommended Model A (Atomic Ledger Mapping) yielding 260 discrete issues (209 subtasks + 51 standalone lifecycle CRs; 224 retrospective closed, 36 open planned).
