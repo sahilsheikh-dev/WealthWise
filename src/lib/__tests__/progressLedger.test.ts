@@ -319,7 +319,7 @@ describe('permanent progress ledger', () => {
     expect(p20uR1).toContain('start month, frequency, due day');
     expect(p20uR1).toContain('both scopes');
     expect(p20uR1).toContain('H1–H5 findings are recorded in CONT3');
-    expect(ledger).toMatch(/Overall progress (?:████████░░|█████████░) (?:79|80|82|83|84|85|86)% \((?:158\/200|159\/201|160\/202|161\/203|162\/204|163\/205|163\/207|164\/207|165\/208|166\/209|167\/209|168\/209|172\/209|173\/209|174\/209|175\/209|176\/209|177\/209|178\/209|179\/209)\)/);
+    expect(ledger).toMatch(/Overall progress (?:████████░░|█████████░) (?:79|80|82|83|84|85|86)% \((?:158\/200|159\/201|160\/202|161\/203|162\/204|163\/205|163\/207|164\/207|165\/208|166\/209|167\/209|168\/209|172\/209|173\/209|174\/209|175\/209|176\/209|177\/209|178\/209|179\/209|180\/209)\)/);
     expect(ledger).toMatch(/P20\s+██████████ (?:100%|98%) \((?:43\/43|44\/44|45\/45|46\/46|47\/47|48\/48|48\/49|49\/49|50\/50)\)/);
     const o73 = checklist.split('\n').find((line) => line.startsWith('| O73 |'));
     expect(o73).toContain('one-time and recurring');
@@ -576,7 +576,7 @@ describe('permanent progress ledger', () => {
       'P36-A', 'P36-B', 'P36-C', 'P36-D',
       'P37-A', 'P37-B', 'P37-C',
       'P38-A', 'P38-B', 'P38-C',
-      'P39-H',
+      // P39 complete
       'P40-A', 'P40-B',
     ];
 
@@ -1193,7 +1193,7 @@ describe('permanent progress ledger', () => {
     expect(registerRow).toContain('185a5ea125f64ac104344f00ad013d68cdb7a946');
     expect(registerRow).toContain('6b50a1d');
     expect(phaseRow).toMatch(/\|\s*(?:43|44|45|46|47|48|49|50)\s*\|/);
-    expect(ledger).toMatch(/Overall progress (?:████████░░|█████████░) (?:79|80|82|83|84|85|86)% \((?:158\/200|159\/201|160\/202|161\/203|162\/204|163\/205|163\/207|164\/207|165\/208|166\/209|167\/209|168\/209|172\/209|173\/209|174\/209|175\/209|176\/209|177\/209|178\/209|179\/209)\)/);
+    expect(ledger).toMatch(/Overall progress (?:████████░░|█████████░) (?:79|80|82|83|84|85|86)% \((?:158\/200|159\/201|160\/202|161\/203|162\/204|163\/205|163\/207|164\/207|165\/208|166\/209|167\/209|168\/209|172\/209|173\/209|174\/209|175\/209|176\/209|177\/209|178\/209|179\/209|180\/209)\)/);
     expect(ledger).toMatch(/P20\s+██████████ (?:100%|98%) \((?:43\/43|44\/44|45\/45|46\/46|47\/47|48\/48|48\/49|49\/49|50\/50)\)/);
     expect(status).toContain('P20-S-R2-R1 records the verified');
   });
@@ -1226,7 +1226,7 @@ describe('permanent progress ledger', () => {
     expect(registerRow).toContain('CM-2 synchronized local `develop`');
     expect(promptLog.split('\n').filter((line) => line.startsWith('| P20-W-R1 |'))).toHaveLength(1);
     expect(phaseRow).toMatch(/\|\s*(?:43|44|45|46|47|48|49|50)\s*\|/);
-    expect(ledger).toMatch(/Overall progress (?:████████░░|█████████░) (?:79|80|82|83|84|85|86)% \((?:158\/200|159\/201|160\/202|161\/203|162\/204|163\/205|163\/207|164\/207|165\/208|166\/209|167\/209|168\/209|172\/209|173\/209|174\/209|175\/209|176\/209|177\/209|178\/209|179\/209)\)/);
+    expect(ledger).toMatch(/Overall progress (?:████████░░|█████████░) (?:79|80|82|83|84|85|86)% \((?:158\/200|159\/201|160\/202|161\/203|162\/204|163\/205|163\/207|164\/207|165\/208|166\/209|167\/209|168\/209|172\/209|173\/209|174\/209|175\/209|176\/209|177\/209|178\/209|179\/209|180\/209)\)/);
     expect(ledger).toMatch(/P20\s+██████████ (?:100%|98%) \((?:43\/43|44\/44|45\/45|46\/46|47\/47|48\/48|48\/49|49\/49|50\/50)\)/);
     expect(status).toContain('P20-W-R1 records task PR #174 and phase PR #175');
     expect(openItems).toContain('STOP GATE RESOLVED (DEC-P20W-D3-SCHEMA24');
@@ -2163,6 +2163,37 @@ describe('permanent progress ledger', () => {
     expect(openItems).toContain('P39-A Master read-only codebase audit');
     expect(status).toContain('CR-151');
     expect(status).toContain('P39-A');
+  });
+
+  it('records P39-H release audit remediation plan under CR-157', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const roadmap = ledger.split('## 9. Upcoming roadmap')[1]?.split('## 10. Verification matrix')[0] ?? '';
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-157 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-157 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-157');
+
+    const p39h = dashboard.split('\n').find((line) => line.startsWith('| P39-H |'));
+    expect(p39h).toBeDefined();
+    expect(p39h).toContain('| Done |');
+    expect(p39h).toMatch(/Placement:\s+rule 5/);
+
+    expect(roadmap).toContain('P39-H — Group findings into the smallest');
+    expect(roadmap).toContain('Done; CR-157');
+
+    const reportPath = '/tmp/wealthwise-p39-h-remediation-plan.md';
+    expect(existsSync(reportPath)).toBe(true);
+    const report = readFileSync(reportPath, 'utf8');
+    expect(report).toContain('P39-H');
+
+    expect(openItems).toContain('P39-H Release audit remediation plan');
+    expect(status).toContain('CR-157');
+    expect(status).toContain('P39-H');
   });
 
   it('records P39-G clean-install and first-launch walkthrough under CR-156', () => {

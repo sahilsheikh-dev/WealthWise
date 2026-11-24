@@ -2,6 +2,17 @@
 
 # Open items
 
+## P39-H Release audit remediation plan (Done; CR-157)
+
+- Subtask P39-H (CR-157, 2026-11-24): Synthesized all findings from P39-A through P39-G into three prioritized independent remediation batches:
+  1. **Batch 1 (Containment & Storage Fallback):** Connect SQLite fallback to `StorageErrorBanner` for user degradation visibility.
+  2. **Batch 2 (Production Bundle Optimization):** Dynamically load demo/stress data in `createAppStore.ts` to exclude from Hermes bytecode; register 5 missing modal form routes in `_layout.tsx`.
+  3. **Batch 3 (Dependency Alignment):** Upstream Expo SDK resolution tracking for `decode-uri-component` under `DEC-P39-DEPS-01`.
+  4. **Report artifact:** Persisted in `/tmp/wealthwise-p39-h-remediation-plan.md`.
+- Pure planning scope; schema remains version 24; no runtime behavior changed. Phase P39 is 100% complete (8/8 subtasks Done).
+- Physical-device checks: none required (no user-facing application behavior changed).
+- Ordered six gates pass: Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
+
 ## P39-G Clean-install and first-launch walkthrough (Done; CR-156)
 
 - Subtask P39-G (CR-156, 2026-11-24): Completed clean-install walkthrough across onboarding, reminders, app lock, and transaction creation:
