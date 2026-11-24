@@ -1,6 +1,73 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-24 | Updates: owner and AI agents -->
 
 # Status
+- **P20-L-R1 / CR-158 (2026-11-24) — Consistent filter panels and header dot removal.**
+  Implemented consistent filter panels across all screens that display a header filter icon:
+  1. *Goals screen (`app/(tabs)/goals.tsx`):* Added filtering controls alongside existing `SortChip` supporting status (`All`, `In progress`, `Achieved`) and dynamic target year chips; automatic expansion of achieved goals when `Achieved` is selected; `EmptyState` displayed when no goals match the filter.
+  2. *Audited all 5 screens with filter icon:* Goals, Assets, Liabilities, Transactions, and Budget; confirmed sorting preferences and filter selections operate independently.
+  3. *Header filter dot indicator removal:* Removed `showIndicator: filterActive` across all 5 screens; the filter icon never displays a dot indicator initially or after changing sorting or filtering.
+  4. *Regression tests:* Added `ConsistentFilterPanels.test.tsx` (10/10 passing); updated `RouteRenderSmoke.test.tsx` and `BudgetCategoryFilter.test.tsx` assertions to expect dot indicator absence.
+  5. *Device verification check:* Check `O82` added in `Not run` status under `## Next release device checks` in `docs/releases/device-test-checklist.md` (metadata: realme Narzo 60 Pro 5g, Android 15 Vanilla Ice Cream, tester sahilsheikh-dev, 2026-11-24).
+  Schema remains version 24.
+- **P39-H / CR-157 (2026-11-24) — Release audit remediation plan.**
+  Synthesized findings from P39-A through P39-G into 3 prioritized remediation batches:
+  1. *Batch 1 (Containment & Storage Fallback):* Route `onSQLiteFailure` to `StorageErrorBanner` when SQLite degrades to AsyncStorage; rollback: revert handler.
+  2. *Batch 2 (Bundle Treeshaking & Routes):* Treeshake demo/stress fixtures out of Hermes bytecode in `createAppStore.ts` via dynamic import; register 5 missing modal forms in `_layout.tsx`.
+  3. *Batch 3 (Dependencies):* Monitor upstream Expo SDK for `decode-uri-component` patch under `DEC-P39-DEPS-01`.
+  4. *Detailed report:* `/tmp/wealthwise-p39-h-remediation-plan.md`.
+  Pure planning scope; schema remains version 24. Phase P39 is 100% complete (8/8 subtasks Done).
+  Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
+- **P39-G / CR-156 (2026-11-24) — Clean-install and first-launch walkthrough.**
+  Completed architectural walkthrough and failure mode analysis for fresh installations:
+  1. *Boot & Onboarding:* Verified splash screen hold until font and store hydration, clean hardware back exit on onboarding screen, and atomic transition to tab stack.
+  2. *First-launch reminders prompt:* Verified non-modal bottom sheet on first Home tab visit; denial gracefully records `meta.remindersPromptHandled` with no subsequent nagging.
+  3. *First transaction & App lock:* Verified form validation, single-write store mutation, and biometrics/passcode lock flow.
+  4. *Feed P37:* Findings cataloged to structure Phase P37 tutorial screens.
+  5. *Detailed report:* `/tmp/wealthwise-p39-g-clean-install-walkthrough.md`.
+  Pure audit/documentation scope; schema remains version 24.
+  Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
+- **P39-F / CR-155 (2026-11-24) — Debt, TODO/FIXME markers, and skipped test audit.**
+  Completed test debt and marker audit across the codebase:
+  1. *TODO/FIXME markers:* Zero `TODO`, `FIXME`, `HACK`, or `XXX` comments across all source code and tests.
+  2. *Single skipped test:* Investigated `stressBenchmark` in `src/domain/__tests__/stressData.test.ts#L93`; confirmed intentional architectural exception (runs intensive 50y/100y/126y benchmark taking ~180s; opt-in via `WEALTHWISE_STRESS_BENCHMARK=1`).
+  3. *Assertion integrity:* Verified zero weakened assertions.
+  4. *Detailed report:* `/tmp/wealthwise-p39-f-test-debt-audit.md`.
+  Pure audit/documentation scope; schema remains version 24.
+  Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
+- **P39-E / CR-154 (2026-11-24) — Dependency risk triage and CVE review.**
+  Completed audit of 1,124 packages using `npm audit`:
+  1. *Triaged 11 advisories:* 0 critical, 3 high, 8 moderate.
+  2. *Production reachability:* `decode-uri-component` (<= 0.5.0) via `query-string` in `expo-router` has ReDoS advisories (`GHSA-qr28-fpjm-wq7f`, `GHSA-vcc3-ghjq-m6fr`); mitigated by offline-first architecture with no remote URLs; tracked under owner decision `DEC-P39-DEPS-01`.
+  3. *Developer tooling:* `minimatch`, `tar`, `micromatch`, and `braces` vulnerabilities confined to build-time tooling.
+  4. *Hygiene:* Zero `npm audit fix --force` or unvetted install scripts permitted.
+  5. *Detailed report:* `/tmp/wealthwise-p39-e-dependency-risk-audit.md`.
+  Pure audit/documentation scope; schema remains version 24.
+  Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
+- **P39-D / CR-153 (2026-11-24) — Silent failures and recovery-state audit.**
+  Completed deep audit of silent failure modes and recovery states across storage, backup import/export, notifications, and SQLite fallback:
+  1. *Storage & SQLite fallback:* Identified P2 finding in `src/data/stateStorage.native.ts` where `onSQLiteFailure` is undefined, causing automatic fallback to AsyncStorage to log a `console.warn` without a user-facing degradation banner in `StorageErrorBanner`.
+  2. *Backup import/export recovery:* Confirmed robust handling of corrupted JSON, tampered AES-256-GCM ciphertext, incorrect passphrases, and 25MB/35MB size boundaries; `undoImport` single-tap recovery verified.
+  3. *Notification scheduling:* Scheduling failures are logged gracefully without interrupting financial transactions or corrupting reminder state.
+  4. *Detailed report:* `/tmp/wealthwise-p39-d-recovery-audit.md`.
+  Pure audit/documentation scope; schema remains version 24.
+  Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
+- **P39-B / CR-152 (2026-11-24) — Security, network boundary, and debug residue audit.**
+  Verified secrets, network behavior, debug residue, EAS config, bundle reachability, and source maps:
+  1. *Secrets & config:* Zero secrets or private keys tracked; no `.env` files present; EAS config verified clean.
+  2. *Offline runtime boundary:* Verified zero network calls; extended `offlineRuntime.test.ts` to assert prohibition of `EventSource` and `sendBeacon` alongside `fetch`, `XMLHttpRequest`, and `WebSocket`.
+  3. *Debug residue & bundle reachability:* Zero `debugger` statements; exactly 3 intentional/DEV-guarded console calls; dev menu unreachable in production builds (`__DEV__ === false`); identified P2 finding that statically imported demo/stress fixtures are compiled into Hermes bytecode bundle.
+  4. *Source maps:* Zero `.map` files exported in production distribution.
+  5. *Detailed report:* `/tmp/wealthwise-p39-b-security-debug-audit.md`.
+  Pure audit/documentation scope with boundary regression test; schema remains version 24.
+  Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
+- **P39-A / CR-151 (2026-11-24) — Master read-only codebase audit.**
+  Completed master read-only audit across 12 focus areas: dead code, secrets/config, app lock, notification response routes, deep links, silent failures, performance, dependencies, debug residue, TODO debt, permissions, and first launch.
+  1. *Zero P0/P1 blockers:* No active vulnerabilities, data loss risks, or hard crash bugs detected.
+  2. *Identified P2 hardening findings:* Statically imported demo/stress fixtures present in production Hermes bundle; silent SQLite fallback to legacy AsyncStorage without UI indication; deep links into internal modal forms.
+  3. *Clean postures:* Zero secrets tracked; zero TODO/FIXME markers; zero `debugger` statements; 3 intentional/DEV-guarded console calls; clean onboarding and notification response routes.
+  4. *Detailed report:* `/tmp/wealthwise-p39-a-master-audit.md`.
+  Pure audit/documentation scope; schema remains version 24; no runtime behavior changed.
+  Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
 - **P43-E / CR-150 (2026-11-24) — GitHub issue inventory and execution planning.**
   Completed comprehensive inventory of ledger work and concrete execution plan for GitHub issues as a pure documentation and repository-process deliverable (zero GitHub issues created, edited, commented on, or closed):
   1. *Ledger inventory & deduplication:* Audited 209 active dashboard subtasks (173 Done, 36 Planned; P27, P28, P32 reserved slots excluded) and 145 Change Requests (CR-1–CR-150; 94 mapped to subtasks, 51 standalone lifecycle). Evaluated mapping models and recommended Model A (Atomic Ledger Mapping) yielding 260 discrete issues (209 subtasks + 51 standalone lifecycle CRs; 224 retrospective closed, 36 open planned).
