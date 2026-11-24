@@ -2428,4 +2428,30 @@ describe('permanent progress ledger', () => {
     expect(openItems).toContain('CR-160');
     expect(status).toContain('CR-160');
   });
+
+  it('records PR #39 reconciliation, PR label policy, and release attribution under CR-161', () => {
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+    const agents = readFileSync(join(process.cwd(), 'AGENTS.md'), 'utf8');
+    const rules = readFileSync(join(process.cwd(), 'docs/memory/rules.md'), 'utf8');
+    const workingStyle = readFileSync(join(process.cwd(), 'docs/memory/working-style.md'), 'utf8');
+    const releaseHistory = readFileSync(join(process.cwd(), 'docs/releases/release-history.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-161 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-161 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-161');
+
+    expect(agents).toContain('PR #39 (`DO_NOT_MERGE-...`) is verified Closed Unmerged');
+    expect(agents).toContain('`status:superseded`, `wontfix`');
+    expect(rules).toContain('Historical PR #39 is verified Closed Unmerged');
+    expect(workingStyle).toContain('PR #39 is verified Closed Unmerged');
+    expect(releaseHistory).toContain('PR #39');
+    expect(releaseHistory).toContain('P28-E-R3');
+
+    expect(openItems).toContain('CR-161');
+    expect(status).toContain('CR-161');
+  });
 });
