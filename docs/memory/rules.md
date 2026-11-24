@@ -246,18 +246,23 @@ as `Assumed: ...`; state superseded assertions and the replacement/reason.
     `lifecycle:qa-and-release`, `lifecycle:schema-migration`.
   - Type labels: `type:feat`, `type:fix`, `type:docs`, `type:chore`,
     `type:test`, `type:audit`.
+  - Semantic standard labels: `enhancement` (for new capabilities/features),
+    `bug` (for defects/fixes), `documentation` (for documentation/policies).
   - Status labels: `status:planned`, `status:done`, `status:superseded`,
     `status:cancelled`.
 - **Issue protocol:**
   - Create issue when a subtask or standalone CR enters the ledger (`status:planned`,
     open).
+  - Update issue body with task commit links and PR references as implementation proceeds.
   - Transition to `status:done` and close only after merge to `develop` via PR and
     all six ordered gates pass.
   - Issue body captures original ledger date, owning phase/lifecycle, deliverable
-    description, and verifiable commits/PRs. Server timestamps are never backdated.
+    description, dependencies, and verifiable commits/PRs. Server timestamps are never backdated.
   - Public safety: Zero user financial amounts, account numbers, secrets,
     credentials, tokens, or private audit findings in issue titles or bodies.
   - No speculative issues: Agents never open GitHub issues for unapproved ideas.
+- **Test enforcement:** Workflow is test-enforced by `progressLedger.test.ts`,
+  asserting 1:1 issue coverage and policy invariants.
 
 ## Gates
 

@@ -1,6 +1,14 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-24 | Updates: owner and AI agents -->
 
 # Status
+- **CR-160 (2026-11-24) — GitHub issue reconciliation and test-enforced tracking.**
+  Reconciled complete GitHub issue history backfill and established test-enforced ongoing tracking:
+  1. *Semantic standard labels:* Added standard GitHub labels (`enhancement`, `bug`, `documentation`) across all 261 issues (#270–#531) based on item type and lifecycle.
+  2. *Open roadmap issues:* Enriched all 29 open planned issues (Phases P7, P33–P38, P40, P44) with detailed task scope, dependencies, and explicit status (Planned/Open) under milestone `Planned`.
+  3. *Retrospective closures:* Preserved all 232 closed issues, historical ledger dates, PR references, and merge commits without backdating server timestamps.
+  4. *Zero duplicate issues:* Reused exact verified issues #270–#531.
+  5. *Test enforcement:* Formalized rule in `AGENTS.md`, `rules.md`, `working-style.md`, and enforced via `progressLedger.test.ts`.
+  Pure documentation and repository-process scope; schema remains version 24.
 - **CR-159 (2026-11-24) — GitHub issue history backfill and ongoing issue tracking.**
   Executed complete GitHub issue history backfill and ongoing issue-tracking setup approved under P43-E / CR-150:
   1. *Metadata setup:* Created 7 release milestones (`v1.0.0`, `v1.1.0`, `v1.1.1`, `v1.2.0`, `v1.3.0`, `v1.3.1`, `Planned`) and 54 labels across types, statuses, lifecycles, and phases (`phase:p01`–`phase:p44`).
