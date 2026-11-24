@@ -1,6 +1,14 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-24 | Updates: owner and AI agents -->
 
 # Status
+- **P39-F / CR-155 (2026-11-24) — Debt, TODO/FIXME markers, and skipped test audit.**
+  Completed test debt and marker audit across the codebase:
+  1. *TODO/FIXME markers:* Zero `TODO`, `FIXME`, `HACK`, or `XXX` comments across all source code and tests.
+  2. *Single skipped test:* Investigated `stressBenchmark` in `src/domain/__tests__/stressData.test.ts#L93`; confirmed intentional architectural exception (runs intensive 50y/100y/126y benchmark taking ~180s; opt-in via `WEALTHWISE_STRESS_BENCHMARK=1`).
+  3. *Assertion integrity:* Verified zero weakened assertions.
+  4. *Detailed report:* `/tmp/wealthwise-p39-f-test-debt-audit.md`.
+  Pure audit/documentation scope; schema remains version 24.
+  Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
 - **P39-E / CR-154 (2026-11-24) — Dependency risk triage and CVE review.**
   Completed audit of 1,124 packages using `npm audit`:
   1. *Triaged 11 advisories:* 0 critical, 3 high, 8 moderate.

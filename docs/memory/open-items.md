@@ -2,6 +2,17 @@
 
 # Open items
 
+## P39-F Debt, TODO/FIXME markers, and skipped test audit (Done; CR-155)
+
+- Subtask P39-F (CR-155, 2026-11-24): Completed audit of debt markers, skipped tests, and benchmark performance:
+  1. **Debt markers:** Verified zero inline `TODO`, `FIXME`, `HACK`, or `XXX` markers exist in the codebase.
+  2. **Skipped test investigation:** Single skipped test in `src/domain/__tests__/stressData.test.ts#L93` confirmed as documented architectural exception (opt-in 50y/100y/126y stress benchmark via `WEALTHWISE_STRESS_BENCHMARK=1`).
+  3. **Assertion preservation:** Confirmed no test assertions were removed or weakened.
+  4. **Report artifact:** Persisted in `/tmp/wealthwise-p39-f-test-debt-audit.md`.
+- Pure audit/documentation scope; schema remains version 24; no runtime behavior changed.
+- Physical-device checks: none required (no user-facing application behavior changed).
+- Ordered six gates pass: Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
+
 ## P39-E Dependency risk triage and CVE review (Done; CR-154)
 
 - Subtask P39-E (CR-154, 2026-11-24): Completed dependency risk review across 1,124 dependencies:
