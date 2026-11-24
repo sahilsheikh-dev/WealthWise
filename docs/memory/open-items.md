@@ -2,6 +2,17 @@
 
 # Open items
 
+## PR #39 reconciliation, PR/issue label policy, and future tracking (Done; CR-161)
+
+- Subtask CR-161 (2026-11-24): Reconciled PR #39, PR/issue label policies, release records, and future tracking:
+  1. **PR #39 verified disposition:** Truthfully confirmed PR #39 as Closed Unmerged with labels `phase:p01`, `type:chore`, `status:superseded`, `wontfix` and detailed verified body; commit `b779c21` was connected as an ancestry parent in P28-E-R3 (merge commit `0697d88`) and released in `v1.1.1` (PR #69 `ce90a13`), `v1.2.0`, and `v1.3.0`.
+  2. **PR & Issue audit:** Audited all 273 PRs and 261 issues; compiled complete mapping in `/tmp/wealthwise-pr-label-audit.json` and report in `/tmp/wealthwise-pr-issue-audit-report.md`.
+  3. **Policy updates:** Updated `AGENTS.md`, `rules.md`, `working-style.md`, `release-history.md`, and added test enforcement in `src/lib/__tests__/progressLedger.test.ts`.
+  4. **Public safety:** Verified zero personal financial data, tokens, secrets, or private findings in any PR or issue.
+- Pure documentation and repository-process scope; schema remains version 24; no runtime behavior changed.
+- Physical-device checks: none required (repository documentation/process only).
+- Ordered six gates pass.
+
 ## GitHub issue reconciliation and test-enforced tracking (Done; CR-160)
 
 - Subtask CR-160 (2026-11-24): Reconciled complete GitHub issue history backfill and established test-enforced ongoing tracking:

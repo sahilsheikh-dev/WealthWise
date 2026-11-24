@@ -274,17 +274,20 @@ local Gradle builds still require explicit authorization.
   Android AABs go to Google Play and APKs to GitHub. iOS distribution is not
   currently offered.
 - **GitHub issue tracking:** Every approved ledger subtask and standalone Change
-  Request maps 1:1 to a GitHub issue under Model A. When work is approved into
-  the ledger, create or link its issue with phase/lifecycle (`phase:pNN` or
+  Request maps 1:1 to a GitHub issue under Model A. Every pull request must carry
+  matching phase/lifecycle, type, and semantic standard labels. When work is approved
+  into the ledger, create or link its issue with phase/lifecycle (`phase:pNN` or
   `lifecycle:*`), type (`type:*`), status (`status:planned`), semantic standard
-  label (`enhancement`, `bug`, `documentation`), and milestone
-  (`v1.0.0`–`v1.3.0`, `v1.3.1`, `Planned`). Leave it open during planning and
-  implementation, updating the issue body with task commit links and PR references
-  as work progresses. Once merged to `develop` via PR and verified by all six ordered
-  gates, update the status label to `status:done`, post a retrospective completion
-  comment with commits, PRs, merge SHAs, and gates, and close the issue. Never
-  create speculative issues for unapproved work; never include personal financial
-  data, tokens, secrets, or private audit findings in issue titles or bodies.
+  label (`enhancement`, `bug`, `documentation`), and milestone (`v1.0.0`–`v1.3.1`,
+  `Planned`). Update issue and PR bodies with verified task commits, PR links, and
+  merge evidence as work proceeds. Once merged to `develop` via PR and verified by
+  all six ordered gates, update the issue status label to `status:done`, post a
+  retrospective completion comment with commits, PRs, merge SHAs, and gates, and
+  close the issue. Never create speculative issues for unapproved work; never
+  include personal financial data, tokens, secrets, or private audit findings in
+  issue or PR titles or bodies. PR #39 (`DO_NOT_MERGE-...`) is verified Closed Unmerged
+  (`status:superseded`, `wontfix`); its commit `b779c21` was connected as ancestry-only
+  in P28-E-R3 and released in `v1.1.1`.
 
 ## Schema and verification
 
