@@ -2,6 +2,17 @@
 
 # Open items
 
+## P39-A Master read-only codebase audit (Done; CR-151)
+
+- Subtask P39-A (CR-151, 2026-11-24): Completed master read-only codebase audit across 12 areas (dead code, secrets/config, app lock, notification-response routes, deep links, silent failures, performance, dependencies, debug residue, TODO debt, permissions, first launch):
+  1. **Audit results:** Recorded 12 findings with file/line evidence across P0–P3 severities. Confirmed zero P0 (critical) and zero P1 (high) blockers.
+  2. **P2 findings:** Identified bundle bloat from static mock imports in `createAppStore.ts`, lack of UI indication when SQLite falls back to legacy AsyncStorage in `stateStorage.native.ts`, and ungated deep links into modal forms.
+  3. **P3 clean areas:** Verified zero leaked secrets or tracked `.env` files, zero inline TODO/FIXME debt, zero debugger statements, and clean clean-install onboarding and notification response routing.
+  4. **Detailed report:** Persisted to `/tmp/wealthwise-p39-a-master-audit.md`.
+- Pure audit/documentation scope; schema remains version 24; no runtime behavior changed.
+- Physical-device checks: none required (no user-facing application behavior changed).
+- Ordered six gates pass: Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
+
 ## P43-E GitHub issue inventory and execution planning (Done; CR-150)
 
 - Subtask P43-E (CR-150, 2026-11-24): Completed GitHub issue inventory and execution planning as a pure documentation and repository-process task (no GitHub issues created, edited, commented on, or closed):
