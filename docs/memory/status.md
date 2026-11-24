@@ -1,6 +1,15 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-24 | Updates: owner and AI agents -->
 
 # Status
+- **P39-G / CR-156 (2026-11-24) — Clean-install and first-launch walkthrough.**
+  Completed architectural walkthrough and failure mode analysis for fresh installations:
+  1. *Boot & Onboarding:* Verified splash screen hold until font and store hydration, clean hardware back exit on onboarding screen, and atomic transition to tab stack.
+  2. *First-launch reminders prompt:* Verified non-modal bottom sheet on first Home tab visit; denial gracefully records `meta.remindersPromptHandled` with no subsequent nagging.
+  3. *First transaction & App lock:* Verified form validation, single-write store mutation, and biometrics/passcode lock flow.
+  4. *Feed P37:* Findings cataloged to structure Phase P37 tutorial screens.
+  5. *Detailed report:* `/tmp/wealthwise-p39-g-clean-install-walkthrough.md`.
+  Pure audit/documentation scope; schema remains version 24.
+  Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
 - **P39-F / CR-155 (2026-11-24) — Debt, TODO/FIXME markers, and skipped test audit.**
   Completed test debt and marker audit across the codebase:
   1. *TODO/FIXME markers:* Zero `TODO`, `FIXME`, `HACK`, or `XXX` comments across all source code and tests.

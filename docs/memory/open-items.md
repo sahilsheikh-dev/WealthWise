@@ -2,6 +2,18 @@
 
 # Open items
 
+## P39-G Clean-install and first-launch walkthrough (Done; CR-156)
+
+- Subtask P39-G (CR-156, 2026-11-24): Completed clean-install walkthrough across onboarding, reminders, app lock, and transaction creation:
+  1. **Boot sequence & Onboarding:** Confirmed smooth splash dismissal and atomic store transition; hardware back cleanly exits app.
+  2. **Reminders prompt sheet:** Non-modal `FirstLaunchReminderPrompt` tested; denial cleanly sets `meta.remindersPromptHandled`.
+  3. **Denied & interrupted paths:** Biometric rejection fallback to passcode verified; storage resilience verified.
+  4. **P37 handoff:** Onboarding and first-launch observations documented to feed P37 tutorial development.
+  5. **Report artifact:** Persisted in `/tmp/wealthwise-p39-g-clean-install-walkthrough.md`.
+- Pure audit/documentation scope; schema remains version 24; no runtime behavior changed.
+- Physical-device checks: none required (no user-facing application behavior changed).
+- Ordered six gates pass: Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
+
 ## P39-F Debt, TODO/FIXME markers, and skipped test audit (Done; CR-155)
 
 - Subtask P39-F (CR-155, 2026-11-24): Completed audit of debt markers, skipped tests, and benchmark performance:
