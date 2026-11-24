@@ -1,6 +1,15 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-24 | Updates: owner and AI agents -->
 
 # Status
+- **P39-E / CR-154 (2026-11-24) — Dependency risk triage and CVE review.**
+  Completed audit of 1,124 packages using `npm audit`:
+  1. *Triaged 11 advisories:* 0 critical, 3 high, 8 moderate.
+  2. *Production reachability:* `decode-uri-component` (<= 0.5.0) via `query-string` in `expo-router` has ReDoS advisories (`GHSA-qr28-fpjm-wq7f`, `GHSA-vcc3-ghjq-m6fr`); mitigated by offline-first architecture with no remote URLs; tracked under owner decision `DEC-P39-DEPS-01`.
+  3. *Developer tooling:* `minimatch`, `tar`, `micromatch`, and `braces` vulnerabilities confined to build-time tooling.
+  4. *Hygiene:* Zero `npm audit fix --force` or unvetted install scripts permitted.
+  5. *Detailed report:* `/tmp/wealthwise-p39-e-dependency-risk-audit.md`.
+  Pure audit/documentation scope; schema remains version 24.
+  Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
 - **P39-D / CR-153 (2026-11-24) — Silent failures and recovery-state audit.**
   Completed deep audit of silent failure modes and recovery states across storage, backup import/export, notifications, and SQLite fallback:
   1. *Storage & SQLite fallback:* Identified P2 finding in `src/data/stateStorage.native.ts` where `onSQLiteFailure` is undefined, causing automatic fallback to AsyncStorage to log a `console.warn` without a user-facing degradation banner in `StorageErrorBanner`.

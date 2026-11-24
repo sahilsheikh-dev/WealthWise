@@ -2,6 +2,18 @@
 
 # Open items
 
+## P39-E Dependency risk triage and CVE review (Done; CR-154)
+
+- Subtask P39-E (CR-154, 2026-11-24): Completed dependency risk review across 1,124 dependencies:
+  1. **Production reachability triage:** 11 total advisories (0 critical, 3 high, 8 moderate). `decode-uri-component` in `expo-router`/`query-string` is the sole production-reachable advisory, mitigated by offline runtime.
+  2. **Tooling advisories:** `minimatch`, `tar`, `micromatch`, and `braces` affect development/build steps only.
+  3. **Strict security posture:** No `npm audit fix --force` executed; no arbitrary install scripts approved.
+  4. **Open owner decision:** `DEC-P39-DEPS-01` — Accept `decode-uri-component` ReDoS risk until next planned Expo SDK upgrade.
+  5. **Report artifact:** Persisted in `/tmp/wealthwise-p39-e-dependency-risk-audit.md`.
+- Pure audit/documentation scope; schema remains version 24; no runtime behavior changed.
+- Physical-device checks: none required (no user-facing application behavior changed).
+- Ordered six gates pass: Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
+
 ## P39-D Silent failures and recovery-state audit (Done; CR-153)
 
 - Subtask P39-D (CR-153, 2026-11-24): Completed report-first audit extending P30 across storage, backup import/export, notification scheduling, and SQLite fallback visibility:
