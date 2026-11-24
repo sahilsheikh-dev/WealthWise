@@ -1,6 +1,17 @@
-<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-23 | Updates: owner and AI agents -->
+<!-- Purpose: Unresolved requirements, owner decisions and device verification. | Last updated: 2026-11-24 | Updates: owner and AI agents -->
 
 # Open items
+
+## P43-E GitHub issue inventory and execution planning (Done; CR-150)
+
+- Subtask P43-E (CR-150, 2026-11-24): Completed GitHub issue inventory and execution planning as a pure documentation and repository-process task (no GitHub issues created, edited, commented on, or closed):
+  1. **Ledger inventory & deduplication:** Audited all 209 active dashboard subtasks (173 Done, 36 Planned; P27, P28, P32 reserved slots excluded) and 145 Change Requests (CR-1 through CR-150; 94 mapped to subtasks, 51 standalone lifecycle). Evaluated mapping models and recommended Model A (Atomic Ledger Mapping) yielding 260 discrete issues (209 subtasks + 51 standalone lifecycle CRs; 224 retrospective closed, 36 open planned).
+  2. **Metadata & labeling schema:** Structured taxonomy across `phase/*`, `type/*` (`feature`, `fix`, `docs`, `chore`, `debt`, `test`), `status/*` (`planned`, `in-progress`, `completed`), and release milestones (`v1.0.0` through `v1.3.0`, `Future`). Issue bodies strictly reference verified commits, PRs, merge SHAs, and original completion dates; GitHub timestamps are never backdated.
+  3. **Rate limit mitigation:** Defined 7 sequential batches of 35–40 issues with 2–3s delays (~4.5 min per batch, ~32 min total run) to remain well within GitHub API limits (5,000 req/hr) and secondary abuse thresholds.
+  4. **Report artifact:** Persisted detailed findings, schema, and issue generation specs in `/tmp/wealthwise-p43-e-issue-inventory-plan.md`.
+- Pure documentation and repository-process scope; schema remains version 24; no runtime behavior changed.
+- Physical-device checks: none required (no user-facing application behavior changed).
+- Ordered six gates pass: Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
 
 ## P31 Community and project health deliverables (Done; CR-149)
 
@@ -1076,19 +1087,17 @@ Not adopted in CR-106:
 The remaining tasks recorded as Planned on `develop` across dashboard, roadmap, and memory are:
 
 1. **P7 (Cloud Backup — Google Drive):** Research, pure domain scheduling model, Settings UI, Wi-Fi gating, offline handling, and tests (P7-A through P7-D).
-2. **P31 (Project Health & Community):** Community guidelines, issue templates, accessibility statement/audit, and privacy statement (P31-A through P31-D).
-3. **P33 (Widgets):** Platform widget research and implementation planning for Android and iOS (P33-A through P33-C).
-4. **P34 (Quick Capture):** Quick-capture platform research, home-screen shortcuts, and gesture features (P34-A through P34-C).
-5. **P35 (Transaction Auto-Detection):** SMS/notification transaction detection permissions/platform research, scope validation, and implementation planning (P35-A through P35-C).
-6. **P36 (Notes):** Notes design and implementation, media, storage, backup compatibility, and demo data (P36-A through P36-D).
-7. **P37 (Tutorials):** Accessible, replayable in-app walkthroughs and feature introductions (P37-A through P37-C).
-8. **P38 (Skeleton Loaders):** Identify real asynchronous loading states, then implement and verify skeleton loaders (P38-A through P38-C).
-9. **P39 (Hardening & Audits):** Project audit covering security, privacy, permissions, recovery, dependencies, test debt, and onboarding, followed by remediation plan (P39-A through P39-H).
-10. **P40 (Context Hygiene):** Measure documentation size/read costs, then archive completed-phase narrative from main ledger (P40-A through P40-B).
-11. **P43-E (GitHub Issue Management):** Verify GitHub issue inventory and assess batching, API limits, and noise before separately tracked issue-creation work.
-12. **P44 (Spending Heat Map):** Transactions spending heat map with selector, screen, demo data, accessibility, and device checks (P44-A through P44-D).
+2. **P33 (Widgets):** Platform widget research and implementation planning for Android and iOS (P33-A through P33-C).
+3. **P34 (Quick Capture):** Quick-capture platform research, home-screen shortcuts, and gesture features (P34-A through P34-C).
+4. **P35 (Transaction Auto-Detection):** SMS/notification transaction detection permissions/platform research, scope validation, and implementation planning (P35-A through P35-C).
+5. **P36 (Notes):** Notes design and implementation, media, storage, backup compatibility, and demo data (P36-A through P36-D).
+6. **P37 (Tutorials):** Accessible, replayable in-app walkthroughs and feature introductions (P37-A through P37-C).
+7. **P38 (Skeleton Loaders):** Identify real asynchronous loading states, then implement and verify skeleton loaders (P38-A through P38-C).
+8. **P39 (Hardening & Audits):** Project audit covering security, privacy, permissions, recovery, dependencies, test debt, and onboarding, followed by remediation plan (P39-A through P39-H, with P39-C complete).
+9. **P40 (Context Hygiene):** Measure documentation size/read costs, then archive completed-phase narrative from main ledger (P40-A through P40-B).
+10. **P44 (Spending Heat Map):** Transactions spending heat map with selector, screen, demo data, accessibility, and device checks (P44-A through P44-D).
 
-*(Note: P21-F and P43-B were previously completed, verified, and released; P29-U-R1 is completed under CR-147; device check O80 is Pass; O81 is Not run; no release candidate or release lifecycle work is pending.)*
+*(Note: P21-F, P31, P43-B, and P43-E are Done; P29-U-R1 is completed under CR-147; device check O80 is Pass; O81 is Not run; no release candidate or release lifecycle work is pending.)*
 
 ## Phase P7 Google Drive automated backup (planned)
 
