@@ -1,6 +1,8 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-25 | Updates: owner and AI agents -->
 
 # Status
+- **CR-171 (2026-11-25) — Complete `CHANGELOG.md` for all published releases and add mandatory update rule.**
+  Completed `CHANGELOG.md` with verified entries for all five published releases (`v1.0.0` through `v1.3.0`, fixing `v1.1.0` date/content and adding `v1.1.1`, `v1.2.0`, and `v1.3.0`) plus `[Unreleased]`. Wired the mandatory `CHANGELOG.md` update rule into `AGENTS.md`, `docs/releases/README.md`, `docs/releases/TEMPLATE.md`, and `docs/releases/RELEASE_PROMPT.md`. Verified `app/about.tsx` and `AboutScreen.test.tsx` (`https://github.com/sahilsheikh-dev/WealthWise/blob/main/CHANGELOG.md`), and added regression assertions in `progressLedger.test.ts`. Issue `#566`. Documentation only; schema remains version 24.
 - **CR-170 (2026-11-25) — Record owner-reported physical-device check O85 as Pass.**
   Recorded owner-reported physical-device verification **Pass** for check `O85` (Expo SDK 58 / React Native 0.88.1 runtime, bottom tab navigation (`navigateToTab`), forms, SQLite persistence, local notifications, biometrics, and backup export/import on physical Android device) in `docs/releases/device-test-checklist.md` under `## Next release device checks`. Confirmed metadata: `realme Narzo 60 Pro 5g`, `15 Vanilla Ice Cream`, `sahilsheikh-dev`, `2026-11-25`. All `## Next release device checks` entries are now Pass. Issue `#565`. Documentation only; schema remains version 24.
 - **P39-E-R1 / CR-169 (2026-11-25) — Upgrade to Expo SDK 58 and resolve `DEC-P39-DEPS-01`.**
