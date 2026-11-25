@@ -1,6 +1,8 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-24 | Updates: owner and AI agents -->
 
 # Status
+- **CR-167 (2026-11-25) — Refresh remote snapshot, update snapshot/issue-tracking rules, and backfill missing Model A GitHub issues.**
+  Refreshed the pending remote snapshot at `2026-11-25T12:28:13+05:30` via `scripts/export-remote-snapshot.sh` (`develop=f3da010`). Updated `AGENTS.md`, `docs/memory/rules.md`, `docs/memory/README.md`, and `docs/memory/working-style.md` so remote snapshots are refreshed whenever remote state changes or at task start if stale, and any approved work lacking a GitHub issue gets an issue created/linked immediately and closed (`status:done`) with verified commits, PRs, merge SHAs, and gate evidence. Created and closed missing Model A issues `#548`–`#555` (`CR-159`–`CR-165`, `P39-H-R1`/`CR-166`) and opened `#556` (`CR-167`). Pure documentation/process scope; schema remains version 24.
 - **P39-H-R1 / CR-166 (2026-11-25) — P39 audit remediations and Expo SDK 57 patch alignment.**
   Implemented the requested P39 audit remediations on `phase/39-release-audit-and-hardening`:
   1. *SQLite fallback warning (`P39-D`):* Wired `onSQLiteFailure` in `stateStorage.native.ts` to `sqliteFallback.ts` and `StorageErrorBanner.tsx` (`storageWarning` + `dismissStorageWarning`) so SQLite-to-AsyncStorage fallback displays a clear non-intrusive warning confirming data is preserved while keeping `console.warn` logging intact.

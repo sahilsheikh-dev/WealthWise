@@ -52,9 +52,12 @@ Before repository work, the owner should provide a fresh remote snapshot and
 terminal evidence. Keep both under `/tmp/wealthwise/remote-snapshot/` (other
 WealthWise temporary outputs belong under `/tmp/wealthwise/reports/`,
 `/tmp/wealthwise/logs/`, and `/tmp/wealthwise/build-artifacts/`); agents
-must not run the export script when the task prohibits network access. After
-every manual merge, refresh the snapshot before the next agent task so refs,
-PR records, and merge state describe the same point in time.
+must not run the export script when the task prohibits network access.
+After every manual merge, refresh the snapshot before the next agent task—and
+refresh the snapshot with `scripts/export-remote-snapshot.sh` whenever remote state
+changes (PR/issue updates or tag/release changes) or at task start if the latest
+snapshot is older than current remote changes—so refs, PR records, issues, and
+merge state describe the same point in time.
 
 For manual authenticated terminal work, start a recording session and finish it
 with `exit`:
