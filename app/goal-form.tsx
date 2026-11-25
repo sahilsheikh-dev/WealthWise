@@ -25,12 +25,13 @@ import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
 import { confirmAsync } from '../src/lib/confirm';
 import { useTheme } from '../src/theme/useTheme';
+import { closeRouteSafely, singleParam } from '../src/lib/routeParams';
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
 export default function GoalFormScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
-  const goalId = Array.isArray(id) ? id[0] : id;
+  const goalId = singleParam(id);
   const data = useAppStore((state) => state.data);
   const lastError = useAppStore((state) => state.lastError);
   const actions = useAppActions();
@@ -104,7 +105,7 @@ export default function GoalFormScreen() {
   };
 
   if (goalId && !goal) return (
-    <FormScreen title="Goal" onClose={() => router.back()} isDirty={false} footer={null}>
+    <FormScreen title="Goal" onClose={() => closeRouteSafely('/(tabs)/goals')} isDirty={false} footer={null}>
       <EmptyState title="Goal not found" />
     </FormScreen>
   );

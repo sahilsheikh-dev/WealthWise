@@ -41,6 +41,8 @@ import { suggestedValuationMethod } from '../src/domain/valuation';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
+import { closeRouteSafely, singleParam } from '../src/lib/routeParams';
+
 const frequencies: Frequency[] = ['daily', 'weekly', 'monthly', 'yearly'];
 const compoundingOptions = ['monthly', 'quarterly', 'halfYearly', 'yearly', 'simple'] as const;
 const valuationMethodOptions = [
@@ -66,13 +68,13 @@ export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenEr
 
 export default function InvestmentFormScreen() {
   const { id, fromTransaction } = useLocalSearchParams<{ id?: string; fromTransaction?: string }>();
-  const holdingId = Array.isArray(id) ? id[0] : id;
+  const holdingId = singleParam(id);
   const isTransactionPicker = fromTransaction === '1';
   const data = useAppStore((state) => state.data);
   const holding = data.holdings.find((item) => item.id === holdingId);
   const [kind, setKind] = useState<InvestmentKind>('recurring');
   const [name, setName] = useState('');
-  if (holdingId && !holding) return <FormScreen title="Investment" onClose={() => router.back()} isDirty={false} footer={null}><EmptyState title="Investment not found" /></FormScreen>;
+  if (holdingId && !holding) return <FormScreen title="Investment" onClose={() => closeRouteSafely('/assets')} isDirty={false} footer={null}><EmptyState title="Investment not found" /></FormScreen>;
   if (holding?.kind === 'plan') return <PlanEditor plan={holding} onNameChange={setName} />;
   if (holding?.kind === 'manual') return <ManualEditor holding={holding} onNameChange={setName} />;
   return (
