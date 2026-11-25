@@ -2,6 +2,10 @@
 
 # Open items
 
+## P40-A Documentation size and read-cost audit (Done; CR-172; #461)
+
+- Subtask P40-A (CR-172, 2026-11-25): Measured `AGENTS.md`, `docs/PROGRESS.md`, and `docs/memory/*` (17,359 lines / 1,751,606 bytes / ~436,456 estimated tokens at `chars / 4`; `docs/PROGRESS.md` alone is 13,495 lines / 1,443,604 bytes / ~359,592 tokens, with 78.8% in sections `## 10`, `## 6`, `## 4`, and `## 11`), plus 5 doc-parsing Jest suites (96 `it()` blocks, 1,312 `expect()` assertions). Full report stored outside Git at `/tmp/wealthwise/reports/p40-a-doc-size-audit.md`. Unblocks `P40-B` (`#462`). Issue `#461`.
+
 ## CR-171 Complete CHANGELOG.md and add mandatory update rule (Done; #566)
 
 - Subtask CR-171 (2026-11-25): Completed `CHANGELOG.md` for all five published releases (`[1.3.0] - 2026-11-22`, `[1.2.0] - 2026-11-11`, `[1.1.1] - 2026-11-09`, `[1.1.0] - 2026-11-08`, `[1.0.0] - 2026-11-07`) plus `[Unreleased]`. Added the mandatory per-release `CHANGELOG.md` update rule to `AGENTS.md`, `docs/releases/README.md`, `docs/releases/TEMPLATE.md`, and `docs/releases/RELEASE_PROMPT.md`. Verified `app/about.tsx` and `AboutScreen.test.tsx` changelog link, and added regression assertions in `progressLedger.test.ts`. Issue `#566`. Documentation only; schema remains version 24.
