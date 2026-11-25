@@ -2,6 +2,13 @@
 
 # Open items
 
+## P39-E-R1 Expo SDK 58 upgrade and DEC-P39-DEPS-01 resolution (Done; CR-169; #562; device check O85 Not run)
+
+- Subtask P39-E-R1 (CR-169, 2026-11-25):
+  1. **SDK 58 upgrade:** Upgraded `expo` (`^58.0.26`), `react-native` (`0.88.1`), `react` (`19.3.0`), `expo-router` (`~58.0.32`), and all compatible SDK 58 packages, plus `@react-native/jest-preset` and `react-test-renderer@19.3.0`.
+  2. **Advisory resolution (`DEC-P39-DEPS-01`):** `npm ls decode-uri-component` is empty and `npm audit` reports 0 critical/0 high advisories (27 moderate dev/CLI advisories remain in `glob`/`minimatch`).
+  3. **Physical-device check pending:** Added `O85` (`Not run`) in `docs/releases/device-test-checklist.md` for Expo SDK 58 / React Native 0.88.1 runtime verification. Schema version 24 preserved.
+
 ## Record physical-device checks O83 and O84 as Pass (Done; CR-168; #559)
 
 - Subtask CR-168 (2026-11-25): Recorded owner-reported physical-device verification Pass for `O83` and `O84` in `docs/releases/device-test-checklist.md` with confirmed metadata (`realme Narzo 60 Pro 5g`, `15 Vanilla Ice Cream`, `sahilsheikh-dev`, `2026-11-25`).

@@ -48,7 +48,13 @@ export default function OnboardingScreen() {
       bodyContentStyle={styles.scrollContent}
       footer={(
         <View style={styles.footer}>
-          <Button label="Continue" icon="arrow-right" variant="primary" disabled={isSubmitting} onPress={handleSubmit(finish)} />
+          <Button
+            label="Continue"
+            icon="arrow-right"
+            variant="primary"
+            disabled={isSubmitting}
+            onPress={() => handleSubmit(finish)()}
+          />
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Skip for now"
