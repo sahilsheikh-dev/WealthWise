@@ -98,3 +98,4 @@ authoritative rationale and history.
 
 - [DEC-DOCS-R8-OWNER-ACTIONS](../PROGRESS.md#docs-remote-sync-2026-11-22): owner-run and remote-only facts require verifiable evidence, an action log and explicit pending-action reporting.
 - [DEC-DOCS-DEVICE-CHECKLIST-RELEASE-GATE](../PROGRESS.md#dec-docs-device-checklist-release-gate-2026-11-22): keep device results in immutable release sections and block release work until every check passes or a named-ID written waiver is recorded.
+- [DEC-P39-DEPS-01](../PROGRESS.md#dec-p39-deps-01-2026-11-25): accept the `decode-uri-component@0.2.2` ReDoS risk (`GHSA-vcc3-ghjq-m6fr`, `GHSA-qr28-fpjm-wq7f` via `expo-router@57.0.31` -> `query-string@7.1.3`) until the next planned Expo SDK upgrade; vulnerability is not fixed, mitigated by offline-first runtime, re-evaluate on next Expo SDK upgrade.

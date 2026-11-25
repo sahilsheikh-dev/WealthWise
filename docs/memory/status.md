@@ -1,6 +1,10 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-24 | Updates: owner and AI agents -->
 
 # Status
+- **CR-164 (2026-11-25) — Resolve `DEC-P39-DEPS-01` by owner approval.**
+  Recorded owner approval resolving `DEC-P39-DEPS-01`: accept the `decode-uri-component@0.2.2` ReDoS risk (`GHSA-vcc3-ghjq-m6fr` Moderate, `GHSA-qr28-fpjm-wq7f` High via `expo-router@57.0.31` → `query-string@7.1.3`) until the next planned Expo SDK upgrade.
+  - *Constraint & mitigation:* Upstream fix requires SemVer-major `expo-router@58.0.32` (Expo SDK 58), incompatible with Expo SDK 57 (`expo@57.0.33`); mitigated by 100% offline-first runtime (`offlineRuntime.test.ts`). The vulnerability is not fixed.
+  - *Follow-up:* Re-evaluate during the next planned Expo SDK upgrade. No dependencies upgraded; schema remains version 24.
 - **CR-163 (2026-11-25) — Historical PR label reconciliation and DEC-P39-DEPS-01 review.**
   Completed fresh remote snapshot export (`2026-11-25T10:01:47+05:30`, terminal capture `/tmp/wealthwise-remote-snapshot/owner-terminal-2026-11-25.log`), historical PR label reconciliation, and `DEC-P39-DEPS-01` verification:
   1. *PR label reconciliation:* Audited all 277 PRs (276 `MERGED`, 1 `CLOSED` [#39]). Applied missing taxonomy labels to 276 PRs (`ok=276, fail=0`, 0 new labels created; corrected 21 `phase:p28` draft entries to `lifecycle:qa-and-release`); PR #39 already complete (`phase:p01`, `type:chore`, `status:superseded`, `wontfix`). Post-update check verified 277/277 PRs labeled (0 unlabeled). Mapping and results saved in `/tmp/wealthwise-pr-label-reconciliation.json` and `/tmp/wealthwise-pr-label-apply-results.json`.

@@ -2,7 +2,15 @@
 
 # Open items
 
-## Historical PR label reconciliation and DEC-P39-DEPS-01 review (Done; CR-163; DEC-P39-DEPS-01 remains Open)
+## Resolve DEC-P39-DEPS-01 by owner approval (Done; CR-164)
+
+- Subtask CR-164 (2026-11-25): Resolved owner decision `DEC-P39-DEPS-01` per explicit owner approval:
+  1. **Decision:** Accept the `decode-uri-component@0.2.2` ReDoS risk (`GHSA-vcc3-ghjq-m6fr` Moderate `<=0.4.2`, `GHSA-qr28-fpjm-wq7f` High `<=0.5.0` via `expo-router@57.0.31` → `query-string@7.1.3`) until the next planned Expo SDK upgrade.
+  2. **Constraint & mitigation:** `npm audit` fix requires SemVer-major `expo-router@58.0.32` (Expo SDK 58), incompatible with Expo SDK 57 (`expo@57.0.33`). Mitigated by 100% offline-first runtime (`offlineRuntime.test.ts`, zero network calls) and internal routes (`scheme: "wealthwise"`). The vulnerability is not fixed.
+  3. **Follow-up condition:** Re-evaluate `decode-uri-component` / `query-string` / `expo-router` advisories during the next planned Expo SDK upgrade.
+- Pure documentation and decision-tracking scope; no dependencies upgraded; schema remains version 24.
+
+## Historical PR label reconciliation and DEC-P39-DEPS-01 review (Done; CR-163; DEC-P39-DEPS-01 resolved in CR-164)
 
 - Subtask CR-163 (2026-11-25):
   1. **Fresh remote snapshot:** Exported via `export-remote-snapshot.sh` at `2026-11-25T10:01:47+05:30` with terminal session capture in `/tmp/wealthwise-remote-snapshot/owner-terminal-2026-11-25.log`.
@@ -95,7 +103,7 @@
   1. **Production reachability triage:** 11 total advisories (0 critical, 3 high, 8 moderate). `decode-uri-component` in `expo-router`/`query-string` is the sole production-reachable advisory, mitigated by offline runtime.
   2. **Tooling advisories:** `minimatch`, `tar`, `micromatch`, and `braces` affect development/build steps only.
   3. **Strict security posture:** No `npm audit fix --force` executed; no arbitrary install scripts approved.
-  4. **Open owner decision:** `DEC-P39-DEPS-01` — Accept `decode-uri-component` ReDoS risk until next planned Expo SDK upgrade.
+  4. **Resolved owner decision (`DEC-P39-DEPS-01`):** Accepted `decode-uri-component@0.2.2` ReDoS risk until the next planned Expo SDK upgrade per owner approval (CR-164, 2026-11-25); vulnerability is not fixed and will be re-evaluated during the next Expo SDK upgrade.
   5. **Report artifact:** Persisted in `/tmp/wealthwise-p39-e-dependency-risk-audit.md`.
 - Pure audit/documentation scope; schema remains version 24; no runtime behavior changed.
 - Physical-device checks: none required (no user-facing application behavior changed).
