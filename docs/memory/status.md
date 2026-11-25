@@ -1,6 +1,8 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-25 | Updates: owner and AI agents -->
 
 # Status
+- **P40-A / CR-172 (2026-11-25) — Measure documentation size, parsing-test coverage, and per-prompt read cost.**
+  Measured `AGENTS.md` (319 lines, 21,941 bytes, ~5,477 tokens), `docs/PROGRESS.md` (13,495 lines, 1,443,604 bytes, ~359,592 tokens), and all 9 `docs/memory/*` files (3,545 lines, 286,061 bytes, ~71,388 tokens; total 17,359 lines, 1,751,606 bytes, ~436,456 tokens using `chars / 4`). Four narrative sections (`## 10`, `## 6`, `## 4`, `## 11`) account for 78.8% (~284.5k tokens) of `docs/PROGRESS.md`. Five doc-parsing Jest suites cover 96 `it()` blocks / 1,312 `expect()` assertions (`progressLedger`, `memoryDocs`, `branchingDocs` run in 3.096 s). Full report saved outside Git at `/tmp/wealthwise/reports/p40-a-doc-size-audit.md`. Issue `#461`. Schema remains version 24.
 - **CR-171 (2026-11-25) — Complete `CHANGELOG.md` for all published releases and add mandatory update rule.**
   Completed `CHANGELOG.md` with verified entries for all five published releases (`v1.0.0` through `v1.3.0`, fixing `v1.1.0` date/content and adding `v1.1.1`, `v1.2.0`, and `v1.3.0`) plus `[Unreleased]`. Wired the mandatory `CHANGELOG.md` update rule into `AGENTS.md`, `docs/releases/README.md`, `docs/releases/TEMPLATE.md`, and `docs/releases/RELEASE_PROMPT.md`. Verified `app/about.tsx` and `AboutScreen.test.tsx` (`https://github.com/sahilsheikh-dev/WealthWise/blob/main/CHANGELOG.md`), and added regression assertions in `progressLedger.test.ts`. Issue `#566`. Documentation only; schema remains version 24.
 - **CR-170 (2026-11-25) — Record owner-reported physical-device check O85 as Pass.**
