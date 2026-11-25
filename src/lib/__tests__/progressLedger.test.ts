@@ -2120,8 +2120,8 @@ describe('permanent progress ledger', () => {
     expect(roadmap).toContain('P43-E — GitHub issue strategy');
     expect(roadmap).toContain('Done; CR-150');
 
-    // Report existence in /tmp
-    const reportPath = '/tmp/wealthwise-p43-e-issue-inventory-plan.md';
+    // Report existence in /tmp/wealthwise/reports/
+    const reportPath = '/tmp/wealthwise/reports/wealthwise-p43-e-issue-inventory-plan.md';
     expect(existsSync(reportPath)).toBe(true);
     const report = readFileSync(reportPath, 'utf8');
     expect(report).toContain('260 issues');
@@ -2154,7 +2154,7 @@ describe('permanent progress ledger', () => {
     expect(roadmap).toContain('P39-A — Read-only audit');
     expect(roadmap).toContain('Done; CR-151');
 
-    const reportPath = '/tmp/wealthwise-p39-a-master-audit.md';
+    const reportPath = '/tmp/wealthwise/reports/wealthwise-p39-a-master-audit.md';
     expect(existsSync(reportPath)).toBe(true);
     const report = readFileSync(reportPath, 'utf8');
     expect(report).toContain('P0 (Critical / Blocker)');
@@ -2186,7 +2186,7 @@ describe('permanent progress ledger', () => {
     expect(roadmap).toContain('P39-H — Group findings into the smallest');
     expect(roadmap).toContain('Done; CR-157');
 
-    const reportPath = '/tmp/wealthwise-p39-h-remediation-plan.md';
+    const reportPath = '/tmp/wealthwise/reports/wealthwise-p39-h-remediation-plan.md';
     expect(existsSync(reportPath)).toBe(true);
     const report = readFileSync(reportPath, 'utf8');
     expect(report).toContain('P39-H');
@@ -2217,7 +2217,7 @@ describe('permanent progress ledger', () => {
     expect(roadmap).toContain('P39-G — Walk through onboarding');
     expect(roadmap).toContain('Done; CR-156');
 
-    const reportPath = '/tmp/wealthwise-p39-g-clean-install-walkthrough.md';
+    const reportPath = '/tmp/wealthwise/reports/wealthwise-p39-g-clean-install-walkthrough.md';
     expect(existsSync(reportPath)).toBe(true);
     const report = readFileSync(reportPath, 'utf8');
     expect(report).toContain('P39-G');
@@ -2248,7 +2248,7 @@ describe('permanent progress ledger', () => {
     expect(roadmap).toContain('P39-F — Inventory TODO/FIXME markers');
     expect(roadmap).toContain('Done; CR-155');
 
-    const reportPath = '/tmp/wealthwise-p39-f-test-debt-audit.md';
+    const reportPath = '/tmp/wealthwise/reports/wealthwise-p39-f-test-debt-audit.md';
     expect(existsSync(reportPath)).toBe(true);
     const report = readFileSync(reportPath, 'utf8');
     expect(report).toContain('P39-F');
@@ -2279,7 +2279,7 @@ describe('permanent progress ledger', () => {
     expect(roadmap).toContain('P39-E — Triage current');
     expect(roadmap).toContain('Done; CR-154');
 
-    const reportPath = '/tmp/wealthwise-p39-e-dependency-risk-audit.md';
+    const reportPath = '/tmp/wealthwise/reports/wealthwise-p39-e-dependency-risk-audit.md';
     expect(existsSync(reportPath)).toBe(true);
     const report = readFileSync(reportPath, 'utf8');
     expect(report).toContain('P39-E');
@@ -2311,7 +2311,7 @@ describe('permanent progress ledger', () => {
     expect(roadmap).toContain('P39-D — Extend P30');
     expect(roadmap).toContain('Done; CR-153');
 
-    const reportPath = '/tmp/wealthwise-p39-d-recovery-audit.md';
+    const reportPath = '/tmp/wealthwise/reports/wealthwise-p39-d-recovery-audit.md';
     expect(existsSync(reportPath)).toBe(true);
     const report = readFileSync(reportPath, 'utf8');
     expect(report).toContain('P39-D');
@@ -2342,7 +2342,7 @@ describe('permanent progress ledger', () => {
     expect(roadmap).toContain('P39-B — Verify secrets');
     expect(roadmap).toContain('Done; CR-152');
 
-    const reportPath = '/tmp/wealthwise-p39-b-security-debug-audit.md';
+    const reportPath = '/tmp/wealthwise/reports/wealthwise-p39-b-security-debug-audit.md';
     expect(existsSync(reportPath)).toBe(true);
     const report = readFileSync(reportPath, 'utf8');
     expect(report).toContain('offlineRuntime.test.ts');
@@ -2517,5 +2517,22 @@ describe('permanent progress ledger', () => {
     expect(openItems).toContain('Resolved owner decision (`DEC-P39-DEPS-01`)');
     expect(status).toContain('CR-164');
     expect(status).toContain('DEC-P39-DEPS-01');
+  });
+
+  it('records /tmp/wealthwise artifact organization and exporter relocation under CR-165', () => {
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const independentEntities = ledger.split('## 13. Independent entities')[1] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-165 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-165 |'))).toHaveLength(1);
+    expect(independentEntities.split('\n').filter((line) => line.startsWith('| CR-165 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-165');
+    expect(matrix).toContain('scripts/export-remote-snapshot.sh');
+    expect(openItems).toContain('CR-165');
+    expect(status).toContain('CR-165');
   });
 });

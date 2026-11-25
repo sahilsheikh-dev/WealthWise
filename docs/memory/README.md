@@ -49,7 +49,9 @@ personal financial data, credentials, tokens or private account information here
 ## Remote snapshot export and terminal evidence
 
 Before repository work, the owner should provide a fresh remote snapshot and
-terminal evidence. Keep both under `/tmp/wealthwise-remote-snapshot/`; agents
+terminal evidence. Keep both under `/tmp/wealthwise/remote-snapshot/` (other
+WealthWise temporary outputs belong under `/tmp/wealthwise/reports/`,
+`/tmp/wealthwise/logs/`, and `/tmp/wealthwise/build-artifacts/`); agents
 must not run the export script when the task prohibits network access. After
 every manual merge, refresh the snapshot before the next agent task so refs,
 PR records, and merge state describe the same point in time.
@@ -58,7 +60,7 @@ For manual authenticated terminal work, start a recording session and finish it
 with `exit`:
 
 ```bash
-script -a /tmp/wealthwise-remote-snapshot/owner-terminal-$(date +%F).log
+script -a /tmp/wealthwise/remote-snapshot/owner-terminal-$(date +%F).log
 # perform the owner-run GitHub/Git actions in this recorded shell
 exit
 ```
@@ -69,8 +71,8 @@ for actions that Git refs or the JSON exports cannot establish. If transcript
 text is reconstructed from chat, label it as reconstructed and identify its
 source; do not call it an original terminal capture.
 
-Use the owner's authenticated `export-remote-snapshot.sh` from the repository
-root to export into `/tmp/wealthwise-remote-snapshot/`. The export includes
+Use the owner's authenticated `scripts/export-remote-snapshot.sh` from the repository
+root to export into `/tmp/wealthwise/remote-snapshot/`. The export includes
 `prs.json` fields `number`, `title`, `state`, `base` (`baseRefName`),
 `head` (`headRefName`), `headRefOid`,
 `createdAt`, `updatedAt`, `mergedAt`, `closedAt`, `mergeCommit`, `mergedBy`,
