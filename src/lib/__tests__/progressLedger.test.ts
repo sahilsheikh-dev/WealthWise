@@ -1,7 +1,28 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const ledger = readFileSync(join(process.cwd(), 'docs/PROGRESS.md'), 'utf8');
+function loadLedgerWithArchives(): string {
+  let combined = readFileSync(join(process.cwd(), 'docs/PROGRESS.md'), 'utf8');
+  const sectionArchives: Array<[string, string]> = [
+    ['## 5. Phase history', 'architecture-and-decisions.md'],
+    ['## 6. Prompt and session log', 'phase-history.md'],
+    ['## 7. Change-request register', 'prompt-and-session-log.md'],
+    ['## 8. Known issues and risks', 'change-request-register.md'],
+    ['## 11. Session and release log', 'verification-matrix.md'],
+    ['## 12. Phase branch index', 'session-and-release-log.md'],
+  ];
+
+  for (const [nextHeading, archiveFile] of sectionArchives) {
+    const archivePath = join(process.cwd(), 'docs/memory/archive', archiveFile);
+    if (!existsSync(archivePath)) continue;
+    const archiveRaw = readFileSync(archivePath, 'utf8');
+    const body = archiveRaw.replace(/^>[^\n]*\n+\# [^\n]+\n+/, '');
+    combined = combined.replace(`\n${nextHeading}`, `\n${body}\n${nextHeading}`);
+  }
+  return combined;
+}
+
+const ledger = loadLedgerWithArchives();
 
 describe('permanent progress ledger', () => {
   it('keeps numbered sections aligned with the contents index', () => {
@@ -159,7 +180,7 @@ describe('permanent progress ledger', () => {
     const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
 
     expect(dashboard.split('\n').find((line) => line.startsWith('| P40-B |')))
-      .toContain('| Planned |');
+      .toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P42-A |')))
       .toContain('| Done; Revised by P42-A-R1 |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P42-A-R1 |')))
@@ -319,7 +340,7 @@ describe('permanent progress ledger', () => {
     expect(p20uR1).toContain('start month, frequency, due day');
     expect(p20uR1).toContain('both scopes');
     expect(p20uR1).toContain('H1–H5 findings are recorded in CONT3');
-    expect(ledger).toMatch(/Overall progress (?:████████░░|█████████░) (?:79|80|82|83|84|85|86|87)% \((?:158\/200|159\/201|160\/202|161\/203|162\/204|163\/205|163\/207|164\/207|165\/208|166\/209|167\/209|168\/209|172\/209|173\/209|174\/209|175\/209|176\/209|177\/209|178\/209|179\/209|180\/209|181\/210|182\/211|183\/212|184\/212)\)/);
+    expect(ledger).toMatch(/Overall progress (?:████████░░|█████████░) (?:79|80|82|83|84|85|86|87)% \((?:158\/200|159\/201|160\/202|161\/203|162\/204|163\/205|163\/207|164\/207|165\/208|166\/209|167\/209|168\/209|172\/209|173\/209|174\/209|175\/209|176\/209|177\/209|178\/209|179\/209|180\/209|181\/210|182\/211|183\/212|184\/212|185\/212)\)/);
     expect(ledger).toMatch(/P20\s+██████████ (?:100%|98%) \((?:43\/43|44\/44|45\/45|46\/46|47\/47|48\/48|48\/49|49\/49|50\/50|51\/51)\)/);
     const o73 = checklist.split('\n').find((line) => line.startsWith('| O73 |'));
     expect(o73).toContain('one-time and recurring');
@@ -576,8 +597,7 @@ describe('permanent progress ledger', () => {
       'P36-A', 'P36-B', 'P36-C', 'P36-D',
       'P37-A', 'P37-B', 'P37-C',
       'P38-A', 'P38-B', 'P38-C',
-      // P39 complete; P40-A complete
-      'P40-B',
+      // P39 complete; P40-A/B complete
     ];
 
     for (const id of plannedPartIds) {
@@ -1200,7 +1220,7 @@ describe('permanent progress ledger', () => {
     expect(registerRow).toContain('185a5ea125f64ac104344f00ad013d68cdb7a946');
     expect(registerRow).toContain('6b50a1d');
     expect(phaseRow).toMatch(/\|\s*(?:43|44|45|46|47|48|49|50|51)\s*\|/);
-    expect(ledger).toMatch(/Overall progress (?:████████░░|█████████░) (?:79|80|82|83|84|85|86|87)% \((?:158\/200|159\/201|160\/202|161\/203|162\/204|163\/205|163\/207|164\/207|165\/208|166\/209|167\/209|168\/209|172\/209|173\/209|174\/209|175\/209|176\/209|177\/209|178\/209|179\/209|180\/209|181\/210|182\/211|183\/212|184\/212)\)/);
+    expect(ledger).toMatch(/Overall progress (?:████████░░|█████████░) (?:79|80|82|83|84|85|86|87)% \((?:158\/200|159\/201|160\/202|161\/203|162\/204|163\/205|163\/207|164\/207|165\/208|166\/209|167\/209|168\/209|172\/209|173\/209|174\/209|175\/209|176\/209|177\/209|178\/209|179\/209|180\/209|181\/210|182\/211|183\/212|184\/212|185\/212)\)/);
     expect(ledger).toMatch(/P20\s+██████████ (?:100%|98%) \((?:43\/43|44\/44|45\/45|46\/46|47\/47|48\/48|48\/49|49\/49|50\/50|51\/51)\)/);
     expect(status).toContain('P20-S-R2-R1 records the verified');
   });
@@ -1233,7 +1253,7 @@ describe('permanent progress ledger', () => {
     expect(registerRow).toContain('CM-2 synchronized local `develop`');
     expect(promptLog.split('\n').filter((line) => line.startsWith('| P20-W-R1 |'))).toHaveLength(1);
     expect(phaseRow).toMatch(/\|\s*(?:43|44|45|46|47|48|49|50|51)\s*\|/);
-    expect(ledger).toMatch(/Overall progress (?:████████░░|█████████░) (?:79|80|82|83|84|85|86|87)% \((?:158\/200|159\/201|160\/202|161\/203|162\/204|163\/205|163\/207|164\/207|165\/208|166\/209|167\/209|168\/209|172\/209|173\/209|174\/209|175\/209|176\/209|177\/209|178\/209|179\/209|180\/209|181\/210|182\/211|183\/212|184\/212)\)/);
+    expect(ledger).toMatch(/Overall progress (?:████████░░|█████████░) (?:79|80|82|83|84|85|86|87)% \((?:158\/200|159\/201|160\/202|161\/203|162\/204|163\/205|163\/207|164\/207|165\/208|166\/209|167\/209|168\/209|172\/209|173\/209|174\/209|175\/209|176\/209|177\/209|178\/209|179\/209|180\/209|181\/210|182\/211|183\/212|184\/212|185\/212)\)/);
     expect(ledger).toMatch(/P20\s+██████████ (?:100%|98%) \((?:43\/43|44\/44|45\/45|46\/46|47\/47|48\/48|48\/49|49\/49|50\/50|51\/51)\)/);
     expect(status).toContain('P20-W-R1 records task PR #174 and phase PR #175');
     expect(openItems).toContain('STOP GATE RESOLVED (DEC-P20W-D3-SCHEMA24');
@@ -2713,5 +2733,40 @@ describe('permanent progress ledger', () => {
     expect(openItems).toContain('P40-A');
     expect(status).toContain('P40-A');
     expect(status).toContain('1,443,604 bytes');
+  });
+
+  it('archives completed-phase narrative under docs/memory/archive and preserves full ledger coverage (P40-B / CR-173)', () => {
+    const mainLedger = readFileSync(join(process.cwd(), 'docs/PROGRESS.md'), 'utf8');
+    const memoryIndex = readFileSync(join(process.cwd(), 'docs/memory/README.md'), 'utf8');
+    const archiveIndexPath = join(process.cwd(), 'docs/memory/archive/README.md');
+    expect(existsSync(archiveIndexPath)).toBe(true);
+    const archiveIndex = readFileSync(archiveIndexPath, 'utf8');
+
+    const archiveFiles = [
+      'architecture-and-decisions.md',
+      'phase-history.md',
+      'prompt-and-session-log.md',
+      'change-request-register.md',
+      'verification-matrix.md',
+      'session-and-release-log.md',
+    ];
+
+    for (const file of archiveFiles) {
+      const fullPath = join(process.cwd(), 'docs/memory/archive', file);
+      expect(existsSync(fullPath)).toBe(true);
+      expect(archiveIndex).toContain(file);
+      expect(mainLedger).toContain(`memory/archive/${file}`);
+      expect(readFileSync(fullPath, 'utf8')).toContain('../PROGRESS.md');
+    }
+
+    expect(mainLedger).toContain('memory/archive/README.md');
+    expect(memoryIndex).toContain('archive/README.md');
+    expect(Buffer.byteLength(mainLedger, 'utf8')).toBeLessThan(450_000);
+
+    const dashboard = mainLedger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const p40b = dashboard.split('\n').find((line) => line.startsWith('| P40-B |'));
+    expect(p40b).toContain('| Done |');
+    expect(p40b).toMatch(/Placement:\s+rule 3/);
+    expect(mainLedger).toMatch(/P40\s+██████████ 100% \(2\/2\)/);
   });
 });
