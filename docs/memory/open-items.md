@@ -2,6 +2,14 @@
 
 # Open items
 
+## Remote-snapshot refresh rules, GitHub issue-tracking rules, and missing issue backfill (Done; CR-167)
+
+- Subtask CR-167 (2026-11-25):
+  1. **Refreshed remote snapshot:** Executed `bash scripts/export-remote-snapshot.sh` (`2026-11-25T12:28:13+05:30`, `develop=f3da010`) into `/tmp/wealthwise/remote-snapshot/`.
+  2. **Updated standing rules:** Updated `AGENTS.md`, `docs/memory/rules.md`, `docs/memory/README.md`, and `docs/memory/working-style.md` to require conditional remote-snapshot refreshes whenever remote state changes or at task start if stale, and immediate GitHub issue creation/closure with verified commits, PRs, merge SHAs, and gate evidence for any unissued approved work.
+  3. **Backfilled missing Model A issues:** Created and closed `#548` (`CR-159`), `#549` (`CR-160`), `#550` (`CR-161`), `#551` (`CR-162`), `#552` (`CR-163`), `#553` (`CR-164`), `#554` (`CR-165`), and `#555` (`P39-H-R1`/`CR-166`); opened `#556` for `CR-167`.
+- Owner physical-device checks `O83` and `O84` remain `Not run` (owner confirmed they will run them before any future release candidate build/draft). Schema version 24 preserved.
+
 ## P39-H-R1 P39 audit remediations and SDK 57 patch alignment (Done; CR-166; device checks O83–O84 Not run)
 
 - Subtask P39-H-R1 (CR-166, 2026-11-25):
