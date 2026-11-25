@@ -18,7 +18,11 @@ import { ActionToastHost } from '../src/components/ActionToastHost';
 import OnboardingScreen from './onboarding';
 import { SecurityProvider } from '../src/components/SecurityProvider';
 import { StorageErrorBanner } from '../src/components/StorageErrorBanner';
-import { NotificationResponseHandler, ReminderRuntime } from '../src/components/ReminderRuntime';
+import {
+  NotificationResponseHandler,
+  ReminderRuntime,
+  TransactionDetectionRuntime,
+} from '../src/components/ReminderRuntime';
 import { FirstLaunchReminderPrompt } from '../src/components/FirstLaunchReminderPrompt';
 import { useAppStore } from '../src/data/store';
 import { ThemeProvider } from '../src/theme/ThemeProvider';
@@ -42,6 +46,7 @@ function AppContent() {
       ) : (
         <>
           <ReminderRuntime />
+          <TransactionDetectionRuntime />
           <StorageErrorBanner />
           <LockGate>
             {onboarded ? (
@@ -58,6 +63,7 @@ function AppContent() {
                 <Stack.Screen name="insurance" />
                 <Stack.Screen name="emergency-fund" />
                 <Stack.Screen name="transaction-form" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="transaction-detection" />
                 <Stack.Screen name="link-missing" />
                 <Stack.Screen name="profile-form" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="theme" />

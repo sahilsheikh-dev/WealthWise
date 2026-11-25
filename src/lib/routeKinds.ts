@@ -37,6 +37,7 @@ export const ROUTE_KINDS: Readonly<Record<string, RouteKind>> = {
   reminders: 'stack',
   security: 'stack',
   theme: 'stack',
+  'transaction-detection': 'stack',
   'transaction-form': 'form',
 };
 
