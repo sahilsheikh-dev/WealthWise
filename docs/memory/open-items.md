@@ -2,6 +2,10 @@
 
 # Open items
 
+## P35-A Transaction auto-detection research and plan (Done; CR-176; #440)
+
+- Subtask P35-A (CR-176, 2026-11-25): Completed SMS/notification transaction detection research and implementation plan in `/tmp/wealthwise/reports/p35-a-transaction-detection-research.md`. Recommended Android `NotificationListenerService` (no `READ_SMS`/`RECEIVE_SMS`), 100% local-only parsing with zero raw-message storage, in-app Prominent Disclosure + affirmative opt-in consent, Android 13+ Restricted Settings walkthrough for sideloaded APKs, and reviewable drafts in `metaStore` (iOS unsupported). Unresolved owner questions for P35-B validation: confirm dropping `READ_SMS`, `metaStore` draft queue (schema stays v24), iOS unsupported posture, and `PRIVACY.md` update in P35-C. Issue `#440`. Schema remains version 24.
+
 ## P34-A Quick-capture research and implementation plan (Done; CR-175; #437)
 
 - Subtask P34-A (CR-175, 2026-11-25): Completed quick-capture platform and policy research for Expo SDK 58 / React Native `0.88.1` in `/tmp/wealthwise/reports/p34-a-quick-capture-research.md`. Recommended P34-B (`expo-quick-actions` + Android `TileService` via config plugin + opt-in `expo-notifications` action behind `LockGate`) and P34-C (opt-in foreground-only shake via `expo-sensors`), with double-tap back, key combos, and background gestures out of scope. Unresolved owner questions: whether to include the persistent Notification Action in P34-B, preferred default shortcut items, and P34-C sequencing. Issue `#437`. Schema remains version 24.
