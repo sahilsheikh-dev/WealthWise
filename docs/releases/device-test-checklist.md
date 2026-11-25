@@ -224,7 +224,7 @@ The owner reports O61-O74 passed on 2026-11-22. Tested and validated by sahilshe
 
 ## v1.4.0 device checks
 
-Version 1.4.0 · Candidate 2026-11-25
+Version 1.4.0 · Published 2026-11-25
 
 | Field | Value |
 |---|---|
