@@ -20,27 +20,6 @@ Use only `Pass`, `Fail`, or `Blocked` after running each check. `Not run` remain
 
 | ID | Test | Result | Notes |
 |---|---|---|---|
-| O77 | Verify budget item and section rename on a physical device: rename an expense, investment, or income budget item and a section across month and following scopes; confirm that linked transactions update to display the new category name in Transactions list, filter, and detail views, while preserving the transaction amount, date, budget link, and custom note (even when the note matches the old item or section name). | Pass | P20-Y-R5; owner-reported physical-device verification, 2026-11-23. |
-| O78 | Verify dynamic Budget category filter on a physical device: open Filter panel in Budget, verify category filter chips alongside SortChip defaulting to "All" and listing available categories (Income, Expenses, Needs, Wants, Debt, Assets, Liabilities, and newly created categories); verify selecting each category filters the visible Budget sections correctly, verify filter indicator on Filter icon when active, and verify category persistence across month navigation. | Pass | P20-Z; owner-reported physical-device verification, 2026-11-23. |
-| O79 | Verify Budget filter icon indicator dot behavior and margin on a physical device: confirm that the filter icon in Budget does not show a dot indicator when category filter is "All" (default), matching Assets, Liabilities, and Transactions filter icon appearance; confirm that the dot indicator appears only when a specific category is filtered; confirm that the filter panel margin aligns with the screen layout. | Pass | P20-Z-R1; owner-reported physical-device verification, 2026-11-23. |
-| O80 | Verify persistent sorting preferences across screens on a physical device: change sort order on Transactions, Assets, Liabilities, and Budget; verify preferences persist when switching between screens and after app close and reopen; confirm filters remain separate and unchanged. | Pass | P17-C-R1; owner-reported physical-device verification, 2026-11-23. |
-| O81 | Verify dynamic asset valuation inputs and calculations on a physical device: create and edit one-time and recurring assets with Manual, Interest-based, Unit-based, and Balance-based valuation methods; verify form inputs adjust dynamically for each method (e.g., auto-calculation of units and total value for unit-based, interest rate and compounding for interest-based, read-only calculated balance for balance-based); verify holding value calculation, value update route, and persistence across app restart. | Pass | P29-U-R1; owner-reported physical-device verification, 2026-11-24. |
-| O82 | Verify consistent filter panels and absence of filter icon dot indicator on a physical device: open filter panel across Goals, Assets, Liabilities, Transactions, and Budget; verify Goals offers status (All, In progress, Achieved) and target year filter chips alongside SortChip; verify selecting filters and changing sort orders across all 5 screens keeps sort and filter states independent; verify that the header filter icon never displays a dot indicator initially or after changing sorting or filtering on any screen. | Pass | P20-L-R1; owner-reported physical-device verification, 2026-11-24. |
-| O83 | Verify modal presentation and deep-link parameter fallback on a physical device: open `ef-allocation-form`, `holding-valuation-form`, `liability-closure-form`, `liability-closure-note-form`, and `recurring-plan-stop-form` in-app to confirm modal presentation; open a `wealthwise://` deep link with a missing or invalid ID (for example, `wealthwise://holding-valuation-form?id=missing`) and confirm the safe empty/unavailable screen renders without crashing and Close navigates to a valid screen. | Pass | P39-H-R1; owner-reported physical-device verification, 2026-11-25. |
-| O84 | Verify Demo Mode and production APK behavior after Expo SDK 57 patch alignment on a physical device: enable/use Demo Mode in-app and verify screens, reminders, SQLite persistence, and backup export/import operate normally on the aligned SDK 57 packages. | Pass | P39-H-R1; owner-reported physical-device verification, 2026-11-25. |
-| O85 | Verify Expo SDK 58 / React Native 0.88.1 runtime, bottom tab navigation (`navigateToTab`), forms, SQLite persistence, local notifications, biometrics, and backup export/import on a physical Android device. | Pass | CR-170; owner-reported physical-device verification, 2026-11-25. realme Narzo 60 Pro 5g, 15 Vanilla Ice Cream, sahilsheikh-dev. Expo SDK 58 / React Native 0.88.1 runtime, bottom tabs, forms, SQLite persistence, local notifications, biometrics, and backup export/import verified. |
-
-The owner reports O77 passed on 2026-11-23. Tested and validated by sahilsheikh-dev on physical device realme Narzo 60 Pro 5g running Android 15 Vanilla Ice Cream.
-
-The owner reports O78 and O79 passed on 2026-11-23. Tested and validated by sahilsheikh-dev on physical device realme Narzo 60 Pro 5g running Android 15 Vanilla Ice Cream.
-
-The owner reports O80 passed on 2026-11-23. Tested and validated by sahilsheikh-dev on physical device realme Narzo 60 Pro 5g running Android 15 Vanilla Ice Cream.
-
-The owner reports O81 and O82 passed on 2026-11-24. Tested and validated by sahilsheikh-dev on physical device realme Narzo 60 Pro 5g running Android 15 Vanilla Ice Cream.
-
-The owner reports O83 and O84 passed on 2026-11-25. Tested and validated by sahilsheikh-dev on physical device realme Narzo 60 Pro 5g running Android 15 Vanilla Ice Cream.
-
-The owner reports O85 passed on 2026-11-25. Tested and validated by sahilsheikh-dev on physical device realme Narzo 60 Pro 5g running Android 15 Vanilla Ice Cream. Expo SDK 58 / React Native 0.88.1 runtime, bottom tab navigation, forms, SQLite persistence, local notifications, biometrics, and backup export/import verified.
 
 ## v1.0.0 device checks
 
@@ -242,6 +221,48 @@ Use only `Pass`, `Fail`, or `Blocked` after running each check. `Not run` remain
 The owner reports O75 and O76 passed on 2026-11-22. Tested and validated by sahilsheikh-dev on physical device realme Narzo 60 Pro 5g running Android 15 Vanilla Ice Cream.
 
 The owner reports O61-O74 passed on 2026-11-22. Tested and validated by sahilsheikh-dev on physical device realme Narzo 60 Pro 5g running Android 15 Vanilla Ice Cream.
+
+## v1.4.0 device checks
+
+Version 1.4.0 · Candidate 2026-11-25
+
+| Field | Value |
+|---|---|
+| App version | 1.4.0 |
+| Device model | realme Narzo 60 Pro 5g |
+| Android version | 15 Vanilla Ice Cream |
+| Tester | sahilsheikh-dev |
+| Date | 2026-11-25 |
+
+Use only `Pass`, `Fail`, or `Blocked` after running each check. `Not run` remains the pending marker.
+
+### Results
+
+| ID | Test | Result | Notes |
+|---|---|---|---|
+| O77 | Verify budget item and section rename on a physical device: rename an expense, investment, or income budget item and a section across month and following scopes; confirm that linked transactions update to display the new category name in Transactions list, filter, and detail views, while preserving the transaction amount, date, budget link, and custom note (even when the note matches the old item or section name). | Pass | P20-Y-R5; owner-reported physical-device verification, 2026-11-23. |
+| O78 | Verify dynamic Budget category filter on a physical device: open Filter panel in Budget, verify category filter chips alongside SortChip defaulting to "All" and listing available categories (Income, Expenses, Needs, Wants, Debt, Assets, Liabilities, and newly created categories); verify selecting each category filters the visible Budget sections correctly, verify filter indicator on Filter icon when active, and verify category persistence across month navigation. | Pass | P20-Z; owner-reported physical-device verification, 2026-11-23. |
+| O79 | Verify Budget filter icon indicator dot behavior and margin on a physical device: confirm that the filter icon in Budget does not show a dot indicator when category filter is "All" (default), matching Assets, Liabilities, and Transactions filter icon appearance; confirm that the dot indicator appears only when a specific category is filtered; confirm that the filter panel margin aligns with the screen layout. | Pass | P20-Z-R1; owner-reported physical-device verification, 2026-11-23. |
+| O80 | Verify persistent sorting preferences across screens on a physical device: change sort order on Transactions, Assets, Liabilities, and Budget; verify preferences persist when switching between screens and after app close and reopen; confirm filters remain separate and unchanged. | Pass | P17-C-R1; owner-reported physical-device verification, 2026-11-23. |
+| O81 | Verify dynamic asset valuation inputs and calculations on a physical device: create and edit one-time and recurring assets with Manual, Interest-based, Unit-based, and Balance-based valuation methods; verify form inputs adjust dynamically for each method (e.g., auto-calculation of units and total value for unit-based, interest rate and compounding for interest-based, read-only calculated balance for balance-based); verify holding value calculation, value update route, and persistence across app restart. | Pass | P29-U-R1; owner-reported physical-device verification, 2026-11-24. |
+| O82 | Verify consistent filter panels and absence of filter icon dot indicator on a physical device: open filter panel across Goals, Assets, Liabilities, Transactions, and Budget; verify Goals offers status (All, In progress, Achieved) and target year filter chips alongside SortChip; verify selecting filters and changing sort orders across all 5 screens keeps sort and filter states independent; verify that the header filter icon never displays a dot indicator initially or after changing sorting or filtering on any screen. | Pass | P20-L-R1; owner-reported physical-device verification, 2026-11-24. |
+| O83 | Verify modal presentation and deep-link parameter fallback on a physical device: open `ef-allocation-form`, `holding-valuation-form`, `liability-closure-form`, `liability-closure-note-form`, and `recurring-plan-stop-form` in-app to confirm modal presentation; open a `wealthwise://` deep link with a missing or invalid ID (for example, `wealthwise://holding-valuation-form?id=missing`) and confirm the safe empty/unavailable screen renders without crashing and Close navigates to a valid screen. | Pass | P39-H-R1; owner-reported physical-device verification, 2026-11-25. |
+| O84 | Verify Demo Mode and production APK behavior after Expo SDK 57 patch alignment on a physical device: enable/use Demo Mode in-app and verify screens, reminders, SQLite persistence, and backup export/import operate normally on the aligned SDK 57 packages. | Pass | P39-H-R1; owner-reported physical-device verification, 2026-11-25. |
+| O85 | Verify Expo SDK 58 / React Native 0.88.1 runtime, bottom tab navigation (`navigateToTab`), forms, SQLite persistence, local notifications, biometrics, and backup export/import on a physical Android device. | Pass | CR-170; owner-reported physical-device verification, 2026-11-25. realme Narzo 60 Pro 5g, 15 Vanilla Ice Cream, sahilsheikh-dev. Expo SDK 58 / React Native 0.88.1 runtime, bottom tabs, forms, SQLite persistence, local notifications, biometrics, and backup export/import verified. |
+
+### Owner follow-up
+
+The owner reports O77 passed on 2026-11-23. Tested and validated by sahilsheikh-dev on physical device realme Narzo 60 Pro 5g running Android 15 Vanilla Ice Cream.
+
+The owner reports O78 and O79 passed on 2026-11-23. Tested and validated by sahilsheikh-dev on physical device realme Narzo 60 Pro 5g running Android 15 Vanilla Ice Cream.
+
+The owner reports O80 passed on 2026-11-23. Tested and validated by sahilsheikh-dev on physical device realme Narzo 60 Pro 5g running Android 15 Vanilla Ice Cream.
+
+The owner reports O81 and O82 passed on 2026-11-24. Tested and validated by sahilsheikh-dev on physical device realme Narzo 60 Pro 5g running Android 15 Vanilla Ice Cream.
+
+The owner reports O83 and O84 passed on 2026-11-25. Tested and validated by sahilsheikh-dev on physical device realme Narzo 60 Pro 5g running Android 15 Vanilla Ice Cream.
+
+The owner reports O85 passed on 2026-11-25. Tested and validated by sahilsheikh-dev on physical device realme Narzo 60 Pro 5g running Android 15 Vanilla Ice Cream. Expo SDK 58 / React Native 0.88.1 runtime, bottom tab navigation, forms, SQLite persistence, local notifications, biometrics, and backup export/import verified.
 
 ## Release gate
 
