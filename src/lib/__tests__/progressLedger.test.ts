@@ -2554,8 +2554,8 @@ describe('permanent progress ledger', () => {
     expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-166 |'))).toHaveLength(1);
     expect(register.split('\n').filter((line) => line.startsWith('| CR-166 |'))).toHaveLength(1);
     expect(matrix).toContain('CR-166');
-    expect(checklist).toMatch(/\|\s*O83\s*\|[^|]+\|\s*Not run\s*\|/);
-    expect(checklist).toMatch(/\|\s*O84\s*\|[^|]+\|\s*Not run\s*\|/);
+    expect(checklist).toMatch(/\|\s*O83\s*\|[^|]+\|\s*Pass\s*\|/);
+    expect(checklist).toMatch(/\|\s*O84\s*\|[^|]+\|\s*Pass\s*\|/);
     expect(openItems).toContain('P39-H-R1');
     expect(openItems).toContain('O83');
     expect(openItems).toContain('O84');
@@ -2587,5 +2587,24 @@ describe('permanent progress ledger', () => {
     expect(workingStyle).toContain('create and link it immediately');
     expect(openItems).toContain('CR-167');
     expect(status).toContain('CR-167');
+  });
+
+  it('records owner-reported O83 and O84 Pass under CR-168', () => {
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const independentEntities = ledger.split('## 13. Independent entities')[1] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const checklist = readFileSync(join(process.cwd(), 'docs/releases/device-test-checklist.md'), 'utf8');
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-168 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-168 |'))).toHaveLength(1);
+    expect(independentEntities.split('\n').filter((line) => line.startsWith('| CR-168 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-168');
+    expect(checklist).toMatch(/\|\s*O83\s*\|[^|]+\|\s*Pass\s*\|/);
+    expect(checklist).toMatch(/\|\s*O84\s*\|[^|]+\|\s*Pass\s*\|/);
+    expect(openItems).toContain('CR-168');
+    expect(status).toContain('CR-168');
   });
 });
