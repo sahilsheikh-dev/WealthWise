@@ -1,4 +1,4 @@
-import { router, usePathname } from 'expo-router';
+import { router, usePathname, type Href } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, AppState } from 'react-native';
 
@@ -14,6 +14,13 @@ import {
   reminderNotificationAdapter,
   type NotificationResponseEnvelope,
 } from '../lib/reminderNotifications';
+import { notificationListenerAdapter } from '../lib/notificationListener';
+import {
+  ensureTransactionDraftNotificationCategory,
+  ingestDetectedNotifications,
+  postGenericDraftReviewNotification,
+  syncNativeDetectionConfig,
+} from '../lib/transactionDetectionRuntime';
 import { reminderScheduler } from '../lib/reminderRuntime';
 import { MAX_SCHEDULED_REMINDERS } from '../lib/reminderScheduler';
 import { useUIStore } from '../data/uiStore';
@@ -98,14 +105,23 @@ export function NotificationResponseHandler() {
   const handleResponse = useCallback((response: NotificationResponseEnvelope) => {
     if (handledResponseId.current === response.identifier) return;
     handledResponseId.current = response.identifier;
-    const target = reminderTarget(response.data);
-    if (target) {
-      if (target.dueItemId === 'update-values') router.push('/assets');
-      else {
-        router.push({
-          pathname: '/payment-confirm',
-          params: { dueItemId: target.dueItemId, dueDate: target.dueDate },
-        });
+    if (isRecord(response.data) && response.data.type === 'wealthwise-transaction-draft') {
+      const draftId = typeof response.data.draftId === 'string' ? response.data.draftId : undefined;
+      router.push(
+        (draftId
+          ? { pathname: '/transaction-detection', params: { draftId } }
+          : '/transaction-detection') as Href,
+      );
+    } else {
+      const target = reminderTarget(response.data);
+      if (target) {
+        if (target.dueItemId === 'update-values') router.push('/assets');
+        else {
+          router.push({
+            pathname: '/payment-confirm',
+            params: { dueItemId: target.dueItemId, dueDate: target.dueDate },
+          });
+        }
       }
     }
     void reminderNotificationAdapter.clearLastResponse().catch((error: unknown) => {
@@ -128,6 +144,48 @@ export function NotificationResponseHandler() {
     });
     return removeListener;
   }, [handleResponse]);
+
+  return null;
+}
+
+export function TransactionDetectionRuntime() {
+  const status = useAppStore((state) => state.status);
+
+  useEffect(() => {
+    if (status !== 'ready') return undefined;
+    void ensureTransactionDraftNotificationCategory();
+    void syncNativeDetectionConfig();
+
+    const drain = async () => {
+      const events = await notificationListenerAdapter.drainQueuedEvents();
+      if (events.length === 0) return;
+      await ingestDetectedNotifications(events);
+    };
+    void drain();
+
+    const unsubApp = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') {
+        void drain();
+      }
+    });
+
+    const unsubEvents = notificationListenerAdapter.subscribeLiveEvents((event) => {
+      void ingestDetectedNotifications([event]).then(async ({ addedDrafts }) => {
+        const firstDraft = addedDrafts[0];
+        if (!firstDraft) return;
+        if (AppState.currentState === 'active') {
+          router.push(`/transaction-detection?draftId=${encodeURIComponent(firstDraft.id)}` as Href);
+        } else {
+          await postGenericDraftReviewNotification(firstDraft.id);
+        }
+      });
+    });
+
+    return () => {
+      unsubApp.remove();
+      unsubEvents();
+    };
+  }, [status]);
 
   return null;
 }

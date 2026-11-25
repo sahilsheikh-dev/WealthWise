@@ -1,5 +1,5 @@
 import { Feather } from '@expo/vector-icons';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { PanResponder, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 
@@ -20,6 +20,8 @@ import {
   StatPill,
   WarningBanner,
 } from '../../src/components/ui';
+import { DEFAULT_TRANSACTION_DETECTION } from '../../src/data/metaStore';
+import { metaStore } from '../../src/data/store';
 import { useUIStore } from '../../src/data/uiStore';
 import { useAppData } from '../../src/data/useAppData';
 import { useSort } from '../../src/data/useSort';
@@ -65,6 +67,24 @@ export default function TransactionsScreen() {
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const today = useMemo(() => todayISO(), []);
   const [touchingChips, setTouchingChips] = useState(false);
+  const [pendingDraftCount, setPendingDraftCount] = useState(0);
+  useEffect(() => {
+    let active = true;
+    if (typeof metaStore?.getMeta === 'function') {
+      void metaStore.getMeta().then((meta) => {
+        if (active) setPendingDraftCount((meta.transactionDetection ?? DEFAULT_TRANSACTION_DETECTION).pendingDrafts.length);
+      });
+    }
+    const unsub = typeof metaStore?.subscribe === 'function'
+      ? metaStore.subscribe((meta) => {
+          if (active) setPendingDraftCount((meta.transactionDetection ?? DEFAULT_TRANSACTION_DETECTION).pendingDrafts.length);
+        })
+      : () => undefined;
+    return () => {
+      active = false;
+      unsub();
+    };
+  }, []);
   useEffect(() => {
     if (params.month && /^\d{4}-(0[1-9]|1[0-2])$/.test(params.month)) setTxMonth(params.month);
   }, [params.month, setTxMonth]);
@@ -172,6 +192,21 @@ export default function TransactionsScreen() {
           </View>
           </Card>
         </View>
+        <Pressable
+          testID="transaction-detection-entry"
+          accessibilityRole="button"
+          accessibilityLabel={pendingDraftCount > 0 ? `${pendingDraftCount} detected transaction drafts ready to review` : 'Transaction detection settings'}
+          onPress={() => router.push('/transaction-detection' as Href)}
+          style={[styles.unlinkedNotice, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <AppText>
+            {pendingDraftCount > 0
+              ? `${pendingDraftCount} detected transaction draft${pendingDraftCount === 1 ? '' : 's'} ready. `
+              : 'Notification transaction detection. '}
+            <AppText weight="semibold" style={{ color: colors.primary }}>
+              {pendingDraftCount > 0 ? 'Review' : 'Settings'}
+            </AppText>
+          </AppText>
+        </Pressable>
         {unlinkedCount > 0 ? (
           <Pressable
             testID="unlinked-entry-notice"
