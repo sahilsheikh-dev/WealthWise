@@ -2,6 +2,15 @@
 
 # Open items
 
+## Historical PR label reconciliation and DEC-P39-DEPS-01 review (Done; CR-163; DEC-P39-DEPS-01 remains Open)
+
+- Subtask CR-163 (2026-11-25):
+  1. **Fresh remote snapshot:** Exported via `export-remote-snapshot.sh` at `2026-11-25T10:01:47+05:30` with terminal session capture in `/tmp/wealthwise-remote-snapshot/owner-terminal-2026-11-25.log`.
+  2. **Historical PR labels:** Audited all 277 PRs (276 `MERGED`, 1 `CLOSED` [#39]). Applied missing taxonomy labels to 276 PRs (`ok=276, fail=0`, 0 labels created; mapped 21 `phase:p28` draft entries to `lifecycle:qa-and-release`); PR #39 retained `phase:p01`, `type:chore`, `status:superseded`, `wontfix`. Post-update check confirmed 277/277 PRs labeled (0 unlabeled). Artifacts in `/tmp/wealthwise-pr-label-reconciliation.json` and `/tmp/wealthwise-pr-label-apply-results.json`.
+  3. **DEC-P39-DEPS-01 (Open — Pending owner confirmation):** Verified `decode-uri-component@0.2.2` (`GHSA-vcc3-ghjq-m6fr`, `GHSA-qr28-fpjm-wq7f`) via `expo-router@57.0.31` → `query-string@7.1.3`. Upstream fix requires SemVer-major `expo-router@58.0.32` (Expo SDK 58), incompatible with Expo SDK 57 (`expo@57.0.33`). Mitigated by 100% offline-first runtime. No dependencies upgraded; awaiting explicit owner confirmation to accept risk until the next planned Expo SDK upgrade.
+  4. **Future tracking rules:** Verified `AGENTS.md`, `rules.md`, and `working-style.md` cover PR/issue labeling and commit/PR/merge evidence without gaps.
+- Pure documentation and repository-process scope; schema remains version 24; no runtime behavior changed.
+
 ## PR #39 reconciliation, PR/issue label policy, and future tracking (Done; CR-161)
 
 - Subtask CR-161 (2026-11-24): Reconciled PR #39, PR/issue label policies, release records, and future tracking:

@@ -1,6 +1,12 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-24 | Updates: owner and AI agents -->
 
 # Status
+- **CR-163 (2026-11-25) — Historical PR label reconciliation and DEC-P39-DEPS-01 review.**
+  Completed fresh remote snapshot export (`2026-11-25T10:01:47+05:30`, terminal capture `/tmp/wealthwise-remote-snapshot/owner-terminal-2026-11-25.log`), historical PR label reconciliation, and `DEC-P39-DEPS-01` verification:
+  1. *PR label reconciliation:* Audited all 277 PRs (276 `MERGED`, 1 `CLOSED` [#39]). Applied missing taxonomy labels to 276 PRs (`ok=276, fail=0`, 0 new labels created; corrected 21 `phase:p28` draft entries to `lifecycle:qa-and-release`); PR #39 already complete (`phase:p01`, `type:chore`, `status:superseded`, `wontfix`). Post-update check verified 277/277 PRs labeled (0 unlabeled). Mapping and results saved in `/tmp/wealthwise-pr-label-reconciliation.json` and `/tmp/wealthwise-pr-label-apply-results.json`.
+  2. *DEC-P39-DEPS-01 review:* Verified `decode-uri-component@0.2.2` (`GHSA-vcc3-ghjq-m6fr`, `GHSA-qr28-fpjm-wq7f`) is transitive via `expo-router@57.0.31` → `query-string@7.1.3`; `npm audit` fix requires SemVer-major `expo-router@58.0.32` (Expo SDK 58), incompatible with Expo SDK 57 (`expo@57.0.33`). Decision remains **Open (Pending owner confirmation)**; no dependencies upgraded.
+  3. *Future tracking rules:* Verified `AGENTS.md`, `rules.md`, and `working-style.md` already require PR/issue labels and commit/PR/merge links with zero gaps.
+  Pure documentation and repository-process scope; schema remains version 24.
 - **CR-162 (2026-11-24) — Record physical-device checks O81 and O82 as Pass.**
   Recorded owner-reported physical-device validation for checks O81 and O82 as Pass in `docs/releases/device-test-checklist.md`:
   1. *O81:* Dynamic asset valuation inputs and calculations (P29-U-R1) tested and validated Pass on physical device.

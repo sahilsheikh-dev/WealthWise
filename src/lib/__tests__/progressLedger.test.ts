@@ -2476,4 +2476,23 @@ describe('permanent progress ledger', () => {
     expect(openItems).toContain('O82');
     expect(status).toContain('CR-162');
   });
+
+  it('records historical PR label reconciliation and open DEC-P39-DEPS-01 status under CR-163', () => {
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const independentEntities = ledger.split('## 13. Independent entities')[1] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-163 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-163 |'))).toHaveLength(1);
+    expect(independentEntities.split('\n').filter((line) => line.startsWith('| CR-163 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-163');
+    expect(matrix).toContain('277');
+    expect(openItems).toContain('CR-163');
+    expect(openItems).toContain('DEC-P39-DEPS-01');
+    expect(status).toContain('CR-163');
+    expect(status).toContain('DEC-P39-DEPS-01');
+  });
 });
