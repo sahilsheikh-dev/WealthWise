@@ -8,7 +8,8 @@ or checksums.
 
 | Version | Date | Type | Android download | Release notes | Status |
 |---|---|---|---|---|---|
-| v1.3.0 | 2026-11-22 | Minor | [APK](https://github.com/sahilsheikh-dev/WealthWise/releases/latest/download/WealthWise-android-latest-v1.3.0.apk) | [v1.3.0 notes](./published/v1.3.0.md) | Published |
+| v1.4.0 | 2026-11-25 | Minor | [APK](https://github.com/sahilsheikh-dev/WealthWise/releases/latest/download/WealthWise-android-latest-v1.4.0.apk) | [v1.4.0 notes](./published/v1.4.0.md) | Candidate prepared |
+| v1.3.0 | 2026-11-22 | Minor | [APK](https://github.com/sahilsheikh-dev/WealthWise/releases/download/v1.3.0/WealthWise-android-v1.3.0.apk) | [v1.3.0 notes](./published/v1.3.0.md) | Published |
 | v1.2.0 | 2026-11-11 | Minor | [APK](https://github.com/sahilsheikh-dev/WealthWise/releases/download/v1.2.0/WealthWise-android-v1.2.0.apk) | [v1.2.0 notes](./published/v1.2.0.md) | Published |
 | v1.1.1 | 2026-11-09 | Patch | [APK](https://github.com/sahilsheikh-dev/WealthWise/releases/download/v1.1.1/WealthWise-android-v1.1.1.apk) | [v1.1.1 notes](./published/v1.1.1.md) | Published |
 | v1.1.0 | 2026-11-08 | Minor | [APK](https://github.com/sahilsheikh-dev/WealthWise/releases/download/v1.1.0/WealthWise-android-v1.1.0.apk) | [v1.1.0 notes](./published/v1.1.0.md) | Published |
