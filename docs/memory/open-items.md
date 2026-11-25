@@ -2,9 +2,9 @@
 
 # Open items
 
-## P28-F-R8 Prepare v1.4.0 release candidate (In progress; CR-174; #574)
+## P28-F-R8 Prepare and publish v1.4.0 release (Done; CR-174; #574)
 
-- Subtask P28-F-R8 (CR-174, 2026-11-25): Owner approved `v1.4.0` release-note draft and supplied 13 screenshots. Prepared `v1.4.0` candidate on `task/P28-F-R8-prepare-v1.4.0-release` under `qa-and-release` (`app.json`/`package.json` `1.4.0`, `docs/releases/published/v1.4.0.md`, `CHANGELOG.md`, `README.md`, `device-test-checklist.md` `## v1.4.0 device checks`). Issue `#574`. Next: merge to `develop`, create `release/v1.4.0` + GitHub Release draft, build `android-apk` via EAS, upload and verify artifact, then request publication approval.
+- Subtask P28-F-R8 (CR-174, 2026-11-25): Published **WealthWise v1.4.0** (`main` `40cc7a2`, tag `v1.4.0`, EAS build `21c0f156-39ff-4087-a4e2-df0519121650`, `android-apk`, `versionCode` `6`, `106,032,738` bytes). Renamed `v1.3.0` asset to `WealthWise-android-v1.3.0.apk`, verified all APK and 13 screenshot URLs (`HTTP 200`), updated `release-history.md`, and back-merged `main` into `develop`. Issue `#574`.
 
 ## P40-B Archive completed-phase narrative (Done; CR-173; #462)
 
