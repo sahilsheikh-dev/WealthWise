@@ -2,6 +2,10 @@
 
 # Open items
 
+## P35-B Transaction auto-detection scope validation and design (Done; CR-177; #441)
+
+- Subtask P35-B (CR-177, 2026-11-25): Validated P35-A research and finalized P35-C implementation design in `/tmp/wealthwise/reports/p35-b-implementation-design.md`. Confirmed Android-only `NotificationListenerService`, zero SMS permissions, `metaStore` draft queue/dedup/7-day expiry (schema v24), dynamic credit/debit/Investment categorization, prominent disclosure, foreground review vs generic background `Review` notification, and acceptance criteria. Unblocks `P35-C` (`#442`). Issue `#441`. Schema remains version 24.
+
 ## P35-A Transaction auto-detection research and plan (Done; CR-176; #440)
 
 - Subtask P35-A (CR-176, 2026-11-25): Completed SMS/notification transaction detection research and implementation plan in `/tmp/wealthwise/reports/p35-a-transaction-detection-research.md`. Recommended Android `NotificationListenerService` (no `READ_SMS`/`RECEIVE_SMS`), 100% local-only parsing with zero raw-message storage, in-app Prominent Disclosure + affirmative opt-in consent, Android 13+ Restricted Settings walkthrough for sideloaded APKs, and reviewable drafts in `metaStore` (iOS unsupported). Unresolved owner questions for P35-B validation: confirm dropping `READ_SMS`, `metaStore` draft queue (schema stays v24), iOS unsupported posture, and `PRIVACY.md` update in P35-C. Issue `#440`. Schema remains version 24.
