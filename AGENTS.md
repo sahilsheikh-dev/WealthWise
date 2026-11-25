@@ -78,17 +78,19 @@ apply only that exception and preserve all other rules.
   an `Owner actions pending` list.
 
   Record manual owner terminal sessions with
-  `script -a /tmp/wealthwise-remote-snapshot/owner-terminal-$(date +%F).log`
+  `script -a /tmp/wealthwise/remote-snapshot/owner-terminal-$(date +%F).log`
   and finish the session with `exit`. `pbpaste` only copies the clipboard; it
   is not session evidence unless the full terminal text was copied first.
-  The owner exports the snapshot with `export-remote-snapshot.sh`; its PR
+  The owner exports the snapshot with `scripts/export-remote-snapshot.sh`; its PR
   records include number, title, state, base (`baseRefName`), head
   (`headRefName`), headRefOid, createdAt,
   updatedAt, mergedAt, closedAt, mergeCommit, mergedBy, url, author, labels
   and body, plus detail files for the latest 60 PRs, releases, tags, issues and
   remote branches. After every manual merge, refresh the snapshot before the
   next agent task. Export and capture procedures are maintained in
-  `docs/memory/README.md`.
+  `docs/memory/README.md`, and WealthWise `/tmp` artifacts are organized under
+  `/tmp/wealthwise/` (`remote-snapshot/`, `reports/`, `logs/`,
+  `build-artifacts/`).
 - **R7 — Slot-filling and empty phase reservations:** empty phase numbers freed
   by independent entity separation or cancellation (P7, P27, P28, P32) stay
   reserved as empty slots so no existing phase is renumbered and no

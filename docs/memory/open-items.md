@@ -2,6 +2,14 @@
 
 # Open items
 
+## Temporary artifact organization and exporter relocation (Done; CR-165)
+
+- Subtask CR-165 (2026-11-25):
+  1. **Organized `/tmp/wealthwise/`:** Moved 312 WealthWise-specific `/tmp` artifacts into `/tmp/wealthwise/` preserving timestamps and permissions (`remote-snapshot/`: 177, `reports/`: 59, `logs/`: 74, `build-artifacts/`: 2; 0 conflicts; unrelated system/editor files left unmoved).
+  2. **Relocated exporter:** Moved `~/export-remote-snapshot.sh` to `scripts/export-remote-snapshot.sh` (verified WealthWise-specific, zero embedded tokens/credentials, uses `gh` CLI authentication) and updated output path to `/tmp/wealthwise/remote-snapshot/`.
+  3. **Updated references & tests:** Updated `AGENTS.md`, `docs/memory/README.md`, `docs/memory/rules.md`, `src/lib/__tests__/branchingDocs.test.ts`, and `src/lib/__tests__/progressLedger.test.ts`. Historical entries keep their original `/tmp` paths; current artifacts reside under `/tmp/wealthwise/`.
+- Pure documentation/tooling scope; no `/tmp` artifacts committed to Git; schema remains version 24.
+
 ## Resolve DEC-P39-DEPS-01 by owner approval (Done; CR-164)
 
 - Subtask CR-164 (2026-11-25): Resolved owner decision `DEC-P39-DEPS-01` per explicit owner approval:
