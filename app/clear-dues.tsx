@@ -15,6 +15,7 @@ import { amortizedBalanceAfter } from '../src/domain/liability';
 import type { PlanHolding, RecurringLiability } from '../src/domain/types';
 import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
+import { closeRouteSafely, singleParam } from '../src/lib/routeParams';
 import { confirmAsync } from '../src/lib/confirm';
 import { formatMonth } from '../src/lib/format';
 import { typography } from '../src/theme/tokens';
@@ -25,8 +26,8 @@ export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenEr
 
 export default function ClearDuesScreen() {
   const params = useLocalSearchParams<{ kind?: string; id?: string }>();
-  const kind = Array.isArray(params.kind) ? params.kind[0] : params.kind;
-  const id = Array.isArray(params.id) ? params.id[0] : params.id;
+  const kind = singleParam(params.kind);
+  const id = singleParam(params.id);
   const data = useAppStore((state) => state.data);
   const actions = useAppActions();
   const today = useMemo(() => todayISO(), []);
@@ -98,14 +99,14 @@ export default function ClearDuesScreen() {
 
   if (!target || !item || !pending) {
     return (
-      <FormScreen title="Clear past dues" onClose={() => router.back()} isDirty={false} footer={null}>
+      <FormScreen title="Clear past dues" onClose={() => closeRouteSafely('/(tabs)')} isDirty={false} footer={null}>
         <EmptyState title="Schedule not found" />
       </FormScreen>
     );
   }
   if (pending.count === 0) {
     return (
-      <FormScreen title="Clear past dues" onClose={() => router.back()} isDirty={false} footer={<Button label="Done" onPress={() => router.back()} />}>
+      <FormScreen title="Clear past dues" onClose={() => closeRouteSafely('/(tabs)')} isDirty={false} footer={<Button label="Done" onPress={() => closeRouteSafely('/(tabs)')} />}>
         <EmptyState
           title="No past dues"
           subtitle={target.kind === 'plan'

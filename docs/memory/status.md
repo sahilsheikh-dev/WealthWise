@@ -1,6 +1,14 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-24 | Updates: owner and AI agents -->
 
 # Status
+- **P39-H-R1 / CR-166 (2026-11-25) — P39 audit remediations and Expo SDK 57 patch alignment.**
+  Implemented the requested P39 audit remediations on `phase/39-release-audit-and-hardening`:
+  1. *SQLite fallback warning (`P39-D`):* Wired `onSQLiteFailure` in `stateStorage.native.ts` to `sqliteFallback.ts` and `StorageErrorBanner.tsx` (`storageWarning` + `dismissStorageWarning`) so SQLite-to-AsyncStorage fallback displays a clear non-intrusive warning confirming data is preserved while keeping `console.warn` logging intact.
+  2. *Explicit modal routes (`P39-A`):* Registered `ef-allocation-form`, `holding-valuation-form`, `liability-closure-form`, `liability-closure-note-form`, and `recurring-plan-stop-form` in `app/_layout.tsx` with `presentation: 'modal'`.
+  3. *Deep-link parameter handling (`P39-A`):* Added `src/lib/routeParams.ts` (`singleParam`, `closeRouteSafely`) across form/reminder/due routes so missing/invalid `wealthwise://` params fail gracefully and exit cleanly even when `router.canGoBack()` is false.
+  4. *Production stress-data tree-shaking (`P39-B`):* Replaced static `createStressData` import in `createAppStore.ts` with a `__DEV__`-guarded `require('../domain/stressData')`, keeping `demoData.ts` / Demo Mode intact and eliminating stress generators from production Hermes bundles.
+  5. *Expo SDK 57 patch alignment (`P39-E`):* Updated the 8 SDK 57 packages (`expo`, `expo-router`, `expo-sqlite`, `expo-build-properties`, `expo-constants`, `expo-notifications`, `expo-sharing`, `expo-splash-screen`) to SDK 57 patch versions; `DEC-P39-DEPS-01` remains accepted until the next SDK major upgrade.
+  Added `P39AuditRemediations.test.tsx` and physical-device checks `O83` and `O84` (`Not run`) in `docs/releases/device-test-checklist.md`. Schema remains version 24.
 - **CR-165 (2026-11-25) — Organize `/tmp/wealthwise/` artifacts and track `scripts/export-remote-snapshot.sh`.**
   Organized WealthWise-specific temporary artifacts under `/tmp/wealthwise/` (`remote-snapshot/`: 177 files, `reports/`: 59 files, `logs/`: 74 files, `build-artifacts/`: 2 files; 312 total moved, 0 conflicts, unrelated `/tmp` entries preserved unmoved).
   Relocated `~/export-remote-snapshot.sh` to [scripts/export-remote-snapshot.sh](../../scripts/export-remote-snapshot.sh) (verified WealthWise-only, zero credentials/tokens, uses owner-authenticated `gh`), updated its output path to `/tmp/wealthwise/remote-snapshot/`, and updated `AGENTS.md`, `docs/memory/README.md`, `docs/memory/rules.md`, and `branchingDocs.test.ts`. Historical ledger paths remain intact with current-path note recorded under CR-165. Pure documentation/tooling scope; schema remains version 24.

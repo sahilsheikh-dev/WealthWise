@@ -46,6 +46,8 @@ import { confirmAsync } from '../src/lib/confirm';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
+import { closeRouteSafely } from '../src/lib/routeParams';
+
 const typeOptions = [
   { label: 'Expense', value: 'expense' },
   { label: 'Income', value: 'income' },
@@ -358,7 +360,7 @@ export default function TransactionFormScreen() {
 
   if (editing && !transaction) {
     return (
-      <FormScreen title="Transaction" onClose={() => router.back()} isDirty={false} footer={null}>
+      <FormScreen title="Transaction" onClose={() => closeRouteSafely('/(tabs)/transactions')} isDirty={false} footer={null}>
         <EmptyState title="Transaction not found" subtitle="It may have been deleted. Return to your transactions to continue." />
       </FormScreen>
     );

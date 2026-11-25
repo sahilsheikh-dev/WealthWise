@@ -20,12 +20,13 @@ import { makeHoldingValuationFormSchema } from '../src/domain/schemas';
 import type { ValuationMethod } from '../src/domain/types';
 import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
+import { closeRouteSafely, singleParam } from '../src/lib/routeParams';
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
 export default function HoldingValuationFormScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
-  const holdingId = Array.isArray(id) ? id[0] : id;
+  const holdingId = singleParam(id);
   const data = useAppStore((state) => state.data);
   const error = useAppStore((state) => state.lastError);
   const actions = useAppActions();
@@ -51,7 +52,7 @@ export default function HoldingValuationFormScreen() {
   const enteredValue = useWatch({ control: form.control, name: 'value' });
 
   if (!holding || !method) {
-    return <FormScreen title="Update holding value" onClose={() => router.back()} isDirty={false} footer={null}>
+    return <FormScreen title="Update holding value" onClose={() => closeRouteSafely('/assets')} isDirty={false} footer={null}>
       <EmptyState title="Holding not found" />
     </FormScreen>;
   }

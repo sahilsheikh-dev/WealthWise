@@ -24,6 +24,8 @@ import { SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
+import { closeRouteSafely } from '../src/lib/routeParams';
+
 const budgetIncomeFormSchema = z.object({
   name: z.string().trim().min(1, 'Enter an income name.').max(40, 'Keep the name under 40 characters.'),
   amount: z.string().trim().regex(/^\d+(?:\.\d{1,2})?$/, 'Enter a valid income amount.')
@@ -134,7 +136,7 @@ export default function BudgetIncomeFormScreen() {
 
   if (editing && !income) {
     return (
-      <FormScreen title="Edit income" onClose={() => router.back()} isDirty={false} footer={null}>
+      <FormScreen title="Edit income" onClose={() => closeRouteSafely('/(tabs)/budget')} isDirty={false} footer={null}>
         <EmptyState title="Budget income not found" />
       </FormScreen>
     );

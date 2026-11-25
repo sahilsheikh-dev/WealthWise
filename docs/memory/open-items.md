@@ -2,6 +2,17 @@
 
 # Open items
 
+## P39-H-R1 P39 audit remediations and SDK 57 patch alignment (Done; CR-166; device checks O83–O84 Not run)
+
+- Subtask P39-H-R1 (CR-166, 2026-11-25):
+  1. **SQLite fallback warning:** Wired `onSQLiteFailure` in `stateStorage.native.ts` through `sqliteFallback.ts` to `StorageErrorBanner.tsx` (`storageWarning` state) without implying data loss.
+  2. **Modal route registrations:** Added explicit `<Stack.Screen ... options={{ presentation: 'modal' }} />` declarations for `ef-allocation-form`, `holding-valuation-form`, `liability-closure-form`, `liability-closure-note-form`, and `recurring-plan-stop-form` in `app/_layout.tsx`.
+  3. **Deep-link parameter handling:** Added `src/lib/routeParams.ts` (`singleParam`, `closeRouteSafely`) across form/reminder/due routes so missing/invalid params render safe fallback UI and exit cleanly on cold deep-link launches.
+  4. **Production stress-data bundle:** Guarded `src/domain/stressData.ts` behind `__DEV__` lazy `require` in `createAppStore.ts`, preserving Demo Mode (`demoData.ts`) while excluding stress fixtures from production Hermes output.
+  5. **Expo SDK 57 patch alignment:** Aligned the 8 SDK 57 packages via npm (`expo` `~57.0.34`, `expo-router` `~57.0.32`, `expo-sqlite` `~57.0.7`, `expo-build-properties` `~57.0.24`, `expo-constants` `~57.0.25`, `expo-notifications` `~57.0.26`, `expo-sharing` `~57.0.27`, `expo-splash-screen` `~57.0.12`). `DEC-P39-DEPS-01` remains accepted until the next planned Expo SDK major upgrade.
+  6. **Physical-device checks pending:** Added `O83` (modal presentation & deep-link fallback) and `O84` (Demo Mode & SDK 57 patch verification) in `Not run` status under `## Next release device checks` in `docs/releases/device-test-checklist.md`.
+- Schema version 24 preserved.
+
 ## Temporary artifact organization and exporter relocation (Done; CR-165)
 
 - Subtask CR-165 (2026-11-25):

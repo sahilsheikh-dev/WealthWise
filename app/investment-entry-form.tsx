@@ -24,6 +24,8 @@ import { currentInstallmentAmount } from '../src/domain/sip';
 import { todayISO } from '../src/lib/clock';
 import { choiceAsync, confirmAsync } from '../src/lib/confirm';
 
+import { closeRouteSafely } from '../src/lib/routeParams';
+
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
 export default function InvestmentEntryFormScreen() {
@@ -107,9 +109,9 @@ export default function InvestmentEntryFormScreen() {
       if (!useAppStore.getState().lastError) router.back();
     });
   };
-  if (!holding || (entryId && !entry)) return <FormScreen title="Investment entry" onClose={() => router.back()} isDirty={false} footer={null}><EmptyState title="Investment entry not found" /></FormScreen>;
+  if (!holding || (entryId && !entry)) return <FormScreen title="Investment entry" onClose={() => closeRouteSafely('/assets')} isDirty={false} footer={null}><EmptyState title="Investment entry not found" /></FormScreen>;
   if (!entry && requestedKind === 'Deposit' && capabilities && !capabilities.entries) {
-    return <FormScreen title="Investment entry" onClose={() => router.back()} isDirty={false} footer={null}><EmptyState title="Fixed deposits do not accept new deposits. Record a maturity withdrawal instead." /></FormScreen>;
+    return <FormScreen title="Investment entry" onClose={() => closeRouteSafely('/assets')} isDirty={false} footer={null}><EmptyState title="Fixed deposits do not accept new deposits. Record a maturity withdrawal instead." /></FormScreen>;
   }
   return (
     <FormScreen title="Investment entry" onClose={() => router.back()} isDirty={isDirty}
