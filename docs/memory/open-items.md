@@ -2,6 +2,10 @@
 
 # Open items
 
+## P35-C Opt-in Android notification-based transaction detection (Done; CR-178; #442; device check O86 Not run)
+
+- Subtask P35-C (CR-178, 2026-11-25): Implemented opt-in Android `NotificationListenerService` transaction detection (`plugins/withNotificationListener.js`, zero SMS permissions), local-only parsing/dedup/7-day expiry (`src/domain/transactionDetection.ts`), `metaStore.ts` draft queue (schema v24), prominent disclosure & source-app allowlist (`app/transaction-detection.tsx`), dynamic credit/debit/Investment categorization (`app/transaction-form.tsx`), foreground review & generic background `Review` notification (`TransactionDetectionRuntime`), and `PRIVACY.md` / `CHANGELOG.md` (`[Unreleased]`) updates. Physical-device check `O86` added in `Not run` status (requires installable native Android build). Issue `#442`. Schema remains version 24.
+
 ## P35-B Transaction auto-detection scope validation and design (Done; CR-177; #441)
 
 - Subtask P35-B (CR-177, 2026-11-25): Validated P35-A research and finalized P35-C implementation design in `/tmp/wealthwise/reports/p35-b-implementation-design.md`. Confirmed Android-only `NotificationListenerService`, zero SMS permissions, `metaStore` draft queue/dedup/7-day expiry (schema v24), dynamic credit/debit/Investment categorization, prominent disclosure, foreground review vs generic background `Review` notification, and acceptance criteria. Unblocks `P35-C` (`#442`). Issue `#441`. Schema remains version 24.

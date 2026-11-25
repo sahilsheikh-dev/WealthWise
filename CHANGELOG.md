@@ -5,6 +5,9 @@ Update this file for every release: add the new version heading and confirmed re
 
 ## [Unreleased]
 
+### New Features
+- Opt-in Android notification-based transaction detection (`Transaction detection` screen): includes in-app prominent disclosure, user-selected source apps, local-only in-memory parsing without raw-text storage or SMS permissions, duplicate/7-day draft expiry, dynamic credit/debit/Investment categorization, foreground review, and privacy-safe background `Review` notifications (Android only; iOS uses manual entry).
+
 ## [1.4.0] - 2026-11-25
 
 ### New Features
