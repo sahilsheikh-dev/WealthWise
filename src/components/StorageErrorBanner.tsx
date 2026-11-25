@@ -8,23 +8,35 @@ import { useTheme } from '../theme/useTheme';
 import { AppText } from './ui';
 
 export function StorageErrorBanner() {
-  const message = useAppStore((state) => state.storageError);
-  const { dismissStorageError } = useAppActions();
+  const storageError = useAppStore((state) => state.storageError);
+  const storageWarning = useAppStore((state) => state.storageWarning);
+  const { dismissStorageError, dismissStorageWarning } = useAppActions();
   const { colors } = useTheme();
-  if (!message) return null;
+  if (!storageError && !storageWarning) return null;
+
+  const isError = Boolean(storageError);
+  const backgroundColor = isError ? colors.errDim : colors.infoDim;
+  const iconColor = isError ? colors.err : colors.info;
+  const textColor = isError ? colors.err : colors.text1;
+  const iconName = isError ? 'alert-circle' : 'alert-triangle';
+  const bannerText = isError
+    ? 'Your last change could not be saved. Free up storage and try again.'
+    : storageWarning;
+  const dismissLabel = isError ? 'Dismiss storage error' : 'Dismiss storage warning';
+  const onDismiss = isError ? dismissStorageError : dismissStorageWarning;
 
   return (
-    <View accessibilityRole="alert" style={[styles.banner, { backgroundColor: colors.errDim }]}>
-      <Feather name="alert-circle" size={16} color={colors.err} />
-      <AppText style={[typography.meta, styles.message, { color: colors.err }]}>
-        Your last change could not be saved. Free up storage and try again.
+    <View accessibilityRole="alert" style={[styles.banner, { backgroundColor }]}>
+      <Feather name={iconName} size={16} color={iconColor} />
+      <AppText style={[typography.meta, styles.message, { color: textColor }]}>
+        {bannerText}
       </AppText>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Dismiss storage error"
-        onPress={dismissStorageError}
+        accessibilityLabel={dismissLabel}
+        onPress={onDismiss}
         style={styles.dismiss}>
-        <Feather name="x" size={16} color={colors.err} />
+        <Feather name="x" size={16} color={iconColor} />
       </Pressable>
     </View>
   );

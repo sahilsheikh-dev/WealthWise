@@ -1,8 +1,300 @@
-<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-22 | Updates: owner and AI agents -->
+<!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-25 | Updates: owner and AI agents -->
 
 # Status
-- **P28-F-R7 / CR-130 (2026-11-22) — Prepare v1.3.0 release candidate.**
-  Prepared owner-approved v1.3.0 release candidate: bumped versions in app.json,
+- **P40-B / CR-173 (2026-11-25) — Archive completed-phase narrative from `docs/PROGRESS.md`.**
+  Moved completed-phase narrative from `docs/PROGRESS.md` (sections 4, 5, 6, 7, 10, and 11) into 6 linked archive files under `docs/memory/archive/` indexed by `docs/memory/archive/README.md`. Reduced `docs/PROGRESS.md` from `13,495` lines (`1,443,604` bytes, ~359,592 tokens) to `~2,035` lines (`~365 KB`, ~91k tokens) while keeping the active dashboard, standing rules, open items, current roadmap, recent CR/verification records, branch index, and independent entities in `docs/PROGRESS.md`. Updated `progressLedger.test.ts` to load and validate both `docs/PROGRESS.md` and `docs/memory/archive/*` without weakening any assertion. Issue `#462`. Schema remains version 24.
+- **P40-A / CR-172 (2026-11-25) — Measure documentation size, parsing-test coverage, and per-prompt read cost.**
+  Measured `AGENTS.md` (319 lines, 21,941 bytes, ~5,477 tokens), `docs/PROGRESS.md` (13,495 lines, 1,443,604 bytes, ~359,592 tokens), and all 9 `docs/memory/*` files (3,545 lines, 286,061 bytes, ~71,388 tokens; total 17,359 lines, 1,751,606 bytes, ~436,456 tokens using `chars / 4`). Four narrative sections (`## 10`, `## 6`, `## 4`, `## 11`) account for 78.8% (~284.5k tokens) of `docs/PROGRESS.md`. Five doc-parsing Jest suites cover 96 `it()` blocks / 1,312 `expect()` assertions (`progressLedger`, `memoryDocs`, `branchingDocs` run in 3.096 s). Full report saved outside Git at `/tmp/wealthwise/reports/p40-a-doc-size-audit.md`. Issue `#461`. Schema remains version 24.
+- **CR-171 (2026-11-25) — Complete `CHANGELOG.md` for all published releases and add mandatory update rule.**
+  Completed `CHANGELOG.md` with verified entries for all five published releases (`v1.0.0` through `v1.3.0`, fixing `v1.1.0` date/content and adding `v1.1.1`, `v1.2.0`, and `v1.3.0`) plus `[Unreleased]`. Wired the mandatory `CHANGELOG.md` update rule into `AGENTS.md`, `docs/releases/README.md`, `docs/releases/TEMPLATE.md`, and `docs/releases/RELEASE_PROMPT.md`. Verified `app/about.tsx` and `AboutScreen.test.tsx` (`https://github.com/sahilsheikh-dev/WealthWise/blob/main/CHANGELOG.md`), and added regression assertions in `progressLedger.test.ts`. Issue `#566`. Documentation only; schema remains version 24.
+- **CR-170 (2026-11-25) — Record owner-reported physical-device check O85 as Pass.**
+  Recorded owner-reported physical-device verification **Pass** for check `O85` (Expo SDK 58 / React Native 0.88.1 runtime, bottom tab navigation (`navigateToTab`), forms, SQLite persistence, local notifications, biometrics, and backup export/import on physical Android device) in `docs/releases/device-test-checklist.md` under `## Next release device checks`. Confirmed metadata: `realme Narzo 60 Pro 5g`, `15 Vanilla Ice Cream`, `sahilsheikh-dev`, `2026-11-25`. All `## Next release device checks` entries are now Pass. Issue `#565`. Documentation only; schema remains version 24.
+- **P39-E-R1 / CR-169 (2026-11-25) — Upgrade to Expo SDK 58 and resolve `DEC-P39-DEPS-01`.**
+  Upgraded WealthWise from Expo SDK 57 to Expo SDK 58 (`expo@^58.0.26`, `react-native@0.88.1`, `react@19.3.0`, `expo-router@~58.0.32`, and 31 aligned SDK 58 packages plus `@react-native/jest-preset` and `react-test-renderer@19.3.0`). Verified `npm ls decode-uri-component` is empty and `npm audit` reports 0 critical/0 high advisories (27 moderate dev/CLI advisories remain), resolving `DEC-P39-DEPS-01`. Updated `app/(tabs)/_layout.tsx` (`navigateToTab`), `ef-allocation-form.tsx`, `onboarding.tsx`, `profile-form.tsx`, `jest.config.js`, `app.json`, and `TabsLayout.test.tsx`. Added physical-device check `O85` (`Not run`) in `docs/releases/device-test-checklist.md`. Issue `#562`. Schema remains version 24.
+- **CR-168 (2026-11-25) — Record physical-device checks O83 and O84 as Pass.**
+  Recorded owner-reported physical-device validation Pass for checks `O83` (modal presentation & deep-link fallback) and `O84` (Demo Mode & SDK 57 patch verification) in `docs/releases/device-test-checklist.md` under `## Next release device checks` (`App version: TBD`). Confirmed metadata: `realme Narzo 60 Pro 5g`, `15 Vanilla Ice Cream`, `sahilsheikh-dev`, `2026-11-25`. Issue `#559`. Zero Next release device checks remain `Not run` for `P39-H-R1`.
+- **CR-167 (2026-11-25) — Refresh remote snapshot, update snapshot/issue-tracking rules, and backfill missing Model A GitHub issues.**
+  Refreshed the pending remote snapshot at `2026-11-25T12:28:13+05:30` via `scripts/export-remote-snapshot.sh` (`develop=f3da010`). Updated `AGENTS.md`, `docs/memory/rules.md`, `docs/memory/README.md`, and `docs/memory/working-style.md` so remote snapshots are refreshed whenever remote state changes or at task start if stale, and any approved work lacking a GitHub issue gets an issue created/linked immediately and closed (`status:done`) with verified commits, PRs, merge SHAs, and gate evidence. Created and closed missing Model A issues `#548`–`#555` (`CR-159`–`CR-165`, `P39-H-R1`/`CR-166`) and opened `#556` (`CR-167`). Pure documentation/process scope; schema remains version 24.
+- **P39-H-R1 / CR-166 (2026-11-25) — P39 audit remediations and Expo SDK 57 patch alignment.**
+  Implemented the requested P39 audit remediations on `phase/39-release-audit-and-hardening`:
+  1. *SQLite fallback warning (`P39-D`):* Wired `onSQLiteFailure` in `stateStorage.native.ts` to `sqliteFallback.ts` and `StorageErrorBanner.tsx` (`storageWarning` + `dismissStorageWarning`) so SQLite-to-AsyncStorage fallback displays a clear non-intrusive warning confirming data is preserved while keeping `console.warn` logging intact.
+  2. *Explicit modal routes (`P39-A`):* Registered `ef-allocation-form`, `holding-valuation-form`, `liability-closure-form`, `liability-closure-note-form`, and `recurring-plan-stop-form` in `app/_layout.tsx` with `presentation: 'modal'`.
+  3. *Deep-link parameter handling (`P39-A`):* Added `src/lib/routeParams.ts` (`singleParam`, `closeRouteSafely`) across form/reminder/due routes so missing/invalid `wealthwise://` params fail gracefully and exit cleanly even when `router.canGoBack()` is false.
+  4. *Production stress-data tree-shaking (`P39-B`):* Replaced static `createStressData` import in `createAppStore.ts` with a `__DEV__`-guarded `require('../domain/stressData')`, keeping `demoData.ts` / Demo Mode intact and eliminating stress generators from production Hermes bundles.
+  5. *Expo SDK 57 patch alignment (`P39-E`):* Updated the 8 SDK 57 packages (`expo`, `expo-router`, `expo-sqlite`, `expo-build-properties`, `expo-constants`, `expo-notifications`, `expo-sharing`, `expo-splash-screen`) to SDK 57 patch versions; `DEC-P39-DEPS-01` remains accepted until the next SDK major upgrade.
+  Added `P39AuditRemediations.test.tsx` and physical-device checks `O83` and `O84` (`Not run`) in `docs/releases/device-test-checklist.md`. Schema remains version 24.
+- **CR-165 (2026-11-25) — Organize `/tmp/wealthwise/` artifacts and track `scripts/export-remote-snapshot.sh`.**
+  Organized WealthWise-specific temporary artifacts under `/tmp/wealthwise/` (`remote-snapshot/`: 177 files, `reports/`: 59 files, `logs/`: 74 files, `build-artifacts/`: 2 files; 312 total moved, 0 conflicts, unrelated `/tmp` entries preserved unmoved).
+  Relocated `~/export-remote-snapshot.sh` to [scripts/export-remote-snapshot.sh](../../scripts/export-remote-snapshot.sh) (verified WealthWise-only, zero credentials/tokens, uses owner-authenticated `gh`), updated its output path to `/tmp/wealthwise/remote-snapshot/`, and updated `AGENTS.md`, `docs/memory/README.md`, `docs/memory/rules.md`, and `branchingDocs.test.ts`. Historical ledger paths remain intact with current-path note recorded under CR-165. Pure documentation/tooling scope; schema remains version 24.
+- **CR-164 (2026-11-25) — Resolve `DEC-P39-DEPS-01` by owner approval.**
+  Recorded owner approval resolving `DEC-P39-DEPS-01`: accept the `decode-uri-component@0.2.2` ReDoS risk (`GHSA-vcc3-ghjq-m6fr` Moderate, `GHSA-qr28-fpjm-wq7f` High via `expo-router@57.0.31` → `query-string@7.1.3`) until the next planned Expo SDK upgrade.
+  - *Constraint & mitigation:* Upstream fix requires SemVer-major `expo-router@58.0.32` (Expo SDK 58), incompatible with Expo SDK 57 (`expo@57.0.33`); mitigated by 100% offline-first runtime (`offlineRuntime.test.ts`). The vulnerability is not fixed.
+  - *Follow-up:* Re-evaluate during the next planned Expo SDK upgrade. No dependencies upgraded; schema remains version 24.
+- **CR-163 (2026-11-25) — Historical PR label reconciliation and DEC-P39-DEPS-01 review.**
+  Completed fresh remote snapshot export (`2026-11-25T10:01:47+05:30`, terminal capture `/tmp/wealthwise-remote-snapshot/owner-terminal-2026-11-25.log`), historical PR label reconciliation, and `DEC-P39-DEPS-01` verification:
+  1. *PR label reconciliation:* Audited all 277 PRs (276 `MERGED`, 1 `CLOSED` [#39]). Applied missing taxonomy labels to 276 PRs (`ok=276, fail=0`, 0 new labels created; corrected 21 `phase:p28` draft entries to `lifecycle:qa-and-release`); PR #39 already complete (`phase:p01`, `type:chore`, `status:superseded`, `wontfix`). Post-update check verified 277/277 PRs labeled (0 unlabeled). Mapping and results saved in `/tmp/wealthwise-pr-label-reconciliation.json` and `/tmp/wealthwise-pr-label-apply-results.json`.
+  2. *DEC-P39-DEPS-01 review:* Verified `decode-uri-component@0.2.2` (`GHSA-vcc3-ghjq-m6fr`, `GHSA-qr28-fpjm-wq7f`) is transitive via `expo-router@57.0.31` → `query-string@7.1.3`; `npm audit` fix requires SemVer-major `expo-router@58.0.32` (Expo SDK 58), incompatible with Expo SDK 57 (`expo@57.0.33`). Decision remains **Open (Pending owner confirmation)**; no dependencies upgraded.
+  3. *Future tracking rules:* Verified `AGENTS.md`, `rules.md`, and `working-style.md` already require PR/issue labels and commit/PR/merge links with zero gaps.
+  Pure documentation and repository-process scope; schema remains version 24.
+- **CR-162 (2026-11-24) — Record physical-device checks O81 and O82 as Pass.**
+  Recorded owner-reported physical-device validation for checks O81 and O82 as Pass in `docs/releases/device-test-checklist.md`:
+  1. *O81:* Dynamic asset valuation inputs and calculations (P29-U-R1) tested and validated Pass on physical device.
+  2. *O82:* Consistent filter panels and absence of filter icon dot indicator (P20-L-R1) tested and validated Pass on physical device.
+  Metadata confirmed by owner: realme Narzo 60 Pro 5g, Android 15 Vanilla Ice Cream, tester sahilsheikh-dev, 2026-11-24.
+  All device checks in the Next release section are now Pass; zero device checks pending. Pure documentation lifecycle; schema remains version 24.
+- **CR-161 (2026-11-24) — PR #39 reconciliation, PR/issue label policy, and future tracking.**
+  Reconciled PR #39, PR/issue label policies, release records, and future tracking:
+  1. *PR #39 verified disposition:* Truthfully verified PR #39 (`DO_NOT_MERGE-...`) as Closed Unmerged; applied labels `phase:p01`, `type:chore`, `status:superseded`, `wontfix` and updated body with verified facts; commit `b779c21` was brought into repository ancestry in P28-E-R3 and released in `v1.1.1`.
+  2. *Audit of 273 PRs & 261 Issues:* Audited all 273 PRs (272 merged, 1 closed unmerged [#39], 0 open); proposed taxonomy mapping generated in `/tmp/wealthwise-pr-issue-audit-report.md` and `/tmp/wealthwise-pr-label-audit.json`.
+  3. *Policy & test enforcement:* Established mandatory PR and issue labeling in `AGENTS.md`, `rules.md`, `working-style.md`, and test-enforced in `progressLedger.test.ts`.
+  Pure documentation and repository-process scope; schema remains version 24.
+- **CR-160 (2026-11-24) — GitHub issue reconciliation and test-enforced tracking.**
+  Reconciled complete GitHub issue history backfill and established test-enforced ongoing tracking:
+  1. *Semantic standard labels:* Added standard GitHub labels (`enhancement`, `bug`, `documentation`) across all 261 issues (#270–#531) based on item type and lifecycle.
+  2. *Open roadmap issues:* Enriched all 29 open planned issues (Phases P7, P33–P38, P40, P44) with detailed task scope, dependencies, and explicit status (Planned/Open) under milestone `Planned`.
+  3. *Retrospective closures:* Preserved all 232 closed issues, historical ledger dates, PR references, and merge commits without backdating server timestamps.
+  4. *Zero duplicate issues:* Reused exact verified issues #270–#531.
+  5. *Test enforcement:* Formalized rule in `AGENTS.md`, `rules.md`, `working-style.md`, and enforced via `progressLedger.test.ts`.
+  Pure documentation and repository-process scope; schema remains version 24.
+- **CR-159 (2026-11-24) — GitHub issue history backfill and ongoing issue tracking.**
+  Executed complete GitHub issue history backfill and ongoing issue-tracking setup approved under P43-E / CR-150:
+  1. *Metadata setup:* Created 7 release milestones (`v1.0.0`, `v1.1.0`, `v1.1.1`, `v1.2.0`, `v1.3.0`, `v1.3.1`, `Planned`) and 54 labels across types, statuses, lifecycles, and phases (`phase:p01`–`phase:p44`).
+  2. *Issue backfill (Model A):* Generated 261 discrete GitHub issues mapping 1:1 to 210 active subtasks and 51 standalone lifecycle Change Requests.
+  3. *Retrospective closures:* 232 completed issues closed with standardized retrospective summaries capturing original dates, delivered state, PRs, and merge SHAs; server timestamps preserved.
+  4. *Open roadmap issues:* 29 planned roadmap items created open in `status:planned` under milestone `Planned` (Phases P7, P33–P38, P40, P44).
+  5. *Ongoing issue-tracking policy:* Documented in `AGENTS.md`, `rules.md`, `working-style.md`, and `README.md`.
+  Pure documentation and repository-process scope; schema remains version 24.
+- **P20-L-R1 / CR-158 (2026-11-24) — Consistent filter panels and header dot removal.**
+  Implemented consistent filter panels across all screens that display a header filter icon:
+  1. *Goals screen (`app/(tabs)/goals.tsx`):* Added filtering controls alongside existing `SortChip` supporting status (`All`, `In progress`, `Achieved`) and dynamic target year chips; automatic expansion of achieved goals when `Achieved` is selected; `EmptyState` displayed when no goals match the filter.
+  2. *Audited all 5 screens with filter icon:* Goals, Assets, Liabilities, Transactions, and Budget; confirmed sorting preferences and filter selections operate independently.
+  3. *Header filter dot indicator removal:* Removed `showIndicator: filterActive` across all 5 screens; the filter icon never displays a dot indicator initially or after changing sorting or filtering.
+  4. *Regression tests:* Added `ConsistentFilterPanels.test.tsx` (10/10 passing); updated `RouteRenderSmoke.test.tsx` and `BudgetCategoryFilter.test.tsx` assertions to expect dot indicator absence.
+  5. *Device verification check:* Check `O82` added in `Not run` status under `## Next release device checks` in `docs/releases/device-test-checklist.md` (metadata: realme Narzo 60 Pro 5g, Android 15 Vanilla Ice Cream, tester sahilsheikh-dev, 2026-11-24).
+  Schema remains version 24.
+- **P39-H / CR-157 (2026-11-24) — Release audit remediation plan.**
+  Synthesized findings from P39-A through P39-G into 3 prioritized remediation batches:
+  1. *Batch 1 (Containment & Storage Fallback):* Route `onSQLiteFailure` to `StorageErrorBanner` when SQLite degrades to AsyncStorage; rollback: revert handler.
+  2. *Batch 2 (Bundle Treeshaking & Routes):* Treeshake demo/stress fixtures out of Hermes bytecode in `createAppStore.ts` via dynamic import; register 5 missing modal forms in `_layout.tsx`.
+  3. *Batch 3 (Dependencies):* Monitor upstream Expo SDK for `decode-uri-component` patch under `DEC-P39-DEPS-01`.
+  4. *Detailed report:* `/tmp/wealthwise-p39-h-remediation-plan.md`.
+  Pure planning scope; schema remains version 24. Phase P39 is 100% complete (8/8 subtasks Done).
+  Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
+- **P39-G / CR-156 (2026-11-24) — Clean-install and first-launch walkthrough.**
+  Completed architectural walkthrough and failure mode analysis for fresh installations:
+  1. *Boot & Onboarding:* Verified splash screen hold until font and store hydration, clean hardware back exit on onboarding screen, and atomic transition to tab stack.
+  2. *First-launch reminders prompt:* Verified non-modal bottom sheet on first Home tab visit; denial gracefully records `meta.remindersPromptHandled` with no subsequent nagging.
+  3. *First transaction & App lock:* Verified form validation, single-write store mutation, and biometrics/passcode lock flow.
+  4. *Feed P37:* Findings cataloged to structure Phase P37 tutorial screens.
+  5. *Detailed report:* `/tmp/wealthwise-p39-g-clean-install-walkthrough.md`.
+  Pure audit/documentation scope; schema remains version 24.
+  Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
+- **P39-F / CR-155 (2026-11-24) — Debt, TODO/FIXME markers, and skipped test audit.**
+  Completed test debt and marker audit across the codebase:
+  1. *TODO/FIXME markers:* Zero `TODO`, `FIXME`, `HACK`, or `XXX` comments across all source code and tests.
+  2. *Single skipped test:* Investigated `stressBenchmark` in `src/domain/__tests__/stressData.test.ts#L93`; confirmed intentional architectural exception (runs intensive 50y/100y/126y benchmark taking ~180s; opt-in via `WEALTHWISE_STRESS_BENCHMARK=1`).
+  3. *Assertion integrity:* Verified zero weakened assertions.
+  4. *Detailed report:* `/tmp/wealthwise-p39-f-test-debt-audit.md`.
+  Pure audit/documentation scope; schema remains version 24.
+  Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
+- **P39-E / CR-154 (2026-11-24) — Dependency risk triage and CVE review.**
+  Completed audit of 1,124 packages using `npm audit`:
+  1. *Triaged 11 advisories:* 0 critical, 3 high, 8 moderate.
+  2. *Production reachability:* `decode-uri-component` (<= 0.5.0) via `query-string` in `expo-router` has ReDoS advisories (`GHSA-qr28-fpjm-wq7f`, `GHSA-vcc3-ghjq-m6fr`); mitigated by offline-first architecture with no remote URLs; tracked under owner decision `DEC-P39-DEPS-01`.
+  3. *Developer tooling:* `minimatch`, `tar`, `micromatch`, and `braces` vulnerabilities confined to build-time tooling.
+  4. *Hygiene:* Zero `npm audit fix --force` or unvetted install scripts permitted.
+  5. *Detailed report:* `/tmp/wealthwise-p39-e-dependency-risk-audit.md`.
+  Pure audit/documentation scope; schema remains version 24.
+  Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
+- **P39-D / CR-153 (2026-11-24) — Silent failures and recovery-state audit.**
+  Completed deep audit of silent failure modes and recovery states across storage, backup import/export, notifications, and SQLite fallback:
+  1. *Storage & SQLite fallback:* Identified P2 finding in `src/data/stateStorage.native.ts` where `onSQLiteFailure` is undefined, causing automatic fallback to AsyncStorage to log a `console.warn` without a user-facing degradation banner in `StorageErrorBanner`.
+  2. *Backup import/export recovery:* Confirmed robust handling of corrupted JSON, tampered AES-256-GCM ciphertext, incorrect passphrases, and 25MB/35MB size boundaries; `undoImport` single-tap recovery verified.
+  3. *Notification scheduling:* Scheduling failures are logged gracefully without interrupting financial transactions or corrupting reminder state.
+  4. *Detailed report:* `/tmp/wealthwise-p39-d-recovery-audit.md`.
+  Pure audit/documentation scope; schema remains version 24.
+  Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
+- **P39-B / CR-152 (2026-11-24) — Security, network boundary, and debug residue audit.**
+  Verified secrets, network behavior, debug residue, EAS config, bundle reachability, and source maps:
+  1. *Secrets & config:* Zero secrets or private keys tracked; no `.env` files present; EAS config verified clean.
+  2. *Offline runtime boundary:* Verified zero network calls; extended `offlineRuntime.test.ts` to assert prohibition of `EventSource` and `sendBeacon` alongside `fetch`, `XMLHttpRequest`, and `WebSocket`.
+  3. *Debug residue & bundle reachability:* Zero `debugger` statements; exactly 3 intentional/DEV-guarded console calls; dev menu unreachable in production builds (`__DEV__ === false`); identified P2 finding that statically imported demo/stress fixtures are compiled into Hermes bytecode bundle.
+  4. *Source maps:* Zero `.map` files exported in production distribution.
+  5. *Detailed report:* `/tmp/wealthwise-p39-b-security-debug-audit.md`.
+  Pure audit/documentation scope with boundary regression test; schema remains version 24.
+  Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
+- **P39-A / CR-151 (2026-11-24) — Master read-only codebase audit.**
+  Completed master read-only audit across 12 focus areas: dead code, secrets/config, app lock, notification response routes, deep links, silent failures, performance, dependencies, debug residue, TODO debt, permissions, and first launch.
+  1. *Zero P0/P1 blockers:* No active vulnerabilities, data loss risks, or hard crash bugs detected.
+  2. *Identified P2 hardening findings:* Statically imported demo/stress fixtures present in production Hermes bundle; silent SQLite fallback to legacy AsyncStorage without UI indication; deep links into internal modal forms.
+  3. *Clean postures:* Zero secrets tracked; zero TODO/FIXME markers; zero `debugger` statements; 3 intentional/DEV-guarded console calls; clean onboarding and notification response routes.
+  4. *Detailed report:* `/tmp/wealthwise-p39-a-master-audit.md`.
+  Pure audit/documentation scope; schema remains version 24; no runtime behavior changed.
+  Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
+- **P43-E / CR-150 (2026-11-24) — GitHub issue inventory and execution planning.**
+  Completed comprehensive inventory of ledger work and concrete execution plan for GitHub issues as a pure documentation and repository-process deliverable (zero GitHub issues created, edited, commented on, or closed):
+  1. *Ledger inventory & deduplication:* Audited 209 active dashboard subtasks (173 Done, 36 Planned; P27, P28, P32 reserved slots excluded) and 145 Change Requests (CR-1–CR-150; 94 mapped to subtasks, 51 standalone lifecycle). Evaluated mapping models and recommended Model A (Atomic Ledger Mapping) yielding 260 discrete issues (209 subtasks + 51 standalone lifecycle CRs; 224 retrospective closed, 36 open planned).
+  2. *Metadata & labeling schema:* Defined structured label taxonomy: `phase/*`, `type/*` (`feature`, `fix`, `docs`, `chore`, `debt`, `test`), `status/*` (`planned`, `in-progress`, `completed`), and release milestones (`v1.0.0`–`v1.3.0`, `Future`). Issue bodies strictly reference verified commits, PRs, merge SHAs, and original dates; GitHub creation timestamps are preserved without backdating attempts.
+  3. *Rate limits & execution schedule:* Designed 7 sequential batches of 35–40 issues with 2–3s delays (~4.5 min per batch, ~32 min total run) to safely remain well within GitHub API limits (5,000 req/hr) and prevent secondary abuse triggers.
+  4. *Report artifact:* Persisted detailed findings and execution specifications in `/tmp/wealthwise-p43-e-issue-inventory-plan.md`.
+  Pure documentation and repository-process scope; schema remains version 24; no runtime behavior changed.
+  Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
+- **P31 / CR-149 (2026-11-24) — Community and project health deliverables (P31-A, P31-B, P31-C, P31-D).**
+  Delivered all four planned repository documents for project health, community, accessibility, and privacy:
+  1. *P31-A (Community guidelines):* Added `CODE_OF_CONDUCT.md` at repository root establishing standards for respectful collaboration, privacy protection, and private reporting procedures to maintainers.
+  2. *P31-B (Issue forms):* Upgraded `.github/ISSUE_TEMPLATE/` to YAML issue forms: `bug_report.yml`, `feature_request.yml`, `question.yml`, and `config.yml`. Explicit warnings against submitting financial data; required privacy confirmation checkboxes; legacy `.md` templates removed; blank issues disabled.
+  3. *P31-C (Accessibility documentation):* Added `docs/accessibility/accessibility-statement.md` declaring WCAG 2.1 AA targets, 44x44 pt touch targets, dynamic font scaling (1.0x, 1.3x, 2.0x), high contrast, and TalkBack/VoiceOver semantics. Added `docs/accessibility/audit-checklist.md` with practical verification criteria.
+  4. *P31-D (Privacy statement):* Added `PRIVACY.md` at root derived strictly from verified P39-C audit facts: 100% offline-first, local SQLite/AsyncStorage storage in private app sandbox, zero network requests, zero telemetry, local notifications only, biometric authentication via OS Secure Enclave with passcode fallback, scoped SAF file access, AES-256-GCM backup encryption, `allowBackup: false`, and clear disclosure that local storage is unencrypted at rest at the app layer.
+  Pure documentation scope; schema version remains 24.
+  Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
+- **P39-C / CR-148 (2026-11-24) — Report-first permissions and privacy trace.**
+  Completed permissions and privacy trace across declarations, runtime requests, and usage:
+  1. *Network & Analytics:* 100% offline; zero network calls (`fetch`, `XMLHttpRequest`, `WebSocket`) verified by `src/lib/__tests__/offlineRuntime.test.ts`; zero telemetry or analytics SDKs.
+  2. *Android allowBackup:* Explicitly configured `allowBackup: false` in `app.json`, disabling automatic cloud upload of financial records to Google Drive.
+  3. *Notifications:* Local scheduling only under channel `'reminders'`; no remote push tokens or remote servers.
+  4. *Biometrics:* Used for optional app lock; evaluated locally in OS Secure Enclave / Keystore; no biometric data captured or stored; passcode fallback available.
+  5. *Storage & File Intents:* Scoped SAF file picker (`expo-document-picker`) and system share sheet (`expo-sharing`); no broad external storage permissions requested at runtime.
+  6. *Data at Rest & Backup Encryption:* SQLite database (`wealthwise-state.db`) and AsyncStorage stored unencrypted at rest within OS app sandbox; exported backups support strong AES-256-GCM + PBKDF2 encryption.
+  7. *Unverifiable items:* Marked root/jailbreak kernel bypass and custom vendor OEM intent quirks as unverifiable at application level.
+  Detailed audit report written to `/tmp/wealthwise-p39-c-permissions-privacy-trace.md`; findings directly feed P31-D privacy statement.
+  Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
+- **P29-U-R1 / CR-147 (2026-11-23) — Dynamic asset valuation inputs and calculations, and owner-reported O80 Pass.**
+  Implemented dynamic asset valuation inputs and calculations depending on the selected valuation type
+  across both recurring and one-time assets in `app/investment-form.tsx` and `app/holding-valuation-form.tsx`:
+  1. *Recurring asset form (`app/investment-form.tsx` -> `PlanFields`):* Placed `<FormSection title="Valuation">`
+     immediately below `<FormSection title="Basics">` (which contains `Name`, `Holding type`, and optional `Custom type name`),
+     ahead of `Contribution` and `Dates`. Inside `Valuation`, dynamically renders fields for `manual` (opening, actual value,
+     date, worked example modal), `accrual` (opening, annual rate, compounding, maturity date), `unitsPrice` (purchase amount,
+     unit price, units purchased, 2-way auto-calculation, live total value), and `balance` (opening balance, dynamic calculated
+     current balance display). Moved `Frequency` to `Contribution`; omitted `Annual return` when `accrual` is selected.
+  2. *One-time asset form (`app/investment-form.tsx` -> `ManualFields`):* Renders type-dependent inputs for manual, accrual,
+     unitsPrice, and balance with 2-way unit calculation.
+  3. *Holding valuation update route (`app/holding-valuation-form.tsx`):* Displays type-specific screen title, input label,
+     live calculated total value for unit-based holdings, and calls appropriate store action (`updateHoldingPrice` vs `updateHoldingValue`).
+  4. *Domain purity & schema v24:* Injected date handling in `src/domain/schemas.ts`; schema remains version 24 (additive `unitCount?: number` optional field).
+  Recorded owner-reported physical-device validation for check O80 as Pass on realme Narzo 60 Pro 5g running Android 15 Vanilla Ice Cream (sahilsheikh-dev, 2026-11-23).
+  Added physical-device check O81 under Next release device checks in `Not run` status.
+  Verified with regression tests in `src/components/__tests__/InvestmentFormRecurringValuation.test.tsx`,
+  `src/domain/__tests__/valuation.test.ts`, `src/domain/__tests__/schemas.test.ts`,
+  `src/components/__tests__/HoldingValuationDynamic.test.tsx`, and `src/components/__tests__/RouteRenderSmoke.test.tsx`.
+  Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
+- **P17-C-R1 / CR-146 (2026-11-23) — Persistent sorting preferences across screens and sections.**
+  Implemented persistent sorting preferences across every WealthWise screen and section that offers
+  sorting (Transactions, Assets, Liabilities, Budget, Goals, Investment Entries, Link Missing).
+  In `src/data/metaStore.ts`, added in-memory `cachedMeta` and `writeQueue` serialization to `createMetaStore`
+  to guarantee atomic writes during rapid or concurrent sort updates and eliminate mount delays.
+  In `src/data/useSort.ts`, initialized `stored` synchronously from `metaStore.getCachedMeta()` and subscribed
+  to `metaStore.subscribe` so that sort preference updates propagate immediately across mounted components in real time.
+  Preserved complete separation between sort preferences and filter selections (changing or restoring sort does not affect filters).
+  Recorded owner-reported physical-device validation for checks O78 and O79 as Pass on realme Narzo 60 Pro 5g
+  running Android 15 Vanilla Ice Cream (sahilsheikh-dev, 2026-11-23). Added physical-device check O80 under Next release
+  device checks in `Not run` status. Verified with regression tests in `src/data/__tests__/useSort.test.tsx` (6 tests passing).
+  Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
+- **P20-Z-R1 / CR-145 (2026-11-23) — Remove dot on Budget filter icon on default view and preserve owner margins.**
+  Refined Budget filter icon indicator in `app/(tabs)/budget.tsx` to set `filterActive = selectedCategory !== 'All'`,
+  removing sort comparison conditions. When viewing Budget on default ('All'), the filter icon renders clean
+  without a dot indicator, matching the appearance of Assets, Liabilities, and Transactions. The indicator
+  dot is activated only when a specific category is filtered. Preserved owner margin edits removing
+  `marginHorizontal: 20` from `styles.filterPanel`. Added physical-device check O79 in `Not run` status.
+  Verified with regression tests in `src/components/__tests__/BudgetCategoryFilter.test.tsx`.
+  Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
+- **P20-Z / CR-144 (2026-11-23) — Implement dynamic Budget category filter.**
+  Implemented dynamic Budget category filter alongside existing Budget sorting option in
+  `app/(tabs)/budget.tsx`. Adds `categoryOptions` memo calculating base categories (`All`, `Income`,
+  `Expenses`, `Needs`, `Wants`, `Debt`, `Assets`, `Liabilities`) and active custom section names,
+  renders `<Chip>` components inside `<ChipRow>` in `budget-filter-panel` alongside `<SortChip>`,
+  maintains `categoryOverride` state with `routeCategory` fallback, filters `sortedSections` into
+  `displayedSections` with `<EmptyState>` when no sections match, and sets `filterActive` indicator
+  when category is filtered. Added physical-device check O78 under Next release device checks in
+  `Not run` status. Verified with regression tests in `src/components/__tests__/BudgetCategoryFilter.test.tsx`.
+  Gates 1–3, 5, 6 exit 0; Gate 4 exit 1 on upstream expo-sqlite ~57.0.6 patch mismatch (20/21 checks passed).
+- **CR-143 / Documentation (2026-11-23) — Plan Budget category filter (P20-Z) and Dynamic asset valuation (P29-U-R1).**
+  Recorded two feature requests as Planned work only across repository ledgers, memory, and roadmap:
+  P20-Z (Budget category filter, Rule 4 under Phase P20) and P29-U-R1 (Dynamic asset valuation, Rule 2 under Phase P29).
+  Documented placement rationale, branch targets (`phase/20-budget` and `phase/29-income-recurrence`), and explicit
+  open product questions without inventing decisions. All six repository gates pass with exit 0.
+- **CR-142 / Documentation (2026-11-23) — Reconcile planned and unimplemented roadmap items.**
+  Corrected historical open-items and plan notes to resolve stale references: confirmed
+  that P21-F (Emergency Fund target editing) and P43-B (non-release tag cleanup) are Done
+  and released, and documented the authoritative 12 active planned roadmap areas (P7, P31,
+  P33, P34, P35, P36, P37, P38, P39, P40, P43-E, P44). All six repository gates pass with exit 0.
+- **CR-141 / Documentation (2026-11-23) — Reconcile documentation to reflect completed v1.3.0 publication.**
+  Reconciled release documentation across release-history.md, docs/releases/README.md,
+  docs/PROGRESS.md, status.md, and open-items.md to accurately record completed v1.3.0 publication,
+  merge to main via PR #216 (341dbcb), tag v1.3.0 (51523b8), and post-publication sync to develop
+  via PR #217 (97c6d02). All six repository gates pass with exit 0.
+- **CR-140 / Documentation (2026-11-23) — Owner-reported physical-device validation Pass for check O77.**
+  Recorded owner physical-device verification for check O77 (verifying budget item and
+  section rename on physical device preserves transaction name/note while updating category item)
+  as Pass in docs/releases/device-test-checklist.md under Next release device checks.
+  Confirmed metadata with owner (realme Narzo 60 Pro 5g, Android 15 Vanilla Ice Cream,
+  tester sahilsheikh-dev, 2026-11-23). All six repository gates pass with exit 0.
+- **P20-Y-R5 / CR-139 (2026-11-23) — Preserve transaction name/note on budget category item rename.**
+  Fixed budget category item rename behavior to strictly preserve the transaction name/note
+  as previously set when a budget item is renamed, updating only the transaction budget category
+  item. In TransactionsScreen (`app/(tabs)/transactions.tsx`), removed the dynamic
+  `linkedBudgetItem?.name` fallback from `itemTitle` so that the transaction's displayed title
+  strictly preserves its note or original category name without changing to the new budget item
+  name. In `editItem`, `renameSection`, `editBudgetIncome`, and `reconcileBudgetItemTransactions`,
+  set `note: tx.note ? tx.note : oldName` when updating `tx.category`, permanently preserving the
+  original transaction name/note across both domain storage and UI display layers. Verified with
+  regression tests in `src/domain/__tests__/budgetItemRenameTransactions.test.ts` and
+  `src/components/__tests__/TransactionsScreen.test.tsx`. All six repository gates pass with
+  exit 0. Check O77 marked Pass (owner-reported 2026-11-23).
+- **P20-Y-R4 / CR-138 (2026-11-23) — Preserve transaction note across all budget item renames.**
+  Fixed budget item rename behavior to strictly preserve transaction notes across all
+  item types (holding-linked investments, expenses, sections, and incomes) even when
+  the note is identical to the old budget item or section name. Removed matchedTxIds
+  transaction note mutation from editItem in src/domain/budget.ts; added historical
+  budget item lookup fallback to budgetItemForTransaction in src/domain/budgetCategories.ts
+  to cleanly resolve sibling holding items. Verified note preservation across all forms
+  and lists. All six repository gates pass with exit 0. Check O77 remains Not run.
+- **CR-137 / Documentation (2026-11-23) — Prohibit premature app version assignment until release draft.**
+  Established standing rule across all repository policy documents prohibiting adding,
+  bumping, or assigning a specific application version number in the device checklist,
+  metadata tables, package manifests, or anywhere in the repository until the owner
+  explicitly decides to prepare a release candidate draft. Updated Next release device
+  checks in docs/releases/device-test-checklist.md to use TBD (unassigned).
+- **CR-136 / Documentation (2026-11-23) — Device checklist rearrangement for published v1.3.0.**
+  Rearranged docs/releases/device-test-checklist.md: moved published checks O61–O76 into
+  dedicated ## v1.3.0 device checks section placed below v1.2.0 in ascending order.
+  Next release device checks at the top retains only unreleased checks (O77) for upcoming
+  version 1.3.1. Established standing rule across all policy documents requiring published
+  release checks to move into their own specific version section below previous releases.
+- **CR-135 / Documentation (2026-11-22) — Device check O77 and feature/fix checklist rule.**
+  Added check O77 to docs/releases/device-test-checklist.md under Next release device
+  checks in Not run status to verify budget item and section rename on physical devices.
+  Confirmed metadata with owner (realme Narzo 60 Pro 5g, Android 15 Vanilla Ice Cream,
+  tester sahilsheikh-dev, 2026-11-22). Established standing repository rule across policy
+  docs requiring physical-device verification check(s) to be added for any feature,
+  fix, bug fix, or revision that modifies user-facing behavior or core logic.
+- **P20-Y-R3 / CR-134 (2026-11-22) — Sync budget category only, preserving transaction note.**
+  Refined budget item and section rename behavior to update transaction.category only,
+  preserving transaction.note even if it is identical to the old name. Updated editItem,
+  renameSection, editBudgetIncome, and reconcileBudgetItemTransactions. Added regression
+  tests verifying note preservation. All six repository gates pass with exit 0.
+- **P20-Y-R2 / CR-133 (2026-11-22) — Budget item rename reflects in transaction category item.**
+  Fixed WealthWise bug where renaming an expense or standard budget item did not
+  reflect in transaction category item, leaving transactions showing the old name.
+  In P20-Y-R1, transaction updates were gated behind targetHoldingId. P20-Y-R2
+  updates tx.category and tx.note for matching transactions across month/following
+  scopes for all budget items in editItem, renameSection, and editBudgetIncome. Adds
+  reconcileBudgetItemTransactions in budgetCategories.ts and invokes it on store
+  rehydration and backup import to heal desynced transactions. Updates
+  TransactionsScreen categoryLabel to reflect linkedBudgetItem.name. Regression
+  tests in budgetItemRenameTransactions.test.ts and TransactionsScreen.test.tsx.
+  All six repository gates pass with exit 0.
+- **P20-Y-R1 / CR-132 (2026-11-22) — Linked transactions update on budget item rename.**
+  Fixed WealthWise bug where renaming a budget item or category in one month did
+  not update the name shown by transactions linked to that item. Linked
+  transactions now reflect the current budget item name wherever it appears,
+  including existing transactions, while preserving amount, date, category, and
+  budget link. Handles month-specific items and create, edit, display,
+  persistence, migration, and backup-import paths. Added regression tests in
+  `src/domain/__tests__/budgetItemRenameTransactions.test.ts`. All six
+  repository gates pass with exit 0.
+- **P28-F-R7 / CR-130 (2026-11-22) — Prepare and publish v1.3.0 release candidate.**
+  Prepared and published owner-approved v1.3.0 release candidate: bumped versions in app.json,
   package.json, and package-lock.json to 1.3.0; moved finalized release note to
   docs/releases/published/v1.3.0.md with 8 owner-supplied screenshots under
   docs/releases/screenshots/v1.3.0/; aligned build-config.md and device checklist
@@ -12,7 +304,10 @@
   Per owner instruction, updated README.md (Download block and 8-screenshot gallery for v1.3.0),
   aligned published v1.3.0 and v1.2.0 download blocks and release history, and updated
   release rules in AGENTS.md and rules.md to mandate aligning README and release docs during
-  candidate staging. Publication remains pending owner approval. All six repository gates pass.
+  candidate staging. Publication approved and completed on 2026-11-22; release/v1.3.0 merged
+  to main via PR #216 (341dbcb); tag v1.3.0 created; GitHub Release v1.3.0 published as Latest
+  by sahilsheikh-dev; post-publication back-merge to develop completed via PR #217 (97c6d02).
+  All six repository gates pass.
 - **P20-X-R1 / CR-129 (2026-11-22) — Remove transaction sorting & Dropdown search title.**
   Removed sorting option from TransactionForm category dropdowns (Expense, Income, Invest)
   and removed redundant static Search header title from shared Dropdown sheet, keeping
@@ -974,3 +1269,12 @@
   - P7-C: UI & settings in Backup / Security screen (Connect/Disconnect Google Drive, last backup status/timestamp, frequency picker, Wi-Fi only toggle, "Back up now", and "Restore from Google Drive" flow).
   - P7-D: Deterministic demo data, offline fallback, token revocation handling, unit tests, and device checklist rows.
 - Planning-only task: no application code, no dependencies, no schema change.
+
+
+## Current task — P43-B-delete-non-release-tags (2026-11-22)
+
+- Branch: `task/P43-B-delete-non-release-tags`; phase branch: `phase/43-lifecycle-and-transaction-planning`.
+- Executed P43-B per explicit owner approval: deleted all 47 non-release and legacy phase tags locally and on remote `origin`, keeping exclusively the 5 verified release tags (`v1.0.0`, `v1.1.0`, `v1.1.1`, `v1.2.0`, `v1.3.0`).
+- Updated Rule R3 across `AGENTS.md`, `docs/memory/rules.md`, and `docs/PROGRESS.md` to establish that only `vX.Y.Z` release tags are maintained in the repository and non-release tags are prohibited.
+- Updated `PROGRESS.md`, `open-items.md`, and `progressLedger.test.ts`.
+

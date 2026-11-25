@@ -1,0 +1,36 @@
+name: Feature request
+description: Suggest an enhancement or new capability for WealthWise
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### Privacy Reminder
+        WealthWise operates entirely offline. Do not include real personal financial data, account numbers, or credentials in feature proposals.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or User Need
+      description: What challenge or user need does this feature address?
+    validations:
+      required: true
+  - type: textarea
+    id: proposed_solution
+    attributes:
+      label: Proposed Behavior
+      description: Describe how the feature should behave and how users interact with it.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Describe any alternative designs or workarounds you considered.
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Confirmation
+      options:
+        - label: I confirm this feature suggestion respects offline-first architecture and does not contain personal financial data.
+          required: true

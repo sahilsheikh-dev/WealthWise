@@ -10,6 +10,7 @@ import { pendingItems } from '../src/domain/pending';
 import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
 import { formatDate } from '../src/lib/format';
+import { closeRouteSafely, singleParam } from '../src/lib/routeParams';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
@@ -18,14 +19,13 @@ export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenEr
 export default function PaymentConfirmScreen() {
   const { colors } = useTheme();
   const data = useAppStore((state) => state.data);
-  const { dueItemId, dueDate } = useLocalSearchParams<{ dueItemId?: string; dueDate?: string }>();
+  const params = useLocalSearchParams<{ dueItemId?: string; dueDate?: string }>();
+  const dueItemId = singleParam(params.dueItemId);
+  const dueDate = singleParam(params.dueDate);
   const today = todayISO();
-  const validTarget = typeof dueItemId === 'string'
-    && dueItemId.length > 0
-    && typeof dueDate === 'string'
-    && isValidISO(dueDate);
+  const validTarget = Boolean(dueItemId && dueDate && isValidISO(dueDate));
   const item = useMemo(() => {
-    if (!validTarget || typeof dueDate !== 'string' || typeof dueItemId !== 'string') return undefined;
+    if (!validTarget || !dueDate || !dueItemId) return undefined;
     return pendingItems(data, monthKey(dueDate), today).find((candidate) =>
       candidate.id === dueItemId && candidate.dueDate === dueDate);
   }, [data, dueDate, dueItemId, today, validTarget]);
@@ -41,7 +41,7 @@ export default function PaymentConfirmScreen() {
               This reminder is no longer outstanding.
             </AppText>
           </Card>
-          <Button label="Close" onPress={() => router.back()} />
+          <Button label="Close" onPress={() => closeRouteSafely('/(tabs)')} />
         </>
       ) : !item ? (
         <>
@@ -51,7 +51,7 @@ export default function PaymentConfirmScreen() {
               This reminder does not contain a valid due.
             </AppText>
           </Card>
-          <Button label="Close" onPress={() => router.back()} />
+          <Button label="Close" onPress={() => closeRouteSafely('/(tabs)')} />
         </>
       ) : (
         <>

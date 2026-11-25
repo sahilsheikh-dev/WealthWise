@@ -14,12 +14,13 @@ import { useAppActions } from '../src/data/useAppData';
 import { makeStopRecurringFormSchema } from '../src/domain/schemas';
 import { choiceAsync } from '../src/lib/confirm';
 import { todayISO } from '../src/lib/clock';
+import { closeRouteSafely, singleParam } from '../src/lib/routeParams';
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
 export default function RecurringPlanStopFormScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
-  const holdingId = Array.isArray(id) ? id[0] : id;
+  const holdingId = singleParam(id);
   const data = useAppStore((state) => state.data);
   const error = useAppStore((state) => state.lastError);
   const actions = useAppActions();
@@ -34,7 +35,7 @@ export default function RecurringPlanStopFormScreen() {
   });
 
   if (!holding || holding.kind !== 'plan') {
-    return <FormScreen title="Stop investment" onClose={() => router.back()} isDirty={false} footer={null}>
+    return <FormScreen title="Stop investment" onClose={() => closeRouteSafely('/assets')} isDirty={false} footer={null}>
       <EmptyState title="Plan not found" />
     </FormScreen>;
   }

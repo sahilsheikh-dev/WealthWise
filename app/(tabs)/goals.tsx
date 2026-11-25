@@ -6,7 +6,7 @@ import { AmountText } from '../../src/components/AmountText';
 import { AppHeader } from '../../src/components/AppHeader';
 import { GoalProgressRow } from '../../src/components/GoalProgressRow';
 import { SortChip } from '../../src/components/SortChip';
-import { AppText, Card, ChipRow, EmptyState, ProgressBar, SearchField, Screen } from '../../src/components/ui';
+import { AppText, Card, Chip, ChipRow, EmptyState, ProgressBar, SearchField, Screen } from '../../src/components/ui';
 import { useAppData } from '../../src/data/useAppData';
 import { useSort } from '../../src/data/useSort';
 import { emergencyFundBaseline, monthsCovered } from '../../src/domain/ef';
@@ -15,7 +15,7 @@ import { ensureEfGoal, goalTotals, goalView } from '../../src/domain/goals';
 import { formatAmount } from '../../src/lib/amountDisplay';
 import { todayISO } from '../../src/lib/clock';
 import { formatDate } from '../../src/lib/format';
-import { DEFAULT_SORTS, SORT_OPTIONS } from '../../src/lib/sorting';
+import { SORT_OPTIONS } from '../../src/lib/sorting';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
 
@@ -26,6 +26,8 @@ export default function GoalsScreen() {
   const data = useAppData();
   const sorting = useSort('goals');
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<'All' | 'In progress' | 'Achieved'>('All');
+  const [yearFilter, setYearFilter] = useState<'All' | number>('All');
   const [achievedExpanded, setAchievedExpanded] = useState(false);
   const [query, setQuery] = useState('');
   const asOf = todayISO();
@@ -36,6 +38,9 @@ export default function GoalsScreen() {
     asOf,
   });
   const totals = goalTotals(goals, expenseBaseline, data, asOf);
+  const availableYears = Array.from(
+    new Set(goals.map((goal) => goal.year).filter((year) => typeof year === 'number' && Number.isFinite(year))),
+  ).sort((a, b) => a - b);
   const goalCreationOrder = new Map(data.goals.map((goal, index) => [goal.id, index]));
   const sortedGoals = sorting.sort(goals.map((goal) => {
     const view = goalView(goal, { expenseBaseline, data, asOf });
@@ -48,12 +53,18 @@ export default function GoalsScreen() {
       sortCreatedIndex: goalCreationOrder.get(goal.id) ?? data.goals.length,
     };
   }));
+  const filteredGoals = sortedGoals.filter((goal) => {
+    if (statusFilter === 'In progress' && goal.savedAmount >= goal.targetAmount) return false;
+    if (statusFilter === 'Achieved' && goal.savedAmount < goal.targetAmount) return false;
+    if (yearFilter !== 'All' && goal.year !== yearFilter) return false;
+    return true;
+  });
   const normalizedQuery = query.trim().toLowerCase();
   const visibleGoals = normalizedQuery
-    ? sortedGoals.filter((goal) =>
+    ? filteredGoals.filter((goal) =>
       `${goal.name} ${goal.auto === 'ef' ? 'Emergency fund' : ''}`.toLowerCase().includes(normalizedQuery),
     )
-    : sortedGoals;
+    : filteredGoals;
   const pinnedGoals = visibleGoals.filter((goal) => goal.auto === 'ef');
   const inProgressGoals = visibleGoals.filter((goal) =>
     goal.auto !== 'ef' && goal.savedAmount < goal.targetAmount,
@@ -61,8 +72,7 @@ export default function GoalsScreen() {
   const achievedGoals = visibleGoals.filter((goal) =>
     goal.auto !== 'ef' && goal.savedAmount >= goal.targetAmount,
   );
-  const filterActive = sorting.spec.key !== DEFAULT_SORTS.goals.key
-    || sorting.spec.dir !== DEFAULT_SORTS.goals.dir;
+  const isAchievedExpanded = achievedExpanded || statusFilter === 'Achieved';
 
   const renderGoalCard = (goal: (typeof sortedGoals)[number]) => {
     const view = goalView(goal, { expenseBaseline, data, asOf });
@@ -179,7 +189,6 @@ export default function GoalsScreen() {
             label: 'Filter',
             onPress: () => setFilterPanelOpen((open) => !open),
             expanded: filterPanelOpen,
-            showIndicator: filterActive,
           },
           { icon: 'plus', label: 'New goal', onPress: () => router.push('/goal-form') },
         ]}
@@ -188,6 +197,32 @@ export default function GoalsScreen() {
         <View testID="goal-filter-panel">
           <ChipRow>
             <SortChip options={SORT_OPTIONS.goals} spec={sorting.spec} onChange={sorting.setSpec} />
+            <Chip
+              label="All"
+              selected={statusFilter === 'All' && yearFilter === 'All'}
+              onPress={() => {
+                setStatusFilter('All');
+                setYearFilter('All');
+              }}
+            />
+            <Chip
+              label="In progress"
+              selected={statusFilter === 'In progress'}
+              onPress={() => setStatusFilter((current) => (current === 'In progress' ? 'All' : 'In progress'))}
+            />
+            <Chip
+              label="Achieved"
+              selected={statusFilter === 'Achieved'}
+              onPress={() => setStatusFilter((current) => (current === 'Achieved' ? 'All' : 'Achieved'))}
+            />
+            {availableYears.map((year) => (
+              <Chip
+                key={year}
+                label={String(year)}
+                selected={yearFilter === year}
+                onPress={() => setYearFilter((current) => (current === year ? 'All' : year))}
+              />
+            ))}
           </ChipRow>
         </View>
       ) : null}
@@ -215,20 +250,22 @@ export default function GoalsScreen() {
           testID="achieved-goals-toggle"
           accessibilityRole="button"
           accessibilityLabel={`Achieved (${achievedGoals.length})`}
-          accessibilityHint={achievedExpanded ? 'Hides achieved goals' : 'Shows achieved goals'}
-          accessibilityState={{ expanded: achievedExpanded }}
+          accessibilityHint={isAchievedExpanded ? 'Hides achieved goals' : 'Shows achieved goals'}
+          accessibilityState={{ expanded: isAchievedExpanded }}
           onPress={() => setAchievedExpanded((expanded) => !expanded)}
           style={[styles.achievedToggle, { borderColor: colors.border }]}>
           <AppText weight="semibold" style={[typography.label, { color: colors.text1 }]}>
             Achieved ({achievedGoals.length})
           </AppText>
           <AppText style={[typography.meta, { color: colors.text3 }]}>
-            {achievedExpanded ? 'Hide' : 'Show'}
+            {isAchievedExpanded ? 'Hide' : 'Show'}
           </AppText>
         </Pressable>
       ) : null}
-      {achievedExpanded ? achievedGoals.map(renderGoalCard) : null}
-      {normalizedQuery && visibleGoals.length === 0 ? <EmptyState title="No matches" /> : null}
+      {isAchievedExpanded ? achievedGoals.map(renderGoalCard) : null}
+      {(normalizedQuery || statusFilter !== 'All' || yearFilter !== 'All') && visibleGoals.length === 0 ? (
+        <EmptyState title="No matches" />
+      ) : null}
     </Screen>
   );
 }

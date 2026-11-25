@@ -24,6 +24,7 @@ import { useUIStore } from '../../src/data/uiStore';
 import { useAppData } from '../../src/data/useAppData';
 import { useSort } from '../../src/data/useSort';
 import { customBudgetCategories } from '../../src/domain/budget';
+import { budgetItemForTransaction } from '../../src/domain/budgetCategories';
 import { availableBalance } from '../../src/domain/cashFlow';
 import { shiftMonth } from '../../src/domain/dates';
 import { findUnlinkedEntries } from '../../src/domain/instruments';
@@ -34,7 +35,7 @@ import type { Transaction } from '../../src/domain/types';
 import { formatAmount } from '../../src/lib/amountDisplay';
 import { todayISO } from '../../src/lib/clock';
 import { formatDate, formatMonth } from '../../src/lib/format';
-import { DEFAULT_SORTS, SORT_OPTIONS } from '../../src/lib/sorting';
+import { SORT_OPTIONS } from '../../src/lib/sorting';
 import { swipeIntent } from '../../src/lib/swipe';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
@@ -109,9 +110,6 @@ export default function TransactionsScreen() {
   );
   const groups = useMemo(() => groupByDate(rows), [rows]);
   const hasMonthTransactions = data.transactions.some((item) => item.date.startsWith(month));
-  const filterActive = filter !== 'all' || categoryFilter !== ''
-    || sorting.spec.key !== DEFAULT_SORTS.transactions.key
-    || sorting.spec.dir !== DEFAULT_SORTS.transactions.dir;
   return (
     <Screen scroll={false}>
       <View style={styles.gestureSurface} {...monthPanResponder.panHandlers}>
@@ -125,7 +123,6 @@ export default function TransactionsScreen() {
               label: 'Filter',
               onPress: () => setFilterPanelOpen((open) => !open),
               expanded: filterPanelOpen,
-              showIndicator: filterActive,
             },
             { icon: 'plus', label: 'Add transaction', onPress: () => router.push('/transaction-form') },
           ]}
@@ -312,14 +309,18 @@ export default function TransactionsScreen() {
                 const linked = item.source
                   ? describeSource(data, item.source)
                   : null;
-                const categoryLabel = transactionCategoryLabel(item.category, item.type, budgetCategories);
+                const linkedBudgetItem = budgetItemForTransaction(data, item);
+                const categoryLabel = transactionCategoryLabel(linkedBudgetItem?.name || item.category, item.type, budgetCategories);
+                const itemTitle = (item.note && (!linked || item.note !== `${linked.label} deposit`))
+                  ? item.note
+                  : (item.note || categoryLabel);
                 return (
                   <ListItem
                     key={item.id}
-                    title={item.note || categoryLabel}
+                    title={itemTitle}
                     subtitle={linked ? `${categoryLabel}\n→ ${linked.label}` : categoryLabel}
                     amount={`${tone.symbol}${formatAmount(item.amount, 'row', fontScale)}`}
-                    accessibilityLabel={`${item.note || categoryLabel}, ${categoryLabel}, ${tone.symbol}${formatAmount(item.amount, 'exact', 1)}`}
+                    accessibilityLabel={`${itemTitle}, ${categoryLabel}, ${tone.symbol}${formatAmount(item.amount, 'exact', 1)}`}
                     tone={tone.tone}
                     icon={item.type === 'income' ? 'arrow-down-left' : item.type === 'expense' ? 'arrow-up-right' : 'trending-up'}
                     onPress={() => router.push({ pathname: '/transaction-form', params: { id: item.id } })}

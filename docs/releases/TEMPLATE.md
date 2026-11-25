@@ -10,6 +10,8 @@ Versioning: bug fixes bump PATCH; visible new features bump MINOR; breaking
 changes bump MAJOR. Release 2 is v1.1.0 if it includes the Budget Pace graph,
 otherwise v1.0.1; confirm with the owner. Change app.json, package.json and
 package-lock.json versions only in that version's release-preparation task.
+Also update CHANGELOG.md with this release's heading, confirmed date, and
+verified changes before committing the approved release work.
 -->
 
 ## Download

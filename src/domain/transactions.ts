@@ -75,7 +75,8 @@ export function filterTransactions(
     .filter((transaction) => !options.category || transaction.category === options.category
       || (options.category === 'Other investments' && transaction.type === 'invest'
         && !INVESTMENT_CATEGORIES.has(transaction.category)
-        && !options.customCategories?.has(transaction.category)))
+        && !options.customCategories?.has(transaction.category))
+      || (transaction.type === 'invest' && transaction.note === options.category))
     .filter((transaction) => !query || `${transaction.note} ${transaction.category}`.toLowerCase().includes(query))
     .sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
 }

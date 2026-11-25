@@ -1,5 +1,17 @@
+const path = require('path');
+
+const expoModulesCoreDir = path.dirname(
+  require.resolve('expo-modules-core/package.json', {
+    paths: [__dirname, path.join(__dirname, 'node_modules', 'expo')],
+  }),
+);
+
 module.exports = {
   preset: 'jest-expo',
+  moduleNameMapper: {
+    '^expo-modules-core$': expoModulesCoreDir,
+    '^expo-modules-core/(.*)$': `${expoModulesCoreDir}/$1`,
+  },
   transformIgnorePatterns: [
     '/node_modules/(?!(.pnpm|react-native|@react-native|@react-native-community|expo|@expo|@expo-google-fonts|react-navigation|@react-navigation|@sentry/react-native|native-base|standard-navigation|@noble/ciphers|@noble/hashes))',
     '/node_modules/react-native-reanimated/plugin/',
