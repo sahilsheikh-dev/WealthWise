@@ -1,6 +1,8 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-25 | Updates: owner and AI agents -->
 
 # Status
+- **P35-B / CR-177 (2026-11-25) — Transaction auto-detection scope validation and implementation design.**
+  Validated P35-A research and finalized P35-C design (`#441`) in `/tmp/wealthwise/reports/p35-b-implementation-design.md`. Confirmed Android-only `NotificationListenerService` (`BIND_NOTIFICATION_LISTENER_SERVICE`) via local Expo module/config plugin, zero SMS permissions, prominent disclosure + affirmative opt-in, user-selected source apps, local-only in-memory parsing with zero raw-text storage, `metaStore` draft queue + deduplication + 7-day expiry (keeping schema v24), dynamic credit/debit/Investment categorization, foreground review sheet, and generic background `Review` notification. Schema remains version 24.
 - **P35-A / CR-176 (2026-11-25) — SMS/notification transaction auto-detection research and plan.**
   Completed permission, platform, privacy, and store-policy research for P35-A (`#440`). Recommended Android `NotificationListenerService` (`BIND_NOTIFICATION_LISTENER_SERVICE`) with 100% local-only on-device parsing, zero raw-message persistence, in-app Prominent Disclosure + affirmative consent, Android 13+ Restricted Settings guidance for sideloaded APKs, and reviewable local drafts in `metaStore` (never silently creating or altering financial records); **do not request `READ_SMS`/`RECEIVE_SMS`**. Confirmed iOS is unsupported for automatic SMS/notification capture. Full report stored outside Git at `/tmp/wealthwise/reports/p35-a-transaction-detection-research.md`. Schema remains version 24.
 - **P34-A / CR-175 (2026-11-25) — Quick-capture methods research and implementation plan.**
