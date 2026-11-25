@@ -5,6 +5,24 @@ Update this file for every release: add the new version heading and confirmed re
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-11-25
+
+### New Features
+- Dynamic asset valuation methods across one-time and recurring holdings: Manual, Interest-based (rate and compounding), Unit-based (auto-calculated units and total value), and Balance-based, with live form inputs and valuation updates.
+- Dynamic Budget category filter in the Budget filter panel alongside `SortChip`, listing available categories (including custom categories) and persisting across month navigation.
+- Goals filter panel with status (`All`, `In progress`, `Achieved`) and dynamic target-year filter chips alongside `SortChip`.
+- Persistent per-screen sorting preferences across Transactions, Assets, Liabilities, Goals, and Budget.
+
+### Improvements
+- Upgraded runtime platform to Expo SDK 58 (`react-native@0.88.1`, `expo-router@~58.0.32`), resolving the `decode-uri-component` transitive advisory.
+- Consistent filter panels across Goals, Assets, Liabilities, Transactions, and Budget without header filter-icon dot indicators.
+- Non-intrusive SQLite fallback warning banner when storage falls back to AsyncStorage, accurately confirming preserved local data.
+- Excluded development stress-data generators from production Hermes bundles while keeping Demo Mode intact.
+
+### Fixes
+- Renaming a Budget item or section across single-month or following scopes now updates linked transaction category names while preserving transaction amount, date, budget link, and custom user notes.
+- Added explicit modal route registrations for `ef-allocation-form`, `holding-valuation-form`, `liability-closure-form`, `liability-closure-note-form`, and `recurring-plan-stop-form`, plus safe fallback handling for missing or invalid `wealthwise://` deep-link parameters.
+
 ## [1.3.0] - 2026-11-22
 
 ### New Features

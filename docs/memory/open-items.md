@@ -2,6 +2,10 @@
 
 # Open items
 
+## P28-F-R8 Prepare v1.4.0 release candidate (In progress; CR-174; #574)
+
+- Subtask P28-F-R8 (CR-174, 2026-11-25): Owner approved `v1.4.0` release-note draft and supplied 13 screenshots. Prepared `v1.4.0` candidate on `task/P28-F-R8-prepare-v1.4.0-release` under `qa-and-release` (`app.json`/`package.json` `1.4.0`, `docs/releases/published/v1.4.0.md`, `CHANGELOG.md`, `README.md`, `device-test-checklist.md` `## v1.4.0 device checks`). Issue `#574`. Next: merge to `develop`, create `release/v1.4.0` + GitHub Release draft, build `android-apk` via EAS, upload and verify artifact, then request publication approval.
+
 ## P40-B Archive completed-phase narrative (Done; CR-173; #462)
 
 - Subtask P40-B (CR-173, 2026-11-25): Archived completed-phase narrative from `docs/PROGRESS.md` into `docs/memory/archive/` (`README.md` + 6 section archives), reducing `docs/PROGRESS.md` by ~75% in bytes while preserving all historical records and full `progressLedger.test.ts` coverage. Phase `P40` is now complete (`2/2`). Issue `#462`.
