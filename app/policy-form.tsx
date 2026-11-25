@@ -22,6 +22,8 @@ import { confirmAsync } from '../src/lib/confirm';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
+import { closeRouteSafely } from '../src/lib/routeParams';
+
 const optionalAmountSchema = z.string().transform((value) => {
   const trimmed = value.trim();
   return trimmed === '' ? undefined : Number(trimmed);
@@ -114,7 +116,7 @@ export default function PolicyFormScreen() {
 
   if (editing && !policy) {
     return (
-      <FormScreen title="Policy" onClose={() => router.back()} isDirty={false} footer={null}>
+      <FormScreen title="Policy" onClose={() => closeRouteSafely('/insurance')} isDirty={false} footer={null}>
         <EmptyState title="Policy not found" />
       </FormScreen>
     );

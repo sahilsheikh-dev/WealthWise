@@ -20,6 +20,8 @@ import { confirmAsync } from '../src/lib/confirm';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
+import { closeRouteSafely } from '../src/lib/routeParams';
+
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
 type EfBucketFormInput = {
@@ -147,7 +149,7 @@ export default function EfBucketFormScreen() {
 
   if (editing && !bucket) {
     return (
-      <FormScreen title="Allocation item" onClose={() => router.back()} footer={null}>
+      <FormScreen title="Allocation item" onClose={() => closeRouteSafely('/emergency-fund')} footer={null}>
         <EmptyState title="Allocation item not found" />
       </FormScreen>
     );

@@ -26,6 +26,8 @@ import { formatMonth } from '../src/lib/format';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
+import { closeRouteSafely } from '../src/lib/routeParams';
+
 const budgetItemFormSchema = z.object({
   name: z.string().trim().min(1, 'Enter an item name.').max(30, 'Keep the name under 30 characters.'),
   mode: z.enum(['amount', 'percent']),
@@ -127,7 +129,7 @@ export default function BudgetItemFormScreen() {
 
   if (!section || (editing && !item)) {
     return (
-      <FormScreen title={editing ? 'Edit item' : 'Add item'} onClose={() => router.back()} isDirty={false} footer={null}>
+      <FormScreen title={editing ? 'Edit item' : 'Add item'} onClose={() => closeRouteSafely('/(tabs)/budget')} isDirty={false} footer={null}>
         <EmptyState title={section ? 'Budget item not found' : 'Budget section not found'} />
       </FormScreen>
     );
