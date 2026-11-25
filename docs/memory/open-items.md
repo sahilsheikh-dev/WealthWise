@@ -2,6 +2,10 @@
 
 # Open items
 
+## Record physical-device checks O83 and O84 as Pass (Done; CR-168; #559)
+
+- Subtask CR-168 (2026-11-25): Recorded owner-reported physical-device verification Pass for `O83` and `O84` in `docs/releases/device-test-checklist.md` with confirmed metadata (`realme Narzo 60 Pro 5g`, `15 Vanilla Ice Cream`, `sahilsheikh-dev`, `2026-11-25`).
+
 ## Remote-snapshot refresh rules, GitHub issue-tracking rules, and missing issue backfill (Done; CR-167)
 
 - Subtask CR-167 (2026-11-25):
