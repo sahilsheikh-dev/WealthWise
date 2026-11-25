@@ -234,8 +234,11 @@ local Gradle builds still require explicit authorization.
   platform-generated asset digest that cannot be removed by editing the
   release.
   Release sequence: obtain approval of the Markdown draft first, then commit
-  the approved code and finalized note (already moved to `published/`) on the
-  task branch and merge task -> phase -> `develop` through PRs. After the
+  the approved code, finalized note (already moved to `published/`), and
+  `CHANGELOG.md` update (adding the new version heading with the confirmed
+  release date and verified change summary) on the task branch and merge
+  task -> phase -> `develop` through PRs. Never assign a version or date in
+  `CHANGELOG.md` before the owner authorizes release-candidate preparation. After the
   merge, create the GitHub Release as a draft at the merged code, attach every
   version screenshot and use each absolute asset URL in the draft body.
   Run `eas build --platform android --profile android-apk`, wait for

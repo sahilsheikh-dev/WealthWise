@@ -2628,9 +2628,61 @@ describe('permanent progress ledger', () => {
     expect(pkg.dependencies.expo).toMatch(/^\^?58\./);
     expect(pkg.dependencies['expo-router']).toMatch(/^~?58\./);
     expect(decisionsSection).toContain('Resolved by Expo SDK 58 upgrade');
-    expect(checklist).toMatch(/\|\s*O85\s*\|[^|]+\|\s*Not run\s*\|/);
+    expect(checklist).toMatch(/\|\s*O85\s*\|[^|]+\|\s*Pass\s*\|/);
     expect(openItems).toContain('P39-E-R1');
     expect(openItems).toContain('O85');
     expect(status).toContain('P39-E-R1');
+  });
+
+  it('records owner-reported O85 Pass under CR-170', () => {
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const independentEntities = ledger.split('## 13. Independent entities')[1] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const checklist = readFileSync(join(process.cwd(), 'docs/releases/device-test-checklist.md'), 'utf8');
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-170 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-170 |'))).toHaveLength(1);
+    expect(independentEntities.split('\n').filter((line) => line.startsWith('| CR-170 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-170');
+    expect(checklist).toMatch(/\|\s*O85\s*\|[^|]+\|\s*Pass\s*\|/);
+    expect(openItems).toContain('CR-170');
+    expect(status).toContain('CR-170');
+  });
+
+  it('completes CHANGELOG.md for all published releases and enforces per-release updates under CR-171', () => {
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const independentEntities = ledger.split('## 13. Independent entities')[1] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const changelog = readFileSync(join(process.cwd(), 'CHANGELOG.md'), 'utf8');
+    const agents = readFileSync(join(process.cwd(), 'AGENTS.md'), 'utf8');
+    const releaseReadme = readFileSync(join(process.cwd(), 'docs/releases/README.md'), 'utf8');
+    const releaseTemplate = readFileSync(join(process.cwd(), 'docs/releases/TEMPLATE.md'), 'utf8');
+    const releasePrompt = readFileSync(join(process.cwd(), 'docs/releases/RELEASE_PROMPT.md'), 'utf8');
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-171 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-171 |'))).toHaveLength(1);
+    expect(independentEntities.split('\n').filter((line) => line.startsWith('| CR-171 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-171');
+
+    expect(changelog).toContain('## [Unreleased]');
+    expect(changelog).toContain('## [1.3.0] - 2026-11-22');
+    expect(changelog).toContain('## [1.2.0] - 2026-11-11');
+    expect(changelog).toContain('## [1.1.1] - 2026-11-09');
+    expect(changelog).toContain('## [1.1.0] - 2026-11-08');
+    expect(changelog).toContain('## [1.0.0] - 2026-11-07');
+    expect(changelog).not.toContain('TBD');
+
+    expect(agents).toContain('CHANGELOG.md');
+    expect(releaseReadme).toContain('CHANGELOG.md');
+    expect(releaseTemplate).toContain('CHANGELOG.md');
+    expect(releasePrompt).toContain('CHANGELOG.md');
+    expect(openItems).toContain('CR-171');
+    expect(status).toContain('CR-171');
   });
 });

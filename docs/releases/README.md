@@ -42,10 +42,13 @@ The shared project rules are in [AGENTS.md](../../AGENTS.md),
    images per row, ordered Home, Assets, Liabilities, Emergency Fund, Goals,
    Insurance, Budget, Transactions; omit unavailable screens.
 4. After the owner approves the Markdown draft, finalize it with all release
-   details and screenshots, move it to `docs/releases/published/`, and include
-   the approved note in the release-work commit before creating the GitHub draft.
-   Release notes and GitHub release bodies must not contain a Contributors
-   section.
+   details and screenshots, move it to `docs/releases/published/`, update
+   `CHANGELOG.md` with the new version heading, confirmed release date, and
+   verified change summary, and include both the approved note and
+   `CHANGELOG.md` update in the release-work commit before creating the GitHub
+   draft. Never assign a version or date in `CHANGELOG.md` before the owner
+   authorizes release-candidate preparation. Release notes and GitHub release
+   bodies must not contain a Contributors section.
 5. Commit the approved work on its task branch and merge it
    task -> phase -> `develop` through PRs. Run all six gates in order and
    complete the physical-device checklist. Never build from unmerged changes.

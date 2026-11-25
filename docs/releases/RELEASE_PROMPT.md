@@ -684,6 +684,7 @@ Before considering the release complete, verify:
 - Verified PR links.
 - Verified changelog URL.
 - Correct breaking change documentation.
+- Updated `CHANGELOG.md` with the new version heading, confirmed date, and verified changes.
 - Saved release draft.
 - Explicit approval.
 - Successful GitHub publication.
