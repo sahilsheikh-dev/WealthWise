@@ -49,6 +49,7 @@ import { addIncomeItem, applyBudgetPlanToMonth, editBudgetIncome as editBudgetIn
 import { pendingItems } from '../../domain/pending';
 import { clearDue as clearDueDomain, duesThroughPreview, undoClearDue as undoClearDueDomain } from '../../domain/dues';
 import { liabilitySchedule, planSchedule } from '../../domain/schedule';
+import { suggestedValuationMethod } from '../../domain/valuation';
 import { emptyAppData } from '../../domain/actions';
 import { createBackup } from '../../domain/backup';
 import { encryptBackup, isEncryptedBackup } from '../../domain/backupCrypto';
@@ -4138,10 +4139,10 @@ describe('route render smoke audit', () => {
         )).toHaveLength(1);
       }
       if (name === 'Transactions' || name === 'Assets' || name === 'Liabilities') {
-        expect(renderer.root.findByProps({ accessibilityLabel: 'Filter' }).props.showIndicator).toBe(true);
+        expect(renderer.root.findByProps({ accessibilityLabel: 'Filter' }).props.showIndicator).toBeFalsy();
         expect(renderer.root.findAll((node) =>
           String(node.type) === 'view' && node.props.testID === 'header-action-indicator',
-        )).toHaveLength(1);
+        )).toHaveLength(0);
       }
       const header = renderer.root.findAllByType('header')[0];
       const headerActionLabels = header?.findAll((node) =>
@@ -5255,11 +5256,13 @@ describe('route render smoke audit', () => {
   it('explains the first scheduled deposit and deposit tracking dates', () => {
     const renderer = renderScreen(React.createElement(InvestmentFormScreen));
     const dates = renderer.root.findAll((node) => String(node.type) === 'datefield');
-    expect(dates[0]?.props).toMatchObject({
+    const firstDate = dates.find((node) => node.props.accessibilityLabel === 'First scheduled contribution date');
+    const trackDate = dates.find((node) => node.props.accessibilityLabel === 'Scheduled deposit tracking start date');
+    expect(firstDate?.props).toMatchObject({
       accessibilityLabel: 'First scheduled contribution date',
       accessibilityHint: 'The first date on your recurring investment schedule.',
     });
-    expect(dates[1]?.props).toMatchObject({
+    expect(trackDate?.props).toMatchObject({
       accessibilityLabel: 'Scheduled deposit tracking start date',
       accessibilityHint: 'Only deposits due on or after this date count toward missed contributions.',
     });
@@ -5421,7 +5424,8 @@ describe('route render smoke audit', () => {
         renderer = renderScreen(React.createElement(InvestmentFormScreen));
         expect(renderer.root.findAllByProps({ label: 'Save' })).toHaveLength(1);
         expect(renderer.root.findAllByType(Dropdown).some((field) => field.props.label === 'Valuation method')).toBe(true);
-        expect(renderer.root.findAllByType(Dropdown).some((field) => field.props.label === 'Compounding')).toBe(true);
+        const isAccrual = (holding.valuationMethod ?? suggestedValuationMethod(holding.type, false, holding.ratePct)) === 'accrual';
+        expect(renderer.root.findAllByType(Dropdown).some((field) => field.props.label === 'Compounding')).toBe(isAccrual);
         if (holding.kind === 'plan') {
           expect(renderer.root.findAllByType(Dropdown).some((field) => field.props.label === 'Holding type')).toBe(true);
         } else {

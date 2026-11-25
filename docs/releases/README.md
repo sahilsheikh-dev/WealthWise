@@ -42,10 +42,13 @@ The shared project rules are in [AGENTS.md](../../AGENTS.md),
    images per row, ordered Home, Assets, Liabilities, Emergency Fund, Goals,
    Insurance, Budget, Transactions; omit unavailable screens.
 4. After the owner approves the Markdown draft, finalize it with all release
-   details and screenshots, move it to `docs/releases/published/`, and include
-   the approved note in the release-work commit before creating the GitHub draft.
-   Release notes and GitHub release bodies must not contain a Contributors
-   section.
+   details and screenshots, move it to `docs/releases/published/`, update
+   `CHANGELOG.md` with the new version heading, confirmed release date, and
+   verified change summary, and include both the approved note and
+   `CHANGELOG.md` update in the release-work commit before creating the GitHub
+   draft. Never assign a version or date in `CHANGELOG.md` before the owner
+   authorizes release-candidate preparation. Release notes and GitHub release
+   bodies must not contain a Contributors section.
 5. Commit the approved work on its task branch and merge it
    task -> phase -> `develop` through PRs. Run all six gates in order and
    complete the physical-device checklist. Never build from unmerged changes.
@@ -97,7 +100,7 @@ The shared project rules are in [AGENTS.md](../../AGENTS.md),
 
 A release must not be built, drafted, tagged or published while any row in ANY section of the device checklist (the Next release section and every earlier section) has a Result other than Pass. Not run, Fail and Blocked all block. Check the checklist first; if blocked, stop and report the blocking IDs, and do not start the build or the GitHub Release draft. A Pass may only be recorded from an owner-observed or owner-reported device result, never inferred from automated tests or Expo exports. Only an explicit written owner waiver for named IDs lifts the block; record the waiver in the ledger (Owner-run actions log) and in the release note, and leave the row's Result unchanged.
 
-Maintenance rules: new device checks go under Next release device checks (or the decided version's section) with the next free ID, never into a published release's section, never renumbered. When the next version is decided, retitle that section `## vX.Y.Z device checks (next release)` and fill its App version. On publication, retitle it `## vX.Y.Z device checks`, set the published date, move it to the bottom of the version list (ascending order), and create a new empty `## Next release device checks` section at the top. Device-check results the owner reports are recorded under rule R8 (Owner-run actions log) with their evidence. When updating the device checklist, agents must prompt the owner to confirm all metadata fields before making changes: Device model, Android version, Tester (always record the tester username, e.g., sahilsheikh-dev), and verification Date, providing suggestions based on previous releases data (e.g., realme Narzo 60 Pro 5g, 15 Vanilla Ice Cream, sahilsheikh-dev).
+Maintenance rules: new device checks go under Next release device checks (or the decided version's section) with the next free ID, never into a published release's section, never renumbered. When the next version is decided, retitle that section `## vX.Y.Z device checks (next release)` and fill its App version. On publication, retitle it `## vX.Y.Z device checks`, set the published date, move it to the bottom of the version list (ascending order), and create a new empty `## Next release device checks` section at the top. Device-check results the owner reports are recorded under rule R8 (Owner-run actions log) with their evidence. When updating the device checklist, agents must prompt the owner to confirm all metadata fields before making changes: Device model, Android version, Tester (always record the tester username, e.g., sahilsheikh-dev), and verification Date, providing suggestions based on previous releases data (e.g., realme Narzo 60 Pro 5g, 15 Vanilla Ice Cream, sahilsheikh-dev). For any new feature, bug fix, behavior change, or revision that modifies user-facing behavior, data integrity, calculations, navigation, or forms, agents must add the corresponding physical-device verification check(s) to the device checklist under Next release device checks with the next free sequential ID (`O<n>`) in `Not run` status, and record the check ID in `docs/PROGRESS.md`, `status.md`, and `open-items.md`. Once a release is published, move all checks verified for that specific version into its own `## vX.Y.Z device checks` section placed below previous release checks in ascending version order, keeping each specific version's checks strictly under its own release section, while `## Next release device checks` retains only unreleased checks for the next version. Agents must never add, bump, or assign a specific application version number in the device checklist, metadata tables, package manifests, or anywhere in the repository until the owner explicitly decides to prepare a release candidate draft; until a release draft is finalized, keep the version unassigned (TBD / Next release).
 
 ## Release rules
 
@@ -164,10 +167,12 @@ Maintenance rules: new device checks go under Next release device checks (or the
   develop-to-main PR #132 (`b678493`) and main-to-develop PR #133 (`eedff48`).
   The `main` and `develop` trees match, and the v1.2.0 tag remains at its
   verified build candidate.
-- v1.3.0 candidate release: EAS build `c2ec9414-ae63-44cc-b34a-0f67f6cb51cb`
+- v1.3.0 release: EAS build `c2ec9414-ae63-44cc-b34a-0f67f6cb51cb`
   completed with profile `android-apk` and Android `versionCode` 4 on
-  2026-11-22. The 107,030,213-byte APK is uploaded to the GitHub release draft
-  and byte-verified against EAS. Publication remains pending.
+  2026-11-22. The 107,030,213-byte APK was uploaded to the GitHub release
+  and byte-verified against EAS. Publication completed; release/v1.3.0 merged
+  to main via PR #216 (341dbcb), tagged v1.3.0, and back-merged to develop via
+  PR #217 (97c6d02).
 - O45-O53 are owner-reported Pass; device model, Android version and tester
   details were not supplied.
 - Production AAB: not verified.

@@ -26,6 +26,8 @@ import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
 import { choiceAsync, confirmAsync } from '../src/lib/confirm';
 
+import { closeRouteSafely, singleParam } from '../src/lib/routeParams';
+
 const kindOptions = [
   { label: 'Recurring (EMI)', value: 'recurring' },
   { label: 'One-time', value: 'one-time' },
@@ -35,7 +37,7 @@ export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenEr
 
 export default function LiabilityFormScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
-  const liabilityId = Array.isArray(id) ? id[0] : id;
+  const liabilityId = singleParam(id);
   const data = useAppStore((state) => state.data);
   const actions = useAppActions();
   const today = useMemo(() => todayISO(), []);
@@ -219,7 +221,7 @@ export default function LiabilityFormScreen() {
     });
   };
   if (liabilityId && !liability) return (
-    <FormScreen title="Liability" onClose={() => router.back()} isDirty={false} footer={null}>
+    <FormScreen title="Liability" onClose={() => closeRouteSafely('/liabilities')} isDirty={false} footer={null}>
       <EmptyState title="Liability not found" />
     </FormScreen>
   );

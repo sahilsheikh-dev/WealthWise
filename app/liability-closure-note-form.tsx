@@ -16,12 +16,13 @@ import {
   type LiabilityClosureNoteFormOutput,
 } from '../src/domain/schemas';
 import { choiceAsync, confirmAsync } from '../src/lib/confirm';
+import { closeRouteSafely, singleParam } from '../src/lib/routeParams';
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
 export default function LiabilityClosureNoteFormScreen() {
   const params = useLocalSearchParams<{ liabilityId?: string }>();
-  const liabilityId = Array.isArray(params.liabilityId) ? params.liabilityId[0] : params.liabilityId;
+  const liabilityId = singleParam(params.liabilityId);
   const liability = useAppStore((state) => state.data.liabilities.find((entry) => entry.id === liabilityId));
   const data = useAppStore((state) => state.data);
   const actions = useAppActions();
@@ -72,7 +73,7 @@ export default function LiabilityClosureNoteFormScreen() {
 
   if (!liability || liability.kind !== 'recurring' || !liability.closure) {
     return (
-      <FormScreen title="Closed loan" onClose={() => router.back()} isDirty={false} footer={null}>
+      <FormScreen title="Closed loan" onClose={() => closeRouteSafely('/liabilities')} isDirty={false} footer={null}>
         <EmptyState title="Closed loan not found" />
       </FormScreen>
     );

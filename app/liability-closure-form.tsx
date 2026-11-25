@@ -23,12 +23,13 @@ import {
 import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
 import { confirmAsync } from '../src/lib/confirm';
+import { closeRouteSafely, singleParam } from '../src/lib/routeParams';
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
 export default function LiabilityClosureFormScreen() {
   const params = useLocalSearchParams<{ liabilityId?: string }>();
-  const liabilityId = Array.isArray(params.liabilityId) ? params.liabilityId[0] : params.liabilityId;
+  const liabilityId = singleParam(params.liabilityId);
   const liability = useAppStore((state) => state.data.liabilities.find((entry) => entry.id === liabilityId));
   const actions = useAppActions();
   const today = useMemo(() => todayISO(), []);
@@ -97,7 +98,7 @@ export default function LiabilityClosureFormScreen() {
 
   if (!liability || liability.kind !== 'recurring' || liability.closure) {
     return (
-      <FormScreen title="Foreclosure" onClose={() => router.back()} isDirty={false} footer={null}>
+      <FormScreen title="Foreclosure" onClose={() => closeRouteSafely('/liabilities')} isDirty={false} footer={null}>
         <EmptyState title="Open recurring liability not found" />
       </FormScreen>
     );

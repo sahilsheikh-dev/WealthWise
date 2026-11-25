@@ -4,15 +4,15 @@ This checklist records owner-run Android physical-device checks for WealthWise r
 
 ## Next release device checks
 
-Version 1.3.0
+Next release (TBD)
 
 | Field | Value |
 |---|---|
-| App version | 1.3.0 |
+| App version | TBD (unassigned until release draft finalization) |
 | Device model | realme Narzo 60 Pro 5g |
 | Android version | 15 Vanilla Ice Cream |
 | Tester | sahilsheikh-dev |
-| Date | 2026-11-22 |
+| Date | 2026-11-25 |
 
 Use only `Pass`, `Fail`, or `Blocked` after running each check. `Not run` remains the pending marker.
 
@@ -20,28 +20,6 @@ Use only `Pass`, `Fail`, or `Blocked` after running each check. `Not run` remain
 
 | ID | Test | Result | Notes |
 |---|---|---|---|
-| O61 | Verify the searchable Dropdown keyboard remains usable and the sheet stays keyboard-safe on iOS and Android. | Pass | P20-S-R2; owner-reported physical-device verification, 2026-11-22. |
-| O62 | Verify screen readers announce the filtered-result count politely on iOS and Android. | Pass | P20-S-R2; owner-reported physical-device verification, 2026-11-22. |
-| O63 | Verify the Dropdown clear-search control meets the 44x44 pt tap target on iOS and Android. | Pass | P20-S-R2; owner-reported physical-device verification, 2026-11-22. |
-| O64 | Verify searchable Dropdown row layout and operation at real-device font scales 1.3 and 2.0 on iOS and Android. | Pass | P20-S-R2; owner-reported physical-device verification, 2026-11-22. |
-| O65 | Edit and save an Emergency Fund target from its screen on a physical device. | Pass | P21-F; owner-reported physical-device verification, 2026-11-22. |
-| O66 | Verify Emergency Fund target Undo toast timing and exact one-step restoration on a physical device. | Pass | P21-F; owner-reported physical-device verification, 2026-11-22. |
-| O67 | Verify Home and Goals refresh to the edited Emergency Fund target on a physical device. | Pass | P21-F; owner-reported physical-device verification, 2026-11-22. |
-| O68 | Verify Emergency Fund target form layout at font scales 1.3 and 2.0 on a physical device. | Pass | P21-F; owner-reported physical-device verification, 2026-11-22. |
-| O69 | Verify an Invest transaction shows a neutral category before holding selection, blocks Save without a holding, and derives the category after selection. | Pass | P20-W D1; owner-reported physical-device verification, 2026-11-22. |
-| O70 | Verify the expense Budget category picker, derived section context, searchable Custom option and custom category entry on iOS and Android. | Pass | P20-W D2; owner-reported physical-device verification, 2026-11-22. |
-| O71 | Verify custom earned-income type entry and persistence in Budget income and Transaction forms, including trimming and reopening the saved value. | Pass | P20-W D3 implemented under schema v24; owner-reported physical-device verification, 2026-11-22. |
-| O72 | Verify Transaction form scrolling, validation, category picker and custom category entry at font scales 1.3 and 2.0 on iOS and Android. | Pass | P20-W; owner-reported physical-device verification, 2026-11-22. |
-| O73 | On a physical device, use Spend, Invest and Income items, including one-time and recurring items where applicable. Edit name, value/amount, start month, frequency and due day; verify both single-month and this-and-following edits. Delete with each scope, restart after each flow, and confirm the changed values and deletions persist. | Pass | P20-U-R1; owner-reported physical-device verification, 2026-11-22. |
-| O74 | On a physical device, create a linked one-time savings Budget item, then mark it Paid from Transactions with a different viewed month and after a month-only edit; verify one holding Deposit, one linked transaction, correct Budget actual, one-write persistence and one-step Undo. | Pass | P20-A-R3; owner-reported physical-device verification, 2026-11-22. |
-| O75 | Verify Budget category and item sorting on iOS and Android: SortChip in filter panel on Budget screen, persistent sort order across app restart, and category dropdown sorting in TransactionForm and BudgetIncomeForm at font scales 1.0, 1.3, and 2.0. | Pass | P20-X; owner-reported physical-device verification, 2026-11-22. |
-| O76 | Verify payment date prompt when marking scheduled/budgeted items Paid in Transactions and Budget (default today, customizable, historical dates preserved), verify linking one asset to multiple one-time investment budgets and paying each updates correct holding and budget actuals, and verify Transaction form Expense category dropdown only displays user-created or applicable scheduled categories while preserving historical removed categories when editing. | Pass | P20-Y; owner-reported physical-device verification, 2026-11-22. |
-
-### Owner follow-up
-
-The owner reports O75 and O76 passed on 2026-11-22. Tested and validated by sahilsheikh-dev on physical device realme Narzo 60 Pro 5g running Android 15 Vanilla Ice Cream.
-
-The owner reports O61-O74 passed on 2026-11-22. Tested and validated by sahilsheikh-dev on physical device realme Narzo 60 Pro 5g running Android 15 Vanilla Ice Cream.
 
 ## v1.0.0 device checks
 
@@ -203,11 +181,94 @@ Use only `Pass`, `Fail`, or `Blocked` after running each check. `Not run` remain
 
 The owner reports O45-O60 passed on 2026-11-11. Tested and validated by sahilsheikh-dev on physical device realme Narzo 60 Pro 5g running Android 15 Vanilla Ice Cream.
 
+## v1.3.0 device checks
+
+Version 1.3.0 · Published 2026-11-22
+
+| Field | Value |
+|---|---|
+| App version | 1.3.0 |
+| Device model | realme Narzo 60 Pro 5g |
+| Android version | 15 Vanilla Ice Cream |
+| Tester | sahilsheikh-dev |
+| Date | 2026-11-22 |
+
+Use only `Pass`, `Fail`, or `Blocked` after running each check. `Not run` remains the pending marker.
+
+### Results
+
+| ID | Test | Result | Notes |
+|---|---|---|---|
+| O61 | Verify the searchable Dropdown keyboard remains usable and the sheet stays keyboard-safe on iOS and Android. | Pass | P20-S-R2; owner-reported physical-device verification, 2026-11-22. |
+| O62 | Verify screen readers announce the filtered-result count politely on iOS and Android. | Pass | P20-S-R2; owner-reported physical-device verification, 2026-11-22. |
+| O63 | Verify the Dropdown clear-search control meets the 44x44 pt tap target on iOS and Android. | Pass | P20-S-R2; owner-reported physical-device verification, 2026-11-22. |
+| O64 | Verify searchable Dropdown row layout and operation at real-device font scales 1.3 and 2.0 on iOS and Android. | Pass | P20-S-R2; owner-reported physical-device verification, 2026-11-22. |
+| O65 | Edit and save an Emergency Fund target from its screen on a physical device. | Pass | P21-F; owner-reported physical-device verification, 2026-11-22. |
+| O66 | Verify Emergency Fund target Undo toast timing and exact one-step restoration on a physical device. | Pass | P21-F; owner-reported physical-device verification, 2026-11-22. |
+| O67 | Verify Home and Goals refresh to the edited Emergency Fund target on a physical device. | Pass | P21-F; owner-reported physical-device verification, 2026-11-22. |
+| O68 | Verify Emergency Fund target form layout at font scales 1.3 and 2.0 on a physical device. | Pass | P21-F; owner-reported physical-device verification, 2026-11-22. |
+| O69 | Verify an Invest transaction shows a neutral category before holding selection, blocks Save without a holding, and derives the category after selection. | Pass | P20-W D1; owner-reported physical-device verification, 2026-11-22. |
+| O70 | Verify the expense Budget category picker, derived section context, searchable Custom option and custom category entry on iOS and Android. | Pass | P20-W D2; owner-reported physical-device verification, 2026-11-22. |
+| O71 | Verify custom earned-income type entry and persistence in Budget income and Transaction forms, including trimming and reopening the saved value. | Pass | P20-W D3 implemented under schema v24; owner-reported physical-device verification, 2026-11-22. |
+| O72 | Verify Transaction form scrolling, validation, category picker and custom category entry at font scales 1.3 and 2.0 on iOS and Android. | Pass | P20-W; owner-reported physical-device verification, 2026-11-22. |
+| O73 | On a physical device, use Spend, Invest and Income items, including one-time and recurring items where applicable. Edit name, value/amount, start month, frequency and due day; verify both single-month and this-and-following edits. Delete with each scope, restart after each flow, and confirm the changed values and deletions persist. | Pass | P20-U-R1; owner-reported physical-device verification, 2026-11-22. |
+| O74 | On a physical device, create a linked one-time savings Budget item, then mark it Paid from Transactions with a different viewed month and after a month-only edit; verify one holding Deposit, one linked transaction, correct Budget actual, one-write persistence and one-step Undo. | Pass | P20-A-R3; owner-reported physical-device verification, 2026-11-22. |
+| O75 | Verify Budget category and item sorting on iOS and Android: SortChip in filter panel on Budget screen, persistent sort order across app restart, and category dropdown sorting in TransactionForm and BudgetIncomeForm at font scales 1.0, 1.3, and 2.0. | Pass | P20-X; owner-reported physical-device verification, 2026-11-22. |
+| O76 | Verify payment date prompt when marking scheduled/budgeted items Paid in Transactions and Budget (default today, customizable, historical dates preserved), verify linking one asset to multiple one-time investment budgets and paying each updates correct holding and budget actuals, and verify Transaction form Expense category dropdown only displays user-created or applicable scheduled categories while preserving historical removed categories when editing. | Pass | P20-Y; owner-reported physical-device verification, 2026-11-22. |
+
+### Owner follow-up
+
+The owner reports O75 and O76 passed on 2026-11-22. Tested and validated by sahilsheikh-dev on physical device realme Narzo 60 Pro 5g running Android 15 Vanilla Ice Cream.
+
+The owner reports O61-O74 passed on 2026-11-22. Tested and validated by sahilsheikh-dev on physical device realme Narzo 60 Pro 5g running Android 15 Vanilla Ice Cream.
+
+## v1.4.0 device checks
+
+Version 1.4.0 · Candidate 2026-11-25
+
+| Field | Value |
+|---|---|
+| App version | 1.4.0 |
+| Device model | realme Narzo 60 Pro 5g |
+| Android version | 15 Vanilla Ice Cream |
+| Tester | sahilsheikh-dev |
+| Date | 2026-11-25 |
+
+Use only `Pass`, `Fail`, or `Blocked` after running each check. `Not run` remains the pending marker.
+
+### Results
+
+| ID | Test | Result | Notes |
+|---|---|---|---|
+| O77 | Verify budget item and section rename on a physical device: rename an expense, investment, or income budget item and a section across month and following scopes; confirm that linked transactions update to display the new category name in Transactions list, filter, and detail views, while preserving the transaction amount, date, budget link, and custom note (even when the note matches the old item or section name). | Pass | P20-Y-R5; owner-reported physical-device verification, 2026-11-23. |
+| O78 | Verify dynamic Budget category filter on a physical device: open Filter panel in Budget, verify category filter chips alongside SortChip defaulting to "All" and listing available categories (Income, Expenses, Needs, Wants, Debt, Assets, Liabilities, and newly created categories); verify selecting each category filters the visible Budget sections correctly, verify filter indicator on Filter icon when active, and verify category persistence across month navigation. | Pass | P20-Z; owner-reported physical-device verification, 2026-11-23. |
+| O79 | Verify Budget filter icon indicator dot behavior and margin on a physical device: confirm that the filter icon in Budget does not show a dot indicator when category filter is "All" (default), matching Assets, Liabilities, and Transactions filter icon appearance; confirm that the dot indicator appears only when a specific category is filtered; confirm that the filter panel margin aligns with the screen layout. | Pass | P20-Z-R1; owner-reported physical-device verification, 2026-11-23. |
+| O80 | Verify persistent sorting preferences across screens on a physical device: change sort order on Transactions, Assets, Liabilities, and Budget; verify preferences persist when switching between screens and after app close and reopen; confirm filters remain separate and unchanged. | Pass | P17-C-R1; owner-reported physical-device verification, 2026-11-23. |
+| O81 | Verify dynamic asset valuation inputs and calculations on a physical device: create and edit one-time and recurring assets with Manual, Interest-based, Unit-based, and Balance-based valuation methods; verify form inputs adjust dynamically for each method (e.g., auto-calculation of units and total value for unit-based, interest rate and compounding for interest-based, read-only calculated balance for balance-based); verify holding value calculation, value update route, and persistence across app restart. | Pass | P29-U-R1; owner-reported physical-device verification, 2026-11-24. |
+| O82 | Verify consistent filter panels and absence of filter icon dot indicator on a physical device: open filter panel across Goals, Assets, Liabilities, Transactions, and Budget; verify Goals offers status (All, In progress, Achieved) and target year filter chips alongside SortChip; verify selecting filters and changing sort orders across all 5 screens keeps sort and filter states independent; verify that the header filter icon never displays a dot indicator initially or after changing sorting or filtering on any screen. | Pass | P20-L-R1; owner-reported physical-device verification, 2026-11-24. |
+| O83 | Verify modal presentation and deep-link parameter fallback on a physical device: open `ef-allocation-form`, `holding-valuation-form`, `liability-closure-form`, `liability-closure-note-form`, and `recurring-plan-stop-form` in-app to confirm modal presentation; open a `wealthwise://` deep link with a missing or invalid ID (for example, `wealthwise://holding-valuation-form?id=missing`) and confirm the safe empty/unavailable screen renders without crashing and Close navigates to a valid screen. | Pass | P39-H-R1; owner-reported physical-device verification, 2026-11-25. |
+| O84 | Verify Demo Mode and production APK behavior after Expo SDK 57 patch alignment on a physical device: enable/use Demo Mode in-app and verify screens, reminders, SQLite persistence, and backup export/import operate normally on the aligned SDK 57 packages. | Pass | P39-H-R1; owner-reported physical-device verification, 2026-11-25. |
+| O85 | Verify Expo SDK 58 / React Native 0.88.1 runtime, bottom tab navigation (`navigateToTab`), forms, SQLite persistence, local notifications, biometrics, and backup export/import on a physical Android device. | Pass | CR-170; owner-reported physical-device verification, 2026-11-25. realme Narzo 60 Pro 5g, 15 Vanilla Ice Cream, sahilsheikh-dev. Expo SDK 58 / React Native 0.88.1 runtime, bottom tabs, forms, SQLite persistence, local notifications, biometrics, and backup export/import verified. |
+
+### Owner follow-up
+
+The owner reports O77 passed on 2026-11-23. Tested and validated by sahilsheikh-dev on physical device realme Narzo 60 Pro 5g running Android 15 Vanilla Ice Cream.
+
+The owner reports O78 and O79 passed on 2026-11-23. Tested and validated by sahilsheikh-dev on physical device realme Narzo 60 Pro 5g running Android 15 Vanilla Ice Cream.
+
+The owner reports O80 passed on 2026-11-23. Tested and validated by sahilsheikh-dev on physical device realme Narzo 60 Pro 5g running Android 15 Vanilla Ice Cream.
+
+The owner reports O81 and O82 passed on 2026-11-24. Tested and validated by sahilsheikh-dev on physical device realme Narzo 60 Pro 5g running Android 15 Vanilla Ice Cream.
+
+The owner reports O83 and O84 passed on 2026-11-25. Tested and validated by sahilsheikh-dev on physical device realme Narzo 60 Pro 5g running Android 15 Vanilla Ice Cream.
+
+The owner reports O85 passed on 2026-11-25. Tested and validated by sahilsheikh-dev on physical device realme Narzo 60 Pro 5g running Android 15 Vanilla Ice Cream. Expo SDK 58 / React Native 0.88.1 runtime, bottom tab navigation, forms, SQLite persistence, local notifications, biometrics, and backup export/import verified.
+
 ## Release gate
 
 A release must not be built, drafted, tagged or published while any row in ANY section of the device checklist (the Next release section and every earlier section) has a Result other than Pass. Not run, Fail and Blocked all block. Check the checklist first; if blocked, stop and report the blocking IDs, and do not start the build or the GitHub Release draft. A Pass may only be recorded from an owner-observed or owner-reported device result, never inferred from automated tests or Expo exports. Only an explicit written owner waiver for named IDs lifts the block; record the waiver in the ledger (Owner-run actions log) and in the release note, and leave the row's Result unchanged.
 
-Maintenance rules: new device checks go under Next release device checks (or the decided version's section) with the next free ID, never into a published release's section, never renumbered. When the next version is decided, retitle that section `## vX.Y.Z device checks (next release)` and fill its App version. On publication, retitle it `## vX.Y.Z device checks`, set the published date, move it to the bottom of the version list (ascending order), and create a new empty `## Next release device checks` section at the top. Device-check results the owner reports are recorded under rule R8 (Owner-run actions log) with their evidence. When updating the device checklist, agents must prompt the owner to confirm all metadata fields before making changes: Device model, Android version, Tester (always record the tester username, e.g., sahilsheikh-dev), and verification Date, providing suggestions based on previous releases data (e.g., realme Narzo 60 Pro 5g, 15 Vanilla Ice Cream, sahilsheikh-dev).
+Maintenance rules: new device checks go under Next release device checks (or the decided version's section) with the next free ID, never into a published release's section, never renumbered. When the next version is decided, retitle that section `## vX.Y.Z device checks (next release)` and fill its App version. On publication, retitle it `## vX.Y.Z device checks`, set the published date, move it to the bottom of the version list (ascending order), and create a new empty `## Next release device checks` section at the top. Device-check results the owner reports are recorded under rule R8 (Owner-run actions log) with their evidence. When updating the device checklist, agents must prompt the owner to confirm all metadata fields before making changes: Device model, Android version, Tester (always record the tester username, e.g., sahilsheikh-dev), and verification Date, providing suggestions based on previous releases data (e.g., realme Narzo 60 Pro 5g, 15 Vanilla Ice Cream, sahilsheikh-dev). For any new feature, bug fix, behavior change, or revision that modifies user-facing behavior, data integrity, calculations, navigation, or forms, agents must add the corresponding physical-device verification check(s) to the device checklist under Next release device checks with the next free sequential ID (`O<n>`) in `Not run` status, and record the check ID in `docs/PROGRESS.md`, `status.md`, and `open-items.md`. Once a release is published, move all checks verified for that specific version into its own `## vX.Y.Z device checks` section placed below previous release checks in ascending version order, keeping each specific version's checks strictly under its own release section, while `## Next release device checks` retains only unreleased checks for the next version. Agents must never add, bump, or assign a specific application version number in the device checklist, metadata tables, package manifests, or anywhere in the repository until the owner explicitly decides to prepare a release candidate draft; until a release draft is finalized, keep the version unassigned (TBD / Next release).
 
 ## How to run
 

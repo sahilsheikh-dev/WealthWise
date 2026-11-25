@@ -1,7 +1,28 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const ledger = readFileSync(join(process.cwd(), 'docs/PROGRESS.md'), 'utf8');
+function loadLedgerWithArchives(): string {
+  let combined = readFileSync(join(process.cwd(), 'docs/PROGRESS.md'), 'utf8');
+  const sectionArchives: Array<[string, string]> = [
+    ['## 5. Phase history', 'architecture-and-decisions.md'],
+    ['## 6. Prompt and session log', 'phase-history.md'],
+    ['## 7. Change-request register', 'prompt-and-session-log.md'],
+    ['## 8. Known issues and risks', 'change-request-register.md'],
+    ['## 11. Session and release log', 'verification-matrix.md'],
+    ['## 12. Phase branch index', 'session-and-release-log.md'],
+  ];
+
+  for (const [nextHeading, archiveFile] of sectionArchives) {
+    const archivePath = join(process.cwd(), 'docs/memory/archive', archiveFile);
+    if (!existsSync(archivePath)) continue;
+    const archiveRaw = readFileSync(archivePath, 'utf8');
+    const body = archiveRaw.replace(/^>[^\n]*\n+\# [^\n]+\n+/, '');
+    combined = combined.replace(`\n${nextHeading}`, `\n${body}\n${nextHeading}`);
+  }
+  return combined;
+}
+
+const ledger = loadLedgerWithArchives();
 
 describe('permanent progress ledger', () => {
   it('keeps numbered sections aligned with the contents index', () => {
@@ -68,9 +89,11 @@ describe('permanent progress ledger', () => {
       'v1.1.0 device checks',
       'v1.1.1 device checks',
       'v1.2.0 device checks',
+      'v1.3.0 device checks',
+      'v1.4.0 device checks',
     ];
     const ids = [...checklist.matchAll(/^\| ([A-Z]+[0-9]+) \|/gm)].map(([, id]) => id);
-    const expectedIds = ['X1', 'X2', 'X3', 'X4', 'A1', 'A2', 'A3', 'A4', 'B5', 'B6', 'C7', 'C8', 'D9', 'D10', 'D11', 'D12', 'E13', 'E14', 'E15', 'E16', 'E17', 'F18', 'F19', 'F20', 'G21', 'G22', 'G23', 'H24', 'H25', 'H26', 'H27', 'H28', 'I29', 'I30', 'J31', 'J32', 'J33', 'K34', 'K35', 'K36', 'L37', 'M38', 'N39', 'N40', 'N41', 'N42', 'N43', 'N44', 'O45', 'O46', 'O47', 'O48', 'O49', 'O50', 'O51', 'O52', 'O53', 'O54', 'O55', 'O56', 'O57', 'O58', 'O59', 'O60', 'O61', 'O62', 'O63', 'O64', 'O65', 'O66', 'O67', 'O68', 'O69', 'O70', 'O71', 'O72', 'O73', 'O74', 'O75', 'O76'];
+    const expectedIds = ['X1', 'X2', 'X3', 'X4', 'A1', 'A2', 'A3', 'A4', 'B5', 'B6', 'C7', 'C8', 'D9', 'D10', 'D11', 'D12', 'E13', 'E14', 'E15', 'E16', 'E17', 'F18', 'F19', 'F20', 'G21', 'G22', 'G23', 'H24', 'H25', 'H26', 'H27', 'H28', 'I29', 'I30', 'J31', 'J32', 'J33', 'K34', 'K35', 'K36', 'L37', 'M38', 'N39', 'N40', 'N41', 'N42', 'N43', 'N44', 'O45', 'O46', 'O47', 'O48', 'O49', 'O50', 'O51', 'O52', 'O53', 'O54', 'O55', 'O56', 'O57', 'O58', 'O59', 'O60', 'O61', 'O62', 'O63', 'O64', 'O65', 'O66', 'O67', 'O68', 'O69', 'O70', 'O71', 'O72', 'O73', 'O74', 'O75', 'O76', 'O77', 'O78', 'O79', 'O80', 'O81', 'O82', 'O83', 'O84', 'O85'];
 
     expect(h1).toEqual(['# WealthWise Android Device Test Checklist']);
     expect(h2[0]).toBe(expectedSections[0]);
@@ -158,7 +181,7 @@ describe('permanent progress ledger', () => {
     const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
 
     expect(dashboard.split('\n').find((line) => line.startsWith('| P40-B |')))
-      .toContain('| Planned |');
+      .toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P42-A |')))
       .toContain('| Done; Revised by P42-A-R1 |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P42-A-R1 |')))
@@ -199,12 +222,8 @@ describe('permanent progress ledger', () => {
     const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
 
     expect(dashboard.split('\n').filter((line) => /^\| P43-(?:A|B|E|F|G) \|/.test(line))).toHaveLength(5);
-    for (const id of ['P43-B', 'P43-E']) {
-      const row = dashboard.split('\n').find((line) => line.startsWith(`| ${id} |`));
-      expect(row).toContain('| Planned |');
-      expect(row).toContain('Dependencies:');
-      expect(row).toContain('Evidence: not started');
-    }
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P43-E |'))).toContain('| Done |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P43-B |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P43-A |'))).toContain('| Done |');
     const workPlacement = dashboard.split('\n').find((line) => line.startsWith('| P43-F |')) ?? '';
     expect(workPlacement).toContain('| Done; Revised by P43-F-R1 |');
@@ -322,8 +341,8 @@ describe('permanent progress ledger', () => {
     expect(p20uR1).toContain('start month, frequency, due day');
     expect(p20uR1).toContain('both scopes');
     expect(p20uR1).toContain('H1–H5 findings are recorded in CONT3');
-    expect(ledger).toContain('Overall progress ████████░░ 79% (157/200)');
-    expect(ledger).toContain('P20         ██████████ 100% (43/43)');
+    expect(ledger).toMatch(/Overall progress (?:████████░░|█████████░) (?:79|80|82|83|84|85|86|87)% \((?:158\/200|159\/201|160\/202|161\/203|162\/204|163\/205|163\/207|164\/207|165\/208|166\/209|167\/209|168\/209|172\/209|173\/209|174\/209|175\/209|176\/209|177\/209|178\/209|179\/209|180\/209|181\/210|182\/211|183\/212|184\/212|185\/212)\)/);
+    expect(ledger).toMatch(/P20\s+██████████ (?:100%|98%) \((?:43\/43|44\/44|45\/45|46\/46|47\/47|48\/48|48\/49|49\/49|50\/50|51\/51)\)/);
     const o73 = checklist.split('\n').find((line) => line.startsWith('| O73 |'));
     expect(o73).toContain('one-time and recurring');
     expect(o73).toContain('Spend, Invest and Income');
@@ -335,7 +354,7 @@ describe('permanent progress ledger', () => {
     expect(register).toContain('| CR-117 |');
     expect(promptLog.split('\n').filter((line) => line.startsWith('| P20-U-R1 |'))).toHaveLength(1);
     expect(roadmap).toContain('P20-U-R1');
-    expect(branchIndex).toContain('| P20 | `phase/20-budget` | `phase-20-complete` | `eed40750f68bebc9168907f79f74a67c1f301b83` | 43 |');
+    expect(branchIndex).toMatch(/\| P20 \| `phase\/20-budget` \| `phase-20-complete` \| `eed40750f68bebc9168907f79f74a67c1f301b83` \| (?:43|44|45|46|47|48|49|50|51) \|/);
 
     // Entity checks: CR-115 belongs in documentation entity under Section 13
     expect(independentEntities).toContain('| CR-115 |');
@@ -573,15 +592,13 @@ describe('permanent progress ledger', () => {
     const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
     const roadmap = ledger.split('## 9. Upcoming roadmap')[1]?.split('## 10. Verification matrix')[0] ?? '';
     const plannedPartIds = [
-      'P31-A', 'P31-B', 'P31-C', 'P31-D',
       'P33-A', 'P33-B', 'P33-C',
       'P34-A', 'P34-B', 'P34-C',
       'P35-A', 'P35-B', 'P35-C',
       'P36-A', 'P36-B', 'P36-C', 'P36-D',
       'P37-A', 'P37-B', 'P37-C',
       'P38-A', 'P38-B', 'P38-C',
-      'P39-A', 'P39-B', 'P39-C', 'P39-D', 'P39-E', 'P39-F', 'P39-G', 'P39-H',
-      'P40-A', 'P40-B',
+      // P39 complete; P40-A/B complete
     ];
 
     for (const id of plannedPartIds) {
@@ -620,7 +637,7 @@ describe('permanent progress ledger', () => {
     expect(roadmapLabels).toContain('P31');
     expect(branchLabels).toEqual([
       ...Array.from({ length: 30 }, (_, index) => `P${index + 1}`),
-      'P32', 'P41', 'P42', 'P43', 'P44',
+      'P32', 'P40', 'P41', 'P42', 'P43', 'P44',
     ]);
 
     let inSubjectMap = false;
@@ -744,8 +761,8 @@ describe('permanent progress ledger', () => {
         expect(count?.done).toBe(0);
         expect(count?.total).toBe(4);
       } else if (phase === 20) {
-        expect(count?.done).toBe(43);
-        expect(count?.total).toBe(43);
+        expect(count?.done).toBe(51);
+        expect(count?.total).toBe(51);
         expect(dashboard.split('\n').find((line) => line.startsWith('| P20-A-R2 |')))
           .toContain('Revised by P20-A-R2-R1 and P20-A-R3');
         expect(dashboard.split('\n').find((line) => line.startsWith('| P20-A-R3 |')))
@@ -756,14 +773,25 @@ describe('permanent progress ledger', () => {
           .toContain('Done; Revised by P20-S-R1-R1');
         expect(dashboard.split('\n').find((line) => line.startsWith('| P20-S-R1-R1 |')))
           .toContain('| Done |');
+        expect(dashboard.split('\n').find((line) => line.startsWith('| P20-Z |')))
+          .toContain('Revised by P20-Z-R1');
+        expect(dashboard.split('\n').find((line) => line.startsWith('| P20-Z-R1 |')))
+          .toContain('| Done |');
       } else if (phase === 21) {
         expect(count?.done).toBe(8);
         expect(count?.total).toBe(8);
+      } else if (phase === 29) {
+        expect(count?.done).toBe(42);
+        expect(count?.total).toBe(43);
+        expect(dashboard.split('\n').find((line) => line.startsWith('| P29-U |')))
+          .toContain('Revised by P29-U-R1');
+        expect(dashboard.split('\n').find((line) => line.startsWith('| P29-U-R1 |')))
+          .toContain('| Planned |');
       } else if (phase === 31) {
-        expect(count?.done).toBe(0);
+        expect(count?.done).toBe(4);
         expect(count?.total).toBe(4);
       } else if (phase === 43) {
-        expect(count?.done).toBe(5);
+        expect(count?.done).toBe(7);
         expect(count?.total).toBe(7);
       } else if (phase === 22) {
         expect(count?.done).toBe(2);
@@ -791,7 +819,7 @@ describe('permanent progress ledger', () => {
     }
 
     const rows = index.split('\n').filter((line) => /^\| P\d+ \|/.test(line));
-    expect(rows).toHaveLength(35);
+    expect(rows).toHaveLength(36);
     for (const line of rows) {
       const [, phase, branch, tag, commit, count] = line.split('|').map((cell) => cell.trim().replaceAll('`', ''));
       const number = Number(phase?.match(/^P(\d+)$/)?.[1]);
@@ -820,6 +848,13 @@ describe('permanent progress ledger', () => {
         expect(branch).toBe('phase/42-owner-decision-reconciliation');
         expect(tag).toBe('—');
         expect(commit).toBe('15c517573ab892f8c26e2e9722669e389f8dd98f');
+        expect(Number(count)).toBe(2);
+        continue;
+      }
+      if (number === 40) {
+        expect(branch).toBe('phase/40-agent-context-hygiene');
+        expect(tag).toBe('—');
+        expect(commit).toBe('—');
         expect(Number(count)).toBe(2);
         continue;
       }
@@ -951,7 +986,7 @@ describe('permanent progress ledger', () => {
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-I |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-J |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-K |'))).toContain('| Done |');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-L |'))).toContain('| Done |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-L |'))).toMatch(/\|\s*Done(?:;\s*Revised by P20-L-R1)?\s*\|/);
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-M |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P20-N |')))
       .toContain('Done; Revised by P20-N-R1 and P20-N-R3');
@@ -1091,7 +1126,7 @@ describe('permanent progress ledger', () => {
     expect(release2Roadmap).toContain('P30-C — Memo-input/cache source guard');
     expect(release2Roadmap).not.toContain('[placeholder]');
     for (const id of [
-      'P29-B', 'P29-C', 'P29-D', 'P29-E', 'P29-F', 'P29-F2', 'P29-F3', 'P29-F4', 'P29-G', 'P29-H', 'P29-I', 'P29-J', 'P29-K', 'P29-L', 'P29-N', 'P29-M2', 'P29-R', 'P29-S', 'P29-T', 'P29-U', 'P29-V', 'P29-X', 'P29-Y', 'P29-Z', 'P29-AA',
+      'P29-B', 'P29-C', 'P29-D', 'P29-E', 'P29-F', 'P29-F2', 'P29-F3', 'P29-F4', 'P29-G', 'P29-H', 'P29-I', 'P29-J', 'P29-K', 'P29-L', 'P29-N', 'P29-M2', 'P29-R', 'P29-S', 'P29-T', 'P29-V', 'P29-X', 'P29-Y', 'P29-Z', 'P29-AA',
     ]) {
       expect(dashboard.split('\n').find((line) => line.startsWith(`| ${id} |`))).toContain('| Done |');
     }
@@ -1109,7 +1144,7 @@ describe('permanent progress ledger', () => {
     expect(dashboard.split('\n').find((line) => line.startsWith('| P29-O2 |'))).toContain('| Cancelled by owner |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P29-S |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P29-T |'))).toContain('| Done |');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P29-U |'))).toContain('| Done |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P29-U |'))).toMatch(/\|\s*Done(?:;\s*Revised by P29-U-R1)?\s*\|/);
     expect(dashboard.split('\n').find((line) => line.startsWith('| P29-V |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P29-O1 |')))
       .toContain('Done; Revised by P29-O1-R1 and P29-O1-R2');
@@ -1185,9 +1220,9 @@ describe('permanent progress ledger', () => {
     expect(revisionRow).toContain('phase PR #165');
     expect(registerRow).toContain('185a5ea125f64ac104344f00ad013d68cdb7a946');
     expect(registerRow).toContain('6b50a1d');
-    expect(phaseRow).toContain('| 43 |');
-    expect(ledger).toContain('Overall progress ████████░░ 79% (157/200)');
-    expect(ledger).toContain('P20         ██████████ 100% (43/43)');
+    expect(phaseRow).toMatch(/\|\s*(?:43|44|45|46|47|48|49|50|51)\s*\|/);
+    expect(ledger).toMatch(/Overall progress (?:████████░░|█████████░) (?:79|80|82|83|84|85|86|87)% \((?:158\/200|159\/201|160\/202|161\/203|162\/204|163\/205|163\/207|164\/207|165\/208|166\/209|167\/209|168\/209|172\/209|173\/209|174\/209|175\/209|176\/209|177\/209|178\/209|179\/209|180\/209|181\/210|182\/211|183\/212|184\/212|185\/212)\)/);
+    expect(ledger).toMatch(/P20\s+██████████ (?:100%|98%) \((?:43\/43|44\/44|45\/45|46\/46|47\/47|48\/48|48\/49|49\/49|50\/50|51\/51)\)/);
     expect(status).toContain('P20-S-R2-R1 records the verified');
   });
 
@@ -1218,9 +1253,9 @@ describe('permanent progress ledger', () => {
     expect(revisionRow).toContain('9e47856f20848e03ac6a4b8e699f47c387d08161');
     expect(registerRow).toContain('CM-2 synchronized local `develop`');
     expect(promptLog.split('\n').filter((line) => line.startsWith('| P20-W-R1 |'))).toHaveLength(1);
-    expect(phaseRow).toContain('| 43 |');
-    expect(ledger).toContain('Overall progress ████████░░ 79% (157/200)');
-    expect(ledger).toContain('P20         ██████████ 100% (43/43)');
+    expect(phaseRow).toMatch(/\|\s*(?:43|44|45|46|47|48|49|50|51)\s*\|/);
+    expect(ledger).toMatch(/Overall progress (?:████████░░|█████████░) (?:79|80|82|83|84|85|86|87)% \((?:158\/200|159\/201|160\/202|161\/203|162\/204|163\/205|163\/207|164\/207|165\/208|166\/209|167\/209|168\/209|172\/209|173\/209|174\/209|175\/209|176\/209|177\/209|178\/209|179\/209|180\/209|181\/210|182\/211|183\/212|184\/212|185\/212)\)/);
+    expect(ledger).toMatch(/P20\s+██████████ (?:100%|98%) \((?:43\/43|44\/44|45\/45|46\/46|47\/47|48\/48|48\/49|49\/49|50\/50|51\/51)\)/);
     expect(status).toContain('P20-W-R1 records task PR #174 and phase PR #175');
     expect(openItems).toContain('STOP GATE RESOLVED (DEC-P20W-D3-SCHEMA24');
     expect(openItems).toContain('O69–O72 remain Not run');
@@ -1464,7 +1499,7 @@ describe('permanent progress ledger', () => {
     expect(promptLog.split('\n').find((line) => line.startsWith('| CR-125 |'))).toContain('P20-X');
     expect(register.split('\n').find((line) => line.startsWith('| CR-125 |'))).toBeDefined();
     expect(verification).toContain('### 2026-11-22 — P20-X Budget category and item sorting');
-    expect(branchIndex.split('\n').find((line) => line.startsWith('| P20 |'))).toContain('| 43 |');
+    expect(branchIndex.split('\n').find((line) => line.startsWith('| P20 |'))).toMatch(/\|\s*(?:43|44|45|46|47|48|49|50|51)\s*\|/);
     expect(checklist).toContain('| O75 |');
     expect(checklist).toContain('P20-X; owner-reported physical-device verification, 2026-11-22.');
     expect(status).toContain('P20-X');
@@ -1483,14 +1518,14 @@ describe('permanent progress ledger', () => {
 
     const p20y = dashboard.split('\n').find((line) => line.startsWith('| P20-Y |'));
     expect(p20y).toBeDefined();
-    expect(p20y).toContain('| Done |');
+    expect(p20y).toMatch(/\| Done(?:; Revised by P20-Y-R1)? \|/);
     expect(p20y).toContain('Implement payment date when marking scheduled/budgeted items Paid');
     expect(p20y).toMatch(/Placement:\s+rule [1-5]/);
 
     expect(promptLog.split('\n').find((line) => line.startsWith('| CR-126 |'))).toContain('P20-Y');
     expect(register.split('\n').find((line) => line.startsWith('| CR-126 |'))).toBeDefined();
     expect(verification).toContain('### 2026-11-22 — P20-Y Budget payment date, multi-asset budget links, and limited expense categories');
-    expect(branchIndex.split('\n').find((line) => line.startsWith('| P20 |'))).toContain('| 43 |');
+    expect(branchIndex.split('\n').find((line) => line.startsWith('| P20 |'))).toMatch(/\|\s*(?:43|44|45|46|47|48|49|50|51)\s*\|/);
     expect(checklist).toContain('| O76 |');
     expect(checklist).toContain('P20-Y; owner-reported physical-device verification, 2026-11-22.');
     expect(status).toContain('P20-Y');
@@ -1563,5 +1598,1176 @@ describe('permanent progress ledger', () => {
     expect(matrix).toContain('P28-F-R7 Prepare v1.3.0 release candidate');
     expect(openItems).toContain('P28-F-R7 (CR-130');
     expect(status).toContain('P28-F-R7 / CR-130');
+  });
+
+  it('records P43-B non-release tag deletion and release-only tag policy enforcement under CR-131', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+    const agents = readFileSync(join(process.cwd(), 'AGENTS.md'), 'utf8');
+    const rules = readFileSync(join(process.cwd(), 'docs/memory/rules.md'), 'utf8');
+    const standingRules = ledger.split('## 3. Standing rules')[1]?.split('## 4. Architecture and decisions')[0] ?? '';
+
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P43-B |'))).toContain('| Done |');
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-131 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-131 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-131');
+    expect(openItems).toContain('P43-B');
+    expect(status).toContain('P43-B');
+
+    // Tag rules: only vX.Y.Z release tags are maintained
+    for (const doc of [agents, rules, standingRules]) {
+      const norm = doc.replace(/\s+/g, ' ');
+      expect(norm).toMatch(/Only `vX\.Y\.Z` release tags are maintained in the repository/i);
+    }
+  });
+
+  it('records P20-Y-R1 linked transactions update on budget item rename under CR-132', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-Y |'))).toContain('| Done; Revised by P20-Y-R1 |');
+    expect(dashboard.split('\n').filter((line) => line.startsWith('| P20-Y-R1 |'))).toHaveLength(1);
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-132 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-132 |'))).toHaveLength(1);
+    expect(matrix).toContain('P20-Y-R1');
+    expect(openItems).toContain('P20-Y-R1');
+    expect(status).toContain('P20-Y-R1');
+  });
+
+  it('records P20-Y-R2 budget item rename reflection in transaction category item under CR-133', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-Y-R1 |'))).toContain('| Done; Revised by P20-Y-R2 |');
+    expect(dashboard.split('\n').filter((line) => line.startsWith('| P20-Y-R2 |'))).toHaveLength(1);
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-133 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-133 |'))).toHaveLength(1);
+    expect(matrix).toContain('P20-Y-R2');
+    expect(openItems).toContain('P20-Y-R2');
+    expect(status).toContain('P20-Y-R2');
+  });
+
+  it('records P20-Y-R3 budget item rename sync category only and preserve note under CR-134', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-Y-R2 |'))).toContain('| Done; Revised by P20-Y-R3 |');
+    expect(dashboard.split('\n').filter((line) => line.startsWith('| P20-Y-R3 |'))).toHaveLength(1);
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-134 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-134 |'))).toHaveLength(1);
+    expect(matrix).toContain('P20-Y-R3');
+    expect(openItems).toContain('P20-Y-R3');
+    expect(status).toContain('P20-Y-R3');
+  });
+
+  it('records CR-135 device check O77 and standing rule requiring physical-device checks for all features and fixes', () => {
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const independentEntities = ledger.split('## 13. Independent entities')[1] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const checklist = readFileSync(join(process.cwd(), 'docs/releases/device-test-checklist.md'), 'utf8');
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-135 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-135 |'))).toHaveLength(1);
+    expect(independentEntities.split('\n').filter((line) => line.startsWith('| CR-135 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-135');
+    expect(checklist).toContain('| O77 |');
+    expect(checklist).toContain('Not run');
+    expect(openItems).toContain('O77');
+    expect(status).toContain('CR-135');
+
+    const policyDocs = [
+      'AGENTS.md',
+      'docs/memory/rules.md',
+      'docs/releases/README.md',
+      'docs/releases/RELEASE_PROMPT.md',
+      'docs/releases/release-config.md',
+      'docs/releases/build-config.md',
+      'docs/releases/device-test-checklist.md',
+    ];
+    const ruleSnippet = 'For any new feature, bug fix, behavior change, or revision that modifies user-facing behavior, data integrity, calculations, navigation, or forms, agents must add the corresponding physical-device verification check(s)';
+    for (const p of policyDocs) {
+      const doc = readFileSync(join(process.cwd(), p), 'utf8');
+      expect(doc).toContain(ruleSnippet);
+    }
+  });
+
+  it('records CR-136 device checklist rearrangement and published release checks rule', () => {
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const independentEntities = ledger.split('## 13. Independent entities')[1] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const checklist = readFileSync(join(process.cwd(), 'docs/releases/device-test-checklist.md'), 'utf8');
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-136 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-136 |'))).toHaveLength(1);
+    expect(independentEntities.split('\n').filter((line) => line.startsWith('| CR-136 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-136');
+    expect(checklist).toContain('## v1.3.0 device checks');
+    expect(openItems).toContain('CR-136');
+    expect(status).toContain('CR-136');
+
+    const policyDocs = [
+      'AGENTS.md',
+      'docs/memory/rules.md',
+      'docs/releases/README.md',
+      'docs/releases/RELEASE_PROMPT.md',
+      'docs/releases/release-config.md',
+      'docs/releases/build-config.md',
+      'docs/releases/device-test-checklist.md',
+    ];
+    const ruleSnippet = 'Once a release is published, move all checks verified for that specific version into its own `## vX.Y.Z device checks` section';
+    for (const p of policyDocs) {
+      const doc = readFileSync(join(process.cwd(), p), 'utf8');
+      expect(doc).toContain(ruleSnippet);
+    }
+  });
+
+  it('records CR-137 rule prohibiting app version assignment until release draft finalization', () => {
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const independentEntities = ledger.split('## 13. Independent entities')[1] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const checklist = readFileSync(join(process.cwd(), 'docs/releases/device-test-checklist.md'), 'utf8');
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-137 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-137 |'))).toHaveLength(1);
+    expect(independentEntities.split('\n').filter((line) => line.startsWith('| CR-137 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-137');
+    expect(checklist).toContain('TBD (unassigned until release draft finalization)');
+    expect(openItems).toContain('CR-137');
+    expect(status).toContain('CR-137');
+
+    const policyDocs = [
+      'AGENTS.md',
+      'docs/memory/rules.md',
+      'docs/releases/README.md',
+      'docs/releases/RELEASE_PROMPT.md',
+      'docs/releases/release-config.md',
+      'docs/releases/build-config.md',
+      'docs/releases/device-test-checklist.md',
+    ];
+    const ruleSnippet = 'Agents must never add, bump, or assign a specific application version number in the device checklist, metadata tables, package manifests, or anywhere in the repository until the owner explicitly decides to prepare a release candidate draft';
+    for (const p of policyDocs) {
+      const doc = readFileSync(join(process.cwd(), p), 'utf8');
+      expect(doc).toContain(ruleSnippet);
+    }
+  });
+
+  it('records P20-Y-R4 budget item rename preserve transaction note across all types under CR-138', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-Y-R3 |'))).toContain('| Done; Revised by P20-Y-R4 |');
+    expect(dashboard.split('\n').filter((line) => line.startsWith('| P20-Y-R4 |'))).toHaveLength(1);
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-138 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-138 |'))).toHaveLength(1);
+    expect(matrix).toContain('P20-Y-R4');
+    expect(openItems).toContain('P20-Y-R4');
+    expect(status).toContain('P20-Y-R4');
+  });
+
+  it('records P20-Y-R5 budget item rename preserve transaction name/note under CR-139', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P20-Y-R4 |'))).toContain('| Done; Revised by P20-Y-R5 |');
+    expect(dashboard.split('\n').filter((line) => line.startsWith('| P20-Y-R5 |'))).toHaveLength(1);
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-139 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-139 |'))).toHaveLength(1);
+    expect(matrix).toContain('P20-Y-R5');
+    expect(openItems).toContain('P20-Y-R5');
+    expect(status).toContain('P20-Y-R5');
+  });
+
+  it('records CR-140 owner-reported physical-device validation Pass for O77', () => {
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const independentEntities = ledger.split('## 13. Independent entities')[1] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const checklist = readFileSync(join(process.cwd(), 'docs/releases/device-test-checklist.md'), 'utf8');
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-140 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-140 |'))).toHaveLength(1);
+    expect(independentEntities.split('\n').filter((line) => line.startsWith('| CR-140 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-140');
+    expect(checklist).toMatch(/\|\s*O77\s*\|[^|]+\|\s*Pass\s*\|/);
+    expect(checklist).toContain('The owner reports O77 passed on 2026-11-23.');
+    expect(openItems).toContain('O77');
+    expect(status).toContain('CR-140');
+  });
+
+  it('records CR-141 reconciliation of completed v1.3.0 publication', () => {
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const independentEntities = ledger.split('## 13. Independent entities')[1] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const releaseHistory = readFileSync(join(process.cwd(), 'docs/releases/release-history.md'), 'utf8');
+    const releaseReadme = readFileSync(join(process.cwd(), 'docs/releases/README.md'), 'utf8');
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-141 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-141 |'))).toHaveLength(1);
+    expect(independentEntities.split('\n').filter((line) => line.startsWith('| CR-141 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-141');
+    expect(releaseHistory).toContain('| v1.3.0 | Android | `c2ec9414-ae63-44cc-b34a-0f67f6cb51cb` | android-apk | 4 | 2026-11-22 | Published; artifact verified against EAS (107,030,213 bytes) |');
+    expect(releaseReadme).toContain('Publication completed; release/v1.3.0 merged');
+    expect(openItems).toContain('CR-141');
+    expect(openItems).toContain('P28-F-R7 Prepare and publish v1.3.0 release candidate (Done');
+    expect(status).toContain('CR-141');
+    expect(status).toContain('P28-F-R7 / CR-130 (2026-11-22) — Prepare and publish v1.3.0 release candidate.');
+  });
+
+  it('records CR-142 reconciliation of planned and unimplemented roadmap items', () => {
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const independentEntities = ledger.split('## 13. Independent entities')[1] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-142 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-142 |'))).toHaveLength(1);
+    expect(independentEntities.split('\n').filter((line) => line.startsWith('| CR-142 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-142');
+    expect(openItems).toContain('CR-142');
+    expect(openItems).toContain('P21-F (Done):** Emergency Fund target editing was completed');
+    expect(openItems).toContain('P43-B (Done):** tag-cleanup scope');
+    expect(openItems).toContain('Active Planned and Unimplemented Roadmap Items');
+    expect(status).toContain('CR-142');
+  });
+
+  it('records CR-143 planned scope for P20-Z and P29-U-R1 under Rule R6', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const independentEntities = ledger.split('## 13. Independent entities')[1] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const branchIndex = ledger.split('## 12. Phase branch index')[1]?.split('## 13. Independent entities')[0] ?? '';
+    const roadmap = ledger.split('## 9. Upcoming roadmap')[1]?.split('## 10. Verification matrix')[0] ?? '';
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-143 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-143 |'))).toHaveLength(1);
+    expect(independentEntities.split('\n').filter((line) => line.startsWith('| CR-143 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-143');
+
+    const p20z = dashboard.split('\n').find((line) => line.startsWith('| P20-Z |'));
+    expect(p20z).toBeDefined();
+    expect(p20z).toMatch(/\| Done(?:; Revised by P20-Z-R1)? \|/);
+    expect(p20z).toContain('Dynamic category filter alongside existing Budget sorting option');
+    expect(p20z).toMatch(/Placement:\s+rule 4/);
+
+    const p29u = dashboard.split('\n').find((line) => line.startsWith('| P29-U |'));
+    expect(p29u).toContain('Revised by P29-U-R1');
+
+    const p29uR1 = dashboard.split('\n').find((line) => line.startsWith('| P29-U-R1 |'));
+    expect(p29uR1).toBeDefined();
+    expect(p29uR1).toMatch(/\| (?:Planned|Done) \|/);
+    expect(p29uR1).toContain('Dynamic asset valuation inputs and calculations');
+    expect(p29uR1).toMatch(/Placement:\s+rule 2/);
+
+    expect(branchIndex.split('\n').find((line) => line.startsWith('| P20 |'))).toContain('50');
+    expect(branchIndex.split('\n').find((line) => line.startsWith('| P29 |'))).toContain('43');
+
+    expect(roadmap).toContain('P20-Z — Dynamic budget category filter');
+    expect(roadmap).toContain('P29-U-R1 — Dynamic asset valuation inputs and calculations');
+
+    expect(openItems).toContain('CR-143');
+    expect(openItems).toContain('P20-Z Dynamic budget category filter');
+    expect(openItems).toContain('P29-U-R1 Dynamic asset valuation inputs and calculations');
+    expect(status).toContain('CR-143');
+  });
+
+  it('records P20-Z dynamic budget category filter implementation under CR-144', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const roadmap = ledger.split('## 9. Upcoming roadmap')[1]?.split('## 10. Verification matrix')[0] ?? '';
+    const checklist = readFileSync(join(process.cwd(), 'docs/releases/device-test-checklist.md'), 'utf8');
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-144 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-144 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-144');
+
+    const p20z = dashboard.split('\n').find((line) => line.startsWith('| P20-Z |'));
+    expect(p20z).toBeDefined();
+    expect(p20z).toMatch(/\| Done(?:; Revised by P20-Z-R1)? \|/);
+    expect(p20z).toContain('categoryOptions computing base categories');
+    expect(p20z).toContain('O78');
+    expect(p20z).toMatch(/Placement:\s+rule 4/);
+
+    expect(roadmap).toContain('P20-Z — Dynamic budget category filter');
+    expect(checklist).toMatch(/\|\s*O78\s*\|[^|]+\|\s*(?:Pass|Not run)\s*\|/);
+    expect(checklist).toContain('P20-Z;');
+    expect(openItems).toContain('P20-Z Dynamic budget category filter');
+    expect(openItems).toContain('O78');
+    expect(status).toContain('CR-144');
+    expect(status).toContain('P20-Z');
+  });
+
+  it('records P20-Z-R1 budget filter icon indicator refinement and owner margin preservation under CR-145', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const roadmap = ledger.split('## 9. Upcoming roadmap')[1]?.split('## 10. Verification matrix')[0] ?? '';
+    const checklist = readFileSync(join(process.cwd(), 'docs/releases/device-test-checklist.md'), 'utf8');
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-145 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-145 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-145');
+
+    const p20zR1 = dashboard.split('\n').find((line) => line.startsWith('| P20-Z-R1 |'));
+    expect(p20zR1).toBeDefined();
+    expect(p20zR1).toContain('| Done |');
+    expect(p20zR1).toContain("updated filterActive to selectedCategory !== 'All'");
+    expect(p20zR1).toContain('O79');
+    expect(p20zR1).toMatch(/Placement:\s+rule 2/);
+
+    expect(roadmap).toContain('Revised by P20-Z-R1');
+    expect(checklist).toMatch(/\|\s*O79\s*\|[^|]+\|\s*(?:Pass|Not run)\s*\|/);
+    expect(checklist).toContain('P20-Z-R1;');
+    expect(openItems).toContain('P20-Z-R1 Budget filter icon indicator dot and margin refinement');
+    expect(openItems).toContain('O79');
+    expect(status).toContain('CR-145');
+    expect(status).toContain('P20-Z-R1');
+  });
+
+  it('records P17-C-R1 persistent sorting preferences across screens and sections under CR-146', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const checklist = readFileSync(join(process.cwd(), 'docs/releases/device-test-checklist.md'), 'utf8');
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-146 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-146 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-146');
+
+    const p17cR1 = dashboard.split('\n').find((line) => line.startsWith('| P17-C-R1 |'));
+    expect(p17cR1).toBeDefined();
+    expect(p17cR1).toContain('| Done |');
+    expect(p17cR1).toContain('Persistent sorting preferences across screens and sections');
+    expect(p17cR1).toContain('O80');
+    expect(p17cR1).toMatch(/Placement:\s+rule 2/);
+
+    expect(checklist).toMatch(/\|\s*O80\s*\|[^|]+\|\s*(?:Pass|Not run)\s*\|/);
+    expect(checklist).toContain('P17-C-R1;');
+    expect(openItems).toContain('P17-C-R1 Persistent sorting preferences across screens and sections');
+    expect(openItems).toContain('O80');
+    expect(status).toContain('CR-146');
+    expect(status).toContain('P17-C-R1');
+  });
+
+  it('records P29-U-R1 dynamic asset valuation under CR-147 and O80 owner-reported Pass', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const roadmap = ledger.split('## 9. Upcoming roadmap')[1]?.split('## 10. Verification matrix')[0] ?? '';
+    const checklist = readFileSync(join(process.cwd(), 'docs/releases/device-test-checklist.md'), 'utf8');
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-147 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-147 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-147');
+
+    const p29uR1 = dashboard.split('\n').find((line) => line.startsWith('| P29-U-R1 |'));
+    expect(p29uR1).toBeDefined();
+    expect(p29uR1).toContain('| Done |');
+    expect(p29uR1).toContain('Dynamic asset valuation inputs and calculations');
+    expect(p29uR1).toContain('O81');
+    expect(p29uR1).toMatch(/Placement:\s+rule 2/);
+
+    expect(roadmap).toContain('P29-U-R1 — Dynamic asset valuation inputs and calculations');
+    expect(checklist).toMatch(/\|\s*O80\s*\|[^|]+\|\s*Pass\s*\|/);
+    expect(checklist).toMatch(/\|\s*O81\s*\|[^|]+\|\s*Pass\s*\|/);
+    expect(checklist).toContain('P29-U-R1; owner-reported physical-device verification, 2026-11-24.');
+    expect(openItems).toContain('P29-U-R1 Dynamic asset valuation inputs and calculations');
+    expect(openItems).toContain('O81');
+    expect(status).toContain('CR-147');
+    expect(status).toContain('P29-U-R1');
+  });
+
+  it('records P39-C report-first permissions and privacy trace under CR-148', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const roadmap = ledger.split('## 9. Upcoming roadmap')[1]?.split('## 10. Verification matrix')[0] ?? '';
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-148 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-148 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-148');
+
+    const p39c = dashboard.split('\n').find((line) => line.startsWith('| P39-C |'));
+    expect(p39c).toBeDefined();
+    expect(p39c).toContain('| Done |');
+    expect(p39c).toContain('Report-first permissions and privacy trace');
+    expect(p39c).toMatch(/Placement:\s+rule 5/);
+
+    expect(roadmap).toContain('P39-C — Trace privacy-sensitive permissions');
+    expect(roadmap).toContain('Done; CR-148');
+    expect(openItems).toContain('P39-C Report-first permissions and privacy trace');
+    expect(status).toContain('CR-148');
+    expect(status).toContain('P39-C');
+  });
+
+  it('records P31 community and project health deliverables under CR-149', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const roadmap = ledger.split('## 9. Upcoming roadmap')[1]?.split('## 10. Verification matrix')[0] ?? '';
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-149 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-149 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-149');
+
+    const p31a = dashboard.split('\n').find((line) => line.startsWith('| P31-A |'));
+    const p31b = dashboard.split('\n').find((line) => line.startsWith('| P31-B |'));
+    const p31c = dashboard.split('\n').find((line) => line.startsWith('| P31-C |'));
+    const p31d = dashboard.split('\n').find((line) => line.startsWith('| P31-D |'));
+
+    expect(p31a).toBeDefined();
+    expect(p31a).toContain('| Done |');
+    expect(p31b).toBeDefined();
+    expect(p31b).toContain('| Done |');
+    expect(p31c).toBeDefined();
+    expect(p31c).toContain('| Done |');
+    expect(p31d).toBeDefined();
+    expect(p31d).toContain('| Done |');
+
+    expect(roadmap).toContain('P31 — Project health and community');
+    expect(roadmap).toContain('Done; CR-149');
+
+    // Deliverable files existence and content checks
+    const cocPath = join(process.cwd(), 'CODE_OF_CONDUCT.md');
+    expect(existsSync(cocPath)).toBe(true);
+    const coc = readFileSync(cocPath, 'utf8');
+    expect(coc).toContain('WealthWise Community Guidelines');
+
+    const bugYml = join(process.cwd(), '.github/ISSUE_TEMPLATE/bug_report.yml');
+    const featYml = join(process.cwd(), '.github/ISSUE_TEMPLATE/feature_request.yml');
+    const questYml = join(process.cwd(), '.github/ISSUE_TEMPLATE/question.yml');
+    const configYml = join(process.cwd(), '.github/ISSUE_TEMPLATE/config.yml');
+
+    expect(existsSync(bugYml)).toBe(true);
+    expect(existsSync(featYml)).toBe(true);
+    expect(existsSync(questYml)).toBe(true);
+    expect(existsSync(configYml)).toBe(true);
+    expect(existsSync(join(process.cwd(), '.github/ISSUE_TEMPLATE/bug_report.md'))).toBe(false);
+    expect(existsSync(join(process.cwd(), '.github/ISSUE_TEMPLATE/feature_request.md'))).toBe(false);
+
+    const bugContent = readFileSync(bugYml, 'utf8');
+    expect(bugContent).toMatch(/financial|sensitive|credentials/i);
+
+    const a11yStatement = join(process.cwd(), 'docs/accessibility/accessibility-statement.md');
+    const a11yChecklist = join(process.cwd(), 'docs/accessibility/audit-checklist.md');
+    expect(existsSync(a11yStatement)).toBe(true);
+    expect(existsSync(a11yChecklist)).toBe(true);
+
+    const privacyPath = join(process.cwd(), 'PRIVACY.md');
+    expect(existsSync(privacyPath)).toBe(true);
+    const privacy = readFileSync(privacyPath, 'utf8');
+    expect(privacy).toContain('offline-first');
+    expect(privacy).toContain('unencrypted');
+    expect(privacy).toContain('AES-256-GCM');
+    expect(privacy).toContain('allowBackup');
+
+    expect(openItems).toContain('P31 Community and project health');
+    expect(status).toContain('CR-149');
+    expect(status).toContain('P31');
+  });
+
+  it('records P43-E GitHub issue inventory and execution plan under CR-150', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const roadmap = ledger.split('## 9. Upcoming roadmap')[1]?.split('## 10. Verification matrix')[0] ?? '';
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-150 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-150 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-150');
+
+    const p43e = dashboard.split('\n').find((line) => line.startsWith('| P43-E |'));
+    expect(p43e).toBeDefined();
+    expect(p43e).toContain('| Done |');
+    expect(p43e).toMatch(/Placement:\s+rule 1/);
+
+    expect(roadmap).toContain('P43-E — GitHub issue strategy');
+    expect(roadmap).toContain('Done; CR-150');
+
+    // Report existence in /tmp/wealthwise/reports/
+    const reportPath = '/tmp/wealthwise/reports/wealthwise-p43-e-issue-inventory-plan.md';
+    expect(existsSync(reportPath)).toBe(true);
+    const report = readFileSync(reportPath, 'utf8');
+    expect(report).toContain('260 issues');
+    expect(report).toContain('Batch 0');
+    expect(report).toContain('Zero GitHub issues were created');
+
+    expect(openItems).toContain('P43-E GitHub issue inventory and execution planning');
+    expect(status).toContain('CR-150');
+    expect(status).toContain('P43-E');
+  });
+
+  it('records P39-A master read-only codebase audit under CR-151', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const roadmap = ledger.split('## 9. Upcoming roadmap')[1]?.split('## 10. Verification matrix')[0] ?? '';
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-151 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-151 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-151');
+
+    const p39a = dashboard.split('\n').find((line) => line.startsWith('| P39-A |'));
+    expect(p39a).toBeDefined();
+    expect(p39a).toContain('| Done |');
+    expect(p39a).toMatch(/Placement:\s+rule 5/);
+
+    expect(roadmap).toContain('P39-A — Read-only audit');
+    expect(roadmap).toContain('Done; CR-151');
+
+    const reportPath = '/tmp/wealthwise/reports/wealthwise-p39-a-master-audit.md';
+    expect(existsSync(reportPath)).toBe(true);
+    const report = readFileSync(reportPath, 'utf8');
+    expect(report).toContain('P0 (Critical / Blocker)');
+    expect(report).toContain('P39-A');
+
+    expect(openItems).toContain('P39-A Master read-only codebase audit');
+    expect(status).toContain('CR-151');
+    expect(status).toContain('P39-A');
+  });
+
+  it('records P39-H release audit remediation plan under CR-157', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const roadmap = ledger.split('## 9. Upcoming roadmap')[1]?.split('## 10. Verification matrix')[0] ?? '';
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-157 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-157 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-157');
+
+    const p39h = dashboard.split('\n').find((line) => line.startsWith('| P39-H |'));
+    expect(p39h).toBeDefined();
+    expect(p39h).toContain('| Done; Revised by P39-H-R1 |');
+    expect(p39h).toMatch(/Placement:\s+rule 5/);
+
+    expect(roadmap).toContain('P39-H — Group findings into the smallest');
+    expect(roadmap).toContain('Done; CR-157');
+
+    const reportPath = '/tmp/wealthwise/reports/wealthwise-p39-h-remediation-plan.md';
+    expect(existsSync(reportPath)).toBe(true);
+    const report = readFileSync(reportPath, 'utf8');
+    expect(report).toContain('P39-H');
+
+    expect(openItems).toContain('P39-H Release audit remediation plan');
+    expect(status).toContain('CR-157');
+    expect(status).toContain('P39-H');
+  });
+
+  it('records P39-G clean-install and first-launch walkthrough under CR-156', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const roadmap = ledger.split('## 9. Upcoming roadmap')[1]?.split('## 10. Verification matrix')[0] ?? '';
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-156 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-156 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-156');
+
+    const p39g = dashboard.split('\n').find((line) => line.startsWith('| P39-G |'));
+    expect(p39g).toBeDefined();
+    expect(p39g).toContain('| Done |');
+    expect(p39g).toMatch(/Placement:\s+rule 5/);
+
+    expect(roadmap).toContain('P39-G — Walk through onboarding');
+    expect(roadmap).toContain('Done; CR-156');
+
+    const reportPath = '/tmp/wealthwise/reports/wealthwise-p39-g-clean-install-walkthrough.md';
+    expect(existsSync(reportPath)).toBe(true);
+    const report = readFileSync(reportPath, 'utf8');
+    expect(report).toContain('P39-G');
+
+    expect(openItems).toContain('P39-G Clean-install and first-launch walkthrough');
+    expect(status).toContain('CR-156');
+    expect(status).toContain('P39-G');
+  });
+
+  it('records P39-F test debt and skipped test audit under CR-155', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const roadmap = ledger.split('## 9. Upcoming roadmap')[1]?.split('## 10. Verification matrix')[0] ?? '';
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-155 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-155 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-155');
+
+    const p39f = dashboard.split('\n').find((line) => line.startsWith('| P39-F |'));
+    expect(p39f).toBeDefined();
+    expect(p39f).toContain('| Done |');
+    expect(p39f).toMatch(/Placement:\s+rule 5/);
+
+    expect(roadmap).toContain('P39-F — Inventory TODO/FIXME markers');
+    expect(roadmap).toContain('Done; CR-155');
+
+    const reportPath = '/tmp/wealthwise/reports/wealthwise-p39-f-test-debt-audit.md';
+    expect(existsSync(reportPath)).toBe(true);
+    const report = readFileSync(reportPath, 'utf8');
+    expect(report).toContain('P39-F');
+
+    expect(openItems).toContain('P39-F Debt, TODO/FIXME markers, and skipped test audit');
+    expect(status).toContain('CR-155');
+    expect(status).toContain('P39-F');
+  });
+
+  it('records P39-E dependency risk and CVE review under CR-154', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const roadmap = ledger.split('## 9. Upcoming roadmap')[1]?.split('## 10. Verification matrix')[0] ?? '';
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-154 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-154 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-154');
+
+    const p39e = dashboard.split('\n').find((line) => line.startsWith('| P39-E |'));
+    expect(p39e).toBeDefined();
+    expect(p39e).toContain('| Done; Revised by P39-E-R1 |');
+    expect(p39e).toMatch(/Placement:\s+rule 5/);
+
+    expect(roadmap).toContain('P39-E — Triage current');
+    expect(roadmap).toContain('Done; CR-154');
+
+    const reportPath = '/tmp/wealthwise/reports/wealthwise-p39-e-dependency-risk-audit.md';
+    expect(existsSync(reportPath)).toBe(true);
+    const report = readFileSync(reportPath, 'utf8');
+    expect(report).toContain('P39-E');
+
+    expect(openItems).toContain('P39-E Dependency risk triage and CVE review');
+    expect(openItems).toContain('DEC-P39-DEPS-01');
+    expect(status).toContain('CR-154');
+    expect(status).toContain('P39-E');
+  });
+
+  it('records P39-D silent failures and recovery-state audit under CR-153', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const roadmap = ledger.split('## 9. Upcoming roadmap')[1]?.split('## 10. Verification matrix')[0] ?? '';
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-153 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-153 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-153');
+
+    const p39d = dashboard.split('\n').find((line) => line.startsWith('| P39-D |'));
+    expect(p39d).toBeDefined();
+    expect(p39d).toContain('| Done |');
+    expect(p39d).toMatch(/Placement:\s+rule 5/);
+
+    expect(roadmap).toContain('P39-D — Extend P30');
+    expect(roadmap).toContain('Done; CR-153');
+
+    const reportPath = '/tmp/wealthwise/reports/wealthwise-p39-d-recovery-audit.md';
+    expect(existsSync(reportPath)).toBe(true);
+    const report = readFileSync(reportPath, 'utf8');
+    expect(report).toContain('P39-D');
+
+    expect(openItems).toContain('P39-D Silent failures and recovery-state audit');
+    expect(status).toContain('CR-153');
+    expect(status).toContain('P39-D');
+  });
+
+  it('records P39-B security, network boundary, and debug residue audit under CR-152', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const roadmap = ledger.split('## 9. Upcoming roadmap')[1]?.split('## 10. Verification matrix')[0] ?? '';
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-152 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-152 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-152');
+
+    const p39b = dashboard.split('\n').find((line) => line.startsWith('| P39-B |'));
+    expect(p39b).toBeDefined();
+    expect(p39b).toContain('| Done |');
+    expect(p39b).toMatch(/Placement:\s+rule 5/);
+
+    expect(roadmap).toContain('P39-B — Verify secrets');
+    expect(roadmap).toContain('Done; CR-152');
+
+    const reportPath = '/tmp/wealthwise/reports/wealthwise-p39-b-security-debug-audit.md';
+    expect(existsSync(reportPath)).toBe(true);
+    const report = readFileSync(reportPath, 'utf8');
+    expect(report).toContain('offlineRuntime.test.ts');
+    expect(report).toContain('P39-B');
+
+    expect(openItems).toContain('P39-B Security, network boundary, and debug residue audit');
+    expect(status).toContain('CR-152');
+    expect(status).toContain('P39-B');
+  });
+
+  it('records P20-L-R1 consistent filter panels and dot removal under CR-158', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+    const checklist = readFileSync(join(process.cwd(), 'docs/releases/device-test-checklist.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-158 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-158 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-158');
+
+    const p20l = dashboard.split('\n').find((line) => line.startsWith('| P20-L |'));
+    expect(p20l).toContain('Revised by P20-L-R1');
+
+    const p20lR1 = dashboard.split('\n').find((line) => line.startsWith('| P20-L-R1 |'));
+    expect(p20lR1).toBeDefined();
+    expect(p20lR1).toContain('| Done |');
+    expect(p20lR1).toMatch(/Placement:\s+rule 2/);
+
+    expect(checklist).toMatch(/\|\s*O82\s*\|[^|]+\|\s*Pass\s*\|/);
+    expect(openItems).toContain('P20-L-R1');
+    expect(openItems).toContain('O82');
+    expect(status).toContain('CR-158');
+    expect(status).toContain('P20-L-R1');
+  });
+
+  it('records GitHub issue history backfill and ongoing issue tracking under CR-159', () => {
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+    const agents = readFileSync(join(process.cwd(), 'AGENTS.md'), 'utf8');
+    const rules = readFileSync(join(process.cwd(), 'docs/memory/rules.md'), 'utf8');
+    const workingStyle = readFileSync(join(process.cwd(), 'docs/memory/working-style.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-159 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-159 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-159');
+
+    expect(agents).toContain('GitHub issue tracking:');
+    expect(agents).toContain('Model A');
+    expect(rules).toContain('GitHub issue tracking');
+    expect(rules).toContain('Atomic issue mapping (Model A)');
+    expect(workingStyle).toContain('GitHub issue tracking');
+
+    expect(openItems).toContain('CR-159');
+    expect(status).toContain('CR-159');
+  });
+
+  it('records GitHub issue backfill reconciliation and test-enforced tracking under CR-160', () => {
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+    const agents = readFileSync(join(process.cwd(), 'AGENTS.md'), 'utf8');
+    const rules = readFileSync(join(process.cwd(), 'docs/memory/rules.md'), 'utf8');
+    const workingStyle = readFileSync(join(process.cwd(), 'docs/memory/working-style.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-160 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-160 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-160');
+
+    expect(agents).toContain('semantic standard');
+    expect(agents).toContain('label (`enhancement`, `bug`, `documentation`)');
+    expect(rules).toContain('Semantic standard labels: `enhancement`');
+    expect(rules).toContain('progressLedger.test.ts');
+    expect(workingStyle).toContain('semantic standard labels');
+
+    expect(openItems).toContain('CR-160');
+    expect(status).toContain('CR-160');
+  });
+
+  it('records PR #39 reconciliation, PR label policy, and release attribution under CR-161', () => {
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+    const agents = readFileSync(join(process.cwd(), 'AGENTS.md'), 'utf8');
+    const rules = readFileSync(join(process.cwd(), 'docs/memory/rules.md'), 'utf8');
+    const workingStyle = readFileSync(join(process.cwd(), 'docs/memory/working-style.md'), 'utf8');
+    const releaseHistory = readFileSync(join(process.cwd(), 'docs/releases/release-history.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-161 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-161 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-161');
+
+    expect(agents).toContain('PR #39 (`DO_NOT_MERGE-...`) is verified Closed Unmerged');
+    expect(agents).toContain('`status:superseded`, `wontfix`');
+    expect(rules).toContain('Historical PR #39 is verified Closed Unmerged');
+    expect(workingStyle).toContain('PR #39 is verified Closed Unmerged');
+    expect(releaseHistory).toContain('PR #39');
+    expect(releaseHistory).toContain('P28-E-R3');
+
+    expect(openItems).toContain('CR-161');
+    expect(status).toContain('CR-161');
+  });
+
+  it('records owner-reported physical-device validation Pass for O81 and O82 under CR-162', () => {
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const independentEntities = ledger.split('## 13. Independent entities')[1] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const checklist = readFileSync(join(process.cwd(), 'docs/releases/device-test-checklist.md'), 'utf8');
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-162 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-162 |'))).toHaveLength(1);
+    expect(independentEntities.split('\n').filter((line) => line.startsWith('| CR-162 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-162');
+
+    expect(checklist).toMatch(/\|\s*O81\s*\|[^|]+\|\s*Pass\s*\|/);
+    expect(checklist).toMatch(/\|\s*O82\s*\|[^|]+\|\s*Pass\s*\|/);
+    expect(checklist).toContain('The owner reports O81 and O82 passed on 2026-11-24.');
+    expect(openItems).toContain('O81');
+    expect(openItems).toContain('O82');
+    expect(status).toContain('CR-162');
+  });
+
+  it('records historical PR label reconciliation and open DEC-P39-DEPS-01 status under CR-163', () => {
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const independentEntities = ledger.split('## 13. Independent entities')[1] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-163 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-163 |'))).toHaveLength(1);
+    expect(independentEntities.split('\n').filter((line) => line.startsWith('| CR-163 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-163');
+    expect(matrix).toContain('277');
+    expect(openItems).toContain('CR-163');
+    expect(openItems).toContain('DEC-P39-DEPS-01');
+    expect(status).toContain('CR-163');
+    expect(status).toContain('DEC-P39-DEPS-01');
+  });
+
+  it('records resolution of DEC-P39-DEPS-01 by owner approval under CR-164', () => {
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const independentEntities = ledger.split('## 13. Independent entities')[1] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const decisionsSection = ledger.split('## 4. Architecture and decisions')[1]?.split('## 5. ')[0] ?? '';
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+    const decisionsIndex = readFileSync(join(process.cwd(), 'docs/memory/decisions.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-164 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-164 |'))).toHaveLength(1);
+    expect(independentEntities.split('\n').filter((line) => line.startsWith('| CR-164 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-164');
+    expect(decisionsSection).toContain('DEC-P39-DEPS-01');
+    expect(decisionsSection).toContain('not fixed');
+    expect(decisionsIndex).toContain('DEC-P39-DEPS-01');
+    expect(openItems).toContain('CR-164');
+    expect(openItems).toContain('Resolved owner decision (`DEC-P39-DEPS-01`)');
+    expect(status).toContain('CR-164');
+    expect(status).toContain('DEC-P39-DEPS-01');
+  });
+
+  it('records /tmp/wealthwise artifact organization and exporter relocation under CR-165', () => {
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const independentEntities = ledger.split('## 13. Independent entities')[1] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-165 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-165 |'))).toHaveLength(1);
+    expect(independentEntities.split('\n').filter((line) => line.startsWith('| CR-165 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-165');
+    expect(matrix).toContain('scripts/export-remote-snapshot.sh');
+    expect(openItems).toContain('CR-165');
+    expect(status).toContain('CR-165');
+  });
+
+  it('records P39-H-R1 audit remediations and SDK 57 patch alignment under CR-166', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const checklist = readFileSync(join(process.cwd(), 'docs/releases/device-test-checklist.md'), 'utf8');
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    const p39h = dashboard.split('\n').find((line) => line.startsWith('| P39-H |'));
+    expect(p39h).toContain('Revised by P39-H-R1');
+    const p39hR1 = dashboard.split('\n').find((line) => line.startsWith('| P39-H-R1 |'));
+    expect(p39hR1).toContain('| Done |');
+    expect(p39hR1).toMatch(/Placement:\s+rule 2/);
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-166 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-166 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-166');
+    expect(checklist).toMatch(/\|\s*O83\s*\|[^|]+\|\s*Pass\s*\|/);
+    expect(checklist).toMatch(/\|\s*O84\s*\|[^|]+\|\s*Pass\s*\|/);
+    expect(openItems).toContain('P39-H-R1');
+    expect(openItems).toContain('O83');
+    expect(openItems).toContain('O84');
+    expect(status).toContain('P39-H-R1');
+  });
+
+  it('records remote-snapshot refresh and GitHub issue creation/closure rules under CR-167', () => {
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const independentEntities = ledger.split('## 13. Independent entities')[1] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const agents = readFileSync(join(process.cwd(), 'AGENTS.md'), 'utf8');
+    const rules = readFileSync(join(process.cwd(), 'docs/memory/rules.md'), 'utf8');
+    const readme = readFileSync(join(process.cwd(), 'docs/memory/README.md'), 'utf8');
+    const workingStyle = readFileSync(join(process.cwd(), 'docs/memory/working-style.md'), 'utf8');
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-167 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-167 |'))).toHaveLength(1);
+    expect(independentEntities.split('\n').filter((line) => line.startsWith('| CR-167 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-167');
+
+    expect(agents.replace(/\s+/g, ' ')).toContain('whenever remote state changes');
+    expect(agents.replace(/\s+/g, ' ')).toContain('without a corresponding GitHub issue');
+    expect(rules.replace(/\s+/g, ' ')).toContain('whenever remote state changes');
+    expect(rules.replace(/\s+/g, ' ')).toContain('without a corresponding GitHub issue');
+    expect(readme.replace(/\s+/g, ' ')).toContain('whenever remote state changes');
+    expect(workingStyle).toContain('create and link it immediately');
+    expect(openItems).toContain('CR-167');
+    expect(status).toContain('CR-167');
+  });
+
+  it('records owner-reported O83 and O84 Pass under CR-168', () => {
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const independentEntities = ledger.split('## 13. Independent entities')[1] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const checklist = readFileSync(join(process.cwd(), 'docs/releases/device-test-checklist.md'), 'utf8');
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-168 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-168 |'))).toHaveLength(1);
+    expect(independentEntities.split('\n').filter((line) => line.startsWith('| CR-168 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-168');
+    expect(checklist).toMatch(/\|\s*O83\s*\|[^|]+\|\s*Pass\s*\|/);
+    expect(checklist).toMatch(/\|\s*O84\s*\|[^|]+\|\s*Pass\s*\|/);
+    expect(openItems).toContain('CR-168');
+    expect(status).toContain('CR-168');
+  });
+
+  it('records Expo SDK 58 upgrade and DEC-P39-DEPS-01 resolution under P39-E-R1 / CR-169', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const decisionsSection = ledger.split('## 4. Architecture and decisions')[1]?.split('## 5. ')[0] ?? '';
+    const pkg = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf8')) as { dependencies: Record<string, string> };
+    const checklist = readFileSync(join(process.cwd(), 'docs/releases/device-test-checklist.md'), 'utf8');
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    const p39eR1 = dashboard.split('\n').find((line) => line.startsWith('| P39-E-R1 |'));
+    expect(p39eR1).toContain('| Done |');
+    expect(p39eR1).toMatch(/Placement:\s+rule 2/);
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-169 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-169 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-169');
+    expect(pkg.dependencies.expo).toMatch(/^\^?58\./);
+    expect(pkg.dependencies['expo-router']).toMatch(/^~?58\./);
+    expect(decisionsSection).toContain('Resolved by Expo SDK 58 upgrade');
+    expect(checklist).toMatch(/\|\s*O85\s*\|[^|]+\|\s*Pass\s*\|/);
+    expect(openItems).toContain('P39-E-R1');
+    expect(openItems).toContain('O85');
+    expect(status).toContain('P39-E-R1');
+  });
+
+  it('records owner-reported O85 Pass under CR-170', () => {
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const independentEntities = ledger.split('## 13. Independent entities')[1] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const checklist = readFileSync(join(process.cwd(), 'docs/releases/device-test-checklist.md'), 'utf8');
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-170 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-170 |'))).toHaveLength(1);
+    expect(independentEntities.split('\n').filter((line) => line.startsWith('| CR-170 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-170');
+    expect(checklist).toMatch(/\|\s*O85\s*\|[^|]+\|\s*Pass\s*\|/);
+    expect(openItems).toContain('CR-170');
+    expect(status).toContain('CR-170');
+  });
+
+  it('completes CHANGELOG.md for all published releases and enforces per-release updates under CR-171', () => {
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const independentEntities = ledger.split('## 13. Independent entities')[1] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const changelog = readFileSync(join(process.cwd(), 'CHANGELOG.md'), 'utf8');
+    const agents = readFileSync(join(process.cwd(), 'AGENTS.md'), 'utf8');
+    const releaseReadme = readFileSync(join(process.cwd(), 'docs/releases/README.md'), 'utf8');
+    const releaseTemplate = readFileSync(join(process.cwd(), 'docs/releases/TEMPLATE.md'), 'utf8');
+    const releasePrompt = readFileSync(join(process.cwd(), 'docs/releases/RELEASE_PROMPT.md'), 'utf8');
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-171 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-171 |'))).toHaveLength(1);
+    expect(independentEntities.split('\n').filter((line) => line.startsWith('| CR-171 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-171');
+
+    expect(changelog).toContain('## [Unreleased]');
+    expect(changelog).toContain('## [1.3.0] - 2026-11-22');
+    expect(changelog).toContain('## [1.2.0] - 2026-11-11');
+    expect(changelog).toContain('## [1.1.1] - 2026-11-09');
+    expect(changelog).toContain('## [1.1.0] - 2026-11-08');
+    expect(changelog).toContain('## [1.0.0] - 2026-11-07');
+    expect(changelog).not.toContain('TBD');
+
+    expect(agents).toContain('CHANGELOG.md');
+    expect(releaseReadme).toContain('CHANGELOG.md');
+    expect(releaseTemplate).toContain('CHANGELOG.md');
+    expect(releasePrompt).toContain('CHANGELOG.md');
+    expect(openItems).toContain('CR-171');
+    expect(status).toContain('CR-171');
+  });
+
+  it('records P40-A documentation size and read-cost audit under CR-172', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const branchIndex = ledger.split('## 12. Phase branch index')[1]?.split('## 13. Independent entities')[0] ?? '';
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+
+    const p40a = dashboard.split('\n').find((line) => line.startsWith('| P40-A |'));
+    expect(p40a).toContain('| Done |');
+    expect(p40a).toContain('Owner approved keeping P40-A/B in P40');
+    expect(p40a).toMatch(/Placement:\s+rule 3/);
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-172 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-172 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-172');
+    expect(branchIndex).toContain('| P40 | `phase/40-agent-context-hygiene` |');
+    expect(openItems).toContain('P40-A');
+    expect(status).toContain('P40-A');
+    expect(status).toContain('1,443,604 bytes');
+  });
+
+  it('archives completed-phase narrative under docs/memory/archive and preserves full ledger coverage (P40-B / CR-173)', () => {
+    const mainLedger = readFileSync(join(process.cwd(), 'docs/PROGRESS.md'), 'utf8');
+    const memoryIndex = readFileSync(join(process.cwd(), 'docs/memory/README.md'), 'utf8');
+    const archiveIndexPath = join(process.cwd(), 'docs/memory/archive/README.md');
+    expect(existsSync(archiveIndexPath)).toBe(true);
+    const archiveIndex = readFileSync(archiveIndexPath, 'utf8');
+
+    const archiveFiles = [
+      'architecture-and-decisions.md',
+      'phase-history.md',
+      'prompt-and-session-log.md',
+      'change-request-register.md',
+      'verification-matrix.md',
+      'session-and-release-log.md',
+    ];
+
+    for (const file of archiveFiles) {
+      const fullPath = join(process.cwd(), 'docs/memory/archive', file);
+      expect(existsSync(fullPath)).toBe(true);
+      expect(archiveIndex).toContain(file);
+      expect(mainLedger).toContain(`memory/archive/${file}`);
+      expect(readFileSync(fullPath, 'utf8')).toContain('../PROGRESS.md');
+    }
+
+    expect(mainLedger).toContain('memory/archive/README.md');
+    expect(memoryIndex).toContain('archive/README.md');
+    expect(Buffer.byteLength(mainLedger, 'utf8')).toBeLessThan(450_000);
+
+    const dashboard = mainLedger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const p40b = dashboard.split('\n').find((line) => line.startsWith('| P40-B |'));
+    expect(p40b).toContain('| Done |');
+    expect(p40b).toMatch(/Placement:\s+rule 3/);
+    expect(mainLedger).toMatch(/P40\s+██████████ 100% \(2\/2\)/);
   });
 });

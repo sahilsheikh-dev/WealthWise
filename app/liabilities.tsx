@@ -31,7 +31,7 @@ import type { OneTimeLiability, RecurringLiability } from '../src/domain/types';
 import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
 import { formatDate, formatMonth } from '../src/lib/format';
-import { DEFAULT_SORTS, SORT_OPTIONS } from '../src/lib/sorting';
+import { SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
@@ -76,9 +76,6 @@ export default function LiabilitiesScreen() {
     };
     }));
   }, [asOf, data.liabilities, sorting]);
-  const filterActive = kindFilter !== 'All'
-    || sorting.spec.key !== DEFAULT_SORTS.liabilities.key
-    || sorting.spec.dir !== DEFAULT_SORTS.liabilities.dir;
   const normalizedQuery = query.trim().toLowerCase();
   const visibleLiabilities = sortedLiabilities.filter((liability) =>
     (kindFilter === 'Closed'
@@ -107,7 +104,6 @@ export default function LiabilitiesScreen() {
               label: 'Filter',
               onPress: () => setFilterPanelOpen((open) => !open),
               expanded: filterPanelOpen,
-              showIndicator: filterActive,
             },
             { icon: 'plus', label: 'Add a liability', onPress: () => router.push('/liability-form') },
           ]}

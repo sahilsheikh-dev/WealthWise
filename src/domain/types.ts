@@ -104,6 +104,7 @@ type HoldingValuation = {
   maturityDate?: ISODate;
   latestPrice?: number;
   priceAsOf?: ISODate;
+  unitCount?: number;
 };
 
 export type ManualHolding = {

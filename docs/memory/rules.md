@@ -23,7 +23,9 @@
 - **R3 — History and release approval:** never push, amend or rewrite history
   unless the owner explicitly authorizes a push; never force-push. Release
   publication and tag creation, movement or deletion require explicit owner
-  approval.
+  approval. Only `vX.Y.Z` release tags are maintained in the repository;
+  non-release, phase, and intermediate tags are prohibited and must not be
+  created. Legacy non-release tags were deleted under approved task P43-B.
 - **R4 — Documentation scope:** routine documentation committed to Git is
   limited to `docs/memory/*`, `docs/PROGRESS.md`, `docs/releases/**`,
   `CONTRIBUTING.md`, `SECURITY.md`, and `.github/**`. Other documentation
@@ -71,17 +73,19 @@
   an `Owner actions pending` list.
 
   Record manual owner terminal sessions with
-  `script -a /tmp/wealthwise-remote-snapshot/owner-terminal-$(date +%F).log`
+  `script -a /tmp/wealthwise/remote-snapshot/owner-terminal-$(date +%F).log`
   and finish the session with `exit`. `pbpaste` only copies the clipboard; it
   is not session evidence unless the full terminal text was copied first.
-  The owner exports the snapshot with `export-remote-snapshot.sh`; its PR
+  The owner exports the snapshot with `scripts/export-remote-snapshot.sh`; its PR
   records include number, title, state, base (`baseRefName`), head
   (`headRefName`), headRefOid, createdAt,
   updatedAt, mergedAt, closedAt, mergeCommit, mergedBy, url, author, labels
   and body, plus detail files for the latest 60 PRs, releases, tags, issues and
-  remote branches. After every manual merge, refresh the snapshot before the
-  next agent task. Export and capture procedures are maintained in
-  `docs/memory/README.md`.
+  remote branches. Refresh the snapshot with `scripts/export-remote-snapshot.sh`
+  whenever remote state changes (after manual merges, PR/issue updates, or
+  tag/release changes) and at task start if the latest snapshot is older than
+  current remote changes (unless network access is prohibited). Export and capture
+  procedures are maintained in `docs/memory/README.md`.
 - Branching: `main` is stable released code; `develop` is integration and
   must pass all six gates; phase branches use `phase/NN-slug`, task branches
   use `task/ID-slug`, release branches use `release/vX.Y.Z`, hotfix branches
@@ -199,7 +203,7 @@
 
 A release must not be built, drafted, tagged or published while any row in ANY section of the device checklist (the Next release section and every earlier section) has a Result other than Pass. Not run, Fail and Blocked all block. Check the checklist first; if blocked, stop and report the blocking IDs, and do not start the build or the GitHub Release draft. A Pass may only be recorded from an owner-observed or owner-reported device result, never inferred from automated tests or Expo exports. Only an explicit written owner waiver for named IDs lifts the block; record the waiver in the ledger (Owner-run actions log) and in the release note, and leave the row's Result unchanged.
 
-Maintenance rules: new device checks go under Next release device checks (or the decided version's section) with the next free ID, never into a published release's section, never renumbered. When the next version is decided, retitle that section `## vX.Y.Z device checks (next release)` and fill its App version. On publication, retitle it `## vX.Y.Z device checks`, set the published date, move it to the bottom of the version list (ascending order), and create a new empty `## Next release device checks` section at the top. Device-check results the owner reports are recorded under rule R8 (Owner-run actions log) with their evidence. When updating the device checklist, agents must prompt the owner to confirm all metadata fields before making changes: Device model, Android version, Tester (always record the tester username, e.g., sahilsheikh-dev), and verification Date, providing suggestions based on previous releases data (e.g., realme Narzo 60 Pro 5g, 15 Vanilla Ice Cream, sahilsheikh-dev).
+Maintenance rules: new device checks go under Next release device checks (or the decided version's section) with the next free ID, never into a published release's section, never renumbered. When the next version is decided, retitle that section `## vX.Y.Z device checks (next release)` and fill its App version. On publication, retitle it `## vX.Y.Z device checks`, set the published date, move it to the bottom of the version list (ascending order), and create a new empty `## Next release device checks` section at the top. Device-check results the owner reports are recorded under rule R8 (Owner-run actions log) with their evidence. When updating the device checklist, agents must prompt the owner to confirm all metadata fields before making changes: Device model, Android version, Tester (always record the tester username, e.g., sahilsheikh-dev), and verification Date, providing suggestions based on previous releases data (e.g., realme Narzo 60 Pro 5g, 15 Vanilla Ice Cream, sahilsheikh-dev). For any new feature, bug fix, behavior change, or revision that modifies user-facing behavior, data integrity, calculations, navigation, or forms, agents must add the corresponding physical-device verification check(s) to the device checklist under Next release device checks with the next free sequential ID (`O<n>`) in `Not run` status, and record the check ID in `docs/PROGRESS.md`, `status.md`, and `open-items.md`. Once a release is published, move all checks verified for that specific version into its own `## vX.Y.Z device checks` section placed below previous release checks in ascending version order, keeping each specific version's checks strictly under its own release section, while `## Next release device checks` retains only unreleased checks for the next version. Agents must never add, bump, or assign a specific application version number in the device checklist, metadata tables, package manifests, or anywhere in the repository until the owner explicitly decides to prepare a release candidate draft; until a release draft is finalized, keep the version unassigned (TBD / Next release).
 
 ## Protected file hashes
 
@@ -231,6 +235,42 @@ asks; release publication and tag changes require explicit owner approval.
 Every reported/recorded commit hash must
 be copied from `git log` and verified with `git cat-file -t`. Record assumptions
 as `Assumed: ...`; state superseded assertions and the replacement/reason.
+
+## GitHub issue tracking
+
+- **Atomic issue mapping (Model A):** Every approved ledger subtask and standalone
+  Change Request maintains an exact 1:1 GitHub issue mapping.
+- **PR labeling & alignment:** Every pull request requires phase/lifecycle, type,
+  status, and semantic standard labels matching its underlying task.
+- **Taxonomy:**
+  - Milestones: `v1.0.0`–`v1.3.0` for published historical releases, `v1.3.1`
+    for the next release candidate, and `Planned` for future roadmap items.
+  - Phase/Lifecycle labels: `phase:p01`–`phase:p44` (excluding reserved slots
+    P27, P28, P32) or `lifecycle:documentation`, `lifecycle:cleanup`,
+    `lifecycle:qa-and-release`, `lifecycle:schema-migration`.
+  - Type labels: `type:feat`, `type:fix`, `type:docs`, `type:chore`,
+    `type:test`, `type:audit`.
+  - Semantic standard labels: `enhancement` (for new capabilities/features),
+    `bug` (for defects/fixes), `documentation` (for documentation/policies),
+    `wontfix` (for unmerged/rejected changes like PR #39).
+  - Status labels: `status:planned`, `status:done`, `status:superseded`,
+    `status:cancelled`.
+- **Issue and PR protocol:**
+  - Create issue when a subtask or standalone CR enters the ledger (`status:planned`,
+    open); if any approved work starts or completes without a corresponding GitHub
+    issue, create and link it immediately before finishing.
+  - Update issue and PR bodies with task commit links and PR references as implementation proceeds.
+  - Transition to `status:done` and close with verified commits, PRs, merge SHAs, and
+    gate evidence only after merge to `develop` via PR and all six ordered gates pass.
+  - Issue and PR bodies capture original ledger date, owning phase/lifecycle, deliverable
+    description, dependencies, and verifiable commits/PRs. Server timestamps are never backdated.
+  - Public safety: Zero user financial amounts, account numbers, secrets,
+    credentials, tokens, or private audit findings in issue or PR titles or bodies.
+  - No speculative issues: Agents never open GitHub issues for unapproved ideas.
+  - Historical PR #39 is verified Closed Unmerged (`status:superseded`, `wontfix`); its
+    commit `b779c21` was connected as ancestry in P28-E-R3 and released in `v1.1.1`.
+- **Test enforcement:** Workflow is test-enforced by `progressLedger.test.ts`,
+  asserting 1:1 issue coverage and policy invariants.
 
 ## Gates
 

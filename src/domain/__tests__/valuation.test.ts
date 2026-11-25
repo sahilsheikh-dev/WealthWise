@@ -342,4 +342,115 @@ describe('configured holding valuation', () => {
       expect(afterEmergencyAvailable).toEqual(beforeEmergencyAvailable);
     }
   });
+
+  describe('P29-U-R1: Dynamic asset valuation calculations across methods', () => {
+    it('calculates unit-based valuation using unitCount and latestPrice', () => {
+      const stock = manual({
+        type: 'Stocks / ETF',
+        invested: 50_000,
+        value: 50_000,
+        valuationMethod: 'unitsPrice',
+        unitCount: 100,
+        latestPrice: 550,
+        priceAsOf: '2025-05-01',
+        logs: [
+          entry('buy-more', '2025-05-02', 11_000, 550), // 20 units
+        ],
+      });
+
+      expect(holdingValue(stock, '2025-05-01')).toBe(55_000); // 100 * 550
+      expect(holdingValue(stock, '2025-05-03')).toBe(66_000); // 120 * 550
+    });
+
+    it('derives balance-based valuation directly from opening and entry logs', () => {
+      const cash = manual({
+        type: 'Cash',
+        invested: 25_000,
+        value: 25_000,
+        valuationMethod: 'balance',
+        logs: [
+          { id: 'dep-1', date: '2025-02-01', amount: 10_000, kind: 'Deposit', note: '' },
+          { id: 'with-1', date: '2025-03-01', amount: 5_000, kind: 'Withdrawal', note: '' },
+        ],
+      });
+
+      expect(holdingValue(cash, '2025-01-15')).toBe(25_000);
+      expect(holdingValue(cash, '2025-02-15')).toBe(35_000);
+      expect(holdingValue(cash, '2025-03-15')).toBe(30_000);
+
+      const planCash: PlanHolding = {
+        id: 'plan-cash',
+        kind: 'plan',
+        name: 'Recurring Cash',
+        type: 'Cash',
+        frequency: 'monthly',
+        amount: 2_000,
+        ratePct: 0,
+        stepUpPct: 0,
+        tenureYears: 1,
+        startDate: '2025-01-01',
+        trackFrom: '2025-01-01',
+        opening: 5_000,
+        actualValue: null,
+        actualValueDate: null,
+        valuationMethod: 'balance',
+        logs: [
+          { id: 'c-1', date: '2025-01-05', amount: 2_000, kind: 'Deposit', note: '' },
+          { id: 'c-2', date: '2025-02-05', amount: 1_000, kind: 'Withdrawal', note: '' },
+        ],
+      };
+
+      expect(holdingValue(planCash, '2025-01-01')).toBe(5_000);
+      expect(holdingValue(planCash, '2025-01-10')).toBe(7_000);
+      expect(holdingValue(planCash, '2025-02-10')).toBe(6_000);
+    });
+
+    it('preserves existing holding data and logs when valuation method is changed', () => {
+      const initialWithLogs = manual({
+        type: 'Gold',
+        invested: 0,
+        value: 0,
+        valueAsOf: undefined,
+        valuationMethod: 'manual',
+        logs: [
+          entry('gold-initial', '2025-01-01', 100_000, 6_000),
+        ],
+      });
+
+      // Switch to unit-based using existing logs
+      const asUnitsFromLogs: ManualHolding = {
+        ...initialWithLogs,
+        valuationMethod: 'unitsPrice',
+        latestPrice: 6_500,
+        priceAsOf: '2025-06-01',
+      };
+      expect(asUnitsFromLogs.logs.length).toBe(1);
+      expect(holdingValue(asUnitsFromLogs, '2025-06-01')).toBeCloseTo((100_000 / 6_000) * 6_500, 0);
+
+      // Switch holding without logs to unit-based with explicit unitCount
+      const initialNoLogs = manual({
+        type: 'Gold',
+        invested: 100_000,
+        value: 105_000,
+        valuationMethod: 'manual',
+        logs: [],
+      });
+      const asUnitsWithCount: ManualHolding = {
+        ...initialNoLogs,
+        valuationMethod: 'unitsPrice',
+        unitCount: 16.666667,
+        latestPrice: 6_500,
+        priceAsOf: '2025-06-01',
+      };
+      expect(holdingValue(asUnitsWithCount, '2025-06-01')).toBeCloseTo(16.666667 * 6_500, 0);
+
+      // Switch to balance
+      const asBalance: ManualHolding = {
+        ...initialWithLogs,
+        valuationMethod: 'balance',
+      };
+      expect(asBalance.logs.length).toBe(1);
+      expect(holdingValue(asBalance, '2025-06-01')).toBe(100_000);
+    });
+  });
 });
