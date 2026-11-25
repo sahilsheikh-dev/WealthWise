@@ -2,6 +2,10 @@
 
 # Open items
 
+## P34-A Quick-capture research and implementation plan (Done; CR-175; #437)
+
+- Subtask P34-A (CR-175, 2026-11-25): Completed quick-capture platform and policy research for Expo SDK 58 / React Native `0.88.1` in `/tmp/wealthwise/reports/p34-a-quick-capture-research.md`. Recommended P34-B (`expo-quick-actions` + Android `TileService` via config plugin + opt-in `expo-notifications` action behind `LockGate`) and P34-C (opt-in foreground-only shake via `expo-sensors`), with double-tap back, key combos, and background gestures out of scope. Unresolved owner questions: whether to include the persistent Notification Action in P34-B, preferred default shortcut items, and P34-C sequencing. Issue `#437`. Schema remains version 24.
+
 ## P28-F-R8 Prepare and publish v1.4.0 release (Done; CR-174; #574)
 
 - Subtask P28-F-R8 (CR-174, 2026-11-25): Published **WealthWise v1.4.0** (`main` `40cc7a2`, tag `v1.4.0`, EAS build `21c0f156-39ff-4087-a4e2-df0519121650`, `android-apk`, `versionCode` `6`, `106,032,738` bytes). Renamed `v1.3.0` asset to `WealthWise-android-v1.3.0.apk`, verified all APK and 13 screenshot URLs (`HTTP 200`), updated `release-history.md`, and back-merged `main` into `develop`. Issue `#574`.
