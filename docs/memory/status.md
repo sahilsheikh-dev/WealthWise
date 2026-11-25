@@ -1,6 +1,8 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-24 | Updates: owner and AI agents -->
 
 # Status
+- **P39-E-R1 / CR-169 (2026-11-25) — Upgrade to Expo SDK 58 and resolve `DEC-P39-DEPS-01`.**
+  Upgraded WealthWise from Expo SDK 57 to Expo SDK 58 (`expo@^58.0.26`, `react-native@0.88.1`, `react@19.3.0`, `expo-router@~58.0.32`, and 31 aligned SDK 58 packages plus `@react-native/jest-preset` and `react-test-renderer@19.3.0`). Verified `npm ls decode-uri-component` is empty and `npm audit` reports 0 critical/0 high advisories (27 moderate dev/CLI advisories remain), resolving `DEC-P39-DEPS-01`. Updated `app/(tabs)/_layout.tsx` (`navigateToTab`), `ef-allocation-form.tsx`, `onboarding.tsx`, `profile-form.tsx`, `jest.config.js`, `app.json`, and `TabsLayout.test.tsx`. Added physical-device check `O85` (`Not run`) in `docs/releases/device-test-checklist.md`. Issue `#562`. Schema remains version 24.
 - **CR-168 (2026-11-25) — Record physical-device checks O83 and O84 as Pass.**
   Recorded owner-reported physical-device validation Pass for checks `O83` (modal presentation & deep-link fallback) and `O84` (Demo Mode & SDK 57 patch verification) in `docs/releases/device-test-checklist.md` under `## Next release device checks` (`App version: TBD`). Confirmed metadata: `realme Narzo 60 Pro 5g`, `15 Vanilla Ice Cream`, `sahilsheikh-dev`, `2026-11-25`. Issue `#559`. Zero Next release device checks remain `Not run` for `P39-H-R1`.
 - **CR-167 (2026-11-25) — Refresh remote snapshot, update snapshot/issue-tracking rules, and backfill missing Model A GitHub issues.**

@@ -67,7 +67,7 @@ export default function ProfileFormScreen() {
             variant="primary"
             accessibilityLabel="Save profile"
             disabled={isSubmitting}
-            onPress={handleSubmit(save)}
+            onPress={() => handleSubmit(save)()}
             style={styles.save}
           />
         </View>

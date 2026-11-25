@@ -170,7 +170,7 @@ export default function EfAllocationFormScreen() {
               icon="save"
               variant="primary"
               disabled={isSubmitting || !allocationIsValid || !targetValidation.success}
-              onPress={save}
+              onPress={() => save()}
             />
           </View>
         )}
