@@ -47,6 +47,8 @@ import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
 import { closeRouteSafely } from '../src/lib/routeParams';
+import { incomeCategoriesForTransaction } from '../src/domain/transactionDetection';
+import { removeTransactionDraft } from '../src/lib/transactionDetectionDrafts';
 
 const typeOptions = [
   { label: 'Expense', value: 'expense' },
@@ -67,6 +69,8 @@ export default function TransactionFormScreen() {
     category?: string;
     amount?: string;
     date?: string;
+    note?: string;
+    draftId?: string;
     pending?: string;
   }>();
   const { id } = params;
@@ -79,6 +83,8 @@ export default function TransactionFormScreen() {
   const requestedCategoryParam = Array.isArray(params.category) ? params.category[0] : params.category;
   const requestedAmount = Array.isArray(params.amount) ? params.amount[0] : params.amount;
   const requestedDate = Array.isArray(params.date) ? params.date[0] : params.date;
+  const requestedNote = Array.isArray(params.note) ? params.note[0] : params.note;
+  const draftId = Array.isArray(params.draftId) ? params.draftId[0] : params.draftId;
   const pendingParam = Array.isArray(params.pending) ? params.pending[0] : params.pending;
   const pendingMode = pendingParam === '1';
   const data = useAppStore((state) => state.data);
@@ -152,13 +158,13 @@ export default function TransactionFormScreen() {
     } : {
       amount: requestedAmount ?? '',
       date: requestedDate ?? today,
-      note: '',
+      note: requestedNote ?? '',
       type: initialType,
       category: (() => {
         const initialDate = requestedDate && isValidISO(requestedDate) ? requestedDate : today;
         if (initialType === 'invest') return '';
         if (initialType === 'income') {
-          const categories = TRANSACTION_CATEGORIES.income;
+          const categories = incomeCategoriesForTransaction(data, monthKey(initialDate), today);
           if (requestedCategoryParam && categories.some((category) => category === requestedCategoryParam)) {
             return requestedCategoryParam;
           }
@@ -211,9 +217,16 @@ export default function TransactionFormScreen() {
   const selectedInstrument = instruments.find((item) => item.id === selectedInstrumentId);
   const isWithdrawalForm = selectedType === 'income' && selectedCategory === 'Withdrawal';
   const linkedEditable = linkedInstrument && transaction?.source !== undefined;
+  const selectedMonth = isValidISO(selectedDate) ? monthKey(selectedDate) : monthKey(today);
+  const dynamicIncomeCategories = useMemo(
+    () => incomeCategoriesForTransaction(data, selectedMonth, today),
+    [data, selectedMonth, today],
+  );
   const standardCategories = selectedType === 'invest'
     ? INVESTMENT_FORM_CATEGORIES
-    : TRANSACTION_CATEGORIES[selectedType];
+    : selectedType === 'income'
+      ? dynamicIncomeCategories
+      : TRANSACTION_CATEGORIES[selectedType];
   const choices = [
     ...standardCategories,
     ...(transaction?.type === selectedType && !(standardCategories as readonly string[]).includes(transaction.category)
@@ -242,7 +255,6 @@ export default function TransactionFormScreen() {
   const derivedCategory = selectedInstrument
     ? investCategoryFor(selectedInstrument.type)
     : transaction?.category ?? '';
-  const selectedMonth = isValidISO(selectedDate) ? monthKey(selectedDate) : monthKey(today);
   const categorySections = useMemo(
     () => selectedType === 'income'
       ? []
@@ -330,6 +342,9 @@ export default function TransactionFormScreen() {
       : store.data.transactions.at(-1);
     if (!saved) return;
     setTxMonth(monthKey(saved.date));
+    if (draftId) {
+      await removeTransactionDraft(draftId);
+    }
     router.back();
   };
 

@@ -19,6 +19,29 @@ const reminderPreferencesSchema = z.strictObject({
   showAmounts: z.boolean(),
   updateValues: z.boolean().optional(),
 });
+const pendingTransactionDraftSchema = z.strictObject({
+  id: z.string(),
+  type: z.enum(['expense', 'income']),
+  amount: z.number().positive(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  suggestedNote: z.string().max(80),
+  sourcePackage: z.string(),
+  confidence: z.enum(['high', 'medium']),
+  fingerprint: z.string(),
+  createdAtMs: z.number(),
+  expiresAtMs: z.number(),
+});
+const seenDetectionFingerprintSchema = z.strictObject({
+  fingerprint: z.string(),
+  seenAtMs: z.number(),
+});
+const transactionDetectionPreferencesSchema = z.strictObject({
+  enabled: z.boolean(),
+  disclosureAcceptedAt: z.string().datetime().optional(),
+  allowedPackages: z.array(z.string()),
+  pendingDrafts: z.array(pendingTransactionDraftSchema),
+  seenFingerprints: z.array(seenDetectionFingerprintSchema),
+});
 const metaSchema = z.strictObject({
   lastExportAt: z.string().datetime().optional(),
   nudgeDismissedUntil: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
@@ -26,10 +49,12 @@ const metaSchema = z.strictObject({
   remindersPromptHandled: z.boolean().optional(),
   sortSpecs: z.record(z.string(), sortSpecSchema).optional(),
   reminders: reminderPreferencesSchema.optional(),
+  transactionDetection: transactionDetectionPreferencesSchema.optional(),
 });
 
 export type BackupMeta = z.infer<typeof metaSchema>;
 export type PersistedReminderPreferences = z.infer<typeof reminderPreferencesSchema>;
+export type PersistedTransactionDetection = z.infer<typeof transactionDetectionPreferencesSchema>;
 
 export const DEFAULT_REMINDER_PREFERENCES: PersistedReminderPreferences = {
   enabled: false,
@@ -38,6 +63,13 @@ export const DEFAULT_REMINDER_PREFERENCES: PersistedReminderPreferences = {
   sameDay: true,
   showAmounts: false,
   updateValues: false,
+};
+
+export const DEFAULT_TRANSACTION_DETECTION: PersistedTransactionDetection = {
+  enabled: false,
+  allowedPackages: [],
+  pendingDrafts: [],
+  seenFingerprints: [],
 };
 
 export function createMetaStore(storage: StateStorage) {
