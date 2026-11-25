@@ -86,11 +86,13 @@ apply only that exception and preserve all other rules.
   (`headRefName`), headRefOid, createdAt,
   updatedAt, mergedAt, closedAt, mergeCommit, mergedBy, url, author, labels
   and body, plus detail files for the latest 60 PRs, releases, tags, issues and
-  remote branches. After every manual merge, refresh the snapshot before the
-  next agent task. Export and capture procedures are maintained in
-  `docs/memory/README.md`, and WealthWise `/tmp` artifacts are organized under
-  `/tmp/wealthwise/` (`remote-snapshot/`, `reports/`, `logs/`,
-  `build-artifacts/`).
+  remote branches. Refresh the snapshot with `scripts/export-remote-snapshot.sh`
+  whenever remote state changes (after manual merges, PR/issue updates, or
+  tag/release changes) and at task start if the latest snapshot is older than
+  current remote changes (unless network access is prohibited). Export and capture
+  procedures are maintained in `docs/memory/README.md`, and WealthWise `/tmp`
+  artifacts are organized under `/tmp/wealthwise/` (`remote-snapshot/`,
+  `reports/`, `logs/`, `build-artifacts/`).
 - **R7 — Slot-filling and empty phase reservations:** empty phase numbers freed
   by independent entity separation or cancellation (P7, P27, P28, P32) stay
   reserved as empty slots so no existing phase is renumbered and no
@@ -278,14 +280,16 @@ local Gradle builds still require explicit authorization.
 - **GitHub issue tracking:** Every approved ledger subtask and standalone Change
   Request maps 1:1 to a GitHub issue under Model A. Every pull request must carry
   matching phase/lifecycle, type, and semantic standard labels. When work is approved
-  into the ledger, create or link its issue with phase/lifecycle (`phase:pNN` or
-  `lifecycle:*`), type (`type:*`), status (`status:planned`), semantic standard
+  into the ledger—or if any approved work starts or completes without a
+  corresponding GitHub issue—create or link its issue immediately with
+  phase/lifecycle (`phase:pNN` or `lifecycle:*`), type (`type:*`), status
+  (`status:planned`), semantic standard
   label (`enhancement`, `bug`, `documentation`), and milestone (`v1.0.0`–`v1.3.1`,
   `Planned`). Update issue and PR bodies with verified task commits, PR links, and
-  merge evidence as work proceeds. Once merged to `develop` via PR and verified by
-  all six ordered gates, update the issue status label to `status:done`, post a
-  retrospective completion comment with commits, PRs, merge SHAs, and gates, and
-  close the issue. Never create speculative issues for unapproved work; never
+  merge evidence as work proceeds. Once merged to `develop` via PR and verified by all six ordered gates,
+  update the issue status label to `status:done`, post a retrospective completion
+  comment with verified commits, PRs, merge SHAs, and gate evidence, and close
+  the issue. Never create speculative issues for unapproved work; never
   include personal financial data, tokens, secrets, or private audit findings in
   issue or PR titles or bodies. PR #39 (`DO_NOT_MERGE-...`) is verified Closed Unmerged
   (`status:superseded`, `wontfix`); its commit `b779c21` was connected as ancestry-only

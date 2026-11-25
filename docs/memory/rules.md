@@ -81,9 +81,11 @@
   (`headRefName`), headRefOid, createdAt,
   updatedAt, mergedAt, closedAt, mergeCommit, mergedBy, url, author, labels
   and body, plus detail files for the latest 60 PRs, releases, tags, issues and
-  remote branches. After every manual merge, refresh the snapshot before the
-  next agent task. Export and capture procedures are maintained in
-  `docs/memory/README.md`.
+  remote branches. Refresh the snapshot with `scripts/export-remote-snapshot.sh`
+  whenever remote state changes (after manual merges, PR/issue updates, or
+  tag/release changes) and at task start if the latest snapshot is older than
+  current remote changes (unless network access is prohibited). Export and capture
+  procedures are maintained in `docs/memory/README.md`.
 - Branching: `main` is stable released code; `develop` is integration and
   must pass all six gates; phase branches use `phase/NN-slug`, task branches
   use `task/ID-slug`, release branches use `release/vX.Y.Z`, hotfix branches
@@ -255,10 +257,11 @@ as `Assumed: ...`; state superseded assertions and the replacement/reason.
     `status:cancelled`.
 - **Issue and PR protocol:**
   - Create issue when a subtask or standalone CR enters the ledger (`status:planned`,
-    open).
+    open); if any approved work starts or completes without a corresponding GitHub
+    issue, create and link it immediately before finishing.
   - Update issue and PR bodies with task commit links and PR references as implementation proceeds.
-  - Transition to `status:done` and close only after merge to `develop` via PR and
-    all six ordered gates pass.
+  - Transition to `status:done` and close with verified commits, PRs, merge SHAs, and
+    gate evidence only after merge to `develop` via PR and all six ordered gates pass.
   - Issue and PR bodies capture original ledger date, owning phase/lifecycle, deliverable
     description, dependencies, and verifiable commits/PRs. Server timestamps are never backdated.
   - Public safety: Zero user financial amounts, account numbers, secrets,
