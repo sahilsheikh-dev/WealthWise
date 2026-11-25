@@ -2495,4 +2495,27 @@ describe('permanent progress ledger', () => {
     expect(status).toContain('CR-163');
     expect(status).toContain('DEC-P39-DEPS-01');
   });
+
+  it('records resolution of DEC-P39-DEPS-01 by owner approval under CR-164', () => {
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const independentEntities = ledger.split('## 13. Independent entities')[1] ?? '';
+    const matrix = ledger.split('## 10. Verification matrix')[1]?.split('## 11. Session and release log')[0] ?? '';
+    const decisionsSection = ledger.split('## 4. Architecture and decisions')[1]?.split('## 5. ')[0] ?? '';
+    const openItems = readFileSync(join(process.cwd(), 'docs/memory/open-items.md'), 'utf8');
+    const status = readFileSync(join(process.cwd(), 'docs/memory/status.md'), 'utf8');
+    const decisionsIndex = readFileSync(join(process.cwd(), 'docs/memory/decisions.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-164 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-164 |'))).toHaveLength(1);
+    expect(independentEntities.split('\n').filter((line) => line.startsWith('| CR-164 |'))).toHaveLength(1);
+    expect(matrix).toContain('CR-164');
+    expect(decisionsSection).toContain('DEC-P39-DEPS-01');
+    expect(decisionsSection).toContain('not fixed');
+    expect(decisionsIndex).toContain('DEC-P39-DEPS-01');
+    expect(openItems).toContain('CR-164');
+    expect(openItems).toContain('Resolved owner decision (`DEC-P39-DEPS-01`)');
+    expect(status).toContain('CR-164');
+    expect(status).toContain('DEC-P39-DEPS-01');
+  });
 });
