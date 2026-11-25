@@ -73,10 +73,10 @@
   an `Owner actions pending` list.
 
   Record manual owner terminal sessions with
-  `script -a /tmp/wealthwise-remote-snapshot/owner-terminal-$(date +%F).log`
+  `script -a /tmp/wealthwise/remote-snapshot/owner-terminal-$(date +%F).log`
   and finish the session with `exit`. `pbpaste` only copies the clipboard; it
   is not session evidence unless the full terminal text was copied first.
-  The owner exports the snapshot with `export-remote-snapshot.sh`; its PR
+  The owner exports the snapshot with `scripts/export-remote-snapshot.sh`; its PR
   records include number, title, state, base (`baseRefName`), head
   (`headRefName`), headRefOid, createdAt,
   updatedAt, mergedAt, closedAt, mergeCommit, mergedBy, url, author, labels

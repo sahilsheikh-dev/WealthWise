@@ -19,12 +19,15 @@ describe('shared branching and contributor rules', () => {
     }
     expect(read('AGENTS.md')).toContain('0. Reconcile remote state');
     const memoryIndex = read('docs/memory/README.md');
-    expect(memoryIndex).toContain('script -a /tmp/wealthwise-remote-snapshot/owner-terminal-$(date +%F).log');
+    expect(memoryIndex).toContain('script -a /tmp/wealthwise/remote-snapshot/owner-terminal-$(date +%F).log');
     expect(memoryIndex).toContain('only copies the clipboard');
-    expect(memoryIndex).toContain('export-remote-snapshot.sh');
+    expect(memoryIndex).toContain('scripts/export-remote-snapshot.sh');
     expect(memoryIndex).toContain('every manual merge');
-    expect(read('AGENTS.md')).toContain('script -a /tmp/wealthwise-remote-snapshot/owner-terminal-$(date +%F).log');
-    expect(read('docs/memory/rules.md')).toContain('script -a /tmp/wealthwise-remote-snapshot/owner-terminal-$(date +%F).log');
+    expect(read('AGENTS.md')).toContain('script -a /tmp/wealthwise/remote-snapshot/owner-terminal-$(date +%F).log');
+    expect(read('docs/memory/rules.md')).toContain('script -a /tmp/wealthwise/remote-snapshot/owner-terminal-$(date +%F).log');
+    const exporter = read('scripts/export-remote-snapshot.sh');
+    expect(exporter).toContain('S=/tmp/wealthwise/remote-snapshot');
+    expect(exporter).not.toMatch(/ghp_|github_pat_|Authorization:\s*Bearer/i);
     expect(read('docs/memory/README.md')).toContain('headRefOid');
     expect(read('docs/memory/README.md')).toContain('detail files for the latest 60 PRs');
     expect(read('docs/memory/README.md')).toContain('refresh the snapshot before the next agent task');

@@ -1,6 +1,9 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-24 | Updates: owner and AI agents -->
 
 # Status
+- **CR-165 (2026-11-25) — Organize `/tmp/wealthwise/` artifacts and track `scripts/export-remote-snapshot.sh`.**
+  Organized WealthWise-specific temporary artifacts under `/tmp/wealthwise/` (`remote-snapshot/`: 177 files, `reports/`: 59 files, `logs/`: 74 files, `build-artifacts/`: 2 files; 312 total moved, 0 conflicts, unrelated `/tmp` entries preserved unmoved).
+  Relocated `~/export-remote-snapshot.sh` to [scripts/export-remote-snapshot.sh](../../scripts/export-remote-snapshot.sh) (verified WealthWise-only, zero credentials/tokens, uses owner-authenticated `gh`), updated its output path to `/tmp/wealthwise/remote-snapshot/`, and updated `AGENTS.md`, `docs/memory/README.md`, `docs/memory/rules.md`, and `branchingDocs.test.ts`. Historical ledger paths remain intact with current-path note recorded under CR-165. Pure documentation/tooling scope; schema remains version 24.
 - **CR-164 (2026-11-25) — Resolve `DEC-P39-DEPS-01` by owner approval.**
   Recorded owner approval resolving `DEC-P39-DEPS-01`: accept the `decode-uri-component@0.2.2` ReDoS risk (`GHSA-vcc3-ghjq-m6fr` Moderate, `GHSA-qr28-fpjm-wq7f` High via `expo-router@57.0.31` → `query-string@7.1.3`) until the next planned Expo SDK upgrade.
   - *Constraint & mitigation:* Upstream fix requires SemVer-major `expo-router@58.0.32` (Expo SDK 58), incompatible with Expo SDK 57 (`expo@57.0.33`); mitigated by 100% offline-first runtime (`offlineRuntime.test.ts`). The vulnerability is not fixed.
