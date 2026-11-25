@@ -71,12 +71,12 @@ describe('bottom tab layout', () => {
 
     const routes = ['index', 'transactions', 'goals', 'budget'];
     for (const [index, activeTab] of routes.entries()) {
-      const navigate = jest.fn();
+      const navigateToTab = jest.fn();
       let barRenderer: TestRenderer.ReactTestRenderer | undefined;
       act(() => {
         barRenderer = TestRenderer.create((tabs.props.tabBar as (props: unknown) => React.ReactElement)({
-          state: { index, routes: routes.map((name) => ({ name })) },
-          navigation: { navigate },
+          state: { index, routes: routes.map((name) => ({ key: `${name}-key`, name })) },
+          navigateToTab,
         }));
       });
       if (!barRenderer) throw new Error(`The shared bar renderer did not render for ${activeTab}.`);
@@ -84,7 +84,7 @@ describe('bottom tab layout', () => {
       expect(bars).toHaveLength(1);
       expect(bars[0]?.props.activeTab).toBe(activeTab);
       act(() => bars[0]?.props.onSelect('budget'));
-      expect(navigate).toHaveBeenCalledWith('budget');
+      expect(navigateToTab).toHaveBeenCalledWith('budget-key');
       act(() => barRenderer?.unmount());
     }
   });
