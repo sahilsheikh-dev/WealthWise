@@ -1,4 +1,4 @@
-<!-- Purpose: Index and protocol for shared repository AI memory. | Last updated: 2026-11-22 | Updates: owner and AI agents -->
+<!-- Purpose: Index and protocol for shared repository AI memory. | Last updated: 2026-11-25 | Updates: owner and AI agents -->
 
 # Shared AI memory
 
@@ -34,6 +34,7 @@ but does not replace or shorten, the canonical [progress ledger](../PROGRESS.md)
 | [open-items.md](open-items.md) | Unresolved items, assumptions and device checks |
 | [working-style.md](working-style.md) | Owner/AI working agreement |
 | [work-placement.md](work-placement.md) | Work classification, placement rules and branch workflow |
+| [archive/README.md](archive/README.md) | Index of archived completed-phase ledger narrative |
 
 Before work, reconcile remote state using the latest owner snapshot or available
 Git refs as required by R8. Read this index, the relevant memory files, and the

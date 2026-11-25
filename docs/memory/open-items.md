@@ -2,6 +2,10 @@
 
 # Open items
 
+## P40-B Archive completed-phase narrative (Done; CR-173; #462)
+
+- Subtask P40-B (CR-173, 2026-11-25): Archived completed-phase narrative from `docs/PROGRESS.md` into `docs/memory/archive/` (`README.md` + 6 section archives), reducing `docs/PROGRESS.md` by ~75% in bytes while preserving all historical records and full `progressLedger.test.ts` coverage. Phase `P40` is now complete (`2/2`). Issue `#462`.
+
 ## P40-A Documentation size and read-cost audit (Done; CR-172; #461)
 
 - Subtask P40-A (CR-172, 2026-11-25): Measured `AGENTS.md`, `docs/PROGRESS.md`, and `docs/memory/*` (17,359 lines / 1,751,606 bytes / ~436,456 estimated tokens at `chars / 4`; `docs/PROGRESS.md` alone is 13,495 lines / 1,443,604 bytes / ~359,592 tokens, with 78.8% in sections `## 10`, `## 6`, `## 4`, and `## 11`), plus 5 doc-parsing Jest suites (96 `it()` blocks, 1,312 `expect()` assertions). Full report stored outside Git at `/tmp/wealthwise/reports/p40-a-doc-size-audit.md`. Unblocks `P40-B` (`#462`). Issue `#461`.
