@@ -7,6 +7,7 @@ Update this file for every release: add the new version heading and confirmed re
 
 ### New Features
 - Opt-in Android notification-based transaction detection (`Transaction detection` screen): includes in-app prominent disclosure, user-selected source apps, local-only in-memory parsing without raw-text storage or SMS permissions, duplicate/7-day draft expiry, dynamic credit/debit/Investment categorization, foreground review, and privacy-safe background `Review` notifications (Android only; iOS uses manual entry).
+- Added "Automatically detect transactions" setup and live status entry points on Home and Transactions, showing accurate setup/permission states (`Not set up`, `Notification access needed`, `Notification permission needed`, `Enabled`, or `Unavailable on iOS`) and routing directly to `Transaction detection`.
 
 ### Fixes
 - Fixed `undefined is not a function` when allowing payment reminders from the first-launch prompt or Reminders screen by removing unbound `this.ensureChannel()` calls in `reminderNotificationAdapter`, ensuring Android creates the `reminders` channel before requesting `POST_NOTIFICATIONS`.
