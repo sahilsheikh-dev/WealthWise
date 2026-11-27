@@ -2,6 +2,10 @@
 
 # Open items
 
+## P24-A-R1 Fix payment-reminder permission failure (Done; CR-180; device check O87 Not run)
+
+- Subtask P24-A-R1 (CR-180, 2026-11-27): Fixed `_this.ensureChannel is not a function` in `src/lib/reminderNotifications.ts` by extracting standalone `ensureRemindersChannel()` so unbound `requestPermission` / `scheduleTest` callbacks create the Android `reminders` channel before `requestPermissionsAsync()`, clarified Android 12 vs 13+ and `POST_NOTIFICATIONS` vs Notification Access in `app/reminders.tsx`, added `reminderNotifications.test.ts`, updated `CHANGELOG.md` (`[Unreleased]`), and added physical-device check `O87` (`Not run`). Schema remains version 24.
+
 ## CR-179 GitHub issue inventory audit and durable templates (Done)
 
 - Subtask CR-179 (2026-11-27): Audited all 276 non-PR GitHub issues (23 open, 253 closed), completed 205 truncated `...` titles and sparse bodies, posted activity summaries on 23 open zero-comment issues, updated `AGENTS.md` and `docs/memory/rules.md` with Fibonacci (`1, 2, 3, 5, 8, 13`) estimate & issue-writing rules, and updated `.github/ISSUE_TEMPLATE/` (`bug_report.yml`, `feature_request.yml`, `planned_task.yml`). 13 historical `P1`–`P14` issues lack recoverable Git history for a retrospective estimate and are flagged `Unavailable` for owner input if desired. Schema remains version 24.

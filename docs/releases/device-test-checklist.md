@@ -12,7 +12,7 @@ Next release (TBD)
 | Device model | realme Narzo 60 Pro 5g |
 | Android version | 15 Vanilla Ice Cream |
 | Tester | sahilsheikh-dev |
-| Date | 2026-11-25 |
+| Date | 2026-11-27 |
 
 Use only `Pass`, `Fail`, or `Blocked` after running each check. `Not run` remains the pending marker.
 
@@ -21,6 +21,7 @@ Use only `Pass`, `Fail`, or `Blocked` after running each check. `Not run` remain
 | ID | Test | Result | Notes |
 |---|---|---|---|
 | O86 | Verify opt-in Android notification-based transaction detection on a physical device: open Transaction detection, accept the prominent disclosure, grant Android Notification Access (including Allow restricted settings on sideloaded APK), trigger a test payment/bank notification while foregrounded (in-app review) and backgrounded (privacy-safe Review notification), verify OTP/promo/hidden notifications are ignored, and confirm/dismiss a draft without silent transaction creation. | Not run | P35-C; requires installable native Android build (config plugin `withNotificationListener`). Metadata: realme Narzo 60 Pro 5g, 15 Vanilla Ice Cream, sahilsheikh-dev, 2026-11-25. |
+| O87 | Verify payment-reminder permission flow on a physical Android device: tap Turn on reminders in the first-launch Payment reminders sheet (or toggle Enable reminders in Reminders), confirm no `undefined is not a function` error occurs, Android 13+ displays the `POST_NOTIFICATIONS` permission dialog after creating the `reminders` channel, and denying/blocking keeps reminders off and offers Open system settings. | Not run | P24-A-R1; metadata: realme Narzo 60 Pro 5g, 15 Vanilla Ice Cream, sahilsheikh-dev, 2026-11-27. |
 
 ## v1.0.0 device checks
 

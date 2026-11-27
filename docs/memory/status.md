@@ -1,6 +1,8 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-25 | Updates: owner and AI agents -->
 
 # Status
+- **P24-A-R1 / CR-180 (2026-11-27) — Fix payment-reminder permission failure.**
+  Fixed `undefined is not a function` (`_this.ensureChannel is not a function`) when enabling payment reminders from `FirstLaunchReminderPrompt` or `app/reminders.tsx` by extracting standalone `ensureRemindersChannel()` in `src/lib/reminderNotifications.ts` so unbound `requestPermission` / `scheduleTest` callbacks create the Android `reminders` channel before requesting `POST_NOTIFICATIONS`. Clarified Android 12 vs 13+ and `POST_NOTIFICATIONS` vs Notification Access separation in `app/reminders.tsx`, added `reminderNotifications.test.ts`, updated `CHANGELOG.md` (`[Unreleased]`), and added physical-device check `O87` (`Not run`). Schema remains version 24.
 - **CR-179 (2026-11-27) — GitHub issue inventory audit, durable issue-writing rules, and issue templates.**
   Audited all 276 non-PR GitHub issues (23 open, 253 closed), completed 205 truncated `...` titles and sparse bodies from verified ledger/PR evidence, added activity summaries to 23 open zero-comment issues, and flagged 13 `P1`–`P14` issues as `Unavailable` for historical estimate (owner input if desired). Updated `AGENTS.md`, `docs/memory/rules.md`, `.github/ISSUE_TEMPLATE/bug_report.yml`, `.github/ISSUE_TEMPLATE/feature_request.yml`, and added `.github/ISSUE_TEMPLATE/planned_task.yml` with Fibonacci story-point estimates (`1, 2, 3, 5, 8, 13`) and acceptance criteria. Schema remains version 24.
 - **P35-C / CR-178 (2026-11-25) — Opt-in Android notification-based transaction detection.**
