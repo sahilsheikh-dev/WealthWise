@@ -294,7 +294,15 @@ local Gradle builds still require explicit authorization.
   comment with verified commits, PRs, merge SHAs, and gate evidence, and close
   the issue. Never create speculative issues for unapproved work; never
   include personal financial data, tokens, secrets, or private audit findings in
-  issue or PR titles or bodies. PR #39 (`DO_NOT_MERGE-...`) is verified Closed Unmerged
+  issue or PR titles or bodies. Every issue must have a complete, concise title
+  (never ending in `...`), a structured body (context/scope or bug/docs fields,
+  clear acceptance criteria, dependencies, and privacy-safe verified links),
+  matching phase/lifecycle, type, status, and semantic labels, and a Fibonacci
+  story-point estimate (`1, 2, 3, 5, 8, 13`) with a brief basis. Explicitly mark
+  estimates for completed work as `Retrospective estimate (not recorded actuals)`,
+  or mark `Unavailable — insufficient evidence` for owner input when history is
+  unrecoverable; never invent facts. Post meaningful activity comments at key
+  milestones without duplicating existing summaries. PR #39 (`DO_NOT_MERGE-...`) is verified Closed Unmerged
   (`status:superseded`, `wontfix`); its commit `b779c21` was connected as ancestry-only
   in P28-E-R3 and released in `v1.1.1`.
 

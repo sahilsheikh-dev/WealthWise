@@ -2,6 +2,10 @@
 
 # Open items
 
+## CR-179 GitHub issue inventory audit and durable templates (Done)
+
+- Subtask CR-179 (2026-11-27): Audited all 276 non-PR GitHub issues (23 open, 253 closed), completed 205 truncated `...` titles and sparse bodies, posted activity summaries on 23 open zero-comment issues, updated `AGENTS.md` and `docs/memory/rules.md` with Fibonacci (`1, 2, 3, 5, 8, 13`) estimate & issue-writing rules, and updated `.github/ISSUE_TEMPLATE/` (`bug_report.yml`, `feature_request.yml`, `planned_task.yml`). 13 historical `P1`–`P14` issues lack recoverable Git history for a retrospective estimate and are flagged `Unavailable` for owner input if desired. Schema remains version 24.
+
 ## P35-C Opt-in Android notification-based transaction detection (Done; CR-178; #442; device check O86 Not run)
 
 - Subtask P35-C (CR-178, 2026-11-25): Implemented opt-in Android `NotificationListenerService` transaction detection (`plugins/withNotificationListener.js`, zero SMS permissions), local-only parsing/dedup/7-day expiry (`src/domain/transactionDetection.ts`), `metaStore.ts` draft queue (schema v24), prominent disclosure & source-app allowlist (`app/transaction-detection.tsx`), dynamic credit/debit/Investment categorization (`app/transaction-form.tsx`), foreground review & generic background `Review` notification (`TransactionDetectionRuntime`), and `PRIVACY.md` / `CHANGELOG.md` (`[Unreleased]`) updates. Physical-device check `O86` added in `Not run` status (requires installable native Android build). Issue `#442`. Schema remains version 24.

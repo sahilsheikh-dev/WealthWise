@@ -47,6 +47,38 @@ body:
       description: What did you expect to happen instead?
     validations:
       required: true
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance Criteria
+      description: Verifiable conditions required to close this bug (including regression test and gate expectations).
+      placeholder: |
+        - [ ] Regression test reproduces the failure and passes after fix
+        - [ ] Six ordered repository gates pass
+    validations:
+      required: true
+  - type: dropdown
+    id: estimate
+    attributes:
+      label: Story-Point Estimate (Fibonacci)
+      description: Select a Fibonacci story-point estimate (1, 2, 3, 5, 8, 13) or mark Unavailable if evidence is insufficient.
+      options:
+        - "1 — trivial localized fix"
+        - "2 — targeted bug fix with regression test"
+        - "3 — multi-file fix or state/UI interaction"
+        - "5 — cross-layer fix with persistence/migration impact"
+        - "8 — complex subsystem remediation"
+        - "13 — major architectural fix"
+        - "Unavailable — insufficient evidence"
+    validations:
+      required: true
+  - type: textarea
+    id: estimate_basis
+    attributes:
+      label: Estimate Basis & Privacy-Safe Evidence
+      description: Brief rationale for the estimate and privacy-safe links/refs (no real financial data, tokens, or secrets).
+    validations:
+      required: true
   - type: checkboxes
     id: terms
     attributes:
