@@ -50,6 +50,15 @@ jest.mock('../../data/metaStore', () => ({
 }));
 jest.mock('../../lib/confirm', () => ({ choiceAsync: async () => null, confirmAsync: async () => true }));
 jest.mock('../../lib/clock', () => ({ currentHour: () => 9, todayISO: () => '2026-10-10' }));
+jest.mock('../../lib/transactionDetectionStatus', () => ({
+  loadTransactionDetectionStatus: jest.fn(async () => ({
+    status: 'not_setup',
+    label: 'Not set up',
+    description: 'Opt in to detect likely transactions from selected Android payment notifications.',
+    actionLabel: 'Set up',
+    pendingDraftCount: 0,
+  })),
+}));
 jest.mock('../../theme/useTheme', () => ({
   useTheme: () => {
     const { themes } = jest.requireActual('../../theme/themes');
