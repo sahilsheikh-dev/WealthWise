@@ -240,6 +240,15 @@ as `Assumed: ...`; state superseded assertions and the replacement/reason.
 
 - **Atomic issue mapping (Model A):** Every approved ledger subtask and standalone
   Change Request maintains an exact 1:1 GitHub issue mapping.
+- **Issue quality, estimates & activity comments:** Every issue must use a
+  complete, concise title (never ending in `...`) and a structured body
+  covering context/scope (or observed/expected behavior for bugs, purpose/deliverables
+  for docs), acceptance criteria, dependencies, and privacy-safe verified links.
+  Include a Fibonacci story-point estimate (`1, 2, 3, 5, 8, 13`) with a brief
+  basis; label completed-work estimates as `Retrospective estimate (not recorded actuals)`,
+  or mark `Unavailable — insufficient evidence` for owner input when historical
+  records are unrecoverable. Post concise activity comments at meaningful
+  milestones (reusing/updating existing summaries rather than duplicating).
 - **PR labeling & alignment:** Every pull request requires phase/lifecycle, type,
   status, and semantic standard labels matching its underlying task.
 - **Taxonomy:**

@@ -1,0 +1,74 @@
+name: Planned task
+description: Track an approved WealthWise ledger subtask or standalone lifecycle task (Model A)
+title: "[ID]: "
+labels: ["status:planned"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### Privacy & Placement Notice
+        Follow Model A (1:1 with `docs/PROGRESS.md`). **Never include personal financial data, account numbers, tokens, secrets, or private audit findings.**
+  - type: input
+    id: task_id
+    attributes:
+      label: Ledger Task / CR ID
+      description: Canonical ID (e.g., P34-B, P24-A-R1, CR-179).
+    validations:
+      required: true
+  - type: input
+    id: phase_lifecycle
+    attributes:
+      label: Owning Phase or Lifecycle
+      description: e.g., phase:p34, phase:p24, lifecycle:documentation.
+    validations:
+      required: true
+  - type: textarea
+    id: context_scope
+    attributes:
+      label: Context & Scope
+      description: Concise summary of why this task exists and what it delivers.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance Criteria
+      description: Verifiable conditions for completion, including tests and ordered six-gate verification.
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: Prerequisite task IDs or "None".
+    validations:
+      required: true
+  - type: dropdown
+    id: estimate
+    attributes:
+      label: Story-Point Estimate (Fibonacci)
+      description: Fibonacci scale (1, 2, 3, 5, 8, 13). Mark retrospective estimates explicitly when closing historical work.
+      options:
+        - "1"
+        - "2"
+        - "3"
+        - "5"
+        - "8"
+        - "13"
+        - "Unavailable — insufficient evidence"
+    validations:
+      required: true
+  - type: textarea
+    id: estimate_basis
+    attributes:
+      label: Estimate Basis & Privacy-Safe Evidence
+      description: Brief rationale for the estimate and verified links (PRs, commits, ledger refs).
+    validations:
+      required: true
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Confirmation
+      options:
+        - label: I confirm the title has no trailing ellipsis (...), placement matches R6/R7, and no private financial data or secrets are included.
+          required: true
