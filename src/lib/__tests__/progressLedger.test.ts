@@ -2880,4 +2880,31 @@ describe('permanent progress ledger', () => {
     expect(checklist).toContain('| Not run |');
     expect(privacy).toContain('BIND_NOTIFICATION_LISTENER_SERVICE');
   });
+
+  it('enforces durable GitHub issue-writing rules, Fibonacci estimates, and issue templates under CR-179', () => {
+    const agents = readFileSync(join(process.cwd(), 'AGENTS.md'), 'utf8');
+    const rules = readFileSync(join(process.cwd(), 'docs/memory/rules.md'), 'utf8');
+    const configYml = readFileSync(join(process.cwd(), '.github/ISSUE_TEMPLATE/config.yml'), 'utf8');
+    const bugYml = readFileSync(join(process.cwd(), '.github/ISSUE_TEMPLATE/bug_report.yml'), 'utf8');
+    const featYml = readFileSync(join(process.cwd(), '.github/ISSUE_TEMPLATE/feature_request.yml'), 'utf8');
+    const plannedYml = readFileSync(join(process.cwd(), '.github/ISSUE_TEMPLATE/planned_task.yml'), 'utf8');
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const entities = ledger.split('## 13. Independent entities')[1] ?? '';
+
+    expect(agents).toContain('1, 2, 3, 5, 8, 13');
+    expect(agents).toContain('Retrospective estimate (not recorded actuals)');
+    expect(rules).toContain('1, 2, 3, 5, 8, 13');
+    expect(rules).toContain('Unavailable — insufficient evidence');
+    expect(configYml).toContain('blank_issues_enabled: false');
+    expect(bugYml).toContain('Acceptance Criteria');
+    expect(bugYml).toContain('Story-Point Estimate (Fibonacci)');
+    expect(featYml).toContain('Acceptance Criteria');
+    expect(featYml).toContain('Story-Point Estimate (Fibonacci)');
+    expect(plannedYml).toContain('status:planned');
+    expect(plannedYml).toContain('Story-Point Estimate (Fibonacci)');
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-179 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-179 |'))).toHaveLength(1);
+    expect(entities).toContain('| CR-179 |');
+  });
 });
