@@ -1,6 +1,8 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-25 | Updates: owner and AI agents -->
 
 # Status
+- **P35-C-R1 / CR-181 (2026-11-27) — Add Home & Transactions auto-detection entry points.**
+  Added shared status helper `src/lib/transactionDetectionStatus.ts` and `"Automatically detect transactions"` setup/status entry points on Home (`app/(tabs)/index.tsx` under explicit task authorization) and Transactions (`app/(tabs)/transactions.tsx`), accurately reflecting `Unavailable on iOS`, `Not set up`, `Notification access needed`, `Notification permission needed`, and `Enabled` (never misreporting revoked access) and routing to `/transaction-detection`. Added `transactionDetectionStatus.test.ts` and `TransactionDetectionEntryPoints.test.tsx`, updated `CHANGELOG.md` (`[Unreleased]`), and added physical-device check `O88` (`Not run`). Schema remains version 24.
 - **P24-A-R1 / CR-180 (2026-11-27) — Fix payment-reminder permission failure.**
   Fixed `undefined is not a function` (`_this.ensureChannel is not a function`) when enabling payment reminders from `FirstLaunchReminderPrompt` or `app/reminders.tsx` by extracting standalone `ensureRemindersChannel()` in `src/lib/reminderNotifications.ts` so unbound `requestPermission` / `scheduleTest` callbacks create the Android `reminders` channel before requesting `POST_NOTIFICATIONS`. Clarified Android 12 vs 13+ and `POST_NOTIFICATIONS` vs Notification Access separation in `app/reminders.tsx`, added `reminderNotifications.test.ts`, updated `CHANGELOG.md` (`[Unreleased]`), and added physical-device check `O87` (`Not run`). Schema remains version 24.
 - **CR-179 (2026-11-27) — GitHub issue inventory audit, durable issue-writing rules, and issue templates.**

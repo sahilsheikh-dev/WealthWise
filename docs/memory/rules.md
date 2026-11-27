@@ -218,7 +218,7 @@ blob remains unchanged.
 
 | File | Git blob ID | Rule |
 |---|---|---|
-| `app/(tabs)/index.tsx` | `d3d1e465fe9f5d238d338afeb033e2a54889ddc6` | User-owned; no Copilot edits authorized. |
+| `app/(tabs)/index.tsx` | `2f5eff5ae799c53b9e17fbf91c8d49214068f93c` | User-owned; updated under explicit `P35-C-R1` authorization for the Home auto-detection entry point only. |
 | `app/(tabs)/budget.tsx` | `eca7607015cb3c8b85dfc7e0d4001235166742a2` | Updated only for authorized CR-108 Part 2 overview text removal and CR-125 / P20-X Budget category and item sorting; preserve Opening/Closing balance labels, Cash flow labels, removed controls, no bottom border on Insurance/Transactions balance sections, and Stop/Resume investment labels. |
 | `src/components/SortChip.tsx` | `837a675af94dd056532bc63fc4697efc905a5af3` | Leave unchanged. |
 | `src/lib/sorting.ts` | `7491663f0987d83d03f3ed72b01de5b376e3572d` | Leave unchanged. |
