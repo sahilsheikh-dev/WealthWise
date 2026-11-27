@@ -1,6 +1,6 @@
 import * as Notifications from 'expo-notifications';
 import { Linking, Platform } from 'react-native';
-import { SchedulableTriggerInputTypes } from 'expo-notifications';
+import { AndroidImportance, SchedulableTriggerInputTypes } from 'expo-notifications';
 
 import type { PlannedReminder } from '../domain/reminders';
 import type { ReminderNotificationAdapter } from './reminderScheduler';
@@ -20,6 +20,15 @@ function dateFromLocalTime(value: string): Date {
   );
 }
 
+async function ensureRemindersChannel(): Promise<void> {
+  if (Platform.OS === 'android') {
+    await Notifications.setNotificationChannelAsync('reminders', {
+      name: 'Reminders',
+      importance: AndroidImportance.DEFAULT,
+    });
+  }
+}
+
 export const reminderNotificationAdapter: ReminderNotificationAdapter & {
   getPermissionState: () => Promise<ReminderPermissionState>;
   requestPermission: () => Promise<ReminderPermissionState>;
@@ -33,20 +42,13 @@ export const reminderNotificationAdapter: ReminderNotificationAdapter & {
     return reminderPermissionState(await Notifications.getPermissionsAsync());
   },
   async requestPermission() {
-    await this.ensureChannel();
+    await ensureRemindersChannel();
     return reminderPermissionState(await Notifications.requestPermissionsAsync());
   },
   async openSettings() {
     await Linking.openSettings();
   },
-  async ensureChannel() {
-    if (Platform.OS === 'android') {
-      await Notifications.setNotificationChannelAsync('reminders', {
-        name: 'Reminders',
-        importance: Notifications.AndroidImportance.DEFAULT,
-      });
-    }
-  },
+  ensureChannel: ensureRemindersChannel,
   async cancelAll() {
     await Notifications.cancelAllScheduledNotificationsAsync();
   },
@@ -66,7 +68,7 @@ export const reminderNotificationAdapter: ReminderNotificationAdapter & {
     });
   },
   async scheduleTest() {
-    await this.ensureChannel();
+    await ensureRemindersChannel();
     await Notifications.scheduleNotificationAsync({
       content: {
         title: 'Wealth Wise',
