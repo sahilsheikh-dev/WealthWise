@@ -36,6 +36,10 @@ import { currentHour, todayISO } from '../../src/lib/clock';
 import { formatDate } from '../../src/lib/format';
 import { greetingFor } from '../../src/lib/greeting';
 import { shouldShowStorageWarning, storageLevel, storageSummary } from '../../src/lib/storageGuard';
+import {
+  loadTransactionDetectionStatus,
+  type TransactionDetectionStatusInfo,
+} from '../../src/lib/transactionDetectionStatus';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
 
@@ -69,12 +73,27 @@ export default function HomeScreen() {
   }
   const spendingExpanded = spendingState.expanded;
   const [backupMeta, setBackupMeta] = useState<BackupMeta>({});
+  const [detectionStatus, setDetectionStatus] = useState<TransactionDetectionStatusInfo | null>(null);
   const [homePayment, setHomePayment] = useState<PendingItem | null>(null);
   const persistedBytes = useUIStore((state) => state.persistedBytes);
   const setActionToast = useUIStore((state) => state.setActionToast);
   useEffect(() => {
     void metaStore.getMeta().then(setBackupMeta);
   }, []);
+  useEffect(() => {
+    let active = true;
+    const refreshDetection = () => {
+      void loadTransactionDetectionStatus(metaStore).then((status) => {
+        if (active) setDetectionStatus(status);
+      });
+    };
+    refreshDetection();
+    const unsub = typeof metaStore?.subscribe === 'function' ? metaStore.subscribe(refreshDetection) : () => undefined;
+    return () => {
+      active = false;
+      unsub();
+    };
+  }, [isFocused]);
   const recordCount = data.transactions.length
     + data.goals.filter((goal) => !goal.auto).length
     + data.holdings.length + data.liabilities.length;
@@ -298,6 +317,31 @@ export default function HomeScreen() {
         </Card>
       ) : null}
 
+      {detectionStatus ? (
+        <Card>
+          <Pressable
+            testID="home-transaction-detection-entry"
+            accessibilityRole="button"
+            accessibilityLabel={`Automatically detect transactions: ${detectionStatus.label}. ${detectionStatus.actionLabel}`}
+            onPress={() => router.push('/transaction-detection' as Href)}
+            style={styles.detectionEntry}
+          >
+            <View style={styles.detectionHeader}>
+              <AppText weight="semibold" style={{ flex: 1 }}>Automatically detect transactions</AppText>
+              <AppText style={[typography.meta, { color: colors.primary }]} weight="semibold">
+                {detectionStatus.label}
+              </AppText>
+            </View>
+            <AppText style={[typography.meta, { color: colors.text3 }]}>
+              {detectionStatus.description}
+            </AppText>
+            <AppText weight="semibold" style={[typography.meta, { color: colors.primary }]}>
+              {detectionStatus.actionLabel}
+            </AppText>
+          </Pressable>
+        </Card>
+      ) : null}
+
       {dueItems.length > 0 ? (
         <>
           <AppText weight="bold" style={{ color: colors.text3, marginHorizontal: 20, marginTop: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>Upcoming and due</AppText>
@@ -461,6 +505,8 @@ const styles = StyleSheet.create({
   categoryRow: { minHeight: 40, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, borderBottomWidth: StyleSheet.hairlineWidth },
   backupCard: { gap: 10 },
   backupActions: { flexDirection: 'row', gap: 8 },
+  detectionEntry: { minHeight: 44, gap: 6 },
+  detectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   storageActions: { gap: 8, marginTop: 8 },
   quickActions: { marginHorizontal: 20, marginTop: 14, flexDirection: 'row', gap: 8 },
   upcomingCard: { gap: 7 },

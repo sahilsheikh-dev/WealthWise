@@ -20,7 +20,6 @@ import {
   StatPill,
   WarningBanner,
 } from '../../src/components/ui';
-import { DEFAULT_TRANSACTION_DETECTION } from '../../src/data/metaStore';
 import { metaStore } from '../../src/data/store';
 import { useUIStore } from '../../src/data/uiStore';
 import { useAppData } from '../../src/data/useAppData';
@@ -39,6 +38,10 @@ import { todayISO } from '../../src/lib/clock';
 import { formatDate, formatMonth } from '../../src/lib/format';
 import { SORT_OPTIONS } from '../../src/lib/sorting';
 import { swipeIntent } from '../../src/lib/swipe';
+import {
+  loadTransactionDetectionStatus,
+  type TransactionDetectionStatusInfo,
+} from '../../src/lib/transactionDetectionStatus';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
 
@@ -67,18 +70,17 @@ export default function TransactionsScreen() {
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const today = useMemo(() => todayISO(), []);
   const [touchingChips, setTouchingChips] = useState(false);
-  const [pendingDraftCount, setPendingDraftCount] = useState(0);
+  const [detectionStatus, setDetectionStatus] = useState<TransactionDetectionStatusInfo | null>(null);
   useEffect(() => {
     let active = true;
-    if (typeof metaStore?.getMeta === 'function') {
-      void metaStore.getMeta().then((meta) => {
-        if (active) setPendingDraftCount((meta.transactionDetection ?? DEFAULT_TRANSACTION_DETECTION).pendingDrafts.length);
+    const refreshDetection = () => {
+      void loadTransactionDetectionStatus(metaStore).then((status) => {
+        if (active) setDetectionStatus(status);
       });
-    }
+    };
+    refreshDetection();
     const unsub = typeof metaStore?.subscribe === 'function'
-      ? metaStore.subscribe((meta) => {
-          if (active) setPendingDraftCount((meta.transactionDetection ?? DEFAULT_TRANSACTION_DETECTION).pendingDrafts.length);
-        })
+      ? metaStore.subscribe(refreshDetection)
       : () => undefined;
     return () => {
       active = false;
@@ -195,15 +197,20 @@ export default function TransactionsScreen() {
         <Pressable
           testID="transaction-detection-entry"
           accessibilityRole="button"
-          accessibilityLabel={pendingDraftCount > 0 ? `${pendingDraftCount} detected transaction drafts ready to review` : 'Transaction detection settings'}
+          accessibilityLabel={
+            detectionStatus
+              ? `Automatically detect transactions: ${detectionStatus.label}. ${detectionStatus.actionLabel}`
+              : 'Automatically detect transactions'
+          }
           onPress={() => router.push('/transaction-detection' as Href)}
           style={[styles.unlinkedNotice, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <AppText>
-            {pendingDraftCount > 0
-              ? `${pendingDraftCount} detected transaction draft${pendingDraftCount === 1 ? '' : 's'} ready. `
-              : 'Notification transaction detection. '}
+            Automatically detect transactions ({detectionStatus?.label ?? 'Not set up'}).{' '}
+            {detectionStatus && detectionStatus.pendingDraftCount > 0
+              ? `${detectionStatus.pendingDraftCount} draft${detectionStatus.pendingDraftCount === 1 ? '' : 's'} ready. `
+              : ''}
             <AppText weight="semibold" style={{ color: colors.primary }}>
-              {pendingDraftCount > 0 ? 'Review' : 'Settings'}
+              {detectionStatus?.actionLabel ?? 'Set up'}
             </AppText>
           </AppText>
         </Pressable>
