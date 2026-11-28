@@ -966,6 +966,7 @@ describe('route render smoke audit', () => {
     });
     mockPickedFileText = encryptedText;
     mockConfirmAsync.mockClear();
+    mockConfirmAsync.mockResolvedValueOnce(false).mockResolvedValueOnce(false);
 
     let renderer: TestRenderer.ReactTestRenderer | undefined;
     try {
