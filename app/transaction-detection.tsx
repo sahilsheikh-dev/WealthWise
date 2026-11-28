@@ -1,23 +1,25 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AppState, Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { AmountText } from '../src/components/AmountText';
 import { AppHeader } from '../src/components/AppHeader';
 import { SwitchRow } from '../src/components/form/SwitchRow';
 import { TextField } from '../src/components/form/TextField';
-import { AppText, Button, Card, EmptyState, Screen, SectionTitle, WarningBanner } from '../src/components/ui';
+import { AppText, Button, Card, EmptyState, Screen, SearchField, SectionTitle, WarningBanner } from '../src/components/ui';
 import { DEFAULT_TRANSACTION_DETECTION, type PersistedTransactionDetection } from '../src/data/metaStore';
 import { metaStore } from '../src/data/store';
 import {
+  buildSourceAppPickerItems,
   DEFAULT_DETECTION_SOURCE_APPS,
   type PendingTransactionDraft,
 } from '../src/domain/transactionDetection';
+import { confirmAsync } from '../src/lib/confirm';
 import { formatDate } from '../src/lib/format';
-import { notificationListenerAdapter } from '../src/lib/notificationListener';
+import { notificationListenerAdapter, type EligibleSourceAppsResult } from '../src/lib/notificationListener';
 import { singleParam } from '../src/lib/routeParams';
 import { removeTransactionDraft } from '../src/lib/transactionDetectionDrafts';
-import { syncNativeDetectionConfig } from '../src/lib/transactionDetectionRuntime';
+import { buildDraftFormRoute, syncNativeDetectionConfig } from '../src/lib/transactionDetectionRuntime';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
@@ -33,6 +35,11 @@ export default function TransactionDetectionScreen() {
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [disclosureOpen, setDisclosureOpen] = useState(false);
   const [customPackage, setCustomPackage] = useState('');
+  const [appQuery, setAppQuery] = useState('');
+  const [eligibleApps, setEligibleApps] = useState<EligibleSourceAppsResult>({
+    installedTrusted: [],
+    observedApps: [],
+  });
   const [statusError, setStatusError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -41,10 +48,12 @@ export default function TransactionDetectionScreen() {
       void Promise.all([
         metaStore.getMeta(),
         notificationListenerAdapter.isPermissionGranted(),
-      ]).then(([meta, granted]) => {
+        notificationListenerAdapter.getEligibleSourceApps(),
+      ]).then(([meta, granted, eligible]) => {
         if (!active) return;
         setDetection(meta.transactionDetection ?? DEFAULT_TRANSACTION_DETECTION);
         setPermissionGranted(granted);
+        setEligibleApps(eligible);
       });
     };
     sync();
@@ -113,21 +122,30 @@ export default function TransactionDetectionScreen() {
   };
 
   const openDraftReview = (draft: PendingTransactionDraft) => {
-    router.push({
-      pathname: '/transaction-form',
-      params: {
-        draftId: draft.id,
-        type: draft.type,
-        amount: String(draft.amount),
-        date: draft.date,
-        note: draft.suggestedNote,
-      },
+    router.push(buildDraftFormRoute(draft));
+  };
+
+  const discardDraft = (draftId: string) => {
+    void confirmAsync({
+      title: 'Discard detected draft?',
+      message: 'Remove this draft without creating a transaction?',
+      confirmLabel: 'Discard',
+      destructive: true,
+    }).then((confirmed) => {
+      if (confirmed) void removeTransactionDraft(draftId);
     });
   };
 
-  const dismissDraft = (draftId: string) => {
-    void removeTransactionDraft(draftId);
-  };
+  const pickerItems = useMemo(
+    () =>
+      buildSourceAppPickerItems({
+        installedPackages: eligibleApps.installedTrusted,
+        observedApps: eligibleApps.observedApps,
+        allowedPackages: detection.allowedPackages,
+        query: appQuery,
+      }),
+    [appQuery, detection.allowedPackages, eligibleApps.installedTrusted, eligibleApps.observedApps],
+  );
 
   const statusLabel = !isAndroid
     ? 'Android only (not supported on iOS)'
@@ -240,9 +258,9 @@ export default function TransactionDetectionScreen() {
                     onPress={() => openDraftReview(draft)}
                   />
                   <Button
-                    label="Dismiss"
+                    label="Discard"
                     variant="soft"
-                    onPress={() => dismissDraft(draft.id)}
+                    onPress={() => discardDraft(draft.id)}
                   />
                 </View>
               </Card>
@@ -255,16 +273,35 @@ export default function TransactionDetectionScreen() {
             <SectionTitle>Eligible source apps</SectionTitle>
             <Card>
               <AppText style={[typography.meta, { color: colors.text3, marginBottom: 8 }]}>
-                Only notifications from selected apps are inspected. Leave all unchecked only if you want to pause filtering; selecting specific apps is recommended.
+                Only notifications from selected apps are inspected. Android restricts broad installed-app visibility without QUERY_ALL_PACKAGES, so WealthWise shows installed apps from the verified payment catalogue plus apps observed by the notification listener.
               </AppText>
-              {DEFAULT_DETECTION_SOURCE_APPS.map((app) => (
-                <SwitchRow
-                  key={app.packageName}
-                  label={app.label}
-                  value={detection.allowedPackages.includes(app.packageName)}
-                  onValueChange={(checked) => toggleSourceApp(app.packageName, checked)}
-                />
-              ))}
+              <SearchField
+                value={appQuery}
+                onChangeText={setAppQuery}
+                placeholder="Search source apps"
+                accessibilityLabel="Search source apps"
+              />
+              <View style={styles.pickerList}>
+                {pickerItems.map((app) => (
+                  <View key={app.packageName} style={styles.pickerRow}>
+                    <SwitchRow
+                      label={`${app.label} · ${app.trusted ? 'Trusted' : 'Unverified'}`}
+                      value={app.selected}
+                      onValueChange={(checked) => toggleSourceApp(app.packageName, checked)}
+                    />
+                    <AppText style={[typography.meta, { color: colors.text3 }]}>
+                      {app.packageName}
+                      {app.installed ? ' · Installed' : ''}
+                      {app.observed ? ' · Observed' : ''}
+                    </AppText>
+                  </View>
+                ))}
+                {pickerItems.length === 0 ? (
+                  <AppText style={[typography.meta, { color: colors.text3 }]}>
+                    No matching source apps. You can add a package ID below.
+                  </AppText>
+                ) : null}
+              </View>
               <View style={styles.customPackageRow}>
                 <TextField
                   label="Add custom package name"
@@ -345,6 +382,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     marginTop: 12,
+  },
+  pickerList: {
+    marginTop: 10,
+    gap: 8,
+  },
+  pickerRow: {
+    gap: 2,
   },
   customPackageRow: {
     marginTop: 12,

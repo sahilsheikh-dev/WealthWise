@@ -105,6 +105,26 @@ export async function ingestDetectedNotifications(
 
 export { removeTransactionDraft } from './transactionDetectionDrafts';
 
+export function buildDraftFormRoute(draft: PendingTransactionDraft) {
+  return {
+    pathname: '/transaction-form' as const,
+    params: {
+      draftId: draft.id,
+      type: draft.type,
+      amount: String(draft.amount),
+      date: draft.date,
+      note: draft.suggestedNote,
+      sourcePackage: draft.sourcePackage,
+    },
+  };
+}
+
+export async function loadPendingDraftById(draftId: string): Promise<PendingTransactionDraft | null> {
+  const meta = await metaStore.getMeta();
+  const current = meta.transactionDetection ?? DEFAULT_TRANSACTION_DETECTION;
+  return current.pendingDrafts.find((draft) => draft.id === draftId) ?? null;
+}
+
 export async function syncNativeDetectionConfig(): Promise<void> {
   const meta = await metaStore.getMeta();
   const current = meta.transactionDetection ?? DEFAULT_TRANSACTION_DETECTION;

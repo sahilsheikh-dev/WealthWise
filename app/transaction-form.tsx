@@ -47,8 +47,15 @@ import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
 import { closeRouteSafely } from '../src/lib/routeParams';
-import { incomeCategoriesForTransaction } from '../src/domain/transactionDetection';
+import {
+  incomeCategoriesForTransaction,
+  isTrustedSourcePackage,
+  sourceAppLabel,
+} from '../src/domain/transactionDetection';
 import { removeTransactionDraft } from '../src/lib/transactionDetectionDrafts';
+import { metaStore } from '../src/data/store';
+import { DEFAULT_TRANSACTION_DETECTION } from '../src/data/metaStore';
+import { useState } from 'react';
 
 const typeOptions = [
   { label: 'Expense', value: 'expense' },
@@ -71,6 +78,7 @@ export default function TransactionFormScreen() {
     date?: string;
     note?: string;
     draftId?: string;
+    sourcePackage?: string;
     pending?: string;
   }>();
   const { id } = params;
@@ -85,6 +93,9 @@ export default function TransactionFormScreen() {
   const requestedDate = Array.isArray(params.date) ? params.date[0] : params.date;
   const requestedNote = Array.isArray(params.note) ? params.note[0] : params.note;
   const draftId = Array.isArray(params.draftId) ? params.draftId[0] : params.draftId;
+  const sourcePackageParam = Array.isArray(params.sourcePackage) ? params.sourcePackage[0] : params.sourcePackage;
+  const [hydratedSourcePackage, setHydratedSourcePackage] = useState<string | undefined>(sourcePackageParam);
+  const effectiveSourcePackage = sourcePackageParam ?? hydratedSourcePackage;
   const pendingParam = Array.isArray(params.pending) ? params.pending[0] : params.pending;
   const pendingMode = pendingParam === '1';
   const data = useAppStore((state) => state.data);
@@ -344,8 +355,28 @@ export default function TransactionFormScreen() {
     setTxMonth(monthKey(saved.date));
     if (draftId) {
       await removeTransactionDraft(draftId);
+      closeRouteSafely('/(tabs)');
+      return;
     }
     router.back();
+  };
+
+  const dismissDraft = () => {
+    closeRouteSafely('/(tabs)');
+  };
+
+  const discardDraft = () => {
+    if (!draftId) return;
+    void confirmAsync({
+      title: 'Discard detected draft?',
+      message: 'Remove this detected draft without creating a transaction?',
+      confirmLabel: 'Discard',
+      destructive: true,
+    }).then(async (confirmed) => {
+      if (!confirmed) return;
+      await removeTransactionDraft(draftId);
+      closeRouteSafely('/(tabs)');
+    });
   };
 
   const submitFromPress = () => {
@@ -373,6 +404,26 @@ export default function TransactionFormScreen() {
     });
   };
 
+  useEffect(() => {
+    if (!draftId || editing || requestedAmount) return;
+    let active = true;
+    void metaStore.getMeta().then((meta) => {
+      if (!active) return;
+      const draft = (meta.transactionDetection ?? DEFAULT_TRANSACTION_DETECTION).pendingDrafts.find(
+        (candidate) => candidate.id === draftId,
+      );
+      if (!draft) return;
+      setValue('type', draft.type, { shouldDirty: false });
+      setValue('amount', String(draft.amount), { shouldDirty: false });
+      setValue('date', draft.date, { shouldDirty: false });
+      setValue('note', draft.suggestedNote, { shouldDirty: false });
+      setHydratedSourcePackage(draft.sourcePackage);
+    });
+    return () => {
+      active = false;
+    };
+  }, [draftId, editing, requestedAmount, setValue]);
+
   if (editing && !transaction) {
     return (
       <FormScreen title="Transaction" onClose={() => closeRouteSafely('/(tabs)/transactions')} isDirty={false} footer={null}>
@@ -390,11 +441,13 @@ export default function TransactionFormScreen() {
   return (
     <FormScreen
       title="Transaction"
-      onClose={() => router.back()}
+      onClose={() => (draftId ? closeRouteSafely('/(tabs)') : router.back())}
       isDirty={isDirty}
       headerAction={transactionId && (!transaction?.source || linkedEditable)
         ? { label: 'Delete transaction', onPress: remove }
-        : undefined}
+        : draftId && !editing
+          ? { label: 'Discard draft', onPress: discardDraft }
+          : undefined}
       footer={
         <View style={styles.footerActions}>
           {submitCount > 0 && errorCount > 0 ? (
@@ -403,6 +456,15 @@ export default function TransactionFormScreen() {
                 Fix {errorCount} {errorCount === 1 ? 'field' : 'fields'}
               </AppText>
             </View>
+          ) : null}
+          {draftId && !editing ? (
+            <Button
+              label="Dismiss"
+              variant="soft"
+              disabled={isSubmitting}
+              accessibilityLabel="Dismiss draft"
+              onPress={dismissDraft}
+            />
           ) : null}
           <Button
             label="Save"
@@ -417,6 +479,12 @@ export default function TransactionFormScreen() {
       }>
       <>
         <FormErrorBanner message={lastError} />
+        {draftId && effectiveSourcePackage ? (
+          <ReadOnlyRow
+            label="Detected from"
+            value={`${sourceAppLabel(effectiveSourcePackage)} (${isTrustedSourcePackage(effectiveSourcePackage) ? 'Trusted' : 'Unverified'})`}
+          />
+        ) : null}
         {transaction?.source ? (
           <>
             <ReadOnlyRow
