@@ -6,6 +6,7 @@ Update this file for every release: add the new version heading and confirmed re
 ## [Unreleased]
 
 ### New Features
+- Reordered bottom navigation tabs to **Home, Goals, Budget, Transactions** on Android and iOS (`src/components/ui.tsx`, `app/(tabs)/_layout.tsx`) while preserving tab behavior and navigation state.
 - Opt-in Android notification-based transaction detection (`Transaction detection` screen): includes in-app prominent disclosure, user-selected source apps, local-only in-memory parsing without raw-text storage or SMS permissions, duplicate/7-day draft expiry, dynamic credit/debit/Investment categorization, foreground review, and privacy-safe background `Review` notifications (Android only; iOS uses manual entry).
 - Added "Automatically detect transactions" setup and live status entry points on Home and Transactions, showing accurate setup/permission states (`Not set up`, `Notification access needed`, `Notification permission needed`, `Enabled`, or `Unavailable on iOS`) and routing directly to `Transaction detection`.
 - Added a dedicated `Settings` screen (`app/settings.tsx`) reached from a gear button in the Home header (replacing the three-dot menu), moved all global menu options and the transaction auto-detection control there, and hid non-Settings auto-detection entry points while detection is enabled.

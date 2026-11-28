@@ -165,7 +165,7 @@
 - No null-silencing `!` or `as` in `app/` or `src/components/`.
 - Format monetary values through `AmountText`/`formatAmount` with an explicit
   display tier.
-- Tabs remain Home, Transactions, Goals, Budget.
+- Tabs are Home, Goals, Budget, Transactions.
 - Add/Edit/Delete are Feather icon actions. Reuse the established
   `plus`/`edit-2`/`trash-2` naming through shared icon/action components; do not
   substitute text or emoji for these actions.
