@@ -7,6 +7,25 @@ const SERVICE_CLASS = 'WealthWiseNotificationListenerService';
 const MODULE_CLASS = 'WealthWiseNotificationListenerModule';
 const PACKAGE_CLASS = 'WealthWiseNotificationListenerPackage';
 
+const TRUSTED_PAYMENT_PACKAGES = [
+  'com.google.android.apps.nbu.paisa.user',
+  'com.phonepe.app',
+  'net.one97.paytm',
+  'in.org.npci.upiapp',
+  'in.amazon.mShop.android.shopping',
+  'com.dreamplug.androidapp',
+  'money.jupiter',
+  'com.epifi.paisa',
+  'indwin.c3.shareapp',
+  'com.google.android.apps.messaging',
+  'com.samsung.android.messaging',
+  'com.snapwork.hdfc',
+  'com.csam.icici.bank.imobile',
+  'com.sbi.lotusintouch',
+  'com.axis.mobile',
+  'com.msf.kbank.mobile',
+];
+
 const SERVICE_KT = `package ${PACKAGE_NAME}
 
 import android.app.Notification
@@ -35,6 +54,8 @@ class ${SERVICE_CLASS} : NotificationListenerService() {
 
     val prefs = applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     if (!prefs.getBoolean(KEY_ENABLED, false)) return
+
+    recordObservedApp(applicationContext, prefs, pkg)
 
     val allowedRaw = prefs.getString(KEY_ALLOWED_PACKAGES, "[]") ?: "[]"
     val allowed = JSONArray(allowedRaw)
@@ -76,11 +97,36 @@ class ${SERVICE_CLASS} : NotificationListenerService() {
     const val KEY_ENABLED = "enabled"
     const val KEY_ALLOWED_PACKAGES = "allowed_packages"
     const val KEY_QUEUE = "queued_events"
+    const val KEY_OBSERVED_APPS = "observed_apps"
     private const val MAX_QUEUE_SIZE = 25
+    private const val MAX_OBSERVED_APPS = 40
     private const val CHANNEL_ID = "transaction-drafts"
     private const val REVIEW_NOTIFICATION_ID = 35001
     private val CANDIDATE_REGEX = Regex("(?:₹|rs\\\\.?|inr|\\\\$|usd)\\\\s*[0-9]", RegexOption.IGNORE_CASE)
     private val IGNORE_REGEX = Regex("\\\\b(?:otp|one[- ]?time\\\\s+password|verification\\\\s+code|do\\\\s+not\\\\s+share)\\\\b", RegexOption.IGNORE_CASE)
+
+    private fun recordObservedApp(context: Context, prefs: android.content.SharedPreferences, pkg: String) {
+      val label = try {
+        val pm = context.packageManager
+        val info = pm.getApplicationInfo(pkg, 0)
+        pm.getApplicationLabel(info).toString().trim().ifEmpty { pkg }
+      } catch (_: Exception) {
+        pkg
+      }
+      val raw = prefs.getString(KEY_OBSERVED_APPS, "[]") ?: "[]"
+      val current = try { JSONArray(raw) } catch (_: Exception) { JSONArray() }
+      val next = JSONArray()
+      next.put(JSONObject().apply {
+        put("packageName", pkg)
+        put("label", label)
+      })
+      for (i in 0 until current.length()) {
+        if (next.length() >= MAX_OBSERVED_APPS) break
+        val obj = current.optJSONObject(i) ?: continue
+        if (obj.optString("packageName") != pkg) next.put(obj)
+      }
+      prefs.edit().putString(KEY_OBSERVED_APPS, next.toString()).apply()
+    }
 
     private fun looksLikeTransactionCandidate(title: String, text: String): Boolean {
       val combined = "$title $text"
@@ -113,7 +159,7 @@ class ${SERVICE_CLASS} : NotificationListenerService() {
         manager.createNotificationChannel(channel)
       }
 
-      val reviewIntent = Intent(Intent.ACTION_VIEW, Uri.parse("wealthwise://transaction-detection")).apply {
+      val reviewIntent = Intent(Intent.ACTION_VIEW, Uri.parse("wealthwise://transaction-form")).apply {
         setPackage(context.packageName)
         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
       }
@@ -257,6 +303,43 @@ class ${MODULE_CLASS}(private val reactContext: ReactApplicationContext) :
   }
 
   @ReactMethod
+  fun getEligibleSourceApps(promise: Promise) {
+    try {
+      val pm = reactContext.packageManager
+      val installedTrusted = Arguments.createArray()
+      val trustedCatalog = listOf(${TRUSTED_PAYMENT_PACKAGES.map((p) => `"${p}"`).join(', ')})
+      for (pkg in trustedCatalog) {
+        try {
+          pm.getApplicationInfo(pkg, 0)
+          installedTrusted.pushString(pkg)
+        } catch (_: Exception) {
+          // Package not installed on device
+        }
+      }
+      val prefs = reactContext.getSharedPreferences(${SERVICE_CLASS}.PREFS_NAME, Context.MODE_PRIVATE)
+      val raw = prefs.getString(${SERVICE_CLASS}.KEY_OBSERVED_APPS, "[]") ?: "[]"
+      val arr = try { JSONArray(raw) } catch (_: Exception) { JSONArray() }
+      val observedApps = Arguments.createArray()
+      for (i in 0 until arr.length()) {
+        val obj = arr.optJSONObject(i) ?: continue
+        val pkg = obj.optString("packageName")
+        if (pkg.isBlank()) continue
+        observedApps.pushMap(Arguments.createMap().apply {
+          putString("packageName", pkg)
+          putString("label", obj.optString("label", pkg))
+        })
+      }
+      val out = Arguments.createMap().apply {
+        putArray("installedTrusted", installedTrusted)
+        putArray("observedApps", observedApps)
+      }
+      promise.resolve(out)
+    } catch (e: Exception) {
+      promise.reject("E_ELIGIBLE_APPS", e)
+    }
+  }
+
+  @ReactMethod
   fun addListener(eventName: String) {}
 
   @ReactMethod
@@ -302,7 +385,24 @@ class ${PACKAGE_CLASS} : ReactPackage {
 
 function withNotificationListener(config) {
   config = withAndroidManifest(config, (mod) => {
-    const app = mod.modResults.manifest.application?.[0];
+    const manifest = mod.modResults.manifest;
+    manifest.queries = manifest.queries || [{}];
+    const queriesBlock = manifest.queries[0];
+    queriesBlock.package = queriesBlock.package || [];
+    for (const pkg of TRUSTED_PAYMENT_PACKAGES) {
+      if (!queriesBlock.package.some((entry) => entry.$?.['android:name'] === pkg)) {
+        queriesBlock.package.push({ $: { 'android:name': pkg } });
+      }
+    }
+    queriesBlock.intent = queriesBlock.intent || [];
+    if (!queriesBlock.intent.some((entry) => entry.data?.[0]?.$?.['android:scheme'] === 'upi')) {
+      queriesBlock.intent.push({
+        action: [{ $: { 'android:name': 'android.intent.action.VIEW' } }],
+        data: [{ $: { 'android:scheme': 'upi' } }],
+      });
+    }
+
+    const app = manifest.application?.[0];
     if (!app) return mod;
     app.service = app.service || [];
     const fqcn = `${PACKAGE_NAME}.${SERVICE_CLASS}`;

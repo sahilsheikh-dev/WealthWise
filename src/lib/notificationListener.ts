@@ -1,6 +1,11 @@
 import { Linking, NativeEventEmitter, NativeModules, Platform } from 'react-native';
 
-import type { RawDetectedNotification } from '../domain/transactionDetection';
+import type { ObservedSourceApp, RawDetectedNotification } from '../domain/transactionDetection';
+
+export type EligibleSourceAppsResult = {
+  installedTrusted: string[];
+  observedApps: ObservedSourceApp[];
+};
 
 type NativeListenerModule = {
   isPermissionGranted: () => Promise<boolean>;
@@ -8,6 +13,7 @@ type NativeListenerModule = {
   openAppInfoSettings: () => Promise<void>;
   setDetectionConfig: (enabled: boolean, allowedPackages: string[]) => Promise<void>;
   drainQueuedEvents: () => Promise<RawDetectedNotification[]>;
+  getEligibleSourceApps?: () => Promise<EligibleSourceAppsResult>;
 };
 
 const nativeModule = (NativeModules as Record<string, unknown> | undefined)
@@ -47,6 +53,12 @@ export const notificationListenerAdapter = {
   async drainQueuedEvents(): Promise<RawDetectedNotification[]> {
     if (Platform?.OS !== 'android' || !nativeModule) return [];
     return nativeModule.drainQueuedEvents();
+  },
+  async getEligibleSourceApps(): Promise<EligibleSourceAppsResult> {
+    if (Platform?.OS !== 'android' || !nativeModule?.getEligibleSourceApps) {
+      return { installedTrusted: [], observedApps: [] };
+    }
+    return nativeModule.getEligibleSourceApps();
   },
   subscribeLiveEvents(listener: (event: RawDetectedNotification) => void): () => void {
     if (Platform?.OS !== 'android' || !nativeModule) return () => undefined;
