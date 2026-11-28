@@ -104,6 +104,41 @@
   - Reason: `P40-A` completed and `phase/40-agent-context-hygiene` added to Section 12 (Phase branch index).
 - Ordered six gates: all run with actual exit codes recorded.
 
+### CR-167 verification — remote-snapshot refresh, rule updates, and Model A issue backfill (2026-11-25)
+
+- **Remote snapshot refresh:** Ran `bash scripts/export-remote-snapshot.sh` at `2026-11-25T12:28:13+05:30` (`develop=f3da01070eebeef2057da54518db2a79f7ab6cb9`), updating `/tmp/wealthwise/remote-snapshot/` after PRs `#546` and `#547`.
+- **Standing rule updates:** Updated `AGENTS.md`, `docs/memory/rules.md`, `docs/memory/README.md`, and `docs/memory/working-style.md` so agents/owners refresh the remote snapshot via `scripts/export-remote-snapshot.sh` whenever remote state changes or at task start if stale, and create/close a corresponding Model A GitHub issue immediately if any approved work lacks one.
+- **Missing Model A GitHub issues created and closed:** Created and closed `#548` (`CR-159`), `#549` (`CR-160`), `#550` (`CR-161`), `#551` (`CR-162`), `#552` (`CR-163`), `#553` (`CR-164`), `#554` (`CR-165`), and `#555` (`P39-H-R1` / `CR-166`) with verified commits, PRs, merge SHAs, and gate evidence; created `#556` for `CR-167` (closed upon merge to `develop`).
+- **Tests:** Added regression assertions in `src/lib/__tests__/progressLedger.test.ts`; all six ordered gates run.
+
+### CR-166 verification — P39 audit remediations and SDK 57 patch alignment (`P39-H-R1`) (2026-11-25)
+
+- **SQLite fallback warning (`P39-D`):** Added `src/data/sqliteFallback.ts` and wired `onSQLiteFailure` in `src/data/stateStorage.native.ts` to preserve `console.warn` logging while notifying `src/data/store.ts` (`storageWarning` + `dismissStorageWarning` in `src/data/createAppStore.ts`) so `src/components/StorageErrorBanner.tsx` displays `"Primary database unavailable; using backup local storage. Your data is preserved."` without implying data loss.
+- **Explicit modal routes (`P39-A`):** Added `<Stack.Screen ... options={{ presentation: 'modal' }} />` in `app/_layout.tsx` for `ef-allocation-form`, `holding-valuation-form`, `liability-closure-form`, `liability-closure-note-form`, and `recurring-plan-stop-form`.
+- **Deep-link parameter handling (`P39-A`):** Added `src/lib/routeParams.ts` (`singleParam`, `closeRouteSafely`) across form/reminder/due routes so missing or invalid `wealthwise://` params fail gracefully and exit to a safe route even on cold deep-link launch (`router.canGoBack() === false`).
+- **Production stress-data bundle (`P39-B`):** Replaced static `createStressData` import in `src/data/createAppStore.ts` with `__DEV__`-guarded `require('../domain/stressData')`, keeping `buildDemoData` / Demo Mode intact and excluding stress fixtures from production Android and iOS Hermes bundles.
+- **Expo SDK 57 patch alignment (`P39-E`):** Updated the 8 SDK 57 packages via npm (`expo` `~57.0.34`, `expo-build-properties` `~57.0.24`, `expo-constants` `~57.0.25`, `expo-notifications` `~57.0.26`, `expo-router` `~57.0.32`, `expo-sharing` `~57.0.27`, `expo-splash-screen` `~57.0.12`, `expo-sqlite` `~57.0.7`); `DEC-P39-DEPS-01` (`decode-uri-component@0.2.2`) remains accepted until the next planned Expo SDK major upgrade.
+- **Tests & device checks:** Added `src/components/__tests__/P39AuditRemediations.test.tsx`, updated `src/lib/__tests__/progressLedger.test.ts` (updated `P39-H` status assertion from `| Done |` to `| Done; Revised by P39-H-R1 |` and overall progress regex to include `182/211` because `P39-H-R1` revises `P39-H`), and added physical-device checks `O83` and `O84` (`Not run`) in `docs/releases/device-test-checklist.md`.
+- Ordered six gates: all run with actual exit codes recorded.
+
+### CR-165 verification — temporary artifact organization and exporter relocation (2026-11-25)
+
+- **Organized `/tmp/wealthwise/` (outside Git):**
+  - `remote-snapshot/`: `177` files (moved from `/tmp/wealthwise-remote-snapshot/`, including snapshots and `owner-terminal-*.log`).
+  - `reports/`: `59` files (audit reports, label reconciliation JSONs, PR draft bodies, progress/findings notes).
+  - `logs/`: `74` files (gate logs, `doctor`/`lint`/`tsc`/`export` outputs, CM-2/PR logs, temporary helper scripts).
+  - `build-artifacts/`: `2` files (`WealthWise-android-latest-v1.3.0.apk`, `WealthWise-android-v1.2.0.apk`).
+  - Total moved: `312` files; `0` conflicts; unrelated `/tmp` system/editor files left unmoved.
+- **Exporter relocation & safety verification:**
+  - Moved `~/export-remote-snapshot.sh` to `scripts/export-remote-snapshot.sh` preserving permissions (`-rw-r--r--`).
+  - Verified WealthWise-specific scope (`REPO=sahilsheikh-dev/WealthWise`) and zero embedded credentials/tokens (uses owner-authenticated `gh` CLI).
+  - Updated output path to `/tmp/wealthwise/remote-snapshot/` and usage path to `bash scripts/export-remote-snapshot.sh`.
+- **Documentation & tests:**
+  - Updated standing path references in `AGENTS.md`, `docs/memory/README.md`, and `docs/memory/rules.md`.
+  - Current-path note: historical ledger entries above retain their original `/tmp/wealthwise-remote-snapshot/` and `/tmp/wealthwise-*` paths without rewriting past evidence; those artifacts now reside under `/tmp/wealthwise/`.
+  - Updated `src/lib/__tests__/branchingDocs.test.ts` (replaced `/tmp/wealthwise-remote-snapshot/owner-terminal-$(date +%F).log` and `export-remote-snapshot.sh` assertions with `/tmp/wealthwise/remote-snapshot/owner-terminal-$(date +%F).log` and `scripts/export-remote-snapshot.sh` because the exporter and snapshot directory were relocated under CR-165) and `src/lib/__tests__/progressLedger.test.ts` (updated the 8 report paths for P43-E and P39-A/B/D/E/F/G/H from `/tmp/wealthwise-*.md` to `/tmp/wealthwise/reports/wealthwise-*.md` to match the organized `/tmp/wealthwise/reports/` layout).
+- Ordered six gates: all run with actual exit codes recorded.
+
 ### CR-149 verification — community and project health deliverables (P31-A, P31-B, P31-C, P31-D) (2026-11-24)
 
 - Delivered complete documentation-only deliverables for Phase P31:

@@ -2,6 +2,10 @@
 
 # Open items
 
+## P35-C-R8 Settings Save/Cancel equal half-width buttons and UI action/button rules (Done; CR-192; #635; device check O100 Not run)
+
+- Subtask P35-C-R8 (CR-192, 2026-11-28): Added `flex: 1` (`profileActionButton`) to `Cancel` and `Save` in `app/settings.tsx` so they span the full row equally (half each), and documented standing UI rules in `AGENTS.md`, `docs/memory/rules.md`, and `docs/PROGRESS.md` for edit/add/delete top-right icon defaults and equal-width/text-sized button rows. Updated `SettingsScreen.test.tsx`, `CHANGELOG.md` (`[Unreleased]`), and added physical-device check `O100` (`Not run`). Issue `#635`. Schema remains version 24.
+
 ## P35-C-R7 Settings Profile top-right edit icon (Done; CR-191; #632; device check O99 Not run)
 
 - Subtask P35-C-R7 (CR-191, 2026-11-28): Replaced the `Edit profile` `Button` in `app/settings.tsx` with a top-right `edit-2` `IconButton` inside the Profile summary card for inline name and monthly income editing. Updated `SettingsScreen.test.tsx`, `CHANGELOG.md` (`[Unreleased]`), and added physical-device check `O99` (`Not run`). Issue `#632`. Schema remains version 24.

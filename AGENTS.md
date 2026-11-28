@@ -208,6 +208,16 @@ local Gradle builds still require explicit authorization.
   labels, `SortChip.tsx`, `src/lib/sorting.ts`, frozen inputs in
   `src/components/form/`, and the `formComponentsFrozen` test unless the task
   explicitly requires a change.
+- **UI action controls & button-row sizing:** For edit, add, or delete
+  operations, default to a top-right icon (`IconButton` / header icon); ask the
+  owner if a top-right icon is needed and render a labeled `Button` for those
+  operations only when the owner explicitly requests a button. When multiple
+  buttons share a horizontal row/pattern, text buttons must each use `flex: 1`
+  so they split and cover the full available row width equally (e.g. `Save` /
+  `Cancel` half each), icon buttons (`IconButton`) keep their intrinsic icon
+  size without stretching, and multi-button text rows must size/rearrange the
+  number of buttons per row based on text length to prevent awkward wrapping or
+  clipping.
 - Do not weaken assertions. If a design is superseded, document the old
   assertion, its replacement and the reason in `docs/PROGRESS.md`.
 - Check the installed Expo major version before using Expo APIs and consult

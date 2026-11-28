@@ -86,6 +86,16 @@
   tag/release changes) and at task start if the latest snapshot is older than
   current remote changes (unless network access is prohibited). Export and capture
   procedures are maintained in `docs/memory/README.md`.
+- **UI action controls & button-row sizing:** For edit, add, or delete
+  operations, default to a top-right icon (`IconButton` / header icon); ask the
+  owner if a top-right icon is needed and render a labeled `Button` for those
+  operations only when the owner explicitly requests a button. When multiple
+  buttons share a horizontal row/pattern, text buttons must each use `flex: 1`
+  so they split and cover the full available row width equally (e.g. `Save` /
+  `Cancel` half each), icon buttons (`IconButton`) keep their intrinsic icon
+  size without stretching, and multi-button text rows must size/rearrange the
+  number of buttons per row based on text length to prevent awkward wrapping or
+  clipping.
 - Branching: `main` is stable released code; `develop` is integration and
   must pass all six gates; phase branches use `phase/NN-slug`, task branches
   use `task/ID-slug`, release branches use `release/vX.Y.Z`, hotfix branches
