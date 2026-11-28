@@ -182,6 +182,7 @@ export default function SettingsScreen() {
                 label="Cancel"
                 variant="soft"
                 accessibilityLabel="Cancel profile edit"
+                style={styles.profileActionButton}
                 onPress={() => setEditingProfile(false)}
               />
               <Button
@@ -189,6 +190,7 @@ export default function SettingsScreen() {
                 icon="save"
                 variant="primary"
                 accessibilityLabel="Save profile"
+                style={styles.profileActionButton}
                 disabled={isSubmitting}
                 onPress={() => void handleSubmit(saveProfile)()}
               />
@@ -349,6 +351,7 @@ const styles = StyleSheet.create({
   profileField: { gap: 2 },
   profileForm: { gap: 10 },
   profileActions: { flexDirection: 'row', gap: 8 },
+  profileActionButton: { flex: 1 },
   detectionDetails: { gap: 8 },
   menuCard: { paddingVertical: 4 },
   row: {

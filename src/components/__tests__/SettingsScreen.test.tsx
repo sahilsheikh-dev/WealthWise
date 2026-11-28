@@ -204,8 +204,12 @@ describe('Settings screen and Home gear entry point', () => {
       tree.root.findByProps({ accessibilityLabel: 'Your name' }).props.onChangeText('  Asha Rao  ');
       tree.root.findByProps({ accessibilityLabel: 'Monthly take-home income' }).props.onChangeText('');
     });
+    const cancelBtn = tree.root.findByProps({ accessibilityLabel: 'Cancel profile edit' });
+    const saveBtn = tree.root.findByProps({ accessibilityLabel: 'Save profile' });
+    expect(cancelBtn.props.style).toEqual(expect.objectContaining({ flex: 1 }));
+    expect(saveBtn.props.style).toEqual(expect.objectContaining({ flex: 1 }));
     await act(async () => {
-      tree.root.findByProps({ accessibilityLabel: 'Save profile' }).props.onPress();
+      saveBtn.props.onPress();
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
     expect(mockActions.updateSettings).toHaveBeenCalledWith({ name: 'Asha Rao', monthlySalary: null });
