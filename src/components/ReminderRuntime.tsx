@@ -1,6 +1,6 @@
 import { router, usePathname, type Href } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, AppState } from 'react-native';
+import { Alert, AppState, Platform } from 'react-native';
 
 import { useSecuritySettings } from './SecurityProvider';
 import { metaStore, useAppStore } from '../data/store';
@@ -166,7 +166,7 @@ export function TransactionDetectionRuntime() {
   }, [pathname]);
 
   useEffect(() => {
-    if (status !== 'ready') return undefined;
+    if (status !== 'ready' || Platform.OS !== 'android') return undefined;
     void ensureTransactionDraftNotificationCategory();
     void syncNativeDetectionConfig();
 

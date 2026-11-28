@@ -224,9 +224,9 @@ describe('Settings screen and Home gear entry point', () => {
     await act(async () => {
       tree = TestRenderer.create(<SettingsScreen />);
     });
-    expect(tree.root.findByProps({ testID: 'settings-detection-status' }).props.children.join('')).toContain(
-      'Unavailable on iOS',
-    );
+    expect(tree.root.findAllByProps({ testID: 'settings-detection-status' })).toHaveLength(0);
+    expect(tree.root.findAllByProps({ accessibilityLabel: 'Automatically detect transactions' })).toHaveLength(0);
+    expect(JSON.stringify(tree.toJSON())).not.toContain('View Android-only details');
     supportedSpy.mockRestore();
     configSpy.mockRestore();
   });
