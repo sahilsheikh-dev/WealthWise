@@ -5,6 +5,7 @@ import { PanResponder, Pressable, ScrollView, StyleSheet, View, useWindowDimensi
 
 import { AmountText } from '../../src/components/AmountText';
 import { AppHeader } from '../../src/components/AppHeader';
+import { MonthYearPicker } from '../../src/components/MonthYearPicker';
 import { PendingItemActions } from '../../src/components/PendingItemActions';
 import { PendingItemRow } from '../../src/components/PendingItemRow';
 import { SortChip } from '../../src/components/SortChip';
@@ -70,6 +71,7 @@ export default function TransactionsScreen() {
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const today = useMemo(() => todayISO(), []);
   const [touchingChips, setTouchingChips] = useState(false);
+  const [monthPickerOpen, setMonthPickerOpen] = useState(false);
   const [detectionStatus, setDetectionStatus] = useState<TransactionDetectionStatusInfo | null>(null);
   useEffect(() => {
     let active = true;
@@ -231,16 +233,22 @@ export default function TransactionsScreen() {
             <Feather name="chevron-left" size={18} color={colors.text2} />
           </Pressable>
           <Pressable
+            testID="transactions-month-selector"
             accessible
             accessibilityRole="adjustable"
             accessibilityLabel={`Selected month: ${formatMonth(month)}`}
+            accessibilityHint="Tap to jump to a month and year"
             accessibilityActions={[{ name: 'decrement', label: 'Previous month' }, { name: 'increment', label: 'Next month' }]}
+            onPress={() => setMonthPickerOpen(true)}
             onAccessibilityAction={({ nativeEvent }) => {
               if (nativeEvent.actionName === 'decrement') setTxMonth(shiftMonth(month, -1));
               if (nativeEvent.actionName === 'increment') setTxMonth(shiftMonth(month, 1));
             }}
             style={styles.monthAdjustable}>
-            <AppText weight="semibold" style={styles.monthLabel}>{formatMonth(month)}</AppText>
+            <View style={styles.monthPickerTrigger}>
+              <AppText weight="semibold" style={styles.monthLabel}>{formatMonth(month)}</AppText>
+              <Feather name="chevron-down" size={16} color={colors.text3} />
+            </View>
           </Pressable>
           <Pressable
             accessibilityRole="button"
@@ -372,6 +380,15 @@ export default function TransactionsScreen() {
         </View>
       </ScrollView>
       </View>
+      <MonthYearPicker
+        visible={monthPickerOpen}
+        month={month}
+        onSelect={(nextMonth) => {
+          setTxMonth(nextMonth);
+          router.setParams({ month: nextMonth });
+        }}
+        onClose={() => setMonthPickerOpen(false)}
+      />
     </Screen>
   );
 }
@@ -385,6 +402,7 @@ const styles = StyleSheet.create({
   todayButton: { minWidth: 44, height: 44, paddingHorizontal: 10, alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth, borderRadius: 22 },
   monthLabel: { fontSize: 14 },
   monthAdjustable: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 },
+  monthPickerTrigger: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   metrics: { marginHorizontal: 20, marginTop: 8, flexDirection: 'row', gap: 7 },
   filterRow: { minHeight: 44, marginHorizontal: 20, marginTop: 10, flexDirection: 'row', alignItems: 'center', gap: 6 },
   filterScroller: { flex: 1, minWidth: 0 },
