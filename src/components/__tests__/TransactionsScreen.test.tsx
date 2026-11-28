@@ -225,7 +225,7 @@ describe('Transactions available-balance card', () => {
         node.children.join('') === 'Transactions',
       )).toHaveLength(1);
       expect(renderer.root.findAllByProps({ testID: 'unlinked-entry-notice' })).toHaveLength(0);
-      expect(renderer.root.findByProps({ accessibilityLabel: 'Link missing transactions' })).toBeDefined();
+      expect(renderer.root.findAllByProps({ accessibilityLabel: 'Link missing transactions' })).toHaveLength(0);
     } finally {
       mockFontScale = 1;
     }
