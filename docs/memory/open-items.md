@@ -2,6 +2,10 @@
 
 # Open items
 
+## CR-182 Align Expo SDK 58 package versions (Done; cleanup; #599)
+
+- Subtask CR-182 (2026-11-28): Aligned `expo` (`~58.1.0`), `expo-crypto` (`~58.0.9`), `expo-file-system` (`~58.0.15`), `expo-notifications` (`~58.1.10`), `expo-router` (`~58.0.33`), `expo-sharing` (`~58.0.24`), `expo-splash-screen` (`~58.0.15`), and `jest-expo` (`~58.0.16` in `devDependencies`) under `cleanup` lifecycle (`#599`), preserving `.npmrc` (`legacy-peer-deps=true`). `npx expo install --check` (`0`) and `npx expo-doctor` (`20/20`, `0`) pass. Schema remains version 24.
+
 ## P35-C-R1 Add Home & Transactions auto-detection entry points (Done; CR-181; device check O88 Not run)
 
 - Subtask P35-C-R1 (CR-181, 2026-11-27): Added `src/lib/transactionDetectionStatus.ts` and `"Automatically detect transactions"` setup/status entry points on Home (`app/(tabs)/index.tsx`, explicitly authorized) and Transactions (`app/(tabs)/transactions.tsx`), displaying accurate status (`Unavailable on iOS`, `Not set up`, `Notification access needed`, `Notification permission needed`, `Enabled`), routing to `/transaction-detection`, adding `transactionDetectionStatus.test.ts` and `TransactionDetectionEntryPoints.test.tsx`, updating `CHANGELOG.md` (`[Unreleased]`), and adding physical-device check `O88` (`Not run`). Schema remains version 24.
