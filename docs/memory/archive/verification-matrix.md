@@ -6645,3 +6645,48 @@ Gradle build, version bump, or release preparation was performed.
 - Formally established the authoritative list of 12 active planned/unimplemented roadmap areas: P7 (Google Drive Cloud Backup), P31 (Project health/community), P33 (Widgets), P34 (Quick capture), P35 (SMS/notification transaction detection), P36 (Notes), P37 (Tutorials), P38 (Skeleton loaders), P39 (Security/privacy audit), P40 (Context hygiene/archival), P43-E (GitHub issue inventory), P44 (Spending heat map).
 - Ordered six gates pass with exit 0.
 
+
+### P20-AA / CR-185 verification — month and year jump selectors (2026-11-28)
+
+- **Implementation:** Added `src/components/MonthYearPicker.tsx` and integrated month/year jump triggers into `app/(tabs)/transactions.tsx` and `app/(tabs)/budget.tsx` while preserving prev/next buttons, sorting, filters, empty states, and Budget's 24-month forward bound (`lastAllowedMonth`).
+- **Tests:** Added `src/components/__tests__/MonthYearJump.test.tsx`.
+- **Physical-device check:** Added `O91` (`Not run`) to `docs/releases/device-test-checklist.md` under `## Next release device checks` (metadata: realme Narzo 60 Pro 5g, 15 Vanilla Ice Cream, sahilsheikh-dev, 2026-11-28).
+- **Replaced assertions (`progressLedger.test.ts`):**
+  - Old: `expectedIds` ended at `O90`, `Overall progress` allowed up to `89% (193/216)`, and `P20` expected `51/51` / `51`.
+  - Replacement: Added `'O91'` to `expectedIds`, extended `Overall progress` to `89% (194/217)`, extended `P20` to `52/52` / `52`, and added `CR-185` test.
+  - Reason: `P20-AA` month/year jump selectors completed (`CR-185`, `#608`).
+- Ordered six gates: all run with actual exit codes recorded.
+
+### P25-B-R1 / CR-184 verification — backup import confirmation (2026-11-28)
+
+- **Implementation:** Added `confirmAndImportBackup` (`Import backup` / `Cancel`) after plain validation and encrypted decryption in `app/backup.tsx`, keeping Cancel non-mutating and temp-file safe, and replacing `"Replace my data"` with `"Import backup"`.
+- **Tests:** Added `src/components/__tests__/BackupImportConfirm.test.tsx`.
+- **Physical-device check:** Added `O90` (`Not run`) to `docs/releases/device-test-checklist.md` under `## Next release device checks` (metadata: realme Narzo 60 Pro 5g, 15 Vanilla Ice Cream, sahilsheikh-dev, 2026-11-28).
+- **Replaced assertions (`progressLedger.test.ts`, `RouteRenderSmoke.test.tsx`):**
+  - Old: `RouteRenderSmoke.test.tsx` encrypted-import retry test assumed `Unlock backup` did not trigger `confirmAsync` (default `true`); `progressLedger.test.ts` `expectedIds` ended at `O89`, `Overall progress` allowed up to `89% (192/215)`, and `P25-B` asserted `| Done |` only.
+  - Replacement: Set `mockConfirmAsync.mockResolvedValueOnce(false)` in `RouteRenderSmoke.test.tsx` after `Unlock backup` to verify Cancel preserves preview without mutating data; added `'O90'` to `expectedIds`, extended `Overall progress` to `89% (193/216)`, updated `P25-B` to allow `Done; Revised by P25-B-R1`, and added `CR-184` test.
+  - Reason: `P25-B-R1` backup import confirmation completed (`CR-184`, `#605`).
+- Ordered six gates: all run with actual exit codes recorded.
+
+### P35-C-R2 / CR-183 verification — Settings screen and conditional auto-detection entry points (2026-11-28)
+
+- **Implementation:** Added `app/settings.tsx` (registered in `app/_layout.tsx` and `src/lib/routeKinds.ts`), replaced Home header three-dot menu with `Settings` gear button (`app/(tabs)/index.tsx`), moved all `useAppMenu()` items and `Automatically detect transactions` control into Settings, and hid Home/Transactions auto-detection entry points while `status === 'enabled'`.
+- **Tests:** Added `src/components/__tests__/SettingsScreen.test.tsx` and updated `src/components/__tests__/TransactionDetectionEntryPoints.test.tsx`.
+- **Physical-device check:** Added `O89` (`Not run`) to `docs/releases/device-test-checklist.md` under `## Next release device checks` (metadata: realme Narzo 60 Pro 5g, 15 Vanilla Ice Cream, sahilsheikh-dev, 2026-11-28).
+- **Replaced assertions (`progressLedger.test.ts`, `AppHeaderUsage.test.ts`):**
+  - Old: `AppHeaderUsage.test.ts` disallowed `showDefaultMenu={false}` on `app/(tabs)/index.tsx`; `progressLedger.test.ts` `expectedIds` ended at `O88`, `Overall progress` allowed up to `89% (191/214)`, `CR-176`/`CR-177`/`CR-178`/`CR-181` asserted `P35` at `3/3` or `4/4`, `CR-178` asserted `Revised by P35-C-R1` only, and `number === 35` branch index expected `4`.
+  - Replacement: Added `'app/(tabs)/index.tsx'` to `noDefaultMenuScreens` in `AppHeaderUsage.test.ts`; added `'O89'` to `expectedIds`, extended `Overall progress` to `89% (192/215)`, updated `P35` regexes to allow `5/5`, updated `CR-178` to allow `Revised by P35-C-R1 and P35-C-R2`, updated `number === 35` to `5`, and added `CR-183` test.
+  - Reason: `P35-C-R2` Settings screen & conditional entry points completed (`CR-183`, `#602`).
+- Ordered six gates: all run with actual exit codes recorded.
+
+
+### CR-182 verification — Expo SDK 58 package alignment (`cleanup`) (2026-11-28)
+
+- **Aligned packages:** `expo` (`58.0.26` -> `~58.1.0`), `expo-crypto` (`58.0.8` -> `~58.0.9`), `expo-file-system` (`58.0.14` -> `~58.0.15`), `expo-notifications` (`58.1.9` -> `~58.1.10`), `expo-router` (`58.0.32` -> `~58.0.33`), `expo-sharing` (`58.0.23` -> `~58.0.24`), `expo-splash-screen` (`58.0.14` -> `~58.0.15`), and `jest-expo` (`58.0.15` -> `~58.0.16` in `devDependencies`), preserving `.npmrc` (`legacy-peer-deps=true`).
+- **Verification:** `CI=1 npx expo install --check` exits `0` (`Dependencies are up to date`); `npx expo-doctor --verbose` exits `0` (`20/20` checks passed).
+- **Replaced assertions (`progressLedger.test.ts`):**
+  - Old: `CR-169` asserted `pkg.dependencies.expo` matched `/^\^?58\./`.
+  - Replacement: Updated to `/^[~^]?58\./` and added `CR-182` test verifying `Prompt log`, `Register`, `Independent entities` (`cleanup: SDK 58 package alignment`), and `#599`.
+  - Reason: `npx expo install` aligned `expo` to `~58.1.0`.
+- Ordered six gates: all run with actual exit codes recorded.
+
