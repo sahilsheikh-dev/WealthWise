@@ -6597,3 +6597,37 @@ Gradle build, version bump, or release preparation was performed.
 - Next release device checklist table, memory status, and open-items updated.
 - Ordered six gates pass with exit 0.
 
+
+### 2026-11-22 — P20-Y Budget payment date, multi-asset budget links, and limited expense categories
+
+- Implemented payment date when marking scheduled or budgeted items Paid across Transactions and Budget: `PaidAmountDialog` includes DateField defaulting to today and passes payment date to `onPaid`; `clearDue`, `clearDuesThrough`, `PendingItemActions`, and `app/insurance.tsx` accept and propagate `paymentDate` to linked transactions and holding logs, preserving correct historical dates, one-write persistence, and Undo.
+- Supported one asset linking to multiple one-time investment Budget items (`frequency === 'once'`) in `budget.ts` (`addItem`, `editItem`) and `app/budget-item-form.tsx`; `budgetLineActual` attributes holding entries by matching category or note, falling back to single-link attribution; verified paying each linked item updates the correct holding and budget actuals.
+- Limited Transaction form Expense category picker to user-created Budget items and applicable scheduled items (due EMIs, policy premium categories, pending dues) plus Custom, removing unbudgeted built-in suggestions (entertainment, fashion, subscription, travel, gifts, generic insurance premiums); preserved Income and Investment category behaviors; retained historical categories when editing existing transactions to avoid data loss.
+- Documented superseded test assertions in `src/components/__tests__/TransactionForm.test.tsx` (lines 340, 389, 671) where tests previously asserted unbudgeted built-in categories (`Donation`, `Gifts`, unlinked policy titles) rather than user-created or applicable scheduled categories; updated assertions to test user-created items (`Festival`, `Culture`, `Unexpected`) and scheduled policy categories (`Health premium`), and added explicit test for preserving historical removed category `Gifts`.
+- Regression tests: `src/components/__tests__/PaidAmountDialog.test.tsx`, `src/components/__tests__/PendingItemActions.paymentDate.test.tsx`, `src/domain/__tests__/budgetMultiAssetLink.test.ts`, `src/domain/__tests__/budgetCategoriesLimited.test.ts`, `src/components/__tests__/TransactionForm.test.tsx`.
+- Six gates: Gate 1 exit 0; Gates 2–3 exit 0; Gate 4 exit 0 (21/21 checks passed); Gates 5–6 exit 0.
+- Physical-device check O76 validated Pass by owner on 2026-11-22 (realme Narzo 60 Pro 5g, Android 15 Vanilla Ice Cream, tester sahilsheikh-dev).
+
+### 2026-11-22 — P20-Y-R1 Linked transactions update on budget item rename
+
+- Fixed WealthWise bug where renaming a budget item or category in one month did not update the name shown by transactions linked to that item.
+- Linked transactions now reflect the current budget item name wherever they appear, including existing transactions, while preserving their amount, date, category (e.g. `'Mutual fund / SIP'`), and budget link source.
+- `editItem` in `src/domain/budget.ts` locates linked transactions and holding log entries for the item's target holding and updates `note` to the new budget item name across the specified month/scope, preserving amount, date, category, and budget link.
+- `budgetItemForTransaction` in `src/domain/budgetCategories.ts` dynamically resolves the linked budget item for a transaction within that transaction's effective month budget.
+- `TransactionsScreen` in `app/(tabs)/transactions.tsx` displays the resolved budget item name for linked transactions.
+- Dues clearing in `src/domain/dues.ts` and `src/components/PendingItemActions.tsx` passes the budget item title when clearing planned holding dues.
+- Investment entry update in `src/domain/instruments.ts` and `src/domain/investmentActions.ts` synchronizes the note on linked transactions.
+- `filterTransactions` in `src/domain/transactions.ts` matches investment transactions by `note` against budget categories.
+- Added regression tests in `src/domain/__tests__/budgetItemRenameTransactions.test.ts` (5 tests covering month-only scope, following scope, multi-asset link preservation, recurring plan holdings, and transaction display resolution).
+- Six gates: all pass exit 0.
+
+### 2026-11-22 — P28-F-R7 Prepare v1.3.0 release candidate
+
+- Subtask `P28-F-R7` under `qa-and-release` lifecycle.
+- Version bump: `app.json`, `package.json`, and `package-lock.json` bumped to `1.3.0`.
+- Release note: finalized note moved to `docs/releases/published/v1.3.0.md` with 8 owner-supplied screenshots in `docs/releases/screenshots/v1.3.0/` and draft removed.
+- Configuration and checklist: `build-config.md` version identifier updated to `1.3.0`; `device-test-checklist.md` updated to `## v1.3.0 device checks (next release)` with confirmed metadata; `README.md` What's new updated to `v1.3.0`.
+- Tests updated: `src/components/__tests__/AboutScreen.test.tsx` and `src/lib/__tests__/releaseDownloadDocs.test.ts`.
+- Integration and build: Task PR #210 and phase PR #211 merged to `develop` at candidate commit `afeb987`; `release/v1.3.0` created; EAS build `c2ec9414-ae63-44cc-b34a-0f67f6cb51cb` completed with profile `android-apk` and Android `versionCode` 4. The 107,030,213-byte APK artifact was downloaded, byte-verified privately, and uploaded to the `v1.3.0` draft as `WealthWise-android-latest-v1.3.0.apk`. Build records integrated via PR #212 and #213 (`58d9a26`). Per owner instruction, `README.md` (v1.3.0 Download block and 8-screenshot gallery), release notes, release history, and `AGENTS.md`/`rules.md` release rules were updated to align all candidate assets and docs for v1.3.0. Publication approved and completed on 2026-11-22; release/v1.3.0 merged to main via PR #216 (341dbcb); tag v1.3.0 created at 51523b8; GitHub Release v1.3.0 published as Latest by sahilsheikh-dev; post-publication sync PR #217 (97c6d02) merged to develop.
+- Six gates: all pass exit 0.
+

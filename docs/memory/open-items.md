@@ -2,6 +2,10 @@
 
 # Open items
 
+## P35-C-R3 Direct draft modal review flow and compliant source-app picker (Done; CR-186; #611; device checks O92, O93 Not run)
+
+- Subtask P35-C-R3 (CR-186, 2026-11-28): Updated `ReminderRuntime.tsx`, `app/transaction-form.tsx`, `plugins/withNotificationListener.js`, `src/domain/transactionDetection.ts`, `src/lib/notificationListener.ts`, `app/transaction-detection.tsx`, and `PRIVACY.md` so foreground detections and background notification taps open `/transaction-form` directly (Save/Dismiss/Discard semantics, no stacked modals) and the Add app picker uses scoped `<queries>` + observed listener apps without `QUERY_ALL_PACKAGES` (`Trusted` only for verified catalogue packages). Added `TransactionDraftReviewFlow.test.tsx`, updated `TransactionDetectionScreen.test.tsx` and `CHANGELOG.md` (`[Unreleased]`), and added physical-device checks `O92` and `O93` (`Not run`). Issue `#611`. Schema remains version 24.
+
 ## P20-AA Month and year jump selectors for Transactions and Budget (Done; CR-185; #608; device check O91 Not run)
 
 - Subtask P20-AA (CR-185, 2026-11-28): Added `src/components/MonthYearPicker.tsx` and integrated month/year jump selectors into `app/(tabs)/transactions.tsx` and `app/(tabs)/budget.tsx`, preserving previous/next-month controls, sorting, filters, empty periods, and Budget's 24-month forward bound. Added `MonthYearJump.test.tsx`, updated `CHANGELOG.md` (`[Unreleased]`), and added physical-device check `O91` (`Not run`). Issue `#608`. Schema remains version 24.
