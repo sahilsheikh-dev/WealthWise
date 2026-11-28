@@ -2,6 +2,10 @@
 
 # Open items
 
+## P35-C-R5 Hide automatic transaction detection on iOS (Done; CR-188; #617; device check O95 Not run)
+
+- Subtask P35-C-R5 (CR-188, 2026-11-28): Hidden automatic transaction detection controls and entry points on iOS across `app/settings.tsx`, `app/(tabs)/index.tsx` (explicitly authorized), `app/(tabs)/transactions.tsx`, and `TransactionDetectionRuntime`, while keeping Android behavior intact and keeping `/transaction-detection` on iOS as a graceful Android-only manual-entry fallback. Updated `SettingsScreen.test.tsx`, `TransactionDetectionEntryPoints.test.tsx`, `TransactionDetectionScreen.test.tsx`, `rules.md`, `CHANGELOG.md` (`[Unreleased]`), and added physical-device check `O95` (`Not run`). Issue `#617`. Schema remains version 24.
+
 ## P35-C-R4 Improve Android transaction-detection reliability and parser coverage (Done; CR-187; #614; device check O94 Not run)
 
 - Subtask P35-C-R4 (CR-187, 2026-11-28): Fixed backgrounded `emitIfActive()` dropping events in `plugins/withNotificationListener.js` (`onHostResume`/`onHostPause`), added `EXTRA_BIG_TEXT` / `EXTRA_TEXT_LINES` / `EXTRA_MESSAGES` extraction, OEM SMS packages, `reviewLatest=1` draft hydration (`app/transaction-form.tsx`), active-drain routing (`ReminderRuntime.tsx`), full default source-app selection + troubleshooting note (`app/transaction-detection.tsx`), and broadened domain parsing (`src/domain/transactionDetection.ts`) without `READ_SMS` or `QUERY_ALL_PACKAGES`. Updated `PRIVACY.md`, `CHANGELOG.md` (`[Unreleased]`), tests, and added physical-device check `O94` (`Not run`). Issue `#614`. Schema remains version 24.

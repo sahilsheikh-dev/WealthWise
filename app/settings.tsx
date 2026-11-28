@@ -80,48 +80,51 @@ export default function SettingsScreen() {
   const generalItems = menuItems.filter((item) => !item.destructive);
   const dangerItems = menuItems.filter((item) => item.destructive);
 
+  const showTransactionDetection = detectionStatus !== null && detectionStatus.status !== 'unavailable';
+
   return (
     <Screen>
       <AppHeader title="Settings" showBack />
 
-      <SectionTitle>Transaction detection</SectionTitle>
-      <Card style={styles.sectionCard}>
-        <SwitchRow
-          label="Automatically detect transactions"
-          value={detectionEnabled}
-          disabled={detectionStatus?.status === 'unavailable'}
-          onValueChange={toggleDetection}
-        />
-        {detectionStatus ? (
-          <View style={styles.detectionDetails}>
-            <AppText testID="settings-detection-status" weight="semibold" style={{ color: colors.primary }}>
-              Status: {detectionStatus.label}
-            </AppText>
-            <AppText style={[typography.meta, { color: colors.text2 }]}>
-              {detectionStatus.description}
-            </AppText>
-            {detectionStatus.status === 'access_needed' ? (
-              <Button
-                label="Grant Android Notification Access"
-                variant="primary"
-                onPress={() => router.push('/transaction-detection' as Href)}
-              />
-            ) : detectionStatus.status === 'notifications_needed' ? (
-              <Button
-                label="Allow notification permission"
-                variant="primary"
-                onPress={() => router.push('/transaction-detection' as Href)}
-              />
-            ) : (
-              <Button
-                label={detectionStatus.status === 'unavailable' ? 'View Android-only details' : 'Manage transaction detection'}
-                variant="soft"
-                onPress={() => router.push('/transaction-detection' as Href)}
-              />
-            )}
-          </View>
-        ) : null}
-      </Card>
+      {showTransactionDetection ? (
+        <>
+          <SectionTitle>Transaction detection</SectionTitle>
+          <Card style={styles.sectionCard}>
+            <SwitchRow
+              label="Automatically detect transactions"
+              value={detectionEnabled}
+              onValueChange={toggleDetection}
+            />
+            <View style={styles.detectionDetails}>
+              <AppText testID="settings-detection-status" weight="semibold" style={{ color: colors.primary }}>
+                Status: {detectionStatus.label}
+              </AppText>
+              <AppText style={[typography.meta, { color: colors.text2 }]}>
+                {detectionStatus.description}
+              </AppText>
+              {detectionStatus.status === 'access_needed' ? (
+                <Button
+                  label="Grant Android Notification Access"
+                  variant="primary"
+                  onPress={() => router.push('/transaction-detection' as Href)}
+                />
+              ) : detectionStatus.status === 'notifications_needed' ? (
+                <Button
+                  label="Allow notification permission"
+                  variant="primary"
+                  onPress={() => router.push('/transaction-detection' as Href)}
+                />
+              ) : (
+                <Button
+                  label="Manage transaction detection"
+                  variant="soft"
+                  onPress={() => router.push('/transaction-detection' as Href)}
+                />
+              )}
+            </View>
+          </Card>
+        </>
+      ) : null}
 
       <SectionTitle>Preferences &amp; tools</SectionTitle>
       <Card style={styles.menuCard}>
