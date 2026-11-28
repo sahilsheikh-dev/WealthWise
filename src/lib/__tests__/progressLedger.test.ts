@@ -3057,4 +3057,21 @@ describe('permanent progress ledger', () => {
     expect(dashboard).toMatch(/P26\s+██████████ 100% \(2\/2\)/);
     expect(checklist).toContain('| O96 |');
   });
+
+  it('records owner-reported physical-device Pass for O86-O91, O95, O96 under CR-189', () => {
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const checklist = readFileSync(join(process.cwd(), 'docs/releases/device-test-checklist.md'), 'utf8');
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-189 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-189 |'))).toHaveLength(1);
+    for (const id of ['O86', 'O87', 'O88', 'O89', 'O90', 'O91', 'O95', 'O96']) {
+      const row = checklist.split('\n').find((line) => line.startsWith(`| ${id} |`));
+      expect(row).toContain('| Pass |');
+    }
+    for (const id of ['O92', 'O93', 'O94']) {
+      const row = checklist.split('\n').find((line) => line.startsWith(`| ${id} |`));
+      expect(row).toContain('| Not run |');
+    }
+  });
 });

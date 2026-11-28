@@ -2,7 +2,11 @@
 
 # Open items
 
-## P26-A-R1 Reorder bottom tabs to Home, Goals, Budget, Transactions (Done; CR-188; #620; device check O96 Not run)
+## CR-189 Record physical-device checks O86–O91, O95, O96 as Pass (Done; #623; O92–O94 remain Not run)
+
+- Subtask CR-189 (2026-11-28): Recorded owner-reported physical-device verification **Pass** for `O86`, `O87`, `O88`, `O89`, `O90`, `O91`, `O95`, and `O96` in `docs/releases/device-test-checklist.md` (`realme Narzo 60 Pro 5g`, `15 Vanilla Ice Cream`, `sahilsheikh-dev`, `2026-11-28`). `O92`, `O93`, and `O94` remain `Not run`. Issue `#623`. Documentation only; schema remains version 24.
+
+## P26-A-R1 Reorder bottom tabs to Home, Goals, Budget, Transactions (Done; CR-188; #620; device check O96 Pass)
 
 - Subtask P26-A-R1 (CR-188, 2026-11-28): Reordered `bottomTabs` in `src/components/ui.tsx` and `<Tabs.Screen>` in `app/(tabs)/_layout.tsx` to **Home, Goals, Budget, Transactions** on both platforms while preserving each tab's behavior and navigation state. Updated `BottomTabBar.test.tsx`, `TabsLayout.test.tsx`, `docs/memory/rules.md`, `CHANGELOG.md` (`[Unreleased]`), and added physical-device check `O96` (`Not run`). Issue `#620`. Schema remains version 24.
 
