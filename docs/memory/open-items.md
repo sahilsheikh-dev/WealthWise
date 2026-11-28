@@ -2,6 +2,46 @@
 
 # Open items
 
+## P26-A-R1 Reorder bottom tabs to Home, Goals, Budget, Transactions (Done; CR-188; #620; device check O96 Not run)
+
+- Subtask P26-A-R1 (CR-188, 2026-11-28): Reordered `bottomTabs` in `src/components/ui.tsx` and `<Tabs.Screen>` in `app/(tabs)/_layout.tsx` to **Home, Goals, Budget, Transactions** on both platforms while preserving each tab's behavior and navigation state. Updated `BottomTabBar.test.tsx`, `TabsLayout.test.tsx`, `docs/memory/rules.md`, `CHANGELOG.md` (`[Unreleased]`), and added physical-device check `O96` (`Not run`). Issue `#620`. Schema remains version 24.
+
+## P35-C-R5 Hide automatic transaction detection on iOS (Done; CR-188; #617; device check O95 Not run)
+
+- Subtask P35-C-R5 (CR-188, 2026-11-28): Hidden automatic transaction detection controls and entry points on iOS across `app/settings.tsx`, `app/(tabs)/index.tsx` (explicitly authorized), `app/(tabs)/transactions.tsx`, and `TransactionDetectionRuntime`, while keeping Android behavior intact and keeping `/transaction-detection` on iOS as a graceful Android-only manual-entry fallback. Updated `SettingsScreen.test.tsx`, `TransactionDetectionEntryPoints.test.tsx`, `TransactionDetectionScreen.test.tsx`, `rules.md`, `CHANGELOG.md` (`[Unreleased]`), and added physical-device check `O95` (`Not run`). Issue `#617`. Schema remains version 24.
+
+## P35-C-R4 Improve Android transaction-detection reliability and parser coverage (Done; CR-187; #614; device check O94 Not run)
+
+- Subtask P35-C-R4 (CR-187, 2026-11-28): Fixed backgrounded `emitIfActive()` dropping events in `plugins/withNotificationListener.js` (`onHostResume`/`onHostPause`), added `EXTRA_BIG_TEXT` / `EXTRA_TEXT_LINES` / `EXTRA_MESSAGES` extraction, OEM SMS packages, `reviewLatest=1` draft hydration (`app/transaction-form.tsx`), active-drain routing (`ReminderRuntime.tsx`), full default source-app selection + troubleshooting note (`app/transaction-detection.tsx`), and broadened domain parsing (`src/domain/transactionDetection.ts`) without `READ_SMS` or `QUERY_ALL_PACKAGES`. Updated `PRIVACY.md`, `CHANGELOG.md` (`[Unreleased]`), tests, and added physical-device check `O94` (`Not run`). Issue `#614`. Schema remains version 24.
+
+## P35-C-R3 Direct draft modal review flow and compliant source-app picker (Done; CR-186; #611; device checks O92, O93 Not run)
+
+- Subtask P35-C-R3 (CR-186, 2026-11-28): Updated `ReminderRuntime.tsx`, `app/transaction-form.tsx`, `plugins/withNotificationListener.js`, `src/domain/transactionDetection.ts`, `src/lib/notificationListener.ts`, `app/transaction-detection.tsx`, and `PRIVACY.md` so foreground detections and background notification taps open `/transaction-form` directly (Save/Dismiss/Discard semantics, no stacked modals) and the Add app picker uses scoped `<queries>` + observed listener apps without `QUERY_ALL_PACKAGES` (`Trusted` only for verified catalogue packages). Added `TransactionDraftReviewFlow.test.tsx`, updated `TransactionDetectionScreen.test.tsx` and `CHANGELOG.md` (`[Unreleased]`), and added physical-device checks `O92` and `O93` (`Not run`). Issue `#611`. Schema remains version 24.
+
+## P20-AA Month and year jump selectors for Transactions and Budget (Done; CR-185; #608; device check O91 Not run)
+
+- Subtask P20-AA (CR-185, 2026-11-28): Added `src/components/MonthYearPicker.tsx` and integrated month/year jump selectors into `app/(tabs)/transactions.tsx` and `app/(tabs)/budget.tsx`, preserving previous/next-month controls, sorting, filters, empty periods, and Budget's 24-month forward bound. Added `MonthYearJump.test.tsx`, updated `CHANGELOG.md` (`[Unreleased]`), and added physical-device check `O91` (`Not run`). Issue `#608`. Schema remains version 24.
+
+## P25-B-R1 Confirm backup import after file selection (Done; CR-184; #605; device check O90 Not run)
+
+- Subtask P25-B-R1 (CR-184, 2026-11-28): Updated `app/backup.tsx` to prompt `Import backup` / `Cancel` after plain or decrypted backup validation with a clear data-replacement warning, keeping Cancel non-mutating and temp-file safe, and replacing `"Replace my data"` preview action wording with `"Import backup"`. Added `BackupImportConfirm.test.tsx`, updated `CHANGELOG.md` (`[Unreleased]`), and added physical-device check `O90` (`Not run`). Issue `#605`. Schema remains version 24.
+
+## P35-C-R2 Add Settings screen and hide enabled detection entry points (Done; CR-183; #602; device check O89 Not run)
+
+- Subtask P35-C-R2 (CR-183, 2026-11-28): Added `app/settings.tsx` (`Settings` screen with all `useAppMenu()` items and `Automatically detect transactions` control), replaced Home header's three-dot menu with a `Settings` gear button (`app/(tabs)/index.tsx`), hid Home/Transactions auto-detection entry points while `status === 'enabled'`, added `SettingsScreen.test.tsx`, updated `TransactionDetectionEntryPoints.test.tsx` and `CHANGELOG.md` (`[Unreleased]`), and added physical-device check `O89` (`Not run`). Issue `#602`. Schema remains version 24.
+
+## CR-182 Align Expo SDK 58 package versions (Done; cleanup; #599)
+
+- Subtask CR-182 (2026-11-28): Aligned `expo` (`~58.1.0`), `expo-crypto` (`~58.0.9`), `expo-file-system` (`~58.0.15`), `expo-notifications` (`~58.1.10`), `expo-router` (`~58.0.33`), `expo-sharing` (`~58.0.24`), `expo-splash-screen` (`~58.0.15`), and `jest-expo` (`~58.0.16` in `devDependencies`) under `cleanup` lifecycle (`#599`), preserving `.npmrc` (`legacy-peer-deps=true`). `npx expo install --check` (`0`) and `npx expo-doctor` (`20/20`, `0`) pass. Schema remains version 24.
+
+## P35-C-R1 Add Home & Transactions auto-detection entry points (Done; CR-181; device check O88 Not run)
+
+- Subtask P35-C-R1 (CR-181, 2026-11-27): Added `src/lib/transactionDetectionStatus.ts` and `"Automatically detect transactions"` setup/status entry points on Home (`app/(tabs)/index.tsx`, explicitly authorized) and Transactions (`app/(tabs)/transactions.tsx`), displaying accurate status (`Unavailable on iOS`, `Not set up`, `Notification access needed`, `Notification permission needed`, `Enabled`), routing to `/transaction-detection`, adding `transactionDetectionStatus.test.ts` and `TransactionDetectionEntryPoints.test.tsx`, updating `CHANGELOG.md` (`[Unreleased]`), and adding physical-device check `O88` (`Not run`). Schema remains version 24.
+
+## P24-A-R1 Fix payment-reminder permission failure (Done; CR-180; device check O87 Not run)
+
+- Subtask P24-A-R1 (CR-180, 2026-11-27): Fixed `_this.ensureChannel is not a function` in `src/lib/reminderNotifications.ts` by extracting standalone `ensureRemindersChannel()` so unbound `requestPermission` / `scheduleTest` callbacks create the Android `reminders` channel before `requestPermissionsAsync()`, clarified Android 12 vs 13+ and `POST_NOTIFICATIONS` vs Notification Access in `app/reminders.tsx`, added `reminderNotifications.test.ts`, updated `CHANGELOG.md` (`[Unreleased]`), and added physical-device check `O87` (`Not run`). Schema remains version 24.
+
 ## CR-179 GitHub issue inventory audit and durable templates (Done)
 
 - Subtask CR-179 (2026-11-27): Audited all 276 non-PR GitHub issues (23 open, 253 closed), completed 205 truncated `...` titles and sparse bodies, posted activity summaries on 23 open zero-comment issues, updated `AGENTS.md` and `docs/memory/rules.md` with Fibonacci (`1, 2, 3, 5, 8, 13`) estimate & issue-writing rules, and updated `.github/ISSUE_TEMPLATE/` (`bug_report.yml`, `feature_request.yml`, `planned_task.yml`). 13 historical `P1`–`P14` issues lack recoverable Git history for a retrospective estimate and are flagged `Unavailable` for owner input if desired. Schema remains version 24.

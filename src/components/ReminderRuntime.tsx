@@ -1,6 +1,6 @@
 import { router, usePathname, type Href } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, AppState } from 'react-native';
+import { Alert, AppState, Platform } from 'react-native';
 
 import { useSecuritySettings } from './SecurityProvider';
 import { metaStore, useAppStore } from '../data/store';
@@ -16,8 +16,10 @@ import {
 } from '../lib/reminderNotifications';
 import { notificationListenerAdapter } from '../lib/notificationListener';
 import {
+  buildDraftFormRoute,
   ensureTransactionDraftNotificationCategory,
   ingestDetectedNotifications,
+  loadPendingDraftById,
   postGenericDraftReviewNotification,
   syncNativeDetectionConfig,
 } from '../lib/transactionDetectionRuntime';
@@ -107,11 +109,17 @@ export function NotificationResponseHandler() {
     handledResponseId.current = response.identifier;
     if (isRecord(response.data) && response.data.type === 'wealthwise-transaction-draft') {
       const draftId = typeof response.data.draftId === 'string' ? response.data.draftId : undefined;
-      router.push(
-        (draftId
-          ? { pathname: '/transaction-detection', params: { draftId } }
-          : '/transaction-detection') as Href,
-      );
+      if (draftId) {
+        void loadPendingDraftById(draftId).then((draft) => {
+          router.push(
+            (draft
+              ? buildDraftFormRoute(draft)
+              : { pathname: '/transaction-form', params: { draftId } }) as Href,
+          );
+        });
+      } else {
+        router.push({ pathname: '/transaction-form', params: { reviewLatest: '1' } } as Href);
+      }
     } else {
       const target = reminderTarget(response.data);
       if (target) {
@@ -150,16 +158,30 @@ export function NotificationResponseHandler() {
 
 export function TransactionDetectionRuntime() {
   const status = useAppStore((state) => state.status);
+  const pathname = usePathname();
+  const pathnameRef = useRef(pathname);
 
   useEffect(() => {
-    if (status !== 'ready') return undefined;
+    pathnameRef.current = pathname;
+  }, [pathname]);
+
+  useEffect(() => {
+    if (status !== 'ready' || Platform.OS !== 'android') return undefined;
     void ensureTransactionDraftNotificationCategory();
     void syncNativeDetectionConfig();
 
     const drain = async () => {
       const events = await notificationListenerAdapter.drainQueuedEvents();
       if (events.length === 0) return;
-      await ingestDetectedNotifications(events);
+      const { addedDrafts } = await ingestDetectedNotifications(events);
+      const firstDraft = addedDrafts[0];
+      if (
+        firstDraft
+        && AppState.currentState === 'active'
+        && pathnameRef.current !== '/transaction-form'
+      ) {
+        router.push(buildDraftFormRoute(firstDraft) as Href);
+      }
     };
     void drain();
 
@@ -174,7 +196,9 @@ export function TransactionDetectionRuntime() {
         const firstDraft = addedDrafts[0];
         if (!firstDraft) return;
         if (AppState.currentState === 'active') {
-          router.push(`/transaction-detection?draftId=${encodeURIComponent(firstDraft.id)}` as Href);
+          if (pathnameRef.current !== '/transaction-form') {
+            router.push(buildDraftFormRoute(firstDraft) as Href);
+          }
         } else {
           await postGenericDraftReviewNotification(firstDraft.id);
         }

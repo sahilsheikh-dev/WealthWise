@@ -188,6 +188,9 @@ export default function RemindersScreen() {
           <SectionTitle>Permission</SectionTitle>
           <Card>
             <AppText style={[typography.meta, { color: colors.text2 }]}>{permissionLabel(permission)}</AppText>
+            <AppText style={[typography.meta, { color: colors.text3, marginTop: 6 }]}>
+              Payment reminders use your device’s notification permission (requested on Android 13+; enabled unless turned off in system settings on Android 12 or earlier). This is separate from Transaction detection’s Notification Access.
+            </AppText>
             {permission === 'blocked' ? (
               <Button
                 label="Open system settings"

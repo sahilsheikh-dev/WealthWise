@@ -6597,3 +6597,108 @@ Gradle build, version bump, or release preparation was performed.
 - Next release device checklist table, memory status, and open-items updated.
 - Ordered six gates pass with exit 0.
 
+
+### 2026-11-22 — P20-Y Budget payment date, multi-asset budget links, and limited expense categories
+
+- Implemented payment date when marking scheduled or budgeted items Paid across Transactions and Budget: `PaidAmountDialog` includes DateField defaulting to today and passes payment date to `onPaid`; `clearDue`, `clearDuesThrough`, `PendingItemActions`, and `app/insurance.tsx` accept and propagate `paymentDate` to linked transactions and holding logs, preserving correct historical dates, one-write persistence, and Undo.
+- Supported one asset linking to multiple one-time investment Budget items (`frequency === 'once'`) in `budget.ts` (`addItem`, `editItem`) and `app/budget-item-form.tsx`; `budgetLineActual` attributes holding entries by matching category or note, falling back to single-link attribution; verified paying each linked item updates the correct holding and budget actuals.
+- Limited Transaction form Expense category picker to user-created Budget items and applicable scheduled items (due EMIs, policy premium categories, pending dues) plus Custom, removing unbudgeted built-in suggestions (entertainment, fashion, subscription, travel, gifts, generic insurance premiums); preserved Income and Investment category behaviors; retained historical categories when editing existing transactions to avoid data loss.
+- Documented superseded test assertions in `src/components/__tests__/TransactionForm.test.tsx` (lines 340, 389, 671) where tests previously asserted unbudgeted built-in categories (`Donation`, `Gifts`, unlinked policy titles) rather than user-created or applicable scheduled categories; updated assertions to test user-created items (`Festival`, `Culture`, `Unexpected`) and scheduled policy categories (`Health premium`), and added explicit test for preserving historical removed category `Gifts`.
+- Regression tests: `src/components/__tests__/PaidAmountDialog.test.tsx`, `src/components/__tests__/PendingItemActions.paymentDate.test.tsx`, `src/domain/__tests__/budgetMultiAssetLink.test.ts`, `src/domain/__tests__/budgetCategoriesLimited.test.ts`, `src/components/__tests__/TransactionForm.test.tsx`.
+- Six gates: Gate 1 exit 0; Gates 2–3 exit 0; Gate 4 exit 0 (21/21 checks passed); Gates 5–6 exit 0.
+- Physical-device check O76 validated Pass by owner on 2026-11-22 (realme Narzo 60 Pro 5g, Android 15 Vanilla Ice Cream, tester sahilsheikh-dev).
+
+### 2026-11-22 — P20-Y-R1 Linked transactions update on budget item rename
+
+- Fixed WealthWise bug where renaming a budget item or category in one month did not update the name shown by transactions linked to that item.
+- Linked transactions now reflect the current budget item name wherever they appear, including existing transactions, while preserving their amount, date, category (e.g. `'Mutual fund / SIP'`), and budget link source.
+- `editItem` in `src/domain/budget.ts` locates linked transactions and holding log entries for the item's target holding and updates `note` to the new budget item name across the specified month/scope, preserving amount, date, category, and budget link.
+- `budgetItemForTransaction` in `src/domain/budgetCategories.ts` dynamically resolves the linked budget item for a transaction within that transaction's effective month budget.
+- `TransactionsScreen` in `app/(tabs)/transactions.tsx` displays the resolved budget item name for linked transactions.
+- Dues clearing in `src/domain/dues.ts` and `src/components/PendingItemActions.tsx` passes the budget item title when clearing planned holding dues.
+- Investment entry update in `src/domain/instruments.ts` and `src/domain/investmentActions.ts` synchronizes the note on linked transactions.
+- `filterTransactions` in `src/domain/transactions.ts` matches investment transactions by `note` against budget categories.
+- Added regression tests in `src/domain/__tests__/budgetItemRenameTransactions.test.ts` (5 tests covering month-only scope, following scope, multi-asset link preservation, recurring plan holdings, and transaction display resolution).
+- Six gates: all pass exit 0.
+
+### 2026-11-22 — P28-F-R7 Prepare v1.3.0 release candidate
+
+- Subtask `P28-F-R7` under `qa-and-release` lifecycle.
+- Version bump: `app.json`, `package.json`, and `package-lock.json` bumped to `1.3.0`.
+- Release note: finalized note moved to `docs/releases/published/v1.3.0.md` with 8 owner-supplied screenshots in `docs/releases/screenshots/v1.3.0/` and draft removed.
+- Configuration and checklist: `build-config.md` version identifier updated to `1.3.0`; `device-test-checklist.md` updated to `## v1.3.0 device checks (next release)` with confirmed metadata; `README.md` What's new updated to `v1.3.0`.
+- Tests updated: `src/components/__tests__/AboutScreen.test.tsx` and `src/lib/__tests__/releaseDownloadDocs.test.ts`.
+- Integration and build: Task PR #210 and phase PR #211 merged to `develop` at candidate commit `afeb987`; `release/v1.3.0` created; EAS build `c2ec9414-ae63-44cc-b34a-0f67f6cb51cb` completed with profile `android-apk` and Android `versionCode` 4. The 107,030,213-byte APK artifact was downloaded, byte-verified privately, and uploaded to the `v1.3.0` draft as `WealthWise-android-latest-v1.3.0.apk`. Build records integrated via PR #212 and #213 (`58d9a26`). Per owner instruction, `README.md` (v1.3.0 Download block and 8-screenshot gallery), release notes, release history, and `AGENTS.md`/`rules.md` release rules were updated to align all candidate assets and docs for v1.3.0. Publication approved and completed on 2026-11-22; release/v1.3.0 merged to main via PR #216 (341dbcb); tag v1.3.0 created at 51523b8; GitHub Release v1.3.0 published as Latest by sahilsheikh-dev; post-publication sync PR #217 (97c6d02) merged to develop.
+- Six gates: all pass exit 0.
+
+
+### CR-141 verification — reconcile documentation for completed v1.3.0 publication (2026-11-23)
+
+- Reconciled documentation across release-history.md, docs/releases/README.md, open-items.md, status.md, and PROGRESS.md to accurately record completed v1.3.0 publication.
+- Verifiable release facts documented: PR #216 merged release/v1.3.0 to main (341dbcb), tag v1.3.0 points to 51523b8, GitHub Release published as Latest by sahilsheikh-dev, APK artifact (107,030,213 bytes) verified HTTP 200, and PR #217 back-merged main to develop (97c6d02).
+- Ordered six gates pass with exit 0.
+
+### CR-142 verification — reconcile planned and unimplemented roadmap items (2026-11-23)
+
+- Reconciled open-items.md and status.md to remove stale historical references indicating P21-F or P43-B were unimplemented.
+- Documented verified facts: P21-F (Emergency Fund target editing) was completed and released in v1.3.0 with device checks O65–O68 Pass; P43-B (non-release tag cleanup) was completed under CR-131; O77 is Pass.
+- Formally established the authoritative list of 12 active planned/unimplemented roadmap areas: P7 (Google Drive Cloud Backup), P31 (Project health/community), P33 (Widgets), P34 (Quick capture), P35 (SMS/notification transaction detection), P36 (Notes), P37 (Tutorials), P38 (Skeleton loaders), P39 (Security/privacy audit), P40 (Context hygiene/archival), P43-E (GitHub issue inventory), P44 (Spending heat map).
+- Ordered six gates pass with exit 0.
+
+
+### P20-AA / CR-185 verification — month and year jump selectors (2026-11-28)
+
+- **Implementation:** Added `src/components/MonthYearPicker.tsx` and integrated month/year jump triggers into `app/(tabs)/transactions.tsx` and `app/(tabs)/budget.tsx` while preserving prev/next buttons, sorting, filters, empty states, and Budget's 24-month forward bound (`lastAllowedMonth`).
+- **Tests:** Added `src/components/__tests__/MonthYearJump.test.tsx`.
+- **Physical-device check:** Added `O91` (`Not run`) to `docs/releases/device-test-checklist.md` under `## Next release device checks` (metadata: realme Narzo 60 Pro 5g, 15 Vanilla Ice Cream, sahilsheikh-dev, 2026-11-28).
+- **Replaced assertions (`progressLedger.test.ts`):**
+  - Old: `expectedIds` ended at `O90`, `Overall progress` allowed up to `89% (193/216)`, and `P20` expected `51/51` / `51`.
+  - Replacement: Added `'O91'` to `expectedIds`, extended `Overall progress` to `89% (194/217)`, extended `P20` to `52/52` / `52`, and added `CR-185` test.
+  - Reason: `P20-AA` month/year jump selectors completed (`CR-185`, `#608`).
+- Ordered six gates: all run with actual exit codes recorded.
+
+### P25-B-R1 / CR-184 verification — backup import confirmation (2026-11-28)
+
+- **Implementation:** Added `confirmAndImportBackup` (`Import backup` / `Cancel`) after plain validation and encrypted decryption in `app/backup.tsx`, keeping Cancel non-mutating and temp-file safe, and replacing `"Replace my data"` with `"Import backup"`.
+- **Tests:** Added `src/components/__tests__/BackupImportConfirm.test.tsx`.
+- **Physical-device check:** Added `O90` (`Not run`) to `docs/releases/device-test-checklist.md` under `## Next release device checks` (metadata: realme Narzo 60 Pro 5g, 15 Vanilla Ice Cream, sahilsheikh-dev, 2026-11-28).
+- **Replaced assertions (`progressLedger.test.ts`, `RouteRenderSmoke.test.tsx`):**
+  - Old: `RouteRenderSmoke.test.tsx` encrypted-import retry test assumed `Unlock backup` did not trigger `confirmAsync` (default `true`); `progressLedger.test.ts` `expectedIds` ended at `O89`, `Overall progress` allowed up to `89% (192/215)`, and `P25-B` asserted `| Done |` only.
+  - Replacement: Set `mockConfirmAsync.mockResolvedValueOnce(false)` in `RouteRenderSmoke.test.tsx` after `Unlock backup` to verify Cancel preserves preview without mutating data; added `'O90'` to `expectedIds`, extended `Overall progress` to `89% (193/216)`, updated `P25-B` to allow `Done; Revised by P25-B-R1`, and added `CR-184` test.
+  - Reason: `P25-B-R1` backup import confirmation completed (`CR-184`, `#605`).
+- Ordered six gates: all run with actual exit codes recorded.
+
+### P35-C-R2 / CR-183 verification — Settings screen and conditional auto-detection entry points (2026-11-28)
+
+- **Implementation:** Added `app/settings.tsx` (registered in `app/_layout.tsx` and `src/lib/routeKinds.ts`), replaced Home header three-dot menu with `Settings` gear button (`app/(tabs)/index.tsx`), moved all `useAppMenu()` items and `Automatically detect transactions` control into Settings, and hid Home/Transactions auto-detection entry points while `status === 'enabled'`.
+- **Tests:** Added `src/components/__tests__/SettingsScreen.test.tsx` and updated `src/components/__tests__/TransactionDetectionEntryPoints.test.tsx`.
+- **Physical-device check:** Added `O89` (`Not run`) to `docs/releases/device-test-checklist.md` under `## Next release device checks` (metadata: realme Narzo 60 Pro 5g, 15 Vanilla Ice Cream, sahilsheikh-dev, 2026-11-28).
+- **Replaced assertions (`progressLedger.test.ts`, `AppHeaderUsage.test.ts`):**
+  - Old: `AppHeaderUsage.test.ts` disallowed `showDefaultMenu={false}` on `app/(tabs)/index.tsx`; `progressLedger.test.ts` `expectedIds` ended at `O88`, `Overall progress` allowed up to `89% (191/214)`, `CR-176`/`CR-177`/`CR-178`/`CR-181` asserted `P35` at `3/3` or `4/4`, `CR-178` asserted `Revised by P35-C-R1` only, and `number === 35` branch index expected `4`.
+  - Replacement: Added `'app/(tabs)/index.tsx'` to `noDefaultMenuScreens` in `AppHeaderUsage.test.ts`; added `'O89'` to `expectedIds`, extended `Overall progress` to `89% (192/215)`, updated `P35` regexes to allow `5/5`, updated `CR-178` to allow `Revised by P35-C-R1 and P35-C-R2`, updated `number === 35` to `5`, and added `CR-183` test.
+  - Reason: `P35-C-R2` Settings screen & conditional entry points completed (`CR-183`, `#602`).
+- Ordered six gates: all run with actual exit codes recorded.
+
+
+### CR-182 verification — Expo SDK 58 package alignment (`cleanup`) (2026-11-28)
+
+- **Aligned packages:** `expo` (`58.0.26` -> `~58.1.0`), `expo-crypto` (`58.0.8` -> `~58.0.9`), `expo-file-system` (`58.0.14` -> `~58.0.15`), `expo-notifications` (`58.1.9` -> `~58.1.10`), `expo-router` (`58.0.32` -> `~58.0.33`), `expo-sharing` (`58.0.23` -> `~58.0.24`), `expo-splash-screen` (`58.0.14` -> `~58.0.15`), and `jest-expo` (`58.0.15` -> `~58.0.16` in `devDependencies`), preserving `.npmrc` (`legacy-peer-deps=true`).
+- **Verification:** `CI=1 npx expo install --check` exits `0` (`Dependencies are up to date`); `npx expo-doctor --verbose` exits `0` (`20/20` checks passed).
+- **Replaced assertions (`progressLedger.test.ts`):**
+  - Old: `CR-169` asserted `pkg.dependencies.expo` matched `/^\^?58\./`.
+  - Replacement: Updated to `/^[~^]?58\./` and added `CR-182` test verifying `Prompt log`, `Register`, `Independent entities` (`cleanup: SDK 58 package alignment`), and `#599`.
+  - Reason: `npx expo install` aligned `expo` to `~58.1.0`.
+- Ordered six gates: all run with actual exit codes recorded.
+
+
+### P35-C-R3 / CR-186 verification — direct draft modal review & compliant source-app picker (2026-11-28)
+
+- **Implementation:** Updated `ReminderRuntime.tsx`, `app/transaction-form.tsx`, `src/lib/transactionDetectionRuntime.ts`, `src/domain/transactionDetection.ts`, `src/lib/notificationListener.ts`, `plugins/withNotificationListener.js`, `app/transaction-detection.tsx`, `PRIVACY.md`, and `CHANGELOG.md` (`[Unreleased]`).
+- **Tests:** Added `src/components/__tests__/TransactionDraftReviewFlow.test.tsx` and updated `src/components/__tests__/TransactionDetectionScreen.test.tsx`.
+- **Physical-device checks:** Added `O92` and `O93` (`Not run`) to `docs/releases/device-test-checklist.md` under `## Next release device checks` (metadata: realme Narzo 60 Pro 5g, 15 Vanilla Ice Cream, sahilsheikh-dev, 2026-11-28).
+- **Replaced assertions (`TransactionDetectionScreen.test.tsx`, `progressLedger.test.ts`):**
+  - Old: `TransactionDetectionScreen.test.tsx` expected `Review & add` without `sourcePackage` and inbox button `Dismiss`; `progressLedger.test.ts` `expectedIds` ended at `O91`, `Overall progress` allowed up to `89% (194/217)`, `P35` expected `5/5` / `5`, and `P35-C` expected `Revised by P35-C-R1 and P35-C-R2`.
+  - Replacement: Updated `TransactionDetectionScreen.test.tsx` to expect `sourcePackage` and confirmed `Discard`; added `'O92'`, `'O93'` to `expectedIds`, extended `Overall progress` to `89% (195/218)`, updated `P35` to `6/6` / `6`, updated `P35-C` status regex, and added `CR-186` test.
+  - Reason: `P35-C-R3` direct draft modal review & compliant source-app picker completed (`CR-186`, `#611`).
+- Ordered six gates: all run with actual exit codes recorded.
+

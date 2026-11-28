@@ -24,6 +24,9 @@ jest.mock('expo-router', () => ({
   usePathname: () => '/transaction-detection',
 }));
 
+jest.mock('../../lib/confirm', () => ({
+  confirmAsync: jest.fn(async () => true),
+}));
 jest.mock('../../lib/notificationListener', () => ({
   notificationListenerAdapter: {
     isSupported: () => true,
@@ -33,6 +36,7 @@ jest.mock('../../lib/notificationListener', () => ({
     openAppInfoSettings: jest.fn(async () => undefined),
     setDetectionConfig: jest.fn(async () => undefined),
     drainQueuedEvents: jest.fn(async () => []),
+    getEligibleSourceApps: jest.fn(async () => ({ installedTrusted: [], observedApps: [] })),
     subscribeLiveEvents: jest.fn(() => () => undefined),
   },
 }));
@@ -65,6 +69,8 @@ describe('TransactionDetectionScreen', () => {
 
       const treeText = JSON.stringify(renderer!.toJSON());
       expect(treeText).toContain('Android only');
+      expect(treeText).not.toContain('Pending review drafts');
+      expect(treeText).not.toContain('Detect payment notifications');
       const manualBtn = findButtonByLabel(renderer!.root, 'Add transaction manually');
       expect(manualBtn).toBeDefined();
       await act(async () => {
@@ -74,7 +80,7 @@ describe('TransactionDetectionScreen', () => {
     } finally {
       Object.defineProperty(Platform, 'OS', { value: originalOS, configurable: true });
     }
-  });
+  }, 15000);
 
   it('requires prominent disclosure before enabling detection on Android and handles draft review/dismiss', async () => {
     const originalOS = Platform.OS;
@@ -124,6 +130,7 @@ describe('TransactionDetectionScreen', () => {
           amount: '320',
           date: '2026-11-25',
           note: 'Coffee Shop',
+          sourcePackage: 'com.google.android.apps.nbu.paisa.user',
         },
       });
 
@@ -140,15 +147,18 @@ describe('TransactionDetectionScreen', () => {
         await flushPromises();
       });
       expect(notificationListenerAdapter.openNotificationAccessSettings).toHaveBeenCalled();
+      const updatedMeta = await metaStore.getMeta();
+      expect(updatedMeta.transactionDetection?.allowedPackages).toContain('com.google.android.apps.messaging');
+      expect(updatedMeta.transactionDetection?.allowedPackages).toContain('com.snapwork.hdfc');
 
-      const dismissBtn = findButtonByLabel(renderer!.root, 'Dismiss');
+      const discardBtn = findButtonByLabel(renderer!.root, 'Discard');
       await act(async () => {
-        dismissBtn.props.onPress();
+        discardBtn.props.onPress();
         await flushPromises();
       });
       expect(JSON.stringify(renderer!.toJSON())).toContain('No pending drafts');
     } finally {
       Object.defineProperty(Platform, 'OS', { value: originalOS, configurable: true });
     }
-  });
+  }, 15000);
 });

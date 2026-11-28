@@ -6,7 +6,18 @@ Update this file for every release: add the new version heading and confirmed re
 ## [Unreleased]
 
 ### New Features
+- Reordered bottom navigation tabs to **Home, Goals, Budget, Transactions** on Android and iOS (`src/components/ui.tsx`, `app/(tabs)/_layout.tsx`) while preserving tab behavior and navigation state.
 - Opt-in Android notification-based transaction detection (`Transaction detection` screen): includes in-app prominent disclosure, user-selected source apps, local-only in-memory parsing without raw-text storage or SMS permissions, duplicate/7-day draft expiry, dynamic credit/debit/Investment categorization, foreground review, and privacy-safe background `Review` notifications (Android only; iOS uses manual entry).
+- Added "Automatically detect transactions" setup and live status entry points on Home and Transactions, showing accurate setup/permission states (`Not set up`, `Notification access needed`, `Notification permission needed`, `Enabled`, or `Unavailable on iOS`) and routing directly to `Transaction detection`.
+- Added a dedicated `Settings` screen (`app/settings.tsx`) reached from a gear button in the Home header (replacing the three-dot menu), moved all global menu options and the transaction auto-detection control there, and hid non-Settings auto-detection entry points while detection is enabled.
+- Added an `Import backup` / `Cancel` confirmation prompt immediately after selecting and validating/decrypting a backup file in `Backup and restore` (`app/backup.tsx`), warning that importing replaces current app data and updating preview action wording to `Import backup`.
+- Added month and year jump selectors (`MonthYearPicker`) to Transactions (`app/(tabs)/transactions.tsx`) and Budget (`app/(tabs)/budget.tsx`), allowing direct period selection while preserving previous/next-month controls, sorting, filters, empty states, and Budget's 24-month forward bound.
+- Revised transaction-detection review flow to open `/transaction-form` directly as a modal over the current screen on foreground detection or background notification tap, preserving Save/Dismiss/confirmed Discard semantics, and replaced the source-app list with a Play-policy-compliant searchable picker using scoped `<queries>` for verified payment apps and observed listener apps (without `QUERY_ALL_PACKAGES`).
+
+### Fixes
+- Hidden automatic transaction detection controls and entry points on iOS across Settings (`app/settings.tsx`), Home (`app/(tabs)/index.tsx`), Transactions (`app/(tabs)/transactions.tsx`), and `TransactionDetectionRuntime`, while keeping Android behavior intact and showing a graceful Android-only manual-entry fallback on `/transaction-detection`.
+- Improved Android transaction-detection reliability (`P35-C-R4`): fixed backgrounded listener delivery (`onHostResume`/`onHostPause`), extracted `EXTRA_BIG_TEXT` / `EXTRA_TEXT_LINES` / `EXTRA_MESSAGES`, added `reviewLatest=1` draft hydration for native Review notifications and active-drain routing, pre-selected all verified payment and messaging source apps (including OEM SMS packages) on opt-in, and broadened local parsing for combined debit/credit UPI alerts, trailing/colon/verb-prefixed amounts, and real payments mentioning discounts.
+- Fixed `undefined is not a function` when allowing payment reminders from the first-launch prompt or Reminders screen by removing unbound `this.ensureChannel()` calls in `reminderNotificationAdapter`, ensuring Android creates the `reminders` channel before requesting `POST_NOTIFICATIONS`.
 
 ## [1.4.0] - 2026-11-25
 

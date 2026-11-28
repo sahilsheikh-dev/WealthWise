@@ -170,7 +170,7 @@ export default function BackupScreen() {
         setIssues(parsed.issues ?? []);
         return;
       }
-      setPreview(parsed);
+      await confirmAndImportBackup(parsed);
     } catch {
       setMessage('The selected file could not be read.');
     } finally {
@@ -194,9 +194,9 @@ export default function BackupScreen() {
         setIssues(parsed.issues ?? []);
         return;
       }
-      setPreview(parsed);
       setEncryptedImportText(null);
       setValue('importPassphrase', '');
+      await confirmAndImportBackup(parsed);
     } catch (error) {
       setMessage(backupCryptoErrorMessage(error) ?? 'The encrypted backup could not be opened.');
       setValue('importPassphrase', '');
@@ -205,23 +205,30 @@ export default function BackupScreen() {
     }
   };
 
+  const confirmAndImportBackup = async (parsed: Extract<ParseBackupResult, { ok: true }>) => {
+    const confirmed = await confirmAsync({
+      title: 'Import backup?',
+      message: 'Importing this backup will replace ALL data currently on this phone.',
+      confirmLabel: 'Import backup',
+      destructive: true,
+    });
+    if (!confirmed) {
+      setPreview(parsed);
+      return;
+    }
+    const result = await replaceAllData(parsed.data);
+    if (!result.ok) {
+      setMessage(result.message);
+      return;
+    }
+    setMessage('Your data was imported. You can undo this import below.');
+    setPreview(null);
+  };
+
   const replaceImport = async () => {
     if (!preview || !begin('Importing backup…')) return;
     try {
-      const confirmed = await confirmAsync({
-        title: 'Replace all data?',
-        message: 'This will replace ALL data currently on this phone.',
-        confirmLabel: 'Replace my data',
-        destructive: true,
-      });
-      if (!confirmed) return;
-      const result = await replaceAllData(preview.data);
-      if (!result.ok) {
-        setMessage(result.message);
-        return;
-      }
-      setMessage('Your data was imported. You can undo this import below.');
-      setPreview(null);
+      await confirmAndImportBackup(preview);
     } catch {
       setMessage('The data could not be imported. Nothing was replaced.');
     } finally {
@@ -446,7 +453,7 @@ function ImportPreview({
       <AppText weight="semibold" style={{ color: colors.err, marginTop: 8 }}>
         This will replace ALL data currently on this phone
       </AppText>
-      <Button label="Replace my data" icon="upload" variant="danger-text" disabled={busy} onPress={onReplace} />
+      <Button label="Import backup" icon="upload" variant="danger-text" disabled={busy} onPress={onReplace} />
     </View>
   );
 }
