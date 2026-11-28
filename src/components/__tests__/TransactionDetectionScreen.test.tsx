@@ -145,6 +145,9 @@ describe('TransactionDetectionScreen', () => {
         await flushPromises();
       });
       expect(notificationListenerAdapter.openNotificationAccessSettings).toHaveBeenCalled();
+      const updatedMeta = await metaStore.getMeta();
+      expect(updatedMeta.transactionDetection?.allowedPackages).toContain('com.google.android.apps.messaging');
+      expect(updatedMeta.transactionDetection?.allowedPackages).toContain('com.snapwork.hdfc');
 
       const discardBtn = findButtonByLabel(renderer!.root, 'Discard');
       await act(async () => {
