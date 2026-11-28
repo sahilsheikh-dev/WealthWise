@@ -2,6 +2,10 @@
 
 # Open items
 
+## P26-A-R1 Reorder bottom tabs to Home, Goals, Budget, Transactions (Done; CR-188; #620; device check O96 Not run)
+
+- Subtask P26-A-R1 (CR-188, 2026-11-28): Reordered `bottomTabs` in `src/components/ui.tsx` and `<Tabs.Screen>` in `app/(tabs)/_layout.tsx` to **Home, Goals, Budget, Transactions** on both platforms while preserving each tab's behavior and navigation state. Updated `BottomTabBar.test.tsx`, `TabsLayout.test.tsx`, `docs/memory/rules.md`, `CHANGELOG.md` (`[Unreleased]`), and added physical-device check `O96` (`Not run`). Issue `#620`. Schema remains version 24.
+
 ## P35-C-R5 Hide automatic transaction detection on iOS (Done; CR-188; #617; device check O95 Not run)
 
 - Subtask P35-C-R5 (CR-188, 2026-11-28): Hidden automatic transaction detection controls and entry points on iOS across `app/settings.tsx`, `app/(tabs)/index.tsx` (explicitly authorized), `app/(tabs)/transactions.tsx`, and `TransactionDetectionRuntime`, while keeping Android behavior intact and keeping `/transaction-detection` on iOS as a graceful Android-only manual-entry fallback. Updated `SettingsScreen.test.tsx`, `TransactionDetectionEntryPoints.test.tsx`, `TransactionDetectionScreen.test.tsx`, `rules.md`, `CHANGELOG.md` (`[Unreleased]`), and added physical-device check `O95` (`Not run`). Issue `#617`. Schema remains version 24.
