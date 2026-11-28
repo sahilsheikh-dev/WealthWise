@@ -2,6 +2,10 @@
 
 # Open items
 
+## P25-B-R1 Confirm backup import after file selection (Done; CR-184; #605; device check O90 Not run)
+
+- Subtask P25-B-R1 (CR-184, 2026-11-28): Updated `app/backup.tsx` to prompt `Import backup` / `Cancel` after plain or decrypted backup validation with a clear data-replacement warning, keeping Cancel non-mutating and temp-file safe, and replacing `"Replace my data"` preview action wording with `"Import backup"`. Added `BackupImportConfirm.test.tsx`, updated `CHANGELOG.md` (`[Unreleased]`), and added physical-device check `O90` (`Not run`). Issue `#605`. Schema remains version 24.
+
 ## P35-C-R2 Add Settings screen and hide enabled detection entry points (Done; CR-183; #602; device check O89 Not run)
 
 - Subtask P35-C-R2 (CR-183, 2026-11-28): Added `app/settings.tsx` (`Settings` screen with all `useAppMenu()` items and `Automatically detect transactions` control), replaced Home header's three-dot menu with a `Settings` gear button (`app/(tabs)/index.tsx`), hid Home/Transactions auto-detection entry points while `status === 'enabled'`, added `SettingsScreen.test.tsx`, updated `TransactionDetectionEntryPoints.test.tsx` and `CHANGELOG.md` (`[Unreleased]`), and added physical-device check `O89` (`Not run`). Issue `#602`. Schema remains version 24.

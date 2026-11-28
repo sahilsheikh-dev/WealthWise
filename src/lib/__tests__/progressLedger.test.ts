@@ -93,7 +93,7 @@ describe('permanent progress ledger', () => {
       'v1.4.0 device checks',
     ];
     const ids = [...checklist.matchAll(/^\| ([A-Z]+[0-9]+) \|/gm)].map(([, id]) => id);
-    const expectedIds = ['X1', 'X2', 'X3', 'X4', 'A1', 'A2', 'A3', 'A4', 'B5', 'B6', 'C7', 'C8', 'D9', 'D10', 'D11', 'D12', 'E13', 'E14', 'E15', 'E16', 'E17', 'F18', 'F19', 'F20', 'G21', 'G22', 'G23', 'H24', 'H25', 'H26', 'H27', 'H28', 'I29', 'I30', 'J31', 'J32', 'J33', 'K34', 'K35', 'K36', 'L37', 'M38', 'N39', 'N40', 'N41', 'N42', 'N43', 'N44', 'O45', 'O46', 'O47', 'O48', 'O49', 'O50', 'O51', 'O52', 'O53', 'O54', 'O55', 'O56', 'O57', 'O58', 'O59', 'O60', 'O61', 'O62', 'O63', 'O64', 'O65', 'O66', 'O67', 'O68', 'O69', 'O70', 'O71', 'O72', 'O73', 'O74', 'O75', 'O76', 'O77', 'O78', 'O79', 'O80', 'O81', 'O82', 'O83', 'O84', 'O85', 'O86', 'O87', 'O88', 'O89'];
+    const expectedIds = ['X1', 'X2', 'X3', 'X4', 'A1', 'A2', 'A3', 'A4', 'B5', 'B6', 'C7', 'C8', 'D9', 'D10', 'D11', 'D12', 'E13', 'E14', 'E15', 'E16', 'E17', 'F18', 'F19', 'F20', 'G21', 'G22', 'G23', 'H24', 'H25', 'H26', 'H27', 'H28', 'I29', 'I30', 'J31', 'J32', 'J33', 'K34', 'K35', 'K36', 'L37', 'M38', 'N39', 'N40', 'N41', 'N42', 'N43', 'N44', 'O45', 'O46', 'O47', 'O48', 'O49', 'O50', 'O51', 'O52', 'O53', 'O54', 'O55', 'O56', 'O57', 'O58', 'O59', 'O60', 'O61', 'O62', 'O63', 'O64', 'O65', 'O66', 'O67', 'O68', 'O69', 'O70', 'O71', 'O72', 'O73', 'O74', 'O75', 'O76', 'O77', 'O78', 'O79', 'O80', 'O81', 'O82', 'O83', 'O84', 'O85', 'O86', 'O87', 'O88', 'O89', 'O90'];
 
     expect(h1).toEqual(['# WealthWise Android Device Test Checklist']);
     expect(h2[0]).toBe(expectedSections[0]);
@@ -341,7 +341,7 @@ describe('permanent progress ledger', () => {
     expect(p20uR1).toContain('start month, frequency, due day');
     expect(p20uR1).toContain('both scopes');
     expect(p20uR1).toContain('H1–H5 findings are recorded in CONT3');
-    expect(ledger).toMatch(/Overall progress (?:████████░░|█████████░) (?:79|80|82|83|84|85|86|87|88|89)% \((?:158\/200|159\/201|160\/202|161\/203|162\/204|163\/205|163\/207|164\/207|165\/208|166\/209|167\/209|168\/209|172\/209|173\/209|174\/209|175\/209|176\/209|177\/209|178\/209|179\/209|180\/209|181\/210|182\/211|183\/212|184\/212|185\/212|186\/212|187\/212|188\/212|189\/212|190\/213|191\/214|192\/215)\)/);
+    expect(ledger).toMatch(/Overall progress (?:████████░░|█████████░) (?:79|80|82|83|84|85|86|87|88|89)% \((?:158\/200|159\/201|160\/202|161\/203|162\/204|163\/205|163\/207|164\/207|165\/208|166\/209|167\/209|168\/209|172\/209|173\/209|174\/209|175\/209|176\/209|177\/209|178\/209|179\/209|180\/209|181\/210|182\/211|183\/212|184\/212|185\/212|186\/212|187\/212|188\/212|189\/212|190\/213|191\/214|192\/215|193\/216)\)/);
     expect(ledger).toMatch(/P20\s+██████████ (?:100%|98%) \((?:43\/43|44\/44|45\/45|46\/46|47\/47|48\/48|48\/49|49\/49|50\/50|51\/51)\)/);
     const o73 = checklist.split('\n').find((line) => line.startsWith('| O73 |'));
     expect(o73).toContain('one-time and recurring');
@@ -1189,7 +1189,7 @@ describe('permanent progress ledger', () => {
     expect(statusFor('CR-96')).toBe('Done');
     expect(statusFor('CR-97')).toBe('Done');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P25-A |'))).toContain('| Done |');
-    expect(dashboard.split('\n').find((line) => line.startsWith('| P25-B |'))).toContain('| Done |');
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P25-B |'))).toMatch(/\| Done(?:; Revised by P25-B-R1)? \|/);
     expect(dashboard.split('\n').find((line) => line.startsWith('| P25-C |'))).toContain('| Done |');
     expect(dashboard.split('\n').find((line) => line.startsWith('| P25-D |'))).toContain('| Done |');
     expect(ledger).toContain('DEC-TRACKER-CLEANUP');
@@ -1234,7 +1234,7 @@ describe('permanent progress ledger', () => {
     expect(registerRow).toContain('185a5ea125f64ac104344f00ad013d68cdb7a946');
     expect(registerRow).toContain('6b50a1d');
     expect(phaseRow).toMatch(/\|\s*(?:43|44|45|46|47|48|49|50|51)\s*\|/);
-    expect(ledger).toMatch(/Overall progress (?:████████░░|█████████░) (?:79|80|82|83|84|85|86|87|88|89)% \((?:158\/200|159\/201|160\/202|161\/203|162\/204|163\/205|163\/207|164\/207|165\/208|166\/209|167\/209|168\/209|172\/209|173\/209|174\/209|175\/209|176\/209|177\/209|178\/209|179\/209|180\/209|181\/210|182\/211|183\/212|184\/212|185\/212|186\/212|187\/212|188\/212|189\/212|190\/213|191\/214|192\/215)\)/);
+    expect(ledger).toMatch(/Overall progress (?:████████░░|█████████░) (?:79|80|82|83|84|85|86|87|88|89)% \((?:158\/200|159\/201|160\/202|161\/203|162\/204|163\/205|163\/207|164\/207|165\/208|166\/209|167\/209|168\/209|172\/209|173\/209|174\/209|175\/209|176\/209|177\/209|178\/209|179\/209|180\/209|181\/210|182\/211|183\/212|184\/212|185\/212|186\/212|187\/212|188\/212|189\/212|190\/213|191\/214|192\/215|193\/216)\)/);
     expect(ledger).toMatch(/P20\s+██████████ (?:100%|98%) \((?:43\/43|44\/44|45\/45|46\/46|47\/47|48\/48|48\/49|49\/49|50\/50|51\/51)\)/);
     expect(status).toContain('P20-S-R2-R1 records the verified');
   });
@@ -1267,7 +1267,7 @@ describe('permanent progress ledger', () => {
     expect(registerRow).toContain('CM-2 synchronized local `develop`');
     expect(promptLog.split('\n').filter((line) => line.startsWith('| P20-W-R1 |'))).toHaveLength(1);
     expect(phaseRow).toMatch(/\|\s*(?:43|44|45|46|47|48|49|50|51)\s*\|/);
-    expect(ledger).toMatch(/Overall progress (?:████████░░|█████████░) (?:79|80|82|83|84|85|86|87|88|89)% \((?:158\/200|159\/201|160\/202|161\/203|162\/204|163\/205|163\/207|164\/207|165\/208|166\/209|167\/209|168\/209|172\/209|173\/209|174\/209|175\/209|176\/209|177\/209|178\/209|179\/209|180\/209|181\/210|182\/211|183\/212|184\/212|185\/212|186\/212|187\/212|188\/212|189\/212|190\/213|191\/214|192\/215)\)/);
+    expect(ledger).toMatch(/Overall progress (?:████████░░|█████████░) (?:79|80|82|83|84|85|86|87|88|89)% \((?:158\/200|159\/201|160\/202|161\/203|162\/204|163\/205|163\/207|164\/207|165\/208|166\/209|167\/209|168\/209|172\/209|173\/209|174\/209|175\/209|176\/209|177\/209|178\/209|179\/209|180\/209|181\/210|182\/211|183\/212|184\/212|185\/212|186\/212|187\/212|188\/212|189\/212|190\/213|191\/214|192\/215|193\/216)\)/);
     expect(ledger).toMatch(/P20\s+██████████ (?:100%|98%) \((?:43\/43|44\/44|45\/45|46\/46|47\/47|48\/48|48\/49|49\/49|50\/50|51\/51)\)/);
     expect(status).toContain('P20-W-R1 records task PR #174 and phase PR #175');
     expect(openItems).toContain('STOP GATE RESOLVED (DEC-P20W-D3-SCHEMA24');
@@ -2964,5 +2964,21 @@ describe('permanent progress ledger', () => {
     expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-183 |'))).toHaveLength(1);
     expect(register.split('\n').filter((line) => line.startsWith('| CR-183 |'))).toHaveLength(1);
     expect(checklist).toContain('| O89 |');
+  });
+
+  it('records P25-B-R1 backup import confirmation under CR-184', () => {
+    const dashboard = ledger.split('## 2. Status dashboard')[1]?.split('## 3. Standing rules')[0] ?? '';
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const checklist = readFileSync(join(process.cwd(), 'docs/releases/device-test-checklist.md'), 'utf8');
+
+    expect(dashboard.split('\n').find((line) => line.startsWith('| P25-B |'))).toContain('Revised by P25-B-R1');
+    const p25br1 = dashboard.split('\n').find((line) => line.startsWith('| P25-B-R1 |'));
+    expect(p25br1).toContain('| Done |');
+    expect(p25br1).toMatch(/Placement:\s+rule 2/);
+    expect(dashboard).toMatch(/P25\s+██████████ 100% \(7\/7\)/);
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-184 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-184 |'))).toHaveLength(1);
+    expect(checklist).toContain('| O90 |');
   });
 });
