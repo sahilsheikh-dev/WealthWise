@@ -19,6 +19,29 @@ const reminderPreferencesSchema = z.strictObject({
   showAmounts: z.boolean(),
   updateValues: z.boolean().optional(),
 });
+const pendingTransactionDraftSchema = z.strictObject({
+  id: z.string(),
+  type: z.enum(['expense', 'income']),
+  amount: z.number().positive(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  suggestedNote: z.string().max(80),
+  sourcePackage: z.string(),
+  confidence: z.enum(['high', 'medium']),
+  fingerprint: z.string(),
+  createdAtMs: z.number(),
+  expiresAtMs: z.number(),
+});
+const seenDetectionFingerprintSchema = z.strictObject({
+  fingerprint: z.string(),
+  seenAtMs: z.number(),
+});
+const transactionDetectionPreferencesSchema = z.strictObject({
+  enabled: z.boolean(),
+  disclosureAcceptedAt: z.string().datetime().optional(),
+  allowedPackages: z.array(z.string()),
+  pendingDrafts: z.array(pendingTransactionDraftSchema),
+  seenFingerprints: z.array(seenDetectionFingerprintSchema),
+});
 const metaSchema = z.strictObject({
   lastExportAt: z.string().datetime().optional(),
   nudgeDismissedUntil: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
@@ -26,10 +49,12 @@ const metaSchema = z.strictObject({
   remindersPromptHandled: z.boolean().optional(),
   sortSpecs: z.record(z.string(), sortSpecSchema).optional(),
   reminders: reminderPreferencesSchema.optional(),
+  transactionDetection: transactionDetectionPreferencesSchema.optional(),
 });
 
 export type BackupMeta = z.infer<typeof metaSchema>;
 export type PersistedReminderPreferences = z.infer<typeof reminderPreferencesSchema>;
+export type PersistedTransactionDetection = z.infer<typeof transactionDetectionPreferencesSchema>;
 
 export const DEFAULT_REMINDER_PREFERENCES: PersistedReminderPreferences = {
   enabled: false,
@@ -40,10 +65,20 @@ export const DEFAULT_REMINDER_PREFERENCES: PersistedReminderPreferences = {
   updateValues: false,
 };
 
+export const DEFAULT_TRANSACTION_DETECTION: PersistedTransactionDetection = {
+  enabled: false,
+  allowedPackages: [],
+  pendingDrafts: [],
+  seenFingerprints: [],
+};
+
 export function createMetaStore(storage: StateStorage) {
   const listeners = new Set<(meta: BackupMeta) => void>();
+  let cachedMeta: BackupMeta | null = null;
+  let writeQueue: Promise<unknown> = Promise.resolve();
 
   function publish(meta: BackupMeta): void {
+    cachedMeta = meta;
     for (const listener of listeners) listener(meta);
   }
 
@@ -51,27 +86,66 @@ export function createMetaStore(storage: StateStorage) {
     let raw: string | null;
     try {
       raw = await storage.getItem(META_KEY);
-      if (raw === null) return {};
+      if (raw === null) {
+        cachedMeta = {};
+        return {};
+      }
       const parsed: unknown = JSON.parse(raw);
       const validated = metaSchema.safeParse(parsed);
-      return validated.success ? validated.data : {};
+      const data = validated.success ? validated.data : {};
+      cachedMeta = data;
+      return data;
     } catch {
+      cachedMeta = {};
       return {};
     }
   }
 
+  function getCachedMeta(): BackupMeta | null {
+    return cachedMeta;
+  }
+
   async function updateMeta(patch: Partial<BackupMeta>): Promise<BackupMeta> {
-    const current = await getMeta();
-    const validated = metaSchema.safeParse({ ...current, ...patch });
-    if (!validated.success) throw new Error('Backup metadata is invalid.');
-    await storage.setItem(META_KEY, JSON.stringify(validated.data));
-    publish(validated.data);
-    return validated.data;
+    const operation = async () => {
+      let current = cachedMeta;
+      if (current === null) {
+        let raw: string | null;
+        try {
+          raw = await storage.getItem(META_KEY);
+          if (raw !== null) {
+            const parsed: unknown = JSON.parse(raw);
+            const validated = metaSchema.safeParse(parsed);
+            if (validated.success) current = validated.data;
+          }
+        } catch {
+          // ignore
+        }
+      }
+      current = current ?? {};
+      const next = { ...current, ...patch };
+      if (patch.sortSpecs && current.sortSpecs) {
+        next.sortSpecs = { ...current.sortSpecs, ...patch.sortSpecs };
+      }
+      const validated = metaSchema.safeParse(next);
+      if (!validated.success) throw new Error('Backup metadata is invalid.');
+      await storage.setItem(META_KEY, JSON.stringify(validated.data));
+      publish(validated.data);
+      return validated.data;
+    };
+    const queued = writeQueue.then(operation, operation);
+    writeQueue = queued.catch(() => {});
+    return queued;
   }
 
   async function clearMeta(): Promise<void> {
-    await storage.removeItem(META_KEY);
-    publish({});
+    const operation = async () => {
+      await storage.removeItem(META_KEY);
+      cachedMeta = {};
+      publish({});
+    };
+    const queued = writeQueue.then(operation, operation);
+    writeQueue = queued.catch(() => {});
+    return queued;
   }
 
   function subscribe(listener: (meta: BackupMeta) => void): () => void {
@@ -97,11 +171,10 @@ export function createMetaStore(storage: StateStorage) {
       (spec.dir !== 'asc' && spec.dir !== 'desc')) {
       throw new Error('Sort preference is invalid.');
     }
-    const current = await getMeta();
     return updateMeta({
-      sortSpecs: { ...current.sortSpecs, [screenId]: spec },
+      sortSpecs: { [screenId]: spec },
     });
   }
 
-  return { getMeta, updateMeta, clearMeta, subscribe, getSortSpec, updateSortSpec };
+  return { getMeta, updateMeta, clearMeta, subscribe, getSortSpec, updateSortSpec, getCachedMeta };
 }

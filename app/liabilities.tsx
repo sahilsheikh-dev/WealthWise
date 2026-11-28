@@ -26,11 +26,12 @@ import { useSort } from '../src/data/useSort';
 import { isLiabilityClosed, liabilitySummary, payoffDate } from '../src/domain/liability';
 import { liabilitySchedule } from '../src/domain/schedule';
 import { liabilitiesOverview } from '../src/domain/summary';
+import { financialTypeLabel } from '../src/domain/typeLabels';
 import type { OneTimeLiability, RecurringLiability } from '../src/domain/types';
 import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
 import { formatDate, formatMonth } from '../src/lib/format';
-import { DEFAULT_SORTS, SORT_OPTIONS } from '../src/lib/sorting';
+import { SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
@@ -46,6 +47,7 @@ export default function LiabilitiesScreen() {
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const [kindFilter, setKindFilter] = useState<(typeof LIABILITY_FILTERS)[number]>('All');
   const [query, setQuery] = useState('');
+  const [completedExpanded, setCompletedExpanded] = useState(false);
   const asOf = todayISO();
   const [extraText, setExtraText] = useState('0');
   const hasRecurring = data.liabilities.some((liability) =>
@@ -74,9 +76,6 @@ export default function LiabilitiesScreen() {
     };
     }));
   }, [asOf, data.liabilities, sorting]);
-  const filterActive = kindFilter !== 'All'
-    || sorting.spec.key !== DEFAULT_SORTS.liabilities.key
-    || sorting.spec.dir !== DEFAULT_SORTS.liabilities.dir;
   const normalizedQuery = query.trim().toLowerCase();
   const visibleLiabilities = sortedLiabilities.filter((liability) =>
     (kindFilter === 'Closed'
@@ -84,7 +83,13 @@ export default function LiabilitiesScreen() {
       : kindFilter === 'All'
         || (!isLiabilityClosed(liability)
           && (kindFilter === 'Recurring' ? liability.kind === 'recurring' : liability.kind === 'one-time')))
-    && (!normalizedQuery || `${liability.name} ${liability.type}`.toLowerCase().includes(normalizedQuery)),
+    && (!normalizedQuery || `${liability.name} ${financialTypeLabel(liability.type, liability.customTypeName)}`.toLowerCase().includes(normalizedQuery)),
+  );
+  const completedLiabilities = visibleLiabilities.filter((liability) =>
+    liability.balance < 1 || isLiabilityClosed(liability),
+  );
+  const inProgressLiabilities = visibleLiabilities.filter((liability) =>
+    liability.balance >= 1 && !isLiabilityClosed(liability),
   );
 
   return (
@@ -99,7 +104,6 @@ export default function LiabilitiesScreen() {
               label: 'Filter',
               onPress: () => setFilterPanelOpen((open) => !open),
               expanded: filterPanelOpen,
-              showIndicator: filterActive,
             },
             { icon: 'plus', label: 'Add a liability', onPress: () => router.push('/liability-form') },
           ]}
@@ -175,9 +179,31 @@ export default function LiabilitiesScreen() {
           ) : null}
         </Card>
 
-        {visibleLiabilities.map((liability) => liability.kind === 'recurring'
+        {inProgressLiabilities.map((liability) => liability.kind === 'recurring'
           ? <RecurringCard key={liability.id} liability={liability} asOf={asOf} extra={extra} />
           : <OneTimeCard key={liability.id} liability={liability} asOf={asOf} />)}
+        {completedLiabilities.length > 0 ? (
+          <View style={styles.completedSection}>
+            <Pressable
+              testID="liability-completed-toggle"
+              accessibilityRole="button"
+              accessibilityLabel={`Completed (${completedLiabilities.length})`}
+              accessibilityHint={completedExpanded ? 'Hides completed liabilities' : 'Shows completed liabilities'}
+              accessibilityState={{ expanded: completedExpanded }}
+              onPress={() => setCompletedExpanded((expanded) => !expanded)}
+              style={[styles.completedToggle, { borderColor: colors.border }]}>
+              <AppText weight="semibold" style={[typography.label, { color: colors.text1 }]}>
+                Completed ({completedLiabilities.length})
+              </AppText>
+              <AppText style={[typography.meta, { color: colors.text3 }]}>
+                {completedExpanded ? 'Hide' : 'Show'}
+              </AppText>
+            </Pressable>
+            {completedExpanded ? completedLiabilities.map((liability) => liability.kind === 'recurring'
+              ? <RecurringCard key={liability.id} liability={liability} asOf={asOf} extra={extra} />
+              : <OneTimeCard key={liability.id} liability={liability} asOf={asOf} />) : null}
+          </View>
+        ) : null}
         {visibleLiabilities.length === 0 && (normalizedQuery.length > 0 || data.liabilities.length > 0) ? (
           <View testID="liability-no-matches">
             <EmptyState title="No matches" />
@@ -330,7 +356,7 @@ function OneTimeCard({ liability, asOf }: { liability: OneTimeLiability; asOf: s
       <CardHeaderRow
         title={<AppText weight="semibold" style={typography.name}>{liability.name}</AppText>}
         subtitle={<AppText style={[typography.meta, { color: colors.text3 }]}>
-            {liability.type} · {liability.ratePct}% p.a. · Since {formatDate(liability.startDate)}
+            {financialTypeLabel(liability.type, liability.customTypeName)} · {liability.ratePct}% p.a. · Since {formatDate(liability.startDate)}
         </AppText>}
         value={<AmountText value={summary.balance} tier="tile" weight="bold" style={typography.amount} />}
       />
@@ -386,6 +412,18 @@ const styles = StyleSheet.create({
   rupee: { fontSize: 13 },
   extraInput: { minWidth: 82, paddingVertical: 6, fontSize: 13, textAlign: 'right', fontFamily: 'Montserrat_600SemiBold' },
   inputError: { marginTop: 5 },
+  completedSection: { marginTop: 8 },
+  completedToggle: {
+    minHeight: 48,
+    marginHorizontal: 20,
+    marginTop: 10,
+    paddingHorizontal: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   liabilityCard: { marginHorizontal: 20, marginTop: 12, padding: 14, borderWidth: StyleSheet.hairlineWidth, borderRadius: 14 },
   liabilityStatus: { marginTop: 8, lineHeight: 18 },
   scenario: { marginTop: 7 },

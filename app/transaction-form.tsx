@@ -4,8 +4,8 @@ import { useEffect, useMemo, useRef } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { StyleSheet, View } from 'react-native';
 
-import { ChoiceField } from '../src/components/form/ChoiceField';
 import { DateField } from '../src/components/form/DateField';
+import { FieldTitle } from '../src/components/form/FieldTitle';
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { MoneyField } from '../src/components/form/MoneyField';
@@ -22,12 +22,16 @@ import { isValidISO, monthKey, shiftMonth } from '../src/domain/dates';
 import { monthEndDate } from '../src/domain/cashFlow';
 import { customBudgetCategories } from '../src/domain/budget';
 import { budgetCategoryChoiceSections, budgetItemCategoriesForTransaction } from '../src/domain/budgetCategories';
+import { budgetGroupFor } from '../src/domain/budgetGroups';
 import { holdingCapabilities } from '../src/domain/holdingCapabilities';
 import { listInstruments } from '../src/domain/instruments';
 import { describeSource, investCategoryFor } from '../src/domain/links';
 import { suggestPolicyForTransaction } from '../src/domain/policySuggestions';
 import { holdingValue } from '../src/domain/portfolio';
+import { financialTypeLabel } from '../src/domain/typeLabels';
 import {
+  CUSTOM_EXPENSE_CATEGORY_SENTINEL,
+  CUSTOM_INCOME_CATEGORY_SENTINEL,
   INVESTMENT_FORM_CATEGORIES,
   makeTransactionFormSchema,
   TRANSACTION_CATEGORIES,
@@ -42,6 +46,17 @@ import { confirmAsync } from '../src/lib/confirm';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
+import { closeRouteSafely } from '../src/lib/routeParams';
+import {
+  incomeCategoriesForTransaction,
+  isTrustedSourcePackage,
+  sourceAppLabel,
+} from '../src/domain/transactionDetection';
+import { removeTransactionDraft } from '../src/lib/transactionDetectionDrafts';
+import { metaStore } from '../src/data/store';
+import { DEFAULT_TRANSACTION_DETECTION } from '../src/data/metaStore';
+import { useState } from 'react';
+
 const typeOptions = [
   { label: 'Expense', value: 'expense' },
   { label: 'Income', value: 'income' },
@@ -49,6 +64,8 @@ const typeOptions = [
 ] as const;
 const createInvestmentChoice = '__create-investment__';
 const noInvestmentChoice = '__no-investment__';
+const customExpenseCategory = CUSTOM_EXPENSE_CATEGORY_SENTINEL;
+const customIncomeCategory = CUSTOM_INCOME_CATEGORY_SENTINEL;
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
@@ -59,6 +76,10 @@ export default function TransactionFormScreen() {
     category?: string;
     amount?: string;
     date?: string;
+    note?: string;
+    draftId?: string;
+    reviewLatest?: string;
+    sourcePackage?: string;
     pending?: string;
   }>();
   const { id } = params;
@@ -71,6 +92,14 @@ export default function TransactionFormScreen() {
   const requestedCategoryParam = Array.isArray(params.category) ? params.category[0] : params.category;
   const requestedAmount = Array.isArray(params.amount) ? params.amount[0] : params.amount;
   const requestedDate = Array.isArray(params.date) ? params.date[0] : params.date;
+  const requestedNote = Array.isArray(params.note) ? params.note[0] : params.note;
+  const draftIdParam = Array.isArray(params.draftId) ? params.draftId[0] : params.draftId;
+  const reviewLatest = (Array.isArray(params.reviewLatest) ? params.reviewLatest[0] : params.reviewLatest) === '1';
+  const [hydratedDraftId, setHydratedDraftId] = useState<string | undefined>(draftIdParam);
+  const draftId = draftIdParam ?? hydratedDraftId;
+  const sourcePackageParam = Array.isArray(params.sourcePackage) ? params.sourcePackage[0] : params.sourcePackage;
+  const [hydratedSourcePackage, setHydratedSourcePackage] = useState<string | undefined>(sourcePackageParam);
+  const effectiveSourcePackage = sourcePackageParam ?? hydratedSourcePackage;
   const pendingParam = Array.isArray(params.pending) ? params.pending[0] : params.pending;
   const pendingMode = pendingParam === '1';
   const data = useAppStore((state) => state.data);
@@ -138,31 +167,38 @@ export default function TransactionFormScreen() {
       note: transaction.note,
       type: transaction.type,
       category: transaction.category,
+      customCategory: '',
       instrumentId: transaction.source?.kind === 'holding-entry' ? transaction.source.parentId : undefined,
       linkToPolicy: false,
     } : {
       amount: requestedAmount ?? '',
       date: requestedDate ?? today,
-      note: '',
+      note: requestedNote ?? '',
       type: initialType,
       category: (() => {
         const initialDate = requestedDate && isValidISO(requestedDate) ? requestedDate : today;
-        const categories = initialType === 'income'
-          ? TRANSACTION_CATEGORIES.income
-          : [
-            ...(initialType === 'invest' ? INVESTMENT_FORM_CATEGORIES : TRANSACTION_CATEGORIES.expense),
-            ...budgetItemCategoriesForTransaction(data, monthKey(initialDate), today, initialType),
-          ];
-        return requestedCategoryParam && categories.some((category) => category === requestedCategoryParam)
-          ? requestedCategoryParam
-          : categories[0] ?? '';
+        if (initialType === 'invest') return '';
+        if (initialType === 'income') {
+          const categories = incomeCategoriesForTransaction(data, monthKey(initialDate), today);
+          if (requestedCategoryParam && categories.some((category) => category === requestedCategoryParam)) {
+            return requestedCategoryParam;
+          }
+          return categories[0] ?? '';
+        }
+        if (requestedCategoryParam) {
+          return requestedCategoryParam;
+        }
+        const categories = budgetItemCategoriesForTransaction(data, monthKey(initialDate), today, 'expense');
+        return categories[0] ?? customExpenseCategory;
       })(),
+      customCategory: '',
       instrumentId: undefined,
       linkToPolicy: false,
     },
   });
   const selectedType = useWatch({ control, name: 'type' });
   const selectedCategory = useWatch({ control, name: 'category' });
+  const selectedCustomCategory = useWatch({ control, name: 'customCategory' }) ?? '';
   const selectedInstrumentId = useWatch({ control, name: 'instrumentId' });
   const selectedDate = useWatch({ control, name: 'date' }) ?? today;
   const selectedAmount = useWatch({ control, name: 'amount' }) ?? '';
@@ -196,9 +232,16 @@ export default function TransactionFormScreen() {
   const selectedInstrument = instruments.find((item) => item.id === selectedInstrumentId);
   const isWithdrawalForm = selectedType === 'income' && selectedCategory === 'Withdrawal';
   const linkedEditable = linkedInstrument && transaction?.source !== undefined;
+  const selectedMonth = isValidISO(selectedDate) ? monthKey(selectedDate) : monthKey(today);
+  const dynamicIncomeCategories = useMemo(
+    () => incomeCategoriesForTransaction(data, selectedMonth, today),
+    [data, selectedMonth, today],
+  );
   const standardCategories = selectedType === 'invest'
     ? INVESTMENT_FORM_CATEGORIES
-    : TRANSACTION_CATEGORIES[selectedType];
+    : selectedType === 'income'
+      ? dynamicIncomeCategories
+      : TRANSACTION_CATEGORIES[selectedType];
   const choices = [
     ...standardCategories,
     ...(transaction?.type === selectedType && !(standardCategories as readonly string[]).includes(transaction.category)
@@ -215,7 +258,7 @@ export default function TransactionFormScreen() {
     ...(pendingMode || (transaction?.type === 'invest' && !transaction.source) ? [noInvestmentChoice] : []),
   ];
   const instrumentLabels = Object.fromEntries([
-    ...depositInstruments.map((item) => [item.id, `${item.name} (${item.type})`]),
+    ...depositInstruments.map((item) => [item.id, `${item.name} (${financialTypeLabel(item.type, item.customTypeName)})`]),
     [createInvestmentChoice, '+ Create new investment'],
     [noInvestmentChoice, 'Not linked'],
   ]);
@@ -227,12 +270,15 @@ export default function TransactionFormScreen() {
   const derivedCategory = selectedInstrument
     ? investCategoryFor(selectedInstrument.type)
     : transaction?.category ?? '';
-  const selectedMonth = isValidISO(selectedDate) ? monthKey(selectedDate) : monthKey(today);
   const categorySections = useMemo(
     () => selectedType === 'income'
       ? []
-      : budgetCategoryChoiceSections(data, selectedMonth, today, selectedType),
-    [data, selectedMonth, selectedType, today],
+      : budgetCategoryChoiceSections(data, selectedMonth, today, selectedType, undefined, {
+        limitExpenseToCreatedOrApplicable: selectedType === 'expense',
+        existingCategory: (transaction?.type === 'expense' ? transaction.category : undefined)
+          ?? (requestedCategoryParam && requestedCategoryParam !== customExpenseCategory ? requestedCategoryParam : undefined),
+      }),
+    [data, requestedCategoryParam, selectedMonth, selectedType, today, transaction],
   );
   const maxTransactionDate = monthEndDate(shiftMonth(monthKey(today), 24));
   const categoryOptions: DropdownOption[] = categorySections.flatMap((section) =>
@@ -242,15 +288,33 @@ export default function TransactionFormScreen() {
       group: section.name,
     })),
   );
-  for (const category of choices) {
-    if (!categoryOptions.some((option) => option.value === category)) {
+  if (selectedType === 'expense' && !categoryOptions.some((option) => option.value === customExpenseCategory)) {
+    categoryOptions.push({ value: customExpenseCategory, title: 'Custom' });
+  }
+  if (selectedType !== 'expense') {
+    for (const category of choices) {
+      if (!categoryOptions.some((option) => option.value === category)) {
+        categoryOptions.push({
+          value: category,
+          title: transactionCategoryLabel(category, selectedType ?? 'expense', customCategories),
+          group: 'Other',
+        });
+      }
+    }
+  } else {
+    const extraCategory = (transaction?.type === 'expense' ? transaction.category : undefined)
+      ?? (requestedCategoryParam && requestedCategoryParam !== customExpenseCategory ? requestedCategoryParam : undefined);
+    if (extraCategory && !categoryOptions.some((option) => option.value === extraCategory)) {
       categoryOptions.push({
-        value: category,
-        title: transactionCategoryLabel(category, selectedType ?? 'expense', customCategories),
-        group: 'Other',
+        value: extraCategory,
+        title: transactionCategoryLabel(extraCategory, 'expense', customCategories),
+        group: budgetGroupFor(extraCategory)?.name ?? 'Other',
       });
     }
   }
+  const selectedBudgetSection = categorySections.find((section) =>
+    section.categories.some((choice) => choice.category === selectedCategory),
+  )?.name;
 
   const save = async (values: TransactionFormOutput) => {
     const { instrumentId, linkToPolicy: shouldLinkPolicy, ...transactionValues } = values;
@@ -293,7 +357,30 @@ export default function TransactionFormScreen() {
       : store.data.transactions.at(-1);
     if (!saved) return;
     setTxMonth(monthKey(saved.date));
+    if (draftId) {
+      await removeTransactionDraft(draftId);
+      closeRouteSafely('/(tabs)');
+      return;
+    }
     router.back();
+  };
+
+  const dismissDraft = () => {
+    closeRouteSafely('/(tabs)');
+  };
+
+  const discardDraft = () => {
+    if (!draftId) return;
+    void confirmAsync({
+      title: 'Discard detected draft?',
+      message: 'Remove this detected draft without creating a transaction?',
+      confirmLabel: 'Discard',
+      destructive: true,
+    }).then(async (confirmed) => {
+      if (!confirmed) return;
+      await removeTransactionDraft(draftId);
+      closeRouteSafely('/(tabs)');
+    });
   };
 
   const submitFromPress = () => {
@@ -321,9 +408,31 @@ export default function TransactionFormScreen() {
     });
   };
 
+  useEffect(() => {
+    if ((!draftIdParam && !reviewLatest) || editing || requestedAmount) return;
+    let active = true;
+    void metaStore.getMeta().then((meta) => {
+      if (!active) return;
+      const pendingDrafts = (meta.transactionDetection ?? DEFAULT_TRANSACTION_DETECTION).pendingDrafts;
+      const draft = draftIdParam
+        ? pendingDrafts.find((candidate) => candidate.id === draftIdParam)
+        : pendingDrafts[0];
+      if (!draft) return;
+      setHydratedDraftId(draft.id);
+      setValue('type', draft.type, { shouldDirty: false });
+      setValue('amount', String(draft.amount), { shouldDirty: false });
+      setValue('date', draft.date, { shouldDirty: false });
+      setValue('note', draft.suggestedNote, { shouldDirty: false });
+      setHydratedSourcePackage(draft.sourcePackage);
+    });
+    return () => {
+      active = false;
+    };
+  }, [draftIdParam, editing, requestedAmount, reviewLatest, setValue]);
+
   if (editing && !transaction) {
     return (
-      <FormScreen title="Transaction" onClose={() => router.back()} isDirty={false} footer={null}>
+      <FormScreen title="Transaction" onClose={() => closeRouteSafely('/(tabs)/transactions')} isDirty={false} footer={null}>
         <EmptyState title="Transaction not found" subtitle="It may have been deleted. Return to your transactions to continue." />
       </FormScreen>
     );
@@ -338,11 +447,13 @@ export default function TransactionFormScreen() {
   return (
     <FormScreen
       title="Transaction"
-      onClose={() => router.back()}
+      onClose={() => (draftId ? closeRouteSafely('/(tabs)') : router.back())}
       isDirty={isDirty}
       headerAction={transactionId && (!transaction?.source || linkedEditable)
         ? { label: 'Delete transaction', onPress: remove }
-        : undefined}
+        : draftId && !editing
+          ? { label: 'Discard draft', onPress: discardDraft }
+          : undefined}
       footer={
         <View style={styles.footerActions}>
           {submitCount > 0 && errorCount > 0 ? (
@@ -351,6 +462,15 @@ export default function TransactionFormScreen() {
                 Fix {errorCount} {errorCount === 1 ? 'field' : 'fields'}
               </AppText>
             </View>
+          ) : null}
+          {draftId && !editing ? (
+            <Button
+              label="Dismiss"
+              variant="soft"
+              disabled={isSubmitting}
+              accessibilityLabel="Dismiss draft"
+              onPress={dismissDraft}
+            />
           ) : null}
           <Button
             label="Save"
@@ -365,6 +485,12 @@ export default function TransactionFormScreen() {
       }>
       <>
         <FormErrorBanner message={lastError} />
+        {draftId && effectiveSourcePackage ? (
+          <ReadOnlyRow
+            label="Detected from"
+            value={`${sourceAppLabel(effectiveSourcePackage)} (${isTrustedSourcePackage(effectiveSourcePackage) ? 'Trusted' : 'Unverified'})`}
+          />
+        ) : null}
         {transaction?.source ? (
           <>
             <ReadOnlyRow
@@ -412,8 +538,10 @@ export default function TransactionFormScreen() {
                       field.onChange(type);
                       if (type !== 'invest') setValue('instrumentId', undefined, { shouldDirty: true, shouldValidate: true });
                       const categories = type === 'invest' ? INVESTMENT_FORM_CATEGORIES : TRANSACTION_CATEGORIES[type];
-                      if (!categories.some((value) => value === category)) {
-                        setValue('category', categories[0], { shouldDirty: true, shouldValidate: true });
+                      if (type === 'invest') {
+                        setValue('category', '', { shouldDirty: true, shouldValidate: true });
+                      } else if (!categories.some((value) => value === category)) {
+                        setValue('category', categories[0] ?? '', { shouldDirty: true, shouldValidate: true });
                       }
                     }}
                   />
@@ -429,7 +557,9 @@ export default function TransactionFormScreen() {
               control={control}
               name="amount"
               render={({ field }) => (
-                <MoneyField value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.amount?.message} />
+                <FieldTitle title="Amount">
+                  <MoneyField value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.amount?.message} />
+                </FieldTitle>
               )}
             />
             {!transaction?.source && selectedType === 'invest' ? (
@@ -438,11 +568,14 @@ export default function TransactionFormScreen() {
                   control={control}
                   name="instrumentId"
                   render={({ field }) => (
-                    <ChoiceField
+                    <Dropdown
                       label={transaction ? 'Link to an investment (optional)' : 'Invest in'}
+                      accessibilityLabel={transaction ? 'Link to an investment' : 'Invest in'}
                       value={field.value ?? ''}
-                      choices={effectiveInstrumentChoices}
-                      choiceLabels={effectiveInstrumentLabels}
+                      options={effectiveInstrumentChoices.map((id) => ({
+                        value: id,
+                        title: effectiveInstrumentLabels[id] ?? id,
+                      }))}
                       onChange={(id) => {
                         if (id === createInvestmentChoice) {
                           router.push({ pathname: '/investment-form', params: { fromTransaction: '1' } });
@@ -471,31 +604,87 @@ export default function TransactionFormScreen() {
                 name="category"
                 render={({ field }) => (
                   selectedType === 'expense' ? (
-                    <Dropdown
-                      label="Category"
-                      accessibilityLabel="Category"
-                      value={field.value}
-                      options={categoryOptions}
-                      onChange={(value) => {
-                        field.onChange(value);
-                        setValue('instrumentId', undefined, { shouldDirty: true, shouldValidate: true });
-                      }}
-                      error={errors.category?.message}
-                    />
+                    <>
+                      <Dropdown
+                        label="Category"
+                        accessibilityLabel="Category"
+                        value={field.value}
+                        options={categoryOptions}
+                        onChange={(value) => {
+                          field.onChange(value);
+                          setValue('customCategory', '', { shouldDirty: true, shouldValidate: true });
+                          setValue('instrumentId', undefined, { shouldDirty: true, shouldValidate: true });
+                        }}
+                        error={errors.category?.message}
+                      />
+                      {field.value === customExpenseCategory ? (
+                        <Controller
+                          control={control}
+                          name="customCategory"
+                          render={({ field: customField }) => (
+                            <FieldTitle title="Custom category">
+                              <TextField
+                                label="Custom category"
+                                accessibilityLabel="Custom category"
+                                value={customField.value ?? ''}
+                                onChangeText={customField.onChange}
+                                onBlur={customField.onBlur}
+                                placeholder="Enter a category"
+                                maxLength={30}
+                                error={errors.customCategory?.message}
+                              />
+                            </FieldTitle>
+                          )}
+                        />
+                      ) : null}
+                      <ReadOnlyRow
+                        label="Budget section"
+                        value={field.value === customExpenseCategory
+                          ? selectedCustomCategory.trim() ? 'Custom category' : 'Choose a custom category'
+                          : selectedBudgetSection ?? 'Other (not in budget)'}
+                      />
+                    </>
                   ) : (
-                    <ChoiceField
-                      label="Category"
-                      value={field.value}
-                      choices={choices}
-                      choiceLabels={Object.fromEntries(choices.map((category) => [
-                        category, transactionCategoryLabel(category, selectedType, customCategories),
-                      ]))}
-                      onChange={(value) => {
-                        field.onChange(value);
-                        if (value !== 'Withdrawal') setValue('instrumentId', undefined, { shouldDirty: true, shouldValidate: true });
-                      }}
-                      error={errors.category?.message}
-                    />
+                    <>
+                      <Dropdown
+                        label="Category"
+                        accessibilityLabel="Category"
+                        value={field.value}
+                        options={[
+                          ...choices.map((category) => ({
+                            value: category,
+                            title: transactionCategoryLabel(category, selectedType, customCategories),
+                          })),
+                          ...(selectedType === 'income' ? [{ value: customIncomeCategory, title: 'Custom' }] : []),
+                        ]}
+                        onChange={(value) => {
+                          field.onChange(value);
+                          setValue('customCategory', '', { shouldDirty: true, shouldValidate: true });
+                          if (value !== 'Withdrawal') setValue('instrumentId', undefined, { shouldDirty: true, shouldValidate: true });
+                        }}
+                        error={errors.category?.message}
+                      />
+                      {selectedType === 'income' && field.value === customIncomeCategory ? (
+                        <Controller
+                          control={control}
+                          name="customCategory"
+                          render={({ field: customField }) => (
+                            <FieldTitle title="Custom income category">
+                              <TextField
+                                label="Custom income category"
+                                accessibilityLabel="Custom income category"
+                                value={customField.value ?? ''}
+                                onChangeText={customField.onChange}
+                                onBlur={customField.onBlur}
+                                placeholder="Enter an income category"
+                                maxLength={60}
+                                error={errors.customCategory?.message}
+                              />
+                            </FieldTitle>
+                          )}
+                        />
+                      ) : null}
+                    </>
                   )
                 )}
               />
@@ -518,11 +707,14 @@ export default function TransactionFormScreen() {
                 control={control}
                 name="instrumentId"
                 render={({ field }) => (
-                  <ChoiceField
+                  <Dropdown
                     label={isWithdrawalForm ? 'Withdraw from' : transaction ? 'Move to investment' : 'Invest in'}
+                    accessibilityLabel={isWithdrawalForm ? 'Withdraw from' : transaction ? 'Move to investment' : 'Invest in'}
                     value={field.value ?? ''}
-                    choices={effectiveInstrumentChoices}
-                    choiceLabels={effectiveInstrumentLabels}
+                    options={effectiveInstrumentChoices.map((id) => ({
+                      value: id,
+                      title: effectiveInstrumentLabels[id] ?? id,
+                    }))}
                     onChange={(value) => {
                       field.onChange(value);
                       const item = instruments.find((candidate) => candidate.id === value);
@@ -537,7 +729,7 @@ export default function TransactionFormScreen() {
               control={control}
               name="date"
               render={({ field }) => (
-                <DateField value={field.value} onChange={field.onChange} maximumDate={maxTransactionDate} error={errors.date?.message} />
+                <DateField label="Date" value={field.value} onChange={field.onChange} maximumDate={maxTransactionDate} error={errors.date?.message} />
               )}
             />
           </>
@@ -546,16 +738,18 @@ export default function TransactionFormScreen() {
           control={control}
           name="note"
           render={({ field }) => (
-            <TextField
-              label="Note (optional)"
-              value={field.value}
-              onChangeText={field.onChange}
-              onBlur={field.onBlur}
-              placeholder="Add a note"
-              accessibilityLabel="Transaction note"
-              maxLength={61}
-              error={errors.note?.message}
-            />
+            <FieldTitle title="Note (optional)">
+              <TextField
+                label="Note (optional)"
+                value={field.value}
+                onChangeText={field.onChange}
+                onBlur={field.onBlur}
+                placeholder="Add a note"
+                accessibilityLabel="Transaction note"
+                maxLength={61}
+                error={errors.note?.message}
+              />
+            </FieldTitle>
           )}
         />
       </>

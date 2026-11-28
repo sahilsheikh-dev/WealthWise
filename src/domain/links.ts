@@ -73,12 +73,16 @@ export function findLinkedTransaction(
 
 export function investCategoryFor(
   type: HoldingType,
-): 'Mutual fund / SIP' | 'Stocks / ETF' | 'Fixed deposit / RD' | 'Gold / Silver' | 'Other investments' {
+): 'Mutual fund / SIP' | 'Stocks / ETF' | 'Real estate' | 'Fixed deposit / RD' | 'Gold / Silver' | 'Other investments' {
   switch (type) {
     case 'Mutual fund / SIP':
       return 'Mutual fund / SIP';
     case 'Stocks / ETF':
       return 'Stocks / ETF';
+    case 'Real estate':
+      return 'Real estate';
+    case 'Custom':
+      return 'Other investments';
     case 'Fixed deposit':
     case 'Recurring deposit':
       return 'Fixed deposit / RD';

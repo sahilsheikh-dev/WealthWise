@@ -16,7 +16,7 @@ import {
   addLiability, addLiabilityPayment, closeRecurringLiability, deleteLiability, deleteLiabilityPayment, updateLiability, updateLiabilityPayment,
   type AddLiabilityInput, type CloseLiabilityInput, type LiabilityPatch, type LiabilityPaymentPatch,
 } from '../domain/liabilityActions';
-import { addGoal, deleteGoal, updateGoal, type AddGoalInput, type GoalPatch } from '../domain/goalActions';
+import { addGoal, deleteGoal, updateEmergencyFundTarget, updateGoal, type AddGoalInput, type GoalPatch } from '../domain/goalActions';
 import {
   addPolicy as addPolicyData,
   deletePolicy as deletePolicyData,
@@ -51,7 +51,7 @@ import {
   type LinkedTransactionPatch,
 } from '../domain/instruments';
 import { validateIntegrity } from '../domain/links';
-import { monthlyBaseline } from '../domain/ef';
+import { emergencyFundBaseline, monthlyBaseline } from '../domain/ef';
 import { ensureEfGoal } from '../domain/goals';
 import {
   repairEfLinkedHoldings,
@@ -82,6 +82,7 @@ import {
   setBudgetPlan,
   setBudgetRepeat,
 } from '../domain/budget';
+import { reconcileBudgetItemTransactions } from '../domain/budgetCategories';
 import { resolveEfAllocation, type EfAllocation } from '../domain/efAllocation';
 import {
   addLiabilityWithHistory,
@@ -93,13 +94,14 @@ import {
   clearPastDues,
   undoClearDue,
   undoClearDuesThrough,
+  type ClearDueTarget,
   type AddPolicyInput,
   type DueTarget,
   type PastDuesMode,
 } from '../domain/dues';
 import { appDataSchema, SCHEMA_VERSION } from '../domain/schemas';
 import { buildDemoData } from '../mock/demoData';
-import { createStressData, type StressYears } from '../domain/stressData';
+import type { StressYears } from '../domain/stressData';
 import type {
   AppData, BudgetIncomeItem, BudgetItem, BudgetPlan, BudgetSection, GoalLink, Holding, ISODate, LiabilityPayment, MonthBudget, PolicyPayment, Settings, Transaction,
 } from '../domain/types';
@@ -137,14 +139,14 @@ export type AppActions = {
   addInvestmentEntry: (holdingId: string, input: InvestmentEntryInput) => void;
   updateInvestmentEntry: (holdingId: string, entryId: string, patch: InvestmentEntryPatch) => void;
   deleteInvestmentEntry: (holdingId: string, entryId: string) => void;
-  clearDue: (target: DueTarget, rowId?: string, actualAmount?: number) => string | undefined;
-  clearDuesThrough: (target: DueTarget, dueDate: ISODate, actualAmount?: number) => string[] | undefined;
+  clearDue: (target: ClearDueTarget, rowId?: string, actualAmount?: number, note?: string, date?: ISODate) => string | undefined;
+  clearDuesThrough: (target: DueTarget, dueDate: ISODate, actualAmount?: number, date?: ISODate) => string[] | undefined;
   clearPastDues: (target: DueTarget, options: {
     mode: 'settle' | 'record';
     balance?: number;
     addSkippedToOpening?: boolean;
   }) => { count: number; amount: number; months: { month: string; amount: number }[] } | undefined;
-  undoClearDue: (target: DueTarget, entryId: string) => void;
+  undoClearDue: (target: ClearDueTarget, entryId: string) => void;
   undoClearDuesThrough: (target: DueTarget, entryIds: string[]) => void;
   addPlanWithHistory: (input: AddPlanInput, mode: PastDuesMode, addSkippedToOpening?: boolean) => void;
   addLiabilityWithHistory: (input: AddLiabilityInput, mode: PastDuesMode, balance?: number) => void;
@@ -162,6 +164,7 @@ export type AppActions = {
   deleteLiabilityPayment: (liabilityId: string, paymentId: string) => void;
   addGoal: (input: AddGoalInput) => void;
   updateGoal: (id: string, patch: GoalPatch) => void;
+  setEmergencyFundTarget: (target: number) => void;
   setGoalLinks: (goalId: string, links: GoalLink[]) => void;
   fundShortfall: (month: string, allocations: ShortfallAllocation[]) => void;
   allocateSurplus: (date: ISODate, allocations: SurplusAllocation[]) => void;
@@ -201,6 +204,8 @@ export type AppActions = {
   updateSettings: (patch: Partial<Settings>) => void;
   completeOnboarding: (profile: { name: string; monthlySalary: number | null }) => void;
   dismissStorageError: () => void;
+  reportStorageWarning: (message: string) => void;
+  dismissStorageWarning: () => void;
   resolveRecovery: (action: 'start-fresh') => void;
   retryHydration: () => void;
   getCorruptBackup: () => Promise<string | null>;
@@ -224,6 +229,7 @@ export type AppStoreState = {
   status: 'loading' | 'ready' | 'recovery';
   recoveryReason: 'corrupt' | 'newer-version' | 'read-error' | null;
   storageError: string | null;
+  storageWarning: string | null;
   lastError: string | null;
   undoImport: { savedAt: ISODate } | null;
   actions: AppActions;
@@ -248,16 +254,19 @@ export function createAppStore(
   let useStore: UseBoundStore<StoreApi<AppStoreState>> | undefined;
   let corruptionReason: 'corrupt' | 'newer-version' | 'read-error' | null = null;
   let suppressNextWrite = false;
+  const setTransientState = (patch: Partial<AppStoreState>) => {
+    suppressNextWrite = true;
+    try {
+      useStore?.setState(patch);
+    } finally {
+      suppressNextWrite = false;
+    }
+  };
   const safeStorage = createSafeStorage(
     storage,
     {
       onWriteError: (message) => {
-        suppressNextWrite = true;
-        try {
-          useStore?.setState({ storageError: message });
-        } finally {
-          suppressNextWrite = false;
-        }
+        setTransientState({ storageError: message });
       },
       onCorrupt: ({ reason }) => {
         corruptionReason = reason === 'newer-version' ? 'newer-version' : 'corrupt';
@@ -333,7 +342,8 @@ export function createAppStore(
             ...importedData,
             goals: ensureEfGoal(importedData.goals, { expenseBaseline, asOf: today }),
           };
-        set({ data, undoImport: { savedAt: today }, lastError: null });
+        const reconciled = reconcileBudgetItemTransactions(data);
+        set({ data: reconciled, undoImport: { savedAt: today }, lastError: null });
         return { ok: true as const };
       };
       const actions: AppActions = {
@@ -412,25 +422,26 @@ export function createAppStore(
             'Investment entry deleted.',
           );
         },
-        clearDue(target, rowId, actualAmount) {
+        clearDue(target, rowId, actualAmount, note, date) {
           let entryId: string | undefined;
           applyDataAction((data) => {
             const result = clearDue(data, target, {
-              date: deps.today(),
+              date: date ?? deps.today(),
               newId: deps.newId,
               ...(rowId ? { rowId } : {}),
               ...(actualAmount !== undefined ? { actualAmount } : {}),
+              ...(note !== undefined ? { note } : {}),
             });
             entryId = result.entryId;
             return result.data;
           });
           return entryId;
         },
-        clearDuesThrough(target, dueDate, actualAmount) {
+        clearDuesThrough(target, dueDate, actualAmount, date) {
           let entryIds: string[] | undefined;
           applyDataAction((data) => {
             const result = clearDuesThrough(data, target, dueDate, {
-              date: deps.today(),
+              date: date ?? deps.today(),
               newId: deps.newId,
               ...(actualAmount !== undefined ? { actualAmount } : {}),
             });
@@ -535,6 +546,11 @@ export function createAppStore(
           applyDataAction((data) => updateGoal(data, id, patch, {
             expenseBaseline: monthlyBaseline(data.transactions, 'expense', deps.today()),
           }));
+        },
+        setEmergencyFundTarget(target) {
+          applyDataActionWithUndo((data) => updateEmergencyFundTarget(data, target, {
+            expenseBaseline: emergencyFundBaseline(data.transactions, data.settings.monthlySalary, deps.today()).amount,
+          }), 'Emergency fund target updated');
         },
         setGoalLinks(goalId, links) {
           applyDataAction((data) => setGoalLinks(data, goalId, links));
@@ -648,15 +664,22 @@ export function createAppStore(
           applyDataAction((data) => setEfBucketLinks(data, bucketId, holdingIds));
         },
         saveEfPlan(plan) {
-          applyDataAction((data) => saveEfPlan(data, plan, deps.newId));
+          applyDataActionWithUndo((data) => saveEfPlan(data, plan, deps.newId, {
+            expenseBaseline: emergencyFundBaseline(
+              data.transactions,
+              data.settings.monthlySalary,
+              deps.today(),
+            ).amount,
+          }), 'Emergency fund updated');
         },
         dismissStorageError() {
-          suppressNextWrite = true;
-          try {
-            set({ storageError: null });
-          } finally {
-            suppressNextWrite = false;
-          }
+          setTransientState({ storageError: null });
+        },
+        reportStorageWarning(message) {
+          setTransientState({ storageWarning: message });
+        },
+        dismissStorageWarning() {
+          setTransientState({ storageWarning: null });
         },
         resolveRecovery(action) {
           if (action !== 'start-fresh') return;
@@ -758,6 +781,9 @@ export function createAppStore(
             await storage.removeItem(`${PERSIST_NAME}.premigration.v18`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v19`);
             await storage.removeItem(`${PERSIST_NAME}.premigration.v20`);
+            await storage.removeItem(`${PERSIST_NAME}.premigration.v21`);
+            await storage.removeItem(`${PERSIST_NAME}.premigration.v22`);
+            await storage.removeItem(`${PERSIST_NAME}.premigration.v23`);
             await storage.removeItem(`${PERSIST_NAME}.prerepair-efallocation`);
             await storage.removeItem(PREIMPORT_KEY);
             await storage.removeItem(`${PERSIST_NAME}.corrupt.latest`);
@@ -785,6 +811,7 @@ export function createAppStore(
         status: 'loading',
         recoveryReason: null,
         storageError: null,
+        storageWarning: null,
         lastError: null,
         undoImport: null,
         actions,
@@ -794,37 +821,42 @@ export function createAppStore(
               return actions.replaceAllData(buildDemoData(deps.today()));
             },
             async loadStressData(years, dense = false) {
-              const startedAt = deps.now?.() ?? Date.now();
-              const data = createStressData({
-                today: deps.today(),
-                years,
-                seed: 0x29_51_0,
-                newId: deps.newId,
-                dense,
-              });
-              const validated = appDataSchema.safeParse(data);
-              if (!validated.success) {
-                const issue = validated.error.issues[0];
-                return {
-                  ok: false,
-                  message: issue ? `Stress fixture validation failed at ${issue.path.join('.')}: ${issue.message}` : 'Stress fixture validation failed.',
-                };
+              if (__DEV__) {
+                const startedAt = deps.now?.() ?? Date.now();
+                // eslint-disable-next-line @typescript-eslint/no-require-imports
+                const stressModule = require('../domain/stressData') as typeof import('../domain/stressData');
+                const data = stressModule.createStressData({
+                  today: deps.today(),
+                  years,
+                  seed: 0x29_51_0,
+                  newId: deps.newId,
+                  dense,
+                });
+                const validated = appDataSchema.safeParse(data);
+                if (!validated.success) {
+                  const issue = validated.error.issues[0];
+                  return {
+                    ok: false,
+                    message: issue ? `Stress fixture validation failed at ${issue.path.join('.')}: ${issue.message}` : 'Stress fixture validation failed.',
+                  };
+                }
+                const integrityIssues = validateIntegrity(validated.data);
+                if (integrityIssues.length > 0) {
+                  const issue = integrityIssues[0];
+                  return {
+                    ok: false,
+                    message: issue
+                      ? `Stress fixture integrity failed at ${issue.path.join('.')}: ${issue.message}`
+                      : 'Stress fixture integrity failed.',
+                  };
+                }
+                const result = await replaceDataWithUndo(validated.data);
+                if (!result.ok) return result;
+                const persistWrite = latestPersistWrite;
+                await persistWrite;
+                return { ok: true, loadMs: (deps.now?.() ?? Date.now()) - startedAt };
               }
-              const integrityIssues = validateIntegrity(validated.data);
-              if (integrityIssues.length > 0) {
-                const issue = integrityIssues[0];
-                return {
-                  ok: false,
-                  message: issue
-                    ? `Stress fixture integrity failed at ${issue.path.join('.')}: ${issue.message}`
-                    : 'Stress fixture integrity failed.',
-                };
-              }
-              const result = await replaceDataWithUndo(validated.data);
-              if (!result.ok) return result;
-              const persistWrite = latestPersistWrite;
-              await persistWrite;
-              return { ok: true, loadMs: (deps.now?.() ?? Date.now()) - startedAt };
+              return { ok: false, message: 'Stress fixtures are only available in development.' };
             },
             async simulateCorruption() {
               await storage.setItem('wealthwise.app.v1', '{not json');
@@ -885,6 +917,7 @@ export function createAppStore(
         }
         const today = deps.today();
         data = ensureCurrentMonthBudget(data, today, deps.newId);
+        data = reconcileBudgetItemTransactions(data);
         let undoImport: { savedAt: ISODate } | null = null;
         try {
           const rawSnapshot = await storage.getItem(PREIMPORT_KEY);

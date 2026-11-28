@@ -6,6 +6,7 @@ import { z } from 'zod';
 
 import { Dropdown, type DropdownOption } from '../src/components/Dropdown';
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
+import { FieldTitle } from '../src/components/form/FieldTitle';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { ReadOnlyRow } from '../src/components/form/ReadOnlyRow';
 import { SwitchRow } from '../src/components/form/SwitchRow';
@@ -18,6 +19,8 @@ import type { EfCustomBucket } from '../src/domain/types';
 import { confirmAsync } from '../src/lib/confirm';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
+
+import { closeRouteSafely } from '../src/lib/routeParams';
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
@@ -146,7 +149,7 @@ export default function EfBucketFormScreen() {
 
   if (editing && !bucket) {
     return (
-      <FormScreen title="Allocation item" onClose={() => router.back()} footer={null}>
+      <FormScreen title="Allocation item" onClose={() => closeRouteSafely('/emergency-fund')} footer={null}>
         <EmptyState title="Allocation item not found" />
       </FormScreen>
     );
@@ -172,15 +175,17 @@ export default function EfBucketFormScreen() {
         <ReadOnlyRow label="Title" value={bucketLabel} />
       ) : (
         <Controller control={control} name="name" render={({ field }) => (
-          <TextField
-            label="Title"
-            accessibilityLabel="Allocation item title"
-            maxLength={24}
-            value={field.value}
-            onChangeText={field.onChange}
-            onBlur={field.onBlur}
-            error={errors.name?.message}
-          />
+          <FieldTitle title="Title">
+            <TextField
+              label="Title"
+              accessibilityLabel="Allocation item title"
+              maxLength={24}
+              value={field.value}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              error={errors.name?.message}
+            />
+          </FieldTitle>
         )} />
       )}
       {isFixed ? (

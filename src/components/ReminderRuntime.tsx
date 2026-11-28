@@ -1,6 +1,6 @@
-import { router, usePathname } from 'expo-router';
+import { router, usePathname, type Href } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, AppState } from 'react-native';
+import { Alert, AppState, Platform } from 'react-native';
 
 import { useSecuritySettings } from './SecurityProvider';
 import { metaStore, useAppStore } from '../data/store';
@@ -14,6 +14,15 @@ import {
   reminderNotificationAdapter,
   type NotificationResponseEnvelope,
 } from '../lib/reminderNotifications';
+import { notificationListenerAdapter } from '../lib/notificationListener';
+import {
+  buildDraftFormRoute,
+  ensureTransactionDraftNotificationCategory,
+  ingestDetectedNotifications,
+  loadPendingDraftById,
+  postGenericDraftReviewNotification,
+  syncNativeDetectionConfig,
+} from '../lib/transactionDetectionRuntime';
 import { reminderScheduler } from '../lib/reminderRuntime';
 import { MAX_SCHEDULED_REMINDERS } from '../lib/reminderScheduler';
 import { useUIStore } from '../data/uiStore';
@@ -98,14 +107,29 @@ export function NotificationResponseHandler() {
   const handleResponse = useCallback((response: NotificationResponseEnvelope) => {
     if (handledResponseId.current === response.identifier) return;
     handledResponseId.current = response.identifier;
-    const target = reminderTarget(response.data);
-    if (target) {
-      if (target.dueItemId === 'update-values') router.push('/assets');
-      else {
-        router.push({
-          pathname: '/payment-confirm',
-          params: { dueItemId: target.dueItemId, dueDate: target.dueDate },
+    if (isRecord(response.data) && response.data.type === 'wealthwise-transaction-draft') {
+      const draftId = typeof response.data.draftId === 'string' ? response.data.draftId : undefined;
+      if (draftId) {
+        void loadPendingDraftById(draftId).then((draft) => {
+          router.push(
+            (draft
+              ? buildDraftFormRoute(draft)
+              : { pathname: '/transaction-form', params: { draftId } }) as Href,
+          );
         });
+      } else {
+        router.push({ pathname: '/transaction-form', params: { reviewLatest: '1' } } as Href);
+      }
+    } else {
+      const target = reminderTarget(response.data);
+      if (target) {
+        if (target.dueItemId === 'update-values') router.push('/assets');
+        else {
+          router.push({
+            pathname: '/payment-confirm',
+            params: { dueItemId: target.dueItemId, dueDate: target.dueDate },
+          });
+        }
       }
     }
     void reminderNotificationAdapter.clearLastResponse().catch((error: unknown) => {
@@ -128,6 +152,64 @@ export function NotificationResponseHandler() {
     });
     return removeListener;
   }, [handleResponse]);
+
+  return null;
+}
+
+export function TransactionDetectionRuntime() {
+  const status = useAppStore((state) => state.status);
+  const pathname = usePathname();
+  const pathnameRef = useRef(pathname);
+
+  useEffect(() => {
+    pathnameRef.current = pathname;
+  }, [pathname]);
+
+  useEffect(() => {
+    if (status !== 'ready' || Platform.OS !== 'android') return undefined;
+    void ensureTransactionDraftNotificationCategory();
+    void syncNativeDetectionConfig();
+
+    const drain = async () => {
+      const events = await notificationListenerAdapter.drainQueuedEvents();
+      if (events.length === 0) return;
+      const { addedDrafts } = await ingestDetectedNotifications(events);
+      const firstDraft = addedDrafts[0];
+      if (
+        firstDraft
+        && AppState.currentState === 'active'
+        && pathnameRef.current !== '/transaction-form'
+      ) {
+        router.push(buildDraftFormRoute(firstDraft) as Href);
+      }
+    };
+    void drain();
+
+    const unsubApp = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') {
+        void drain();
+      }
+    });
+
+    const unsubEvents = notificationListenerAdapter.subscribeLiveEvents((event) => {
+      void ingestDetectedNotifications([event]).then(async ({ addedDrafts }) => {
+        const firstDraft = addedDrafts[0];
+        if (!firstDraft) return;
+        if (AppState.currentState === 'active') {
+          if (pathnameRef.current !== '/transaction-form') {
+            router.push(buildDraftFormRoute(firstDraft) as Href);
+          }
+        } else {
+          await postGenericDraftReviewNotification(firstDraft.id);
+        }
+      });
+    });
+
+    return () => {
+      unsubApp.remove();
+      unsubEvents();
+    };
+  }, [status]);
 
   return null;
 }

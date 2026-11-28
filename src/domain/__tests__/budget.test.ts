@@ -37,9 +37,11 @@ import {
   MissingPlannedIncomeError,
   monthlyCommitments,
   isItemDueInMonth,
+  isIncomeDueInMonth,
   nextDueMonth,
   outstandingAt,
   plannedForMonth,
+  plannedIncomeOf,
   projectedCashFlow,
   renameSection,
   resolveBudgetPlan,
@@ -95,6 +97,31 @@ const quarterlyPolicy: Policy = {
 };
 
 describe('budget plans and monthly views', () => {
+  it('applies shared income recurrence rules to due and non-due months', () => {
+    const quarterly = {
+      id: 'quarterly-income',
+      name: 'Quarterly',
+      category: 'Freelance' as const,
+      amount: 3000,
+      frequency: 'quarterly' as const,
+      firstDueMonth: '2026-01',
+    };
+    const yearly = {
+      id: 'yearly-income',
+      name: 'Yearly',
+      category: 'Other' as const,
+      amount: 12000,
+      frequency: 'yearly' as const,
+      firstDueMonth: '2026-04',
+    };
+    expect(isIncomeDueInMonth(quarterly, '2026-04')).toBe(true);
+    expect(isIncomeDueInMonth(quarterly, '2026-03')).toBe(false);
+    expect(isIncomeDueInMonth(yearly, '2026-04')).toBe(true);
+    expect(isIncomeDueInMonth(yearly, '2027-04')).toBe(true);
+    expect(isIncomeDueInMonth(yearly, '2027-03')).toBe(false);
+    expect(plannedIncomeOf({ incomes: [quarterly, yearly] }, '2026-04')).toBe(15000);
+    expect(plannedIncomeOf({ incomes: [quarterly, yearly] }, '2026-05')).toBe(0);
+  });
   it('covers frozen start-month and repeat guards with real outcomes', () => {
     const recurringWithoutStart: BudgetItem = {
       id: 'quarterly-no-start',
@@ -202,6 +229,84 @@ describe('budget plans and monthly views', () => {
     expect(nextDueMonth(quarterly, '2026-12')).toBe('2027-02');
     expect(nextDueMonth(item('half-yearly', '2026-08'), '2027-02')).toBe('2027-08');
     expect(nextDueMonth(item('yearly', '2026-12'), '2027-12')).toBe('2028-12');
+  });
+
+  it('projects once-only items and income in one month, preserves frozen snapshots, and never repeats', () => {
+    const income = Object.assign({
+      id: 'one-time-income',
+      name: 'One-time income',
+      category: 'Freelance' as const,
+      amount: 1_000,
+      frequency: 'monthly' as const,
+      firstDueMonth: '2026-03',
+    }, { frequency: 'once' });
+    const budgetPlan = budgetPlanFromLines([{
+      category: 'One-time expense',
+      mode: 'amount',
+      value: 250,
+      frequency: 'monthly',
+      firstDueMonth: '2026-03',
+    }], {
+      incomes: [income],
+      repeatMonthly: true,
+      repeatFrom: '2026-03',
+    });
+    const item = budgetPlan.items[0];
+    if (!item) throw new Error('Once-only Budget item fixture is missing.');
+    Object.assign(item, { frequency: 'once' });
+    const onceItem = item;
+    const oncePolicy = Object.assign({
+      ...policy,
+      trackFrom: '2026-03-15',
+      endDate: '2026-12-31',
+    }, { frequency: 'once' });
+
+    expect(isItemDueInMonth(onceItem, '2026-02')).toBe(false);
+    expect(isItemDueInMonth(onceItem, '2026-03')).toBe(true);
+    expect(isItemDueInMonth(onceItem, '2026-04')).toBe(false);
+    expect(plannedForMonth(onceItem, '2026-03')).toBe(250);
+    expect(plannedForMonth(onceItem, '2026-04')).toBe(0);
+    expect(nextDueMonth(onceItem, '2026-02')).toBe('2026-03');
+    expect(nextDueMonth(onceItem, '2026-04')).toBeUndefined();
+    expect(isIncomeDueInMonth(income, '2026-03')).toBe(true);
+    expect(isIncomeDueInMonth(income, '2026-04')).toBe(false);
+    expect(plannedIncomeOf({ incomes: [income] }, '2026-03')).toBe(1_000);
+    expect(plannedIncomeOf({ incomes: [income] }, '2026-04')).toBe(0);
+
+    const data = { ...emptyAppData('2026-02-01'), budgetPlan, policies: [oncePolicy] };
+    expect(budgetMonthView(data, '2026-03', '2026-02-01')).toMatchObject({
+      plannedIncome: 1_000,
+      plannedSpend: 310,
+    });
+    expect(projectedCashFlow(data, '2026-03', '2026-02-01')).toEqual({
+      opening: 0, closing: 690, projected: true,
+    });
+    expect(effectiveMonthBudget(data, '2026-04', '2026-02-01')).toMatchObject({
+      virtual: true,
+      budget: { source: 'plan' },
+    });
+    expect(budgetMonthView(data, '2026-04', '2026-02-01')).toMatchObject({
+      plannedIncome: 0,
+      plannedSpend: 0,
+    });
+    expect(projectedCashFlow(data, '2026-04', '2026-02-01')).toEqual({
+      opening: 690, closing: 690, projected: true,
+    });
+
+    const snapshot = monthBudgetFromLines('2026-03', [{
+      category: 'One-time expense',
+      planned: 300,
+      frequency: 'monthly',
+      firstDueMonth: '2026-03',
+    }], {
+      incomes: [{ id: 'snapshot-income', name: 'Saved income', category: 'Salary', amount: 1_500 }],
+      source: 'custom',
+    });
+    const snapshotItem = snapshot.items[0];
+    if (!snapshotItem) throw new Error('Frozen once-only snapshot fixture is missing.');
+    Object.assign(snapshotItem, { frequency: 'once' });
+    expect(budgetMonthView({ ...emptyAppData('2026-04-01'), monthBudgets: [snapshot] }, '2026-03', '2026-04-01'))
+      .toMatchObject({ plannedIncome: 1_500, plannedSpend: 300 });
   });
 
   it('uses recurring planned amounts for future totals and projections while retaining frozen snapshots', () => {
@@ -526,7 +631,7 @@ describe('budget plans and monthly views', () => {
   it('maps every budget category to exactly one requested group and demonstrates each in mock budget data', () => {
     expect(BUDGET_GROUPS.map(({ name, weight, categories }) => [name, weight, categories])).toEqual([
       ['Survival (Needs)', 50, ['Living', 'Rent', 'Utilities', 'Recharge', 'Food', 'Transport', 'Family', 'Health', 'Bills', 'Education', 'EMI']],
-      ['Savings and Investments', 20, ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Other investments']],
+      ['Savings and Investments', 20, ['Mutual fund / SIP', 'Stocks / ETF', 'Real estate', 'Fixed deposit / RD', 'Gold / Silver', 'Other investments']],
       ['Wants', 15, ['Shopping', 'Other', 'Eating out', 'Entertainment', 'Fashion', 'Subscriptions', 'Personal spending', 'Travel']],
       ['Festival, Donations, Culture', 5, ['Festival', 'Donation', 'Gifts', 'Culture']],
       ['Unexpected Extras', 10, ['Unexpected']],
@@ -1219,6 +1324,39 @@ describe('budget plans and monthly views', () => {
     expect(unplanned.income.extra).toBe(0);
   });
 
+  it('reconciles custom earned-income categories as planned income instead of non-earned money', () => {
+    const income = { id: 'consulting', name: 'Consulting', category: 'Freelance', amount: 1_000 };
+    const plan = budgetPlanFromLines([], { incomes: [income] });
+    const snapshot = monthBudgetFromLines('2026-03', [], { incomes: [income] });
+    const planIncome = plan.incomes[0];
+    const snapshotIncome = snapshot.incomes[0];
+    if (!planIncome || !snapshotIncome) throw new Error('Custom income fixtures are missing.');
+    Object.assign(planIncome, { category: 'Consulting' });
+    Object.assign(snapshotIncome, { category: 'Consulting' });
+    const data = {
+      ...emptyAppData('2026-03-01'),
+      budgetPlan: plan,
+      monthBudgets: [snapshot],
+      transactions: [{
+        id: 'consulting-actual', type: 'income' as const, amount: 750,
+        category: 'Consulting', note: '', date: '2026-03-10',
+      }],
+    };
+
+    const view = budgetMonthView(data, '2026-03');
+
+    expect(view.income).toMatchObject({
+      planned: 1_000,
+      actual: 750,
+      bySource: [{ category: 'Consulting', amount: 750 }],
+    });
+    expect(view.otherMoneyIn).toBe(0);
+    expect(transactionCategoryLabel('Consulting', 'income')).toBe('Consulting');
+    expect(filterTransactions(data.transactions, {
+      month: '2026-03', type: 'income', query: '', category: 'Consulting',
+    })).toEqual([expect.objectContaining({ category: 'Consulting', amount: 750 })]);
+  });
+
   it('shows planned and actual amounts for every non-earned income category', () => {
     const snapshot = monthBudgetFromLines('2026-03', [], {
       incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 1_200 }],
@@ -1495,8 +1633,18 @@ describe('budget plans and monthly views', () => {
     });
     expect(overview.sections.reduce((sum, section) => sum + section.planned, 0)).toBe(13_125);
     expect(overview.sections.reduce((sum, section) => sum + section.actual, 0)).toBe(8_425);
-    expect(overview.pace).toMatchObject({ days: 31, actual: [0, 0, 0, 200, 200, 200, 200, 900, 900, 925, 925, 925, 925, 925, 925] });
-    expect(overview.pace?.planned.at(-1)).toBe(2_025);
+    expect(overview.pace).toMatchObject({
+      days: 31,
+      elapsedDays: 15,
+      sections: expect.arrayContaining([
+        expect.objectContaining({ id: 'income', plannedToDate: 5_322.58, actualToDate: 7_400 }),
+        expect.objectContaining({ id: 'survival', plannedToDate: 725.81, actualToDate: 900 }),
+        expect.objectContaining({ id: 'savings-investments', plannedToDate: 48.39, actualToDate: 100 }),
+        expect.objectContaining({ id: 'debt-repayments', plannedToDate: 229.84, actualToDate: 25 }),
+      ]),
+    });
+    expect(overview.pace?.sections.find(({ id }) => id === 'survival')?.actual)
+      .toEqual([0, 0, 0, 200, 200, 200, 200, 900, 900, 900, 900, 900, 900, 900, 900]);
   });
 
   it('derives future overviews from plan edits and describes negative left as over budget', () => {
@@ -1814,6 +1962,7 @@ describe('budget plans and monthly views', () => {
         category: 'Freelance',
         amount: 2_500.25,
         day: 17,
+        frequency: 'monthly',
       };
       expect(updated.monthBudgets?.[0]?.incomes).toContainEqual(expected);
       if (scope === 'following') {
@@ -1822,6 +1971,28 @@ describe('budget plans and monthly views', () => {
         expect(updated.budgetPlan).toEqual(before.budgetPlan);
       }
       expect(updated.transactions).toEqual(before.transactions);
+    });
+
+    it('trims and bounds custom earned-income categories for add and edit actions', () => {
+      const before = fixture('2026-03', false);
+      const added = addIncomeItem(before, '2026-03', {
+        id: 'custom-income', name: 'Consulting', category: '  Consulting  ', amount: 500,
+      }, 'month', today);
+      expect(added.monthBudgets?.[0]?.incomes).toContainEqual(expect.objectContaining({
+        id: 'custom-income', category: 'Consulting',
+      }));
+      const current = before.monthBudgets?.[0]?.incomes[0];
+      if (!current) throw new Error('Income category edit fixture missing.');
+      const edited = editBudgetIncome(before, '2026-03', {
+        incomeId: current.id,
+        values: { name: current.name, category: '  Consulting  ', amount: current.amount },
+      }, 'month', today);
+      expect(edited.monthBudgets?.[0]?.incomes).toContainEqual(expect.objectContaining({ category: 'Consulting' }));
+      for (const category of ['   ', 'x'.repeat(61)]) {
+        expect(() => addIncomeItem(before, '2026-03', {
+          id: 'invalid-custom-income', name: 'Consulting', category, amount: 500,
+        }, 'month', today)).toThrow(BudgetMutationError);
+      }
     });
 
     it('validates income edits and handles a virtual or snapshot-only income', () => {
@@ -1845,7 +2016,7 @@ describe('budget plans and monthly views', () => {
         incomeId: original.id, values: { ...values, name: 'x'.repeat(41) },
       }, 'month', today), 'invalid-name');
       expectError(() => editBudgetIncome(before, '2026-03', {
-        incomeId: original.id, values: { ...values, category: 'Invalid' as never },
+        incomeId: original.id, values: { ...values, category: '' as never },
       }, 'month', today), 'invalid-item');
       for (const amount of [Number.POSITIVE_INFINITY, 0, 0.001, 1_000_000_001]) {
         expectError(() => editBudgetIncome(before, '2026-03', {
@@ -2139,7 +2310,7 @@ describe('budget plans and monthly views', () => {
       expect(insuranceDues).toEqual([expect.objectContaining({
         title: 'Insurance',
         amount: 365,
-        source: { kind: 'budget', category: 'Insurance', type: 'expense' },
+        source: { kind: 'budget', category: 'Insurance', type: 'expense', month: '2026-03' },
       })]);
     });
 

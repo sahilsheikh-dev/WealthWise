@@ -51,13 +51,13 @@ export default function InsuranceScreen() {
     setPolicyPayment({ policy, dueAmount: nextDue.amount, dueDate: nextDue.dueDate });
   };
 
-  const savePolicyPayment = (actualAmount: number) => {
+  const savePolicyPayment = (actualAmount: number, paymentDate?: string) => {
     if (!policyPayment) return;
-    const entryId = actions.clearDue(
-      { kind: 'policy', id: policyPayment.policy.id },
-      policySchedule(policyPayment.policy, today).rows.find((row) => row.status !== 'paid')?.id,
-      actualAmount,
-    );
+    const policyRowId = policySchedule(policyPayment.policy, today).rows.find((row) => row.status !== 'paid')?.id;
+    const target = { kind: 'policy' as const, id: policyPayment.policy.id };
+    const entryId = paymentDate !== undefined
+      ? actions.clearDue(target, policyRowId, actualAmount, undefined, paymentDate)
+      : actions.clearDue(target, policyRowId, actualAmount);
     const state = useAppStore.getState();
     if (!entryId || state.lastError) {
       Alert.alert('Unable to mark premium paid', state.lastError ?? 'The payment could not be recorded.');
@@ -82,6 +82,7 @@ export default function InsuranceScreen() {
         title={policyPayment?.policy.name ?? ''}
         dueAmount={policyPayment?.dueAmount ?? 0}
         dueDate={policyPayment?.dueDate}
+        defaultDate={today}
         onPaid={savePolicyPayment}
         onNotPaid={() => setPolicyPayment(null)}
       />
@@ -185,6 +186,7 @@ function frequencyLabel(policy: Policy): string {
     quarterly: 'Quarterly',
     'half-yearly': 'Half-yearly',
     yearly: 'Yearly',
+    once: 'Once only',
   } as const;
   return labels[policy.frequency];
 }
@@ -196,7 +198,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
     paddingVertical: 6,
   },
   detailValue: { flex: 1, textAlign: 'right' },
@@ -208,7 +209,6 @@ const styles = StyleSheet.create({
   policyActions: {
     gap: 8,
     borderTopWidth: StyleSheet.hairlineWidth,
-    marginTop: 8,
     paddingTop: 8,
   },
   policyActionsStacked: { flexDirection: 'column', alignItems: 'stretch' },

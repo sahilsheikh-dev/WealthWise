@@ -8,6 +8,7 @@ export const ROUTE_KINDS: Readonly<Record<string, RouteKind>> = {
   'budget-income-form': 'form',
   'budget-item-form': 'form',
   'budget-section-form': 'form',
+  about: 'stack',
   assets: 'stack',
   backup: 'stack',
   'clear-dues': 'form',
@@ -35,7 +36,9 @@ export const ROUTE_KINDS: Readonly<Record<string, RouteKind>> = {
   'payment-confirm': 'stack',
   reminders: 'stack',
   security: 'stack',
+  settings: 'stack',
   theme: 'stack',
+  'transaction-detection': 'stack',
   'transaction-form': 'form',
 };
 

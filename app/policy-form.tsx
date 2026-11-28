@@ -6,6 +6,7 @@ import { z } from 'zod';
 
 import { Dropdown, type DropdownOption } from '../src/components/Dropdown';
 import { DateField } from '../src/components/form/DateField';
+import { FieldTitle } from '../src/components/form/FieldTitle';
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { FormSection } from '../src/components/form/FormSection';
@@ -21,6 +22,8 @@ import { confirmAsync } from '../src/lib/confirm';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
+import { closeRouteSafely } from '../src/lib/routeParams';
+
 const optionalAmountSchema = z.string().transform((value) => {
   const trimmed = value.trim();
   return trimmed === '' ? undefined : Number(trimmed);
@@ -35,7 +38,7 @@ const policyFormSchema = z.object({
   kind: z.enum(['term-life', 'health', 'life-savings', 'ulip', 'motor', 'home', 'other']),
   premium: z.string().trim().regex(/^\d+(?:\.\d{1,2})?$/, 'Enter a valid premium.')
     .transform(Number).pipe(z.number().positive().max(10_000_000)),
-  frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly', 'custom']),
+  frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly', 'once', 'custom']),
   customIntervalMonths: z.string(),
   nextDueDate: z.string(),
   policyNumber: optionalText(30),
@@ -70,6 +73,7 @@ const frequencyOptions: readonly DropdownOption[] = [
   { value: 'quarterly', title: 'Quarterly' },
   { value: 'half-yearly', title: 'Half-yearly' },
   { value: 'yearly', title: 'Yearly' },
+  { value: 'once', title: 'Once only' },
   { value: 'custom', title: 'Custom' },
 ];
 
@@ -112,7 +116,7 @@ export default function PolicyFormScreen() {
 
   if (editing && !policy) {
     return (
-      <FormScreen title="Policy" onClose={() => router.back()} isDirty={false} footer={null}>
+      <FormScreen title="Policy" onClose={() => closeRouteSafely('/insurance')} isDirty={false} footer={null}>
         <EmptyState title="Policy not found" />
       </FormScreen>
     );
@@ -184,30 +188,34 @@ export default function PolicyFormScreen() {
           control={control}
           name="name"
           render={({ field }) => (
-            <TextField
-              label="Name"
-              accessibilityLabel="Policy name"
-              value={field.value}
-              onChangeText={field.onChange}
-              onBlur={field.onBlur}
-              error={errors.name?.message}
-              maxLength={40}
-            />
+            <FieldTitle title="Name">
+              <TextField
+                label="Name"
+                accessibilityLabel="Policy name"
+                value={field.value}
+                onChangeText={field.onChange}
+                onBlur={field.onBlur}
+                error={errors.name?.message}
+                maxLength={40}
+              />
+            </FieldTitle>
           )}
         />
         <Controller
           control={control}
           name="insurer"
           render={({ field }) => (
-            <TextField
-              label="Insurer"
-              accessibilityLabel="Insurer"
-              value={field.value}
-              onChangeText={field.onChange}
-              onBlur={field.onBlur}
-              error={errors.insurer?.message}
-              maxLength={40}
-            />
+            <FieldTitle title="Insurer">
+              <TextField
+                label="Insurer"
+                accessibilityLabel="Insurer"
+                value={field.value}
+                onChangeText={field.onChange}
+                onBlur={field.onBlur}
+                error={errors.insurer?.message}
+                maxLength={40}
+              />
+            </FieldTitle>
           )}
         />
         <Controller
@@ -230,14 +238,16 @@ export default function PolicyFormScreen() {
           control={control}
           name="premium"
           render={({ field }) => (
-            <MoneyField
-              label="Premium"
-              accessibilityLabel="Premium"
-              value={field.value}
-              onChangeText={field.onChange}
-              onBlur={field.onBlur}
-              error={errors.premium?.message}
-            />
+            <FieldTitle title="Premium">
+              <MoneyField
+                label="Premium"
+                accessibilityLabel="Premium"
+                value={field.value}
+                onChangeText={field.onChange}
+                onBlur={field.onBlur}
+                error={errors.premium?.message}
+              />
+            </FieldTitle>
           )}
         />
         <Controller
@@ -261,14 +271,16 @@ export default function PolicyFormScreen() {
             control={control}
             name="customIntervalMonths"
             render={({ field }) => (
-              <TextField
-                label="Custom interval (months)"
-                accessibilityLabel="Custom interval in months"
-                value={field.value}
-                onChangeText={field.onChange}
-                onBlur={field.onBlur}
-                error={errors.customIntervalMonths?.message}
-              />
+              <FieldTitle title="Custom interval (months)">
+                <TextField
+                  label="Custom interval (months)"
+                  accessibilityLabel="Custom interval in months"
+                  value={field.value}
+                  onChangeText={field.onChange}
+                  onBlur={field.onBlur}
+                  error={errors.customIntervalMonths?.message}
+                />
+              </FieldTitle>
             )}
           />
         ) : null}
@@ -290,44 +302,50 @@ export default function PolicyFormScreen() {
           control={control}
           name="sumAssured"
           render={({ field }) => (
-            <MoneyField
-              label="Sum assured"
-              accessibilityLabel="Sum assured"
-              value={field.value}
-              onChangeText={field.onChange}
-              onBlur={field.onBlur}
-              error={errors.sumAssured?.message}
-            />
+            <FieldTitle title="Sum assured">
+              <MoneyField
+                label="Sum assured"
+                accessibilityLabel="Sum assured"
+                value={field.value}
+                onChangeText={field.onChange}
+                onBlur={field.onBlur}
+                error={errors.sumAssured?.message}
+              />
+            </FieldTitle>
           )}
         />
         <Controller
           control={control}
           name="policyNumber"
           render={({ field }) => (
-            <TextField
-              label="Policy number"
-              accessibilityLabel="Policy number"
-              value={field.value}
-              onChangeText={field.onChange}
-              onBlur={field.onBlur}
-              error={errors.policyNumber?.message}
-              maxLength={30}
-            />
+            <FieldTitle title="Policy number">
+              <TextField
+                label="Policy number"
+                accessibilityLabel="Policy number"
+                value={field.value}
+                onChangeText={field.onChange}
+                onBlur={field.onBlur}
+                error={errors.policyNumber?.message}
+                maxLength={30}
+              />
+            </FieldTitle>
           )}
         />
         <Controller
           control={control}
           name="note"
           render={({ field }) => (
-            <TextField
-              label="Note"
-              accessibilityLabel="Policy note"
-              value={field.value}
-              onChangeText={field.onChange}
-              onBlur={field.onBlur}
-              error={errors.note?.message}
-              maxLength={120}
-            />
+            <FieldTitle title="Note">
+              <TextField
+                label="Note"
+                accessibilityLabel="Policy note"
+                value={field.value}
+                onChangeText={field.onChange}
+                onBlur={field.onBlur}
+                error={errors.note?.message}
+                maxLength={120}
+              />
+            </FieldTitle>
           )}
         />
         {kind === 'life-savings' || kind === 'ulip' ? (
@@ -367,7 +385,7 @@ function isPolicyKind(value: string): value is PolicyKind {
 
 function isPolicyFrequency(value: string): value is PolicyFrequency {
   return value === 'monthly' || value === 'quarterly' || value === 'half-yearly'
-    || value === 'yearly' || value === 'custom';
+    || value === 'yearly' || value === 'once' || value === 'custom';
 }
 
 const styles = StyleSheet.create({ footer: { gap: 8 } });

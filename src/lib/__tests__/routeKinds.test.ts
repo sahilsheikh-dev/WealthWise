@@ -59,6 +59,7 @@ describe('route kind registry', () => {
     expect(routeKindForPath('/')).toBe('tab');
     expect(routeKindForPath('/(tabs)/transactions')).toBe('tab');
     expect(routeKindForPath('/goal-form?id=goal-1')).toBe('form');
+    expect(() => routeKindForPath('/ef-target-form')).toThrow('No route kind is registered');
     expect(routeKindForPath('/liabilities')).toBe('stack');
     expect(routeKindForPath('/insurance')).toBe('stack');
     expect(routeKindForPath('/reminders')).toBe('stack');
@@ -69,6 +70,12 @@ describe('route kind registry', () => {
     expect(routeKindForPath('/budget-income-form?month=2026-10')).toBe('form');
     expect(routeKindForPath('/onboarding')).toBe('special');
     expect(() => routeKindForPath('/missing')).toThrow('No route kind is registered');
+  });
+
+  it('registers the About route as a root stack screen', () => {
+    expect(routeKindForPath('/about')).toBe('stack');
+    const rootLayout = readFileSync(join(process.cwd(), 'app/_layout.tsx'), 'utf8');
+    expect(rootLayout).toMatch(/<Stack\.Screen name="about"\s*\/>/);
   });
 
   it('configures local notification support without changing app identifiers', () => {

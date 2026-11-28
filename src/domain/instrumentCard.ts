@@ -7,6 +7,7 @@ import { suggestedValuationMethod } from './valuation';
 import type { ISODate } from './types';
 import type { PortfolioRow } from './portfolio';
 import { formatDate } from '../lib/format';
+import { financialTypeLabel } from './typeLabels';
 
 export type InstrumentCardTextSegment = { text: string } | { amount: number };
 
@@ -90,7 +91,7 @@ export function buildInstrumentCardModel(row: PortfolioRow, ctx: InstrumentCardC
       kind: 'plan',
       name: holding.name,
       subtitle: [
-        { text: `${holding.type}, Monthly ` },
+        { text: `${financialTypeLabel(holding.type, holding.customTypeName)}, Monthly ` },
         { amount: holding.amount },
         { text: `, ${holding.stepUpPct}% step-up, ${holding.tenureYears} yrs, ${holding.ratePct}% p.a.` },
       ],
@@ -127,8 +128,8 @@ export function buildInstrumentCardModel(row: PortfolioRow, ctx: InstrumentCardC
         { id: 'entries', label: 'Entries' },
         {
           id: 'stop' as const,
-          label: holding.stopDate ? 'Resume recurring' : 'Stop recurring',
-          accessibilityHint: holding.stopDate ? 'Resume this recurring plan' : 'Stop future recurring dues',
+          label: holding.stopDate ? 'Resume investment' : 'Stop investment',
+          accessibilityHint: holding.stopDate ? 'Resume this investment plan' : 'Stop future recurring dues',
         },
         { id: 'update', label: method === 'unitsPrice' ? 'Update price' : 'Update value' },
       ],
@@ -162,8 +163,8 @@ export function buildInstrumentCardModel(row: PortfolioRow, ctx: InstrumentCardC
     kind: 'manual',
     name: holding.name,
     subtitle: cashOrBank
-      ? [{ text: holding.type }]
-      : [{ text: `${holding.type}, invested ` }, { amount: row.invested }],
+      ? [{ text: financialTypeLabel(holding.type, holding.customTypeName) }]
+      : [{ text: `${financialTypeLabel(holding.type, holding.customTypeName)}, invested ` }, { amount: row.invested }],
     value: row.value,
     valueCaption: cashOrBank ? 'Balance' : valueCaption,
     progressPct: cashOrBank ? undefined : sharePct,

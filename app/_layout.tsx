@@ -18,7 +18,11 @@ import { ActionToastHost } from '../src/components/ActionToastHost';
 import OnboardingScreen from './onboarding';
 import { SecurityProvider } from '../src/components/SecurityProvider';
 import { StorageErrorBanner } from '../src/components/StorageErrorBanner';
-import { NotificationResponseHandler, ReminderRuntime } from '../src/components/ReminderRuntime';
+import {
+  NotificationResponseHandler,
+  ReminderRuntime,
+  TransactionDetectionRuntime,
+} from '../src/components/ReminderRuntime';
 import { FirstLaunchReminderPrompt } from '../src/components/FirstLaunchReminderPrompt';
 import { useAppStore } from '../src/data/store';
 import { ThemeProvider } from '../src/theme/ThemeProvider';
@@ -42,6 +46,7 @@ function AppContent() {
       ) : (
         <>
           <ReminderRuntime />
+          <TransactionDetectionRuntime />
           <StorageErrorBanner />
           <LockGate>
             {onboarded ? (
@@ -53,10 +58,12 @@ function AppContent() {
                 }}>
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="assets" />
+                <Stack.Screen name="about" />
                 <Stack.Screen name="liabilities" />
                 <Stack.Screen name="insurance" />
                 <Stack.Screen name="emergency-fund" />
                 <Stack.Screen name="transaction-form" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="transaction-detection" />
                 <Stack.Screen name="link-missing" />
                 <Stack.Screen name="profile-form" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="theme" />
@@ -72,12 +79,18 @@ function AppContent() {
                 <Stack.Screen name="reminders" />
                 <Stack.Screen name="payment-confirm" />
                 <Stack.Screen name="security" />
+                <Stack.Screen name="settings" />
                 <Stack.Screen name="erase-data" />
                 <Stack.Screen name="clear-dues" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="budget-section-form" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="budget-item-form" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="budget-income-form" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="ef-bucket-form" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="ef-allocation-form" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="holding-valuation-form" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="liability-closure-form" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="liability-closure-note-form" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="recurring-plan-stop-form" options={{ presentation: 'modal' }} />
               </Stack>
               <NotificationResponseHandler />
               <ActionToastHost />

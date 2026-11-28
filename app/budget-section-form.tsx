@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { useState } from 'react';
 
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
+import { FieldTitle } from '../src/components/form/FieldTitle';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { SegmentedControl } from '../src/components/form/SegmentedControl';
 import { TextField } from '../src/components/form/TextField';
@@ -14,6 +15,8 @@ import { useAppStore } from '../src/data/store';
 import { useUIStore } from '../src/data/uiStore';
 import { useAppActions } from '../src/data/useAppData';
 import { todayISO } from '../src/lib/clock';
+
+import { closeRouteSafely } from '../src/lib/routeParams';
 
 const budgetSectionFormSchema = z.object({
   name: z.string().trim().min(1, 'Enter a section name.').max(30, 'Keep the name under 30 characters.'),
@@ -78,7 +81,7 @@ export default function BudgetSectionFormScreen() {
 
   if (editing && !section) {
     return (
-      <FormScreen title="Budget category" onClose={() => router.back()} isDirty={false} footer={null}>
+      <FormScreen title="Budget category" onClose={() => closeRouteSafely('/(tabs)/budget')} isDirty={false} footer={null}>
         <EmptyState title="Budget category not found" />
       </FormScreen>
     );
@@ -153,15 +156,17 @@ export default function BudgetSectionFormScreen() {
         control={control}
         name="name"
         render={({ field }) => (
-          <TextField
-            label="Name"
-            accessibilityLabel="Budget category name"
-            value={field.value}
-            onChangeText={field.onChange}
-            onBlur={field.onBlur}
-            maxLength={30}
-            error={errors.name?.message}
-          />
+          <FieldTitle title="Name">
+            <TextField
+              label="Name"
+              accessibilityLabel="Budget category name"
+              value={field.value}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              maxLength={30}
+              error={errors.name?.message}
+            />
+          </FieldTitle>
         )}
       />
       {!section ? (

@@ -4,8 +4,8 @@ import { StyleSheet } from 'react-native';
 
 import { useSecuritySettings } from '../src/components/SecurityProvider';
 import { AppHeader } from '../src/components/AppHeader';
+import { Dropdown } from '../src/components/Dropdown';
 import { AppText, Card, Screen, SectionTitle } from '../src/components/ui';
-import { ChoiceField } from '../src/components/form/ChoiceField';
 import { SwitchRow } from '../src/components/form/SwitchRow';
 import { createAuthenticator } from '../src/lib/authenticate';
 import { GRACE_OPTIONS } from '../src/lib/lockPolicy';
@@ -84,9 +84,10 @@ export default function SecurityScreen() {
         <AppText style={[typography.meta, { color: colors.text3, marginBottom: 10 }]}>
           Require device authentication to open Wealth Wise.
         </AppText>
-        <ChoiceField
+        <Dropdown
           label="Lock again after"
-          choices={graceChoices}
+          accessibilityLabel="Lock again after"
+          options={graceChoices.map((choice) => ({ value: choice, title: choice }))}
           value={graceLabelFor(settings.graceMs)}
           onChange={changeGrace}
         />

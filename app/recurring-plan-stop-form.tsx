@@ -14,12 +14,13 @@ import { useAppActions } from '../src/data/useAppData';
 import { makeStopRecurringFormSchema } from '../src/domain/schemas';
 import { choiceAsync } from '../src/lib/confirm';
 import { todayISO } from '../src/lib/clock';
+import { closeRouteSafely, singleParam } from '../src/lib/routeParams';
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
 export default function RecurringPlanStopFormScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
-  const holdingId = Array.isArray(id) ? id[0] : id;
+  const holdingId = singleParam(id);
   const data = useAppStore((state) => state.data);
   const error = useAppStore((state) => state.lastError);
   const actions = useAppActions();
@@ -34,7 +35,7 @@ export default function RecurringPlanStopFormScreen() {
   });
 
   if (!holding || holding.kind !== 'plan') {
-    return <FormScreen title="Stop recurring" onClose={() => router.back()} isDirty={false} footer={null}>
+    return <FormScreen title="Stop investment" onClose={() => closeRouteSafely('/assets')} isDirty={false} footer={null}>
       <EmptyState title="Plan not found" />
     </FormScreen>;
   }
@@ -43,11 +44,11 @@ export default function RecurringPlanStopFormScreen() {
     if (submitting.current) return;
     submitting.current = true;
     void choiceAsync({
-      title: 'Stop recurring plan?',
+      title: 'Stop investment?',
       message: `Scheduled dues after ${values.stopDate} will be removed. Past unpaid dues on or before that date remain actionable.`,
       choices: [
         { id: 'cancel', label: 'Cancel' },
-        { id: 'stop', label: 'Stop recurring' },
+        { id: 'stop', label: 'Stop investment' },
       ],
     }).then((choice) => {
       if (choice === 'stop') {
@@ -60,12 +61,12 @@ export default function RecurringPlanStopFormScreen() {
 
   return (
     <FormScreen
-      title="Stop recurring"
+      title="Stop investment"
       onClose={() => router.back()}
       isDirty={form.formState.isDirty}
       footer={<View style={{ flexDirection: 'row' }}>
         <Button
-          label="Stop recurring"
+          label="Stop investment"
           icon="pause"
           variant="primary"
           style={{ flex: 1 }}
@@ -77,7 +78,7 @@ export default function RecurringPlanStopFormScreen() {
       <Controller control={form.control} name="stopDate" render={({ field }) => (
         <DateField
           label="Stop date"
-          accessibilityLabel="Stop recurring date"
+          accessibilityLabel="Stop investment date"
           value={field.value}
           onChange={field.onChange}
           maximumDate={today}

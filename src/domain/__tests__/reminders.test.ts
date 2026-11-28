@@ -166,6 +166,42 @@ describe('reminder planner', () => {
     expect(reminders).toHaveLength(6);
   });
 
+  it('schedules a once-only insurance premium reminder once', () => {
+    const policy: Policy = {
+      id: 'one-time-policy',
+      name: 'One-time premium',
+      insurer: 'Insurer',
+      kind: 'health',
+      premium: 50,
+      frequency: 'monthly',
+      startDate: '2026-01-01',
+      status: 'active',
+      premiumYears: 1,
+      trackFrom: '2026-02-15',
+      currentValue: null,
+      valueAsOf: null,
+      payments: [],
+    };
+    Object.assign(policy, { frequency: 'once' });
+    const reminders = planReminders({
+      ...emptyAppData('2026-02-01'),
+      policies: [policy],
+    }, preferences, new Date(2026, 1, 1, 8), 60);
+
+    expect(reminders.filter((reminder) => reminder.dueItemId.includes('one-time-policy'))).toEqual([
+      expect.objectContaining({
+        kind: 'day-before',
+        fireAt: '2026-02-14T09:00',
+        target: expect.objectContaining({ dueDate: '2026-02-15' }),
+      }),
+      expect.objectContaining({
+        kind: 'same-day',
+        fireAt: '2026-02-15T09:00',
+        target: expect.objectContaining({ dueDate: '2026-02-15' }),
+      }),
+    ]);
+  });
+
   it('plans the day before and same-day local times with deterministic targets', () => {
     const data = dataWithLiabilities(oneTimeLiability({ dueDate: '2024-03-01' }));
     const reminders = planReminders(data, preferences, new Date(2024, 1, 28, 8), 60);

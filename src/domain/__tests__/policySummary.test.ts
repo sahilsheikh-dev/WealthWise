@@ -71,6 +71,22 @@ describe('policySummary', () => {
     expect(policySummary(data, '2026-01-01').yearlyPremium).toBe(1_000);
   });
 
+  it('does not annualize a once-only premium but still reports its upcoming due', () => {
+    const data = {
+      ...emptyAppData('2026-02-01'),
+      policies: [policy({
+        frequency: 'once',
+        premium: 500,
+        trackFrom: '2026-03-01',
+      })],
+    };
+
+    expect(policySummary(data, '2026-02-01')).toMatchObject({
+      yearlyPremium: 0,
+      nextRenewal: { date: '2026-03-01', amount: 500 },
+    });
+  });
+
   it('uses the last three months of earned income when no effective budget exists', () => {
     const data = {
       ...emptyAppData('2026-01-15'),

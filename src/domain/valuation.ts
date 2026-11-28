@@ -23,9 +23,11 @@ export function suggestedValuationMethod(
       return ratePct === undefined ? 'manual' : 'accrual';
     case 'Mutual fund / SIP':
     case 'Stocks / ETF':
+    case 'Real estate':
     case 'Gold':
     case 'Silver':
       return hasPricedEntry ? 'unitsPrice' : 'manual';
+    case 'Custom':
     case 'Other':
       return 'manual';
   }
@@ -73,17 +75,26 @@ function accrualValue(holding: Holding, asOf: ISODate, legacyValue: number): num
   }, 0));
 }
 
+export function holdingUnits(holding: Holding, asOf: ISODate): number {
+  const latestPrice = holding.latestPrice;
+  const openingAmount = holding.kind === 'plan' ? holding.opening : holding.invested;
+  const initialUnits = holding.unitCount !== undefined
+    ? holding.unitCount
+    : (latestPrice !== undefined && latestPrice > 0 ? openingAmount / latestPrice : 0);
+  const entryUnits = holding.logs
+    .filter((entry) => entry.date <= asOf)
+    .reduce((total, entry) => {
+      const transactionPrice = entry.price ?? latestPrice ?? 1;
+      const unitsAtEntry = transactionPrice > 0 ? entry.amount / transactionPrice : 0;
+      return total + (entry.kind === 'Deposit' ? unitsAtEntry : -unitsAtEntry);
+    }, 0);
+  return initialUnits + entryUnits;
+}
+
 function unitsValue(holding: Holding, asOf: ISODate, legacyValue: number): number {
   const latestPrice = holding.latestPrice;
   if (latestPrice === undefined || !holding.priceAsOf || holding.priceAsOf > asOf) return legacyValue;
-  const openingAmount = holding.kind === 'plan' ? holding.opening : holding.invested;
-  const units = openingAmount / latestPrice + holding.logs
-    .filter((entry) => entry.date <= asOf)
-    .reduce((total, entry) => {
-      const transactionPrice = entry.price ?? latestPrice;
-      const unitsAtEntry = entry.amount / transactionPrice;
-      return total + (entry.kind === 'Deposit' ? unitsAtEntry : -unitsAtEntry);
-    }, 0);
+  const units = holdingUnits(holding, asOf);
   return Math.max(0, units * latestPrice);
 }
 

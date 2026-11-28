@@ -1,6 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useMemo } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Feather } from '@expo/vector-icons';
+import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 
 import { AmountText } from '../src/components/AmountText';
 import { AppHeader } from '../src/components/AppHeader';
@@ -16,7 +17,7 @@ import {
 import { useAppStore } from '../src/data/store';
 import { useAppActions, useAppData } from '../src/data/useAppData';
 import { isLiabilityClosed, liabilitySummary } from '../src/domain/liability';
-import { liabilitySchedule } from '../src/domain/schedule';
+import { liabilitySchedule, type ScheduleRow } from '../src/domain/schedule';
 import type { LiabilityPayment } from '../src/domain/types';
 import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
@@ -27,12 +28,18 @@ import { useTheme } from '../src/theme/useTheme';
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
+type PendingEmiRow = Pick<ScheduleRow, 'id' | 'dueDate' | 'amount'> & { rowKind: 'pending-emi' };
+type PaidEmisHeaderRow = { rowKind: 'paid-emis-header'; id: string; count: number };
+type DatedLiabilityRow = PendingEmiRow | LiabilityPayment;
+type ListRow = DatedLiabilityRow | PaidEmisHeaderRow;
+
 export default function LiabilityPaymentsScreen() {
   const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const liabilityId = Array.isArray(id) ? id[0] : id;
   const data = useAppData();
   const actions = useAppActions();
+  const [paidEmisExpanded, setPaidEmisExpanded] = useState(false);
   const today = useMemo(() => todayISO(), []);
   const liability = data.liabilities.find((entry) => entry.id === liabilityId);
   const schedule = useMemo(
@@ -47,6 +54,13 @@ export default function LiabilityPaymentsScreen() {
       : [],
     [liability],
   );
+  const scheduledPaidPaymentIds = new Set(
+    schedule?.rows.flatMap((row) => row.entryId ? [row.entryId] : []) ?? [],
+  );
+  const paidEmiPayments = liability?.kind === 'recurring'
+    ? payments.filter((payment) => scheduledPaidPaymentIds.has(payment.id))
+    : [];
+  const otherPayments = payments.filter((payment) => !scheduledPaidPaymentIds.has(payment.id));
 
   if (!liability || !schedule) {
     return <Screen><AppHeader title="Liability entries" showBack fallbackHref="/liabilities" /><EmptyState title="Liability not found" /></Screen>;
@@ -54,6 +68,27 @@ export default function LiabilityPaymentsScreen() {
 
   const summary = liabilitySummary(liability, today);
   const closedDate = liability.kind === 'recurring' ? liability.closure?.date ?? today : today;
+  const pendingEmiRows: PendingEmiRow[] = liability.kind === 'recurring' && !isLiabilityClosed(liability)
+    ? schedule.rows
+      .filter((row) => row.status !== 'paid')
+      .map(({ id: rowId, dueDate, amount }) => ({ rowKind: 'pending-emi', id: rowId, dueDate, amount }))
+    : [];
+  const paidEmisHeader: PaidEmisHeaderRow | null = paidEmiPayments.length > 0
+    ? { rowKind: 'paid-emis-header', id: `paid-emis-${liability.id}`, count: paidEmiPayments.length }
+    : null;
+  const datedRows: DatedLiabilityRow[] = [
+    ...pendingEmiRows,
+    ...otherPayments,
+  ].sort((left, right) => {
+    const leftDate = 'rowKind' in left ? left.dueDate : left.date;
+    const rightDate = 'rowKind' in right ? right.dueDate : right.date;
+    return rightDate.localeCompare(leftDate) || right.id.localeCompare(left.id);
+  });
+  const listRows: ListRow[] = [
+    ...datedRows,
+    ...(paidEmisHeader ? [paidEmisHeader] : []),
+    ...(paidEmisExpanded ? paidEmiPayments : []),
+  ];
   const openPayment = (payment: LiabilityPayment) => {
     if (isLiabilityClosed(liability)) return;
     router.push({ pathname: '/liability-payment-form', params: { liabilityId: liability.id, paymentId: payment.id } });
@@ -161,14 +196,36 @@ export default function LiabilityPaymentsScreen() {
         {liability.kind === 'recurring' && schedule.neverClears ? (
           <AppText style={[typography.meta, styles.summaryNote, { color: colors.err }]}>EMI does not cover monthly interest</AppText>
         ) : null}
+        {liability.kind === 'recurring' ? (
+          <View style={styles.monthCounts}>
+            <View testID="completed-emi-months-cell" style={[styles.summaryCell, styles.monthCountCell]}>
+              <AppText style={[typography.label, { color: colors.text3 }]}>Completed months</AppText>
+              <AppText
+                testID="completed-emi-months"
+                accessibilityLabel={`Completed ${schedule.summary.paid} months`}
+                style={[typography.meta, styles.summaryValue]}>
+                {schedule.summary.paid}
+              </AppText>
+            </View>
+            <View testID="pending-emi-months-cell" style={[styles.summaryCell, styles.monthCountCell]}>
+              <AppText style={[typography.label, { color: colors.text3 }]}>Pending months</AppText>
+              <AppText
+                testID="pending-emi-months"
+                accessibilityLabel={`Pending ${pendingEmiRows.length} months`}
+                style={[typography.meta, styles.summaryValue]}>
+                {pendingEmiRows.length}
+              </AppText>
+            </View>
+          </View>
+        ) : null}
       </Card>
     </View>
   );
 
   return (
     <Screen scroll={false}>
-      <FlatList<LiabilityPayment>
-        data={payments}
+      <FlatList<ListRow>
+        data={listRows}
         keyExtractor={(item) => item.id}
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={<EmptyState title="No entries recorded" />}
@@ -177,6 +234,36 @@ export default function LiabilityPaymentsScreen() {
         maxToRenderPerBatch={16}
         windowSize={9}
         renderItem={({ item }) => {
+          if ('rowKind' in item && item.rowKind === 'pending-emi') {
+            return (
+              <SharedListRow
+                style={[styles.row, { borderColor: colors.border }]}
+                accessibilityLabel={`Pending EMI ${formatDate(item.dueDate)}, ${formatAmount(item.amount, 'exact', 1)}`}
+              >
+                <AppText weight="semibold">{formatDate(item.dueDate)} · Pending EMI</AppText>
+                <AmountText value={item.amount} tier="row" weight="bold" style={typography.amount} />
+              </SharedListRow>
+            );
+          }
+          if ('rowKind' in item && item.rowKind === 'paid-emis-header') {
+            return (
+              <Pressable
+                testID="paid-emis-toggle"
+                accessibilityRole="button"
+                accessibilityLabel={`Paid EMIs, ${item.count} entries`}
+                accessibilityState={{ expanded: paidEmisExpanded }}
+                onPress={() => setPaidEmisExpanded((expanded) => !expanded)}
+                style={[styles.paidEmisToggle, { borderColor: colors.border }]}
+              >
+                <AppText weight="semibold">Paid EMIs ({item.count})</AppText>
+                <Feather
+                  name={paidEmisExpanded ? 'chevron-up' : 'chevron-down'}
+                  size={18}
+                  color={colors.primary}
+                />
+              </Pressable>
+            );
+          }
           const content = (
             <>
               <AppText weight="semibold">{formatDate(item.date)} · {item.kind}</AppText>
@@ -206,7 +293,10 @@ const styles = StyleSheet.create({
   actions: { paddingHorizontal: 20, marginTop: 6, marginBottom: 8, flexDirection: 'row', gap: 8 },
   action: { flexGrow: 1, minWidth: 100 },
   summaryGrid: { marginTop: 10, flexDirection: 'row', flexWrap: 'wrap', columnGap: 12, rowGap: 12 },
+  monthCounts: { marginTop: 12, flexDirection: 'row', flexWrap: 'wrap', columnGap: 12, rowGap: 4 },
+  paidEmisToggle: { marginHorizontal: 20, marginTop: 8, padding: 13, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   summaryCell: { width: '48%', gap: 3 },
+  monthCountCell: { width: 'auto', flex: 1, minWidth: 0 },
   summaryValue: { minHeight: 18 },
   summaryNote: { marginTop: 7 },
   listContent: { paddingBottom: 120 },

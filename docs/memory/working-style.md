@@ -1,4 +1,4 @@
-<!-- Purpose: Capture the owner's collaboration and reporting expectations. | Last updated: 2026-10-26 | Updates: owner and AI agents -->
+<!-- Purpose: Capture the owner's collaboration and reporting expectations. | Last updated: 2026-11-22 | Updates: owner and AI agents -->
 
 # Working style
 
@@ -12,5 +12,8 @@
   assumption and device behavior that was not tested.
 - Record replaced assertions with old behavior, new assertion and reason.
 - Do not use emojis in reports or memory.
-- Preserve all user work; use a checkpoint commit when required and never
+- Preserve all user work; describe each committed change accurately and never
   rewrite history.
+
+- Maintain the **Owner-run actions log** in `docs/PROGRESS.md` from verifiable terminal output, owner snapshots, or Git refs; mark absent exit codes `not captured`. End reports with an **Owner actions pending** list.
+- Maintain **GitHub issue tracking** and PR tracking under Model A: every ledger item has a corresponding GitHub issue (if any approved work lacks an issue, create and link it immediately), and every PR carries matching phase/lifecycle, type, status, and semantic standard labels. Apply standard labels (`enhancement`, `bug`, `documentation`, `wontfix`) accurately, keep planned issues updated with scope/dependencies as work proceeds, and maintain test enforcement via `progressLedger.test.ts`. Record verified commits, PRs, merge SHAs, and gate evidence upon closure (`status:done`). PR #39 is verified Closed Unmerged (`status:superseded`, `wontfix`); commit `b779c21` was connected as ancestry in P28-E-R3 and released in `v1.1.1`. Never invent or open speculative issues for unapproved ideas.

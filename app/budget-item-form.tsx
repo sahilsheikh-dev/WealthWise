@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { Dropdown } from '../src/components/Dropdown';
 import { ApplyScopeDialog } from '../src/components/ApplyScopeDialog';
 import { FormErrorBanner } from '../src/components/form/FormErrorBanner';
+import { FieldTitle } from '../src/components/form/FieldTitle';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { IntegerField } from '../src/components/form/IntegerField';
 import { MoneyField } from '../src/components/form/MoneyField';
@@ -25,11 +26,13 @@ import { formatMonth } from '../src/lib/format';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
+import { closeRouteSafely } from '../src/lib/routeParams';
+
 const budgetItemFormSchema = z.object({
   name: z.string().trim().min(1, 'Enter an item name.').max(30, 'Keep the name under 30 characters.'),
   mode: z.enum(['amount', 'percent']),
   value: z.string().trim(),
-  frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly']),
+  frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly', 'once']),
   firstDueMonth: z.string(),
   day: z.string(),
   scope: z.enum(['month', 'following']),
@@ -126,7 +129,7 @@ export default function BudgetItemFormScreen() {
 
   if (!section || (editing && !item)) {
     return (
-      <FormScreen title={editing ? 'Edit item' : 'Add item'} onClose={() => router.back()} isDirty={false} footer={null}>
+      <FormScreen title={editing ? 'Edit item' : 'Add item'} onClose={() => closeRouteSafely('/(tabs)/budget')} isDirty={false} footer={null}>
         <EmptyState title={section ? 'Budget item not found' : 'Budget section not found'} />
       </FormScreen>
     );
@@ -231,15 +234,17 @@ export default function BudgetItemFormScreen() {
         control={control}
         name="name"
         render={({ field }) => (
-          <TextField
-            label="Name"
-            accessibilityLabel="Budget item name"
-            value={field.value}
-            onChangeText={field.onChange}
-            onBlur={field.onBlur}
-            maxLength={30}
-            error={errors.name?.message}
-          />
+          <FieldTitle title="Name">
+            <TextField
+              label="Name"
+              accessibilityLabel="Budget item name"
+              value={field.value}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              maxLength={30}
+              error={errors.name?.message}
+            />
+          </FieldTitle>
         )}
       />
       {section.type === 'invest' && !section.system ? (
@@ -247,8 +252,12 @@ export default function BudgetItemFormScreen() {
           control={control}
           name="holdingId"
           render={({ field }) => {
+            const isOneTime = frequency === 'once';
             const otherLink = data.budgetPlan?.items.find((candidate) =>
-              candidate.id !== itemId && candidate.holdingId === field.value);
+              candidate.id !== itemId
+              && candidate.holdingId === field.value
+              && (linkedHolding?.kind === 'plan' || !isOneTime || candidate.frequency !== 'once')
+            );
             const options = [
               { value: '', title: 'None' },
               ...data.holdings
@@ -290,7 +299,7 @@ export default function BudgetItemFormScreen() {
         name="mode"
         render={({ field }) => (
           <SegmentedControl
-            value={field.value}
+          value={field.value}
             options={frequency === 'monthly' ? [
               { label: 'Amount', value: 'amount' },
               { label: 'Percent', value: 'percent' },
@@ -304,23 +313,27 @@ export default function BudgetItemFormScreen() {
         control={control}
         name="value"
         render={({ field }) => mode === 'amount' ? (
-          <MoneyField
-            label="Planned amount"
-            accessibilityLabel="Planned amount"
-            value={field.value}
-            onChangeText={field.onChange}
-            onBlur={field.onBlur}
-            error={errors.value?.message}
-          />
+          <FieldTitle title="Planned amount">
+            <MoneyField
+              label="Planned amount"
+              accessibilityLabel="Planned amount"
+              value={field.value}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              error={errors.value?.message}
+            />
+          </FieldTitle>
         ) : (
-          <TextField
-            label="Planned percent"
-            accessibilityLabel="Planned percent"
-            value={field.value}
-            onChangeText={field.onChange}
-            onBlur={field.onBlur}
-            error={errors.value?.message}
-          />
+          <FieldTitle title="Planned percent">
+            <TextField
+              label="Planned percent"
+              accessibilityLabel="Planned percent"
+              value={field.value}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              error={errors.value?.message}
+            />
+          </FieldTitle>
         )}
       />
       <Controller
@@ -337,6 +350,7 @@ export default function BudgetItemFormScreen() {
                 { value: 'quarterly', title: 'Quarterly' },
                 { value: 'half-yearly', title: 'Half-yearly' },
                 { value: 'yearly', title: 'Yearly' },
+                { value: 'once', title: 'Once only' },
               ]),
             ]}
             onChange={field.onChange}
@@ -367,15 +381,17 @@ export default function BudgetItemFormScreen() {
         control={control}
         name="day"
         render={({ field }) => (
-          <IntegerField
-            label="Due day"
-            accessibilityLabel="Due day"
-            icon="calendar-outline"
-            value={field.value}
-            onChangeText={field.onChange}
-            onBlur={field.onBlur}
-            error={errors.day?.message}
-          />
+          <FieldTitle title="Due day">
+            <IntegerField
+              label="Due day"
+              accessibilityLabel="Due day"
+              icon="calendar-outline"
+              value={field.value}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              error={errors.day?.message}
+            />
+          </FieldTitle>
         )}
       />
       <AppText testID="budget-item-due-day-helper" style={[typography.meta, { color: colors.text3 }]}>

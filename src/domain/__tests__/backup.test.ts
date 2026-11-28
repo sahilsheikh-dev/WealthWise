@@ -21,6 +21,9 @@ import { makeV10Fixture } from '../../data/testFixtures/v10';
 import { makeV11Fixture } from '../../data/testFixtures/v11';
 import { makeV12Fixture } from '../../data/testFixtures/v12';
 import { decryptBackup, encryptBackup } from '../backupCrypto';
+import { goalSavedFor } from '../goalLinks';
+import { holdingValue } from '../portfolio';
+import { netWorth } from '../summary';
 
 const { createHash } = jest.requireActual<{
   createHash: (algorithm: string) => { update: (text: string) => { digest: (encoding: 'hex') => string } };
@@ -46,7 +49,7 @@ describe('backup validation and serialization', () => {
     expect(canonicalJson([undefined, 1])).toBe('[1]');
     const text = await createBackup(mockAppData, { exportedAt: '2026-10-10T10:00:00.000Z', digest });
     expect(text).toContain('\n  "app": "wealthwise"');
-    expect(JSON.parse(text)).toMatchObject({ schemaVersion: 21 });
+    expect(JSON.parse(text)).toMatchObject({ schemaVersion: 24 });
     await expect(parseBackup(text, { digest })).resolves.toMatchObject({
       ok: true, data: mockAppData, exportedAt: '2026-10-10T10:00:00.000Z',
       summary: { transactions: mockAppData.transactions.length },
@@ -55,6 +58,85 @@ describe('backup validation and serialization', () => {
     expect(backupFileName('2026-10-10T10:05:00.000Z')).toBe('wealthwise-backup-20261010-1005Z.json');
     expect(encryptedBackupFileName('2026-10-10T10:05:00.000Z'))
       .toBe('wealthwise-backup-20261010-1005Z-encrypted.json');
+  });
+
+  it('round-trips custom holding and liability type names through strict backups', async () => {
+    const holding = mockAppData.holdings[0];
+    const liability = mockAppData.liabilities[0];
+    if (!holding || !liability) throw new Error('Custom backup fixtures are incomplete.');
+    const data = {
+      ...mockAppData,
+      holdings: mockAppData.holdings.map((item) => item.id === holding.id
+        ? { ...item, type: 'Custom' as const, customTypeName: 'Collectibles' }
+        : item),
+      liabilities: mockAppData.liabilities.map((item) => item.id === liability.id
+        ? { ...item, type: 'Custom' as const, customTypeName: 'Family loan' }
+        : item),
+    };
+    const text = await createBackup(data, {
+      exportedAt: '2026-10-10T10:00:00.000Z',
+      digest,
+    });
+    const imported = await parseBackup(text, { digest });
+    if (!imported.ok) throw new Error(`${imported.reason}: ${imported.message}`);
+    expect(imported.data.holdings.find((item) => item.id === holding.id))
+      .toMatchObject({ type: 'Custom', customTypeName: 'Collectibles' });
+    expect(imported.data.liabilities.find((item) => item.id === liability.id))
+      .toMatchObject({ type: 'Custom', customTypeName: 'Family loan' });
+  });
+
+  it('imports a v22 backup through the additive v23 migration', async () => {
+    const raw = await createBackup(mockAppData, {
+      exportedAt: '2026-10-10T10:00:00.000Z',
+      digest,
+    });
+    const v22 = await reChecksum(raw, (envelope) => { envelope.schemaVersion = 22; });
+
+    await expect(parseBackup(v22, migrationOptions)).resolves.toMatchObject({
+      ok: true,
+      data: mockAppData,
+    });
+  });
+
+  it.each([19, 20, 21])('imports a v%s backup through the remaining schema chain', async (schemaVersion) => {
+    const raw = await createBackup(mockAppData, {
+      exportedAt: '2026-10-10T10:00:00.000Z', digest,
+    });
+    const legacy = await reChecksum(raw, (envelope) => { envelope.schemaVersion = schemaVersion; });
+
+    await expect(parseBackup(legacy, migrationOptions)).resolves.toMatchObject({
+      ok: true,
+      data: mockAppData,
+    });
+  });
+
+  it('preserves custom earned-income categories through v23 import and plain/encrypted backup round trips', async () => {
+    const data = structuredClone(mockAppData);
+    const plan = data.budgetPlan;
+    const income = plan?.incomes[0];
+    if (!plan || !income) throw new Error('Custom earned-income backup fixture is missing.');
+    Object.assign(income, { category: 'Consulting' });
+    const currentBackup = await createBackup(data, {
+      exportedAt: '2026-10-10T10:00:00.000Z', digest,
+    });
+    const imported = await parseBackup(currentBackup, { digest });
+    if (!imported.ok) throw new Error(`${imported.reason}: ${imported.message}`);
+    expect(imported.data.budgetPlan?.incomes[0]?.category).toBe('Consulting');
+
+    const v23Backup = await reChecksum(currentBackup, (envelope) => { envelope.schemaVersion = 23; });
+    const v23Imported = await parseBackup(v23Backup, migrationOptions);
+    if (!v23Imported.ok) throw new Error(`${v23Imported.reason}: ${v23Imported.message}`);
+    expect(v23Imported.data.budgetPlan?.incomes[0]?.category).toBe('Consulting');
+
+    const encrypted = await encryptBackup(currentBackup, 'a sufficiently long passphrase', {
+      salt: Uint8Array.from({ length: 16 }, (_, index) => index),
+      nonce: Uint8Array.from({ length: 12 }, (_, index) => index + 16),
+      kdf: { name: 'scrypt', params: { N: 2 ** 15, r: 8, p: 1, dkLen: 32 } },
+    });
+    const decrypted = await decryptBackup(encrypted, 'a sufficiently long passphrase');
+    const encryptedImported = await parseBackup(decrypted, { digest });
+    if (!encryptedImported.ok) throw new Error(`${encryptedImported.reason}: ${encryptedImported.message}`);
+    expect(encryptedImported.data.budgetPlan?.incomes[0]?.category).toBe('Consulting');
   });
 
   it('accepts historical backup dates from 1900 and rejects dates before that floor', () => {
@@ -306,6 +388,31 @@ describe('backup validation and serialization', () => {
     });
   });
 
+  it('round-trips an edited Emergency Fund target through plain and encrypted v23 backups', async () => {
+    const target = 3_456_789.12;
+    const editedData = {
+      ...mockAppData,
+      goals: mockAppData.goals.map((goal) => goal.auto === 'ef' ? { ...goal, target } : goal),
+    };
+    const plain = await createBackup(editedData, {
+      exportedAt: '2026-10-10T10:00:00.000Z', digest,
+    });
+    const plainImport = await parseBackup(plain, { digest });
+    if (!plainImport.ok) throw new Error(`${plainImport.reason}: ${plainImport.message}`);
+    expect(plainImport.data.goals.find((goal) => goal.auto === 'ef')?.target).toBe(target);
+
+    const encrypted = await encryptBackup(plain, 'a sufficiently long passphrase', {
+      salt: Uint8Array.from({ length: 16 }, (_, index) => index),
+      nonce: Uint8Array.from({ length: 12 }, (_, index) => index + 16),
+      kdf: { name: 'scrypt', params: { N: 2 ** 15, r: 8, p: 1, dkLen: 32 } },
+    });
+    const decrypted = await decryptBackup(encrypted, 'a sufficiently long passphrase');
+    const encryptedImport = await parseBackup(decrypted, { digest });
+    if (!encryptedImport.ok) throw new Error(`${encryptedImport.reason}: ${encryptedImport.message}`);
+    expect(encryptedImport.data.goals.find((goal) => goal.auto === 'ef')?.target).toBe(target);
+    expect(SCHEMA_VERSION).toBe(24);
+  });
+
   it('round-trips a manual holding snapshot adjustment through backup export and import', async () => {
     const holding = mockAppData.holdings.find((item) =>
       item.kind === 'manual' && item.id === 'holding-cash');
@@ -396,7 +503,7 @@ describe('backup validation and serialization', () => {
         incomes: [{ id: 'income', name: 'Income', category: 'Salary' as const, amount: 10_000 }],
       })],
     };
-    expect(SCHEMA_VERSION).toBe(21);
+    expect(SCHEMA_VERSION).toBe(24);
     const raw = await createBackup(data, { exportedAt: '2026-10-13T10:00:00.000Z', digest });
     const result = await parseBackup(raw, { digest });
     if (!result.ok) throw new Error(`${result.reason}: ${result.issues?.join('; ') ?? result.message}`);
@@ -458,7 +565,7 @@ describe('backup validation and serialization', () => {
       },
     });
     const future = JSON.parse(raw) as { schemaVersion: number };
-    future.schemaVersion = 22;
+    future.schemaVersion = 25;
     await expect(parseBackup(JSON.stringify(future), { digest }))
       .resolves.toMatchObject({ ok: false, reason: 'newer-version' });
   });
@@ -577,7 +684,7 @@ describe('backup validation and serialization', () => {
     ]);
   });
 
-  it('round-trips an encrypted v20 backup with a settled policy slot and linked investment item', async () => {
+  it('round-trips encrypted v23 once-only schedules with a settled policy slot and linked investment item', async () => {
     const holding = mockAppData.holdings.find((item) => item.kind === 'manual');
     if (!holding) throw new Error('Expected a manual holding for the linked investment backup.');
     const plan = budgetPlanFromLines(
@@ -586,6 +693,14 @@ describe('backup validation and serialization', () => {
     );
     const item = plan.items[0];
     if (!item) throw new Error('Expected an investment item in the linked backup.');
+    const oneTimeIncome = Object.assign({
+      id: 'one-time-income',
+      name: 'One-time income',
+      category: 'Freelance' as const,
+      amount: 1_000,
+      frequency: 'monthly' as const,
+      firstDueMonth: '2026-11',
+    }, { frequency: 'once' });
     const loanData = addLiability(mockAppData, {
       kind: 'recurring',
       type: 'Other',
@@ -608,22 +723,35 @@ describe('backup validation and serialization', () => {
         return () => `closure-record-${++next}`;
       })(),
     });
+    const policy = closedData.policies[0];
+    if (!policy) throw new Error('Expected a policy in the encrypted backup.');
+    const oncePolicy = {
+      ...policy,
+      startDate: '2026-01-01',
+      trackFrom: '2026-11-07',
+      endDate: '2026-11-07',
+      payments: [{
+        id: 'settled-premium',
+        date: '2026-11-04',
+        amount: 18_000,
+        note: '',
+        dueDate: '2026-11-07',
+      }],
+    };
+    Object.assign(oncePolicy, { frequency: 'once' });
+    const onceItem = Object.assign({
+      ...item,
+      holdingId: holding.id,
+      frequency: 'monthly' as const,
+      firstDueMonth: '2026-11',
+    }, { frequency: 'once' });
     const data = {
       ...closedData,
-      policies: closedData.policies.map((policy) => ({
-        ...policy,
-        payments: [{
-          id: 'settled-premium',
-          date: '2026-11-04',
-          amount: 18_000,
-          note: '',
-          dueDate: '2026-11-07',
-        }],
-      })),
-      budgetPlan: { ...plan, items: [{ ...item, holdingId: holding.id }] },
+      policies: [oncePolicy],
+      budgetPlan: { ...plan, incomes: [oneTimeIncome], items: [onceItem] },
     };
     const raw = await createBackup(data, { exportedAt: '2026-10-13T10:00:00.000Z', digest });
-    expect(JSON.parse(raw)).toMatchObject({ schemaVersion: 21 });
+    expect(JSON.parse(raw)).toMatchObject({ schemaVersion: 24 });
     const passphrase = 'a sufficiently long backup passphrase';
     const encrypted = await encryptBackup(raw, passphrase, {
       salt: Uint8Array.from({ length: 16 }, (_, index) => index),
@@ -635,10 +763,14 @@ describe('backup validation and serialization', () => {
     const imported = await parseBackup(decrypted, { digest });
     if (!imported.ok) throw new Error(`${imported.reason}: ${imported.issues?.join('; ') ?? imported.message}`);
     expect(imported.data.budgetPlan?.items).toEqual([
-      expect.objectContaining({ id: item.id, holdingId: holding.id }),
+      expect.objectContaining({ id: item.id, holdingId: holding.id, frequency: 'once', firstDueMonth: '2026-11' }),
     ]);
     expect(imported.data.policies[0]?.payments).toEqual([
       expect.objectContaining({ id: 'settled-premium', dueDate: '2026-11-07' }),
+    ]);
+    expect(imported.data.policies[0]?.frequency).toBe('once');
+    expect(imported.data.budgetPlan?.incomes).toEqual([
+      expect.objectContaining({ id: 'one-time-income', frequency: 'once', firstDueMonth: '2026-11' }),
     ]);
     expect(imported.data.liabilities.find((liability) => liability.id === 'encrypted-closure-loan'))
       .toMatchObject({
@@ -761,7 +893,14 @@ describe('backup validation and serialization', () => {
     const budgetData = {
       ...mockAppData,
       budgetPlan: budgetPlanFromLines([{ category: 'Food', mode: 'percent', value: 25, dueDay: 31 }], {
-        incomes: [{ id: 'salary', name: 'Salary', category: 'Salary', amount: 10_000 }],
+        incomes: [{
+          id: 'salary',
+          name: 'Salary',
+          category: 'Salary',
+          amount: 10_000,
+          frequency: 'quarterly',
+          firstDueMonth: '2026-10',
+        }],
       }),
       monthBudgets: [monthBudgetFromLines('2026-10', [{ category: 'Food', planned: 2_500, dueDay: 31 }], {
         source: 'plan',
@@ -810,6 +949,18 @@ describe('backup validation and serialization', () => {
           { ...budgetData.monthBudgets[0]!.items[0]!, id: 'duplicate-id' },
         ] }],
       },
+      {
+        ...budgetData,
+        budgetPlan: { ...budgetData.budgetPlan, incomes: [
+          { ...budgetData.budgetPlan.incomes[0]!, frequency: 'weekly' },
+        ] },
+      },
+      {
+        ...budgetData,
+        budgetPlan: { ...budgetData.budgetPlan, incomes: [
+          { ...budgetData.budgetPlan.incomes[0]!, frequency: 'quarterly', firstDueMonth: '2026-13' },
+        ] },
+      },
     ];
     for (const invalid of invalidData) expect(validateImportData(invalid)).toMatchObject({ ok: false, reason: 'invalid-data' });
   });
@@ -821,7 +972,7 @@ describe('backup validation and serialization', () => {
     const tampered = raw.replace('"amount": 47000', '"amount": 47001');
     await expect(parseBackup(tampered, { digest })).resolves.toMatchObject({ ok: false, reason: 'checksum-mismatch' });
     const newer = JSON.parse(raw) as Record<string, unknown>;
-    newer.schemaVersion = 22;
+    newer.schemaVersion = 25;
     await expect(parseBackup(JSON.stringify(newer), { digest })).resolves.toMatchObject({ ok: false, reason: 'newer-version' });
     const futureFormat = await reChecksum(raw, (envelope) => { envelope.formatVersion = BACKUP_FORMAT_VERSION + 1; });
     await expect(parseBackup(futureFormat, { digest })).resolves.toMatchObject({ ok: false, reason: 'newer-version' });
@@ -900,6 +1051,128 @@ describe('backup validation and serialization', () => {
     const corrupted = { ...envelope, checksum: { ...envelope.checksum, value: 'wrong' } };
     await expect(parseBackup(JSON.stringify(corrupted), migrationOptions))
       .resolves.toMatchObject({ ok: false, reason: 'checksum-mismatch' });
+  });
+
+  it('preserves independent net-worth, goal and Emergency Fund values when importing a v13 backup', async () => {
+    const asOf = '2026-10-10';
+    const sourceV13Data = {
+      settings: { name: 'Fixture', theme: 'system', monthlySalary: null, onboarded: true },
+      transactions: [],
+      goals: [
+        { id: 'goal-trip', name: 'Trip', target: 10_000, saved: 2_500, year: 2027, links: [] },
+        { id: 'goal-house', name: 'House', target: 100_000, saved: 0, year: 2030, links: [{ instrumentId: 'house-savings' }] },
+        {
+          id: 'goal-emergency',
+          name: 'Emergency fund',
+          target: 30_000,
+          saved: 0,
+          year: 2028,
+          auto: 'ef',
+          links: [{ instrumentId: 'ef-cash' }, { instrumentId: 'ef-bank' }],
+        },
+      ],
+      holdings: [
+        {
+          id: 'ef-cash',
+          kind: 'manual',
+          name: 'Emergency cash',
+          type: 'Cash',
+          invested: 12_500,
+          value: 12_500,
+          valueAsOf: '2026-10-01',
+          logs: [],
+        },
+        {
+          id: 'ef-bank',
+          kind: 'manual',
+          name: 'Emergency savings',
+          type: 'Savings account',
+          invested: 20_000,
+          value: 20_000,
+          valueAsOf: '2026-10-01',
+          logs: [],
+        },
+        {
+          id: 'house-savings',
+          kind: 'manual',
+          name: 'House savings',
+          type: 'Savings account',
+          invested: 33_000,
+          value: 33_000,
+          valueAsOf: '2026-10-01',
+          logs: [],
+        },
+      ],
+      liabilities: [],
+      policies: [],
+      budget: null,
+      budgetPlan: null,
+      monthBudgets: [],
+      efAllocation: { cash: 50, bank: 50 },
+      efCustomBuckets: [],
+      efBucketLinks: { cash: ['ef-cash'], bank: ['ef-bank'] },
+      coverGoals: [
+        { type: 'term-life', targetMode: 'income-multiple', targetValue: 10 },
+        { type: 'health', targetMode: 'amount' },
+      ],
+    };
+    const sourceValues = new Map(sourceV13Data.holdings.map(({ id, value }) => [id, value]));
+    const expectedNetWorth = sourceV13Data.holdings.reduce((total, holding) => total + holding.value, 0);
+    const expectedGoalSavings = sourceV13Data.goals.map((goal) => goal.links.length === 0
+      ? goal.auto === 'ef' ? 0 : goal.saved
+      : goal.links.reduce((total, link) => total + (sourceValues.get(link.instrumentId) ?? 0), 0));
+    const sourceEmergencyGoal = sourceV13Data.goals.find((goal) => goal.auto === 'ef');
+    if (!sourceEmergencyGoal) throw new Error('Expected the synthetic Emergency Fund goal.');
+    const expectedEfAvailableByBucket = Object.fromEntries(
+      Object.entries(sourceV13Data.efBucketLinks).map(([bucketId, holdingIds]) => [
+        bucketId,
+        holdingIds
+          .filter((id) => sourceEmergencyGoal.links.some((link) => link.instrumentId === id))
+          .reduce((total, id) => total + (sourceValues.get(id) ?? 0), 0),
+      ]),
+    );
+    const expectedEfAvailable = Object.values(expectedEfAvailableByBucket)
+      .reduce((total, value) => total + value, 0);
+    const envelope = {
+      app: 'wealthwise',
+      formatVersion: 1,
+      schemaVersion: 13,
+      exportedAt: '2026-10-10T10:00:00.000Z',
+      checksum: { algorithm: 'sha256', value: await digest(canonicalJson(sourceV13Data)) },
+      data: sourceV13Data,
+    };
+
+    const imported = await parseBackup(JSON.stringify(envelope), {
+      digest,
+      today: asOf,
+      newId: () => 'synthetic-v13-migration',
+    });
+    if (!imported.ok) throw new Error(`${imported.reason}: ${imported.message}`);
+
+    expect(netWorth(imported.data, asOf)).toEqual({
+      assets: expectedNetWorth,
+      liabilities: 0,
+      netWorth: expectedNetWorth,
+    });
+    expect(imported.data.goals.map((goal) => goalSavedFor(goal, imported.data, asOf)))
+      .toEqual(expectedGoalSavings);
+    const importedEmergencyGoal = imported.data.goals.find((goal) => goal.auto === 'ef');
+    if (!importedEmergencyGoal) throw new Error('Expected the imported Emergency Fund goal.');
+    expect(importedEmergencyGoal.target).toBe(30_000);
+    const importedEfAvailableByBucket = Object.fromEntries(
+      Object.entries(imported.data.efBucketLinks).map(([bucketId, holdingIds]) => [
+        bucketId,
+        holdingIds
+          .filter((id) => importedEmergencyGoal.links.some((link) => link.instrumentId === id))
+          .reduce((total, id) => {
+            const holding = imported.data.holdings.find((item) => item.id === id);
+            return total + (holding ? holdingValue(holding, asOf) : 0);
+          }, 0),
+      ]),
+    );
+    expect(importedEfAvailableByBucket).toEqual(expectedEfAvailableByBucket);
+    expect(Object.values(importedEfAvailableByBucket).reduce((total, value) => total + value, 0))
+      .toBe(expectedEfAvailable);
   });
 
   it.each([

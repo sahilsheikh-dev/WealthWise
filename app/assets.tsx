@@ -28,12 +28,13 @@ import {
   monthlyCommitment,
   portfolioTotals,
 } from '../src/domain/portfolio';
+import { financialTypeLabel } from '../src/domain/typeLabels';
 import { planSchedule } from '../src/domain/schedule';
 import { HOLDING_TYPES } from '../src/domain/types';
 import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
 import { choiceAsync } from '../src/lib/confirm';
-import { DEFAULT_SORTS, SORT_OPTIONS } from '../src/lib/sorting';
+import { SORT_OPTIONS } from '../src/lib/sorting';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
@@ -42,6 +43,7 @@ const filters = [
   'Recurring',
   ...HOLDING_TYPES,
 ] as const;
+type AssetFilter = (typeof filters)[number] | { customTypeName: string };
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
@@ -50,7 +52,7 @@ export default function AssetsScreen() {
   const data = useAppData();
   const actions = useAppActions();
   const asOf = todayISO();
-  const [filter, setFilter] = useState<(typeof filters)[number]>('All');
+  const [filter, setFilter] = useState<AssetFilter>('All');
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const [query, setQuery] = useState('');
   const assetSorting = useSort('assets');
@@ -79,21 +81,23 @@ export default function AssetsScreen() {
     };
   }), [data, asOf]);
   const totals = portfolioTotals(rows);
-  const filteredRows = filterRows(rows, filter);
+  const customTypeNames = [...new Set(data.holdings
+    .filter((holding) => holding.type === 'Custom')
+    .map((holding) => financialTypeLabel(holding.type, holding.customTypeName)))];
+  const filteredRows = typeof filter === 'string'
+    ? filterRows(rows, filter)
+    : rows.filter((row) => row.holding?.type === 'Custom'
+      && financialTypeLabel(row.holding.type, row.holding.customTypeName) === filter.customTypeName);
   const normalizedQuery = query.trim().toLowerCase();
   const searchedRows = normalizedQuery
     ? filteredRows.filter((row) =>
-      `${row.name} ${row.holding?.type ?? ''}`.toLowerCase().includes(normalizedQuery),
+      `${row.name} ${row.holding ? financialTypeLabel(row.holding.type, row.holding.customTypeName) : ''}`.toLowerCase().includes(normalizedQuery),
     )
     : filteredRows;
   const visibleRows = filter === 'Recurring'
     ? sipSorting.sort(searchedRows)
     : assetSorting.sort(searchedRows);
   const activeSorting = filter === 'Recurring' ? sipSorting : assetSorting;
-  const activeSortDefault = filter === 'Recurring' ? DEFAULT_SORTS.sips : DEFAULT_SORTS.assets;
-  const filterActive = filter !== 'All'
-    || activeSorting.spec.key !== activeSortDefault.key
-    || activeSorting.spec.dir !== activeSortDefault.dir;
   const cardModels = useMemo(
     () => new Map(rows.map((row) => [row.id, buildInstrumentCardModel(row, {
       asOf,
@@ -115,7 +119,6 @@ export default function AssetsScreen() {
             label: 'Filter',
             onPress: () => setFilterPanelOpen((open) => !open),
             expanded: filterPanelOpen,
-            showIndicator: filterActive,
           },
           { icon: 'plus', label: 'New investment', onPress: () => router.push('/investment-form' as Href) },
         ]}
@@ -130,6 +133,14 @@ export default function AssetsScreen() {
             />
             {filters.map((item) => (
               <Chip key={item} label={item} selected={filter === item} onPress={() => setFilter(item)} />
+            ))}
+            {customTypeNames.map((name) => (
+              <Chip
+                key={`custom-${name}`}
+                label={name}
+                selected={typeof filter !== 'string' && filter.customTypeName === name}
+                onPress={() => setFilter({ customTypeName: name })}
+              />
             ))}
           </ChipRow>
         </View>
@@ -199,7 +210,7 @@ export default function AssetsScreen() {
                   if (!holding || holding.kind !== 'plan') return;
                   if (holding.stopDate) {
                     void choiceAsync({
-                      title: 'Resume recurring?',
+                      title: 'Resume investment?',
                       message: 'This restores the plan schedule from the next due after today.',
                       choices: [
                         { id: 'cancel', label: 'Cancel' },

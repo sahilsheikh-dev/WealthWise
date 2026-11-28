@@ -10,13 +10,14 @@ import {
   EARNED_INCOME_CATEGORIES,
   NON_EARNED_INCOME_CATEGORIES,
   HOLDING_TYPES,
+  LIABILITY_TYPES,
   THEME_IDS,
   type AppData,
   type ISODate,
   type Transaction,
 } from './types';
 
-export const SCHEMA_VERSION = 21;
+export const SCHEMA_VERSION = 24;
 
 export function makeStopRecurringFormSchema(
   today: ISODate,
@@ -50,6 +51,7 @@ const valuationFields = {
   maturityDate: isoDateSchema.optional(),
   latestPrice: moneySchema.positive().optional(),
   priceAsOf: isoDateSchema.optional(),
+  unitCount: moneySchema.min(0).optional(),
 };
 const investmentEntrySchema = z.object({
   id: idSchema,
@@ -100,6 +102,7 @@ export const manualHoldingSchema = z.object({
   kind: z.literal('manual'),
   name: z.string(),
   type: holdingTypeSchema,
+  customTypeName: z.string().trim().min(1).max(30).optional(),
   invested: moneySchema,
   value: moneySchema,
   valueAsOf: isoDateSchema.optional(),
@@ -119,6 +122,7 @@ export const planHoldingSchema = z.object({
   kind: z.literal('plan'),
   name: z.string(),
   type: holdingTypeSchema,
+  customTypeName: z.string().trim().min(1).max(30).optional(),
   ...valuationFields,
   frequency: frequencySchema,
   amount: moneySchema,
@@ -155,7 +159,8 @@ export const planHoldingSchema = z.object({
 const liabilityBaseSchema = {
   id: idSchema,
   name: z.string(),
-  type: z.enum(['Home loan', 'Car loan', 'Personal loan', 'Education loan', 'Credit card', 'Borrowed money', 'Other']),
+  type: z.enum(LIABILITY_TYPES),
+  customTypeName: z.string().trim().min(1).max(30).optional(),
   principal: moneySchema.positive(),
   ratePct: moneySchema.min(0).max(100),
   startDate: isoDateSchema,
@@ -225,7 +230,7 @@ export const policySchema = z.object({
   insurer: z.string().max(40),
   kind: policyKindSchema,
   premium: moneySchema.positive().max(10_000_000),
-  frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly', 'custom']),
+  frequency: z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly', 'once', 'custom']),
   customIntervalMonths: z.number().int().min(1).max(120).optional(),
   startDate: isoDateSchema,
   status: z.enum(['active', 'lapsed', 'matured', 'cancelled']),
@@ -262,19 +267,26 @@ const expenseBudgetCategories = [
   'Entertainment', 'Fashion', 'Culture', 'Unexpected', 'Rent', 'Utilities', 'Recharge',
   'Subscriptions', 'Personal spending', 'Travel',
 ] as const;
-const investmentBudgetCategories = ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Other investments'] as const;
+const investmentBudgetCategories = ['Mutual fund / SIP', 'Stocks / ETF', 'Real estate', 'Fixed deposit / RD', 'Gold / Silver', 'Other investments'] as const;
 export const BUDGET_CATEGORIES = [
   ...expenseBudgetCategories.filter((category) => category !== 'Other'),
   'Other',
   ...investmentBudgetCategories,
 ] as const;
-const earnedIncomeCategories = EARNED_INCOME_CATEGORIES;
+const budgetItemFrequencySchema = z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly', 'once']).optional();
+const budgetFirstDueMonthSchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional();
 const budgetIncomeSchema = z.object({
   id: idSchema,
   name: z.string().min(1).max(40),
-  category: z.enum(earnedIncomeCategories),
+  category: z.string().trim().min(1).max(60),
   amount: moneySchema.positive().max(1_000_000_000),
   day: z.number().int().min(1).max(31).optional(),
+  frequency: budgetItemFrequencySchema,
+  firstDueMonth: budgetFirstDueMonthSchema,
+}).superRefine((item, context) => {
+  if ((item.frequency ?? 'monthly') !== 'monthly' && item.firstDueMonth === undefined) {
+    context.addIssue({ code: 'custom', path: ['firstDueMonth'], message: 'Choose the first due month.' });
+  }
 });
 const budgetOtherIncomeSchema = z.strictObject({
   id: idSchema,
@@ -284,14 +296,12 @@ const budgetOtherIncomeSchema = z.strictObject({
   day: z.number().int().min(1).max(31).optional(),
 });
 const budgetDueDaySchema = z.number().int().min(1).max(31).optional();
-const budgetItemFrequencySchema = z.enum(['monthly', 'quarterly', 'half-yearly', 'yearly']).optional();
-const budgetFirstDueMonthSchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional();
 const budgetItemSchedulingFields = {
   frequency: budgetItemFrequencySchema,
   firstDueMonth: budgetFirstDueMonthSchema,
 };
 function validateBudgetItemScheduling(
-  item: { mode: 'amount' | 'percent'; frequency?: 'monthly' | 'quarterly' | 'half-yearly' | 'yearly'; firstDueMonth?: string },
+  item: { mode: 'amount' | 'percent'; frequency?: 'monthly' | 'quarterly' | 'half-yearly' | 'yearly' | 'once'; firstDueMonth?: string },
   context: z.RefinementCtx,
 ): void {
   if ((item.frequency ?? 'monthly') !== 'monthly' && item.firstDueMonth === undefined) {
@@ -514,11 +524,13 @@ export const TRANSACTION_CATEGORIES = {
     'Subscriptions', 'Personal spending', 'Travel',
   ],
   income: ['Salary', 'Freelance', 'Rental', 'Business', 'Interest', 'Withdrawal', 'Borrowed', 'Loan proceeds', 'Own funds', 'Other'],
-  invest: ['Mutual fund / SIP', 'Stocks / ETF', 'Fixed deposit / RD', 'Gold / Silver', 'Other investments', 'Other'],
+  invest: ['Mutual fund / SIP', 'Stocks / ETF', 'Real estate', 'Fixed deposit / RD', 'Gold / Silver', 'Other investments', 'Other'],
 } as const satisfies Record<Transaction['type'], readonly string[]>;
 
 export const INVESTMENT_FORM_CATEGORIES = TRANSACTION_CATEGORIES.invest
   .filter((category) => category !== 'Other');
+export const CUSTOM_EXPENSE_CATEGORY_SENTINEL = '__custom-expense-category__';
+export const CUSTOM_INCOME_CATEGORY_SENTINEL = '__custom-income-category__';
 
 export { EARNED_INCOME_CATEGORIES };
 export { NON_EARNED_INCOME_CATEGORIES };
@@ -580,6 +592,7 @@ export function makeTransactionFormSchema(
     note: z.string().trim().max(60, 'Keep the note under 60 characters'),
     type: z.enum(['income', 'expense', 'invest']),
     category: z.string(),
+    customCategory: z.string().trim().max(60, 'Keep the category under 60 characters').optional(),
     instrumentId: z.string().trim().optional().transform((id) => id || undefined),
     linkToPolicy: z.boolean().optional(),
   }).superRefine((value, context) => {
@@ -587,12 +600,20 @@ export function makeTransactionFormSchema(
     const customBudgetCategories = value.type === 'income'
       ? []
       : options.budgetCategoriesForMonth?.(value.type, value.date) ?? [];
-    if (
+    const customExpense = value.type === 'expense' && value.category === CUSTOM_EXPENSE_CATEGORY_SENTINEL;
+    const customIncome = value.type === 'income' && value.category === CUSTOM_INCOME_CATEGORY_SENTINEL;
+    if (!customExpense && !customIncome && (
       !allowedCategories.includes(value.category) &&
       !legacyCategories[value.type]?.includes(value.category) &&
       !customBudgetCategories.includes(value.category)
-    ) {
+    )) {
       context.addIssue({ code: 'custom', path: ['category'], message: 'Choose a category' });
+    }
+    if (customExpense && (!value.customCategory || value.customCategory.length > 30)) {
+      context.addIssue({ code: 'custom', path: ['customCategory'], message: 'Enter a category' });
+    }
+    if (customIncome && !value.customCategory) {
+      context.addIssue({ code: 'custom', path: ['customCategory'], message: 'Enter an income category' });
     }
 
     const instrumentId = value.instrumentId;
@@ -637,6 +658,15 @@ export function makeTransactionFormSchema(
     ) {
       context.addIssue({ code: 'custom', path: ['instrumentId'], message: 'Only investment transactions can be linked' });
     }
+  }).transform((value) => {
+    const { customCategory, ...transaction } = value;
+    return {
+      ...transaction,
+      category: (value.type === 'expense' && value.category === CUSTOM_EXPENSE_CATEGORY_SENTINEL)
+        || (value.type === 'income' && value.category === CUSTOM_INCOME_CATEGORY_SENTINEL)
+        ? customCategory ?? ''
+        : value.category,
+    };
   });
 }
 
@@ -705,18 +735,10 @@ export type TransactionFormOutput = z.output<ReturnType<typeof makeTransactionFo
 export type MonthAllocationFormInput = z.input<ReturnType<typeof makeMonthAllocationFormSchema>>;
 export type MonthAllocationFormOutput = z.output<ReturnType<typeof makeMonthAllocationFormSchema>>;
 
-const holdingTypeFormSchema = z.enum([
-  'Mutual fund / SIP',
-  'Stocks / ETF',
-  'Fixed deposit',
-  'Recurring deposit',
-  'EPFO / PF',
-  'Savings account',
-  'Cash',
-  'Gold',
-  'Silver',
-  'Other',
-]);
+const holdingTypeFormSchema = z.enum(HOLDING_TYPES);
+const customTypeNameFormSchema = z.string().trim()
+  .max(30, 'Enter a custom type name up to 30 characters')
+  .default('');
 const frequencyFormSchema = z.enum(['daily', 'weekly', 'monthly', 'yearly']);
 const valuationMethodFormSchema = z.enum(['balance', 'balanceInterest', 'accrual', 'manual', 'unitsPrice']);
 const compoundingFormSchema = z.enum(['monthly', 'quarterly', 'halfYearly', 'yearly', 'simple']);
@@ -736,6 +758,7 @@ export function makePlanFormSchema(
     name: z.string().trim().min(1, 'Enter a name up to 40 characters').max(40, 'Enter a name up to 40 characters')
       .refine((name) => !ctx.otherNames.some((other) => other.toLocaleLowerCase() === name.toLocaleLowerCase()), 'A holding with this name already exists'),
     type: holdingTypeFormSchema,
+    customTypeName: customTypeNameFormSchema,
     frequency: frequencyFormSchema,
     amount: moneyInputSchema({ minimum: 0.01, maximum: 10_000_000, maximumMessage: 'Amount is too large' }),
     ratePct: optionalRate(30, 'Enter a rate between 0 and 30'),
@@ -750,14 +773,31 @@ export function makePlanFormSchema(
     opening: moneyInputSchema({ minimum: 0, maximum: 10_000_000_000, optional: true }),
     actualValue: moneyInputSchema({ minimum: 0, maximum: Number.MAX_SAFE_INTEGER, optional: true }),
     actualValueDate: z.string().trim(),
+    latestPrice: z.union([z.literal(''), moneyInputSchema({ minimum: 0.0001, maximum: 10_000_000_000 })])
+      .default('').transform((val) => val === '' ? undefined : val),
+    priceAsOf: z.string().trim().default(''),
+    unitCount: z.union([
+      z.literal(''),
+      z.string().trim()
+        .refine((v) => /^\d+(\.\d{1,6})?$/.test(v), 'Enter a valid unit count')
+        .transform(Number)
+        .refine((v) => v >= 0 && v <= 10_000_000_000, 'Unit count is out of range'),
+    ]).default('').transform((val) => val === '' ? undefined : val),
   }).transform((value) => ({
     ...value,
+    customTypeName: value.type === 'Custom' && value.customTypeName ? value.customTypeName : undefined,
     trackFrom: value.trackFrom || value.startDate,
     opening: value.opening ?? 0,
     actualValue: value.actualValue ?? null,
     actualValueDate: value.actualValueDate || null,
     maturityDate: value.maturityDate || undefined,
+    latestPrice: value.latestPrice,
+    priceAsOf: value.latestPrice !== undefined ? (value.priceAsOf || today) : undefined,
+    unitCount: value.unitCount,
   })).superRefine((value, context) => {
+    if (value.type === 'Custom' && !value.customTypeName) {
+      context.addIssue({ code: 'custom', path: ['customTypeName'], message: 'Enter a custom type name up to 30 characters' });
+    }
     if (!holdingCapabilities(value.type).recurring) {
       context.addIssue({
         code: 'custom',
@@ -832,7 +872,8 @@ export function makeLiabilityFormSchema(
   const common = {
     name: z.string().trim().min(1, 'Enter a name up to 40 characters').max(40, 'Enter a name up to 40 characters')
       .refine((name) => !ctx.otherNames.some((other) => other.toLocaleLowerCase() === name.toLocaleLowerCase()), 'A liability with this name already exists'),
-    type: z.enum(['Home loan', 'Car loan', 'Personal loan', 'Education loan', 'Credit card', 'Borrowed money', 'Other']),
+    type: z.enum(LIABILITY_TYPES),
+    customTypeName: customTypeNameFormSchema,
     principal: moneyInputSchema({ minimum: 0.01, maximum: 1_000_000_000, maximumMessage: 'Amount is too large' }),
     ratePct: optionalRate(60, 'Enter a rate between 0 and 60', true),
     startDate: dateInputSchema()
@@ -854,6 +895,9 @@ export function makeLiabilityFormSchema(
     emi: moneyInputSchema({ minimum: 0.01, maximum: 1_000_000_000, optional: true }),
     dueDate: z.string().optional(),
   }).superRefine((value, context) => {
+    if (value.type === 'Custom' && !value.customTypeName) {
+      context.addIssue({ code: 'custom', path: ['customTypeName'], message: 'Enter a custom type name up to 30 characters' });
+    }
     if (ctx.earliestPaymentDate && value.startDate > ctx.earliestPaymentDate) {
       context.addIssue({ code: 'custom', path: ['startDate'], message: 'A payment is dated before this start date' });
     }
@@ -894,6 +938,7 @@ export function makeLiabilityFormSchema(
     }
     return {
       ...value,
+      customTypeName: value.type === 'Custom' && value.customTypeName ? value.customTypeName : undefined,
       ratePct: solved.ratePct,
       tenureMonths: solved.tenureMonths,
       emi: solved.emi,
@@ -906,6 +951,9 @@ export function makeLiabilityFormSchema(
     emi: z.string().optional(),
     dueDate: z.string().trim(),
   }).superRefine((value, context) => {
+    if (value.type === 'Custom' && !value.customTypeName) {
+      context.addIssue({ code: 'custom', path: ['customTypeName'], message: 'Enter a custom type name up to 30 characters' });
+    }
     if (ctx.earliestPaymentDate && value.startDate > ctx.earliestPaymentDate) {
       context.addIssue({ code: 'custom', path: ['startDate'], message: 'A payment is dated before this start date' });
     }
@@ -916,8 +964,9 @@ export function makeLiabilityFormSchema(
         context.addIssue({ code: 'custom', path: ['dueDate'], message: 'Due date cannot be before the liability started' });
       }
     }
-  }).transform(({ tenureMonths: _tenureMonths, emi: _emi, dueDate, ...value }) => ({
+  }).transform(({ tenureMonths: _tenureMonths, emi: _emi, dueDate, customTypeName, ...value }) => ({
     ...value,
+    ...(value.type === 'Custom' && customTypeName ? { customTypeName } : {}),
     dueDate: dueDate || null,
   }));
   return z.discriminatedUnion('kind', [recurring, oneTime]);
@@ -956,19 +1005,53 @@ export function makeGoalFormSchema(
   });
 }
 
-export function makeHoldingFormSchema(ctx: { otherNames: string[]; entriesExist?: boolean }) {
+export function makeEmergencyFundTargetFormSchema(minimumTarget: number) {
+  return z.object({
+    target: moneyInputSchema({
+      minimum: 0.01,
+      maximum: 10_000_000_000,
+      maximumMessage: 'Amount is too large',
+    }),
+  }).superRefine(({ target }, context) => {
+    if (minimumTarget > 0 && target < minimumTarget) {
+      context.addIssue({
+        code: 'custom',
+        path: ['target'],
+        message: `The emergency fund target must be at least 3 months of cover (${formatINR(minimumTarget)})`,
+      });
+    }
+  });
+}
+
+export function makeHoldingFormSchema(ctx: { otherNames: string[]; entriesExist?: boolean; today?: ISODate }) {
   return z.object({
     name: z.string().trim().min(1, 'Enter a name up to 40 characters').max(40, 'Enter a name up to 40 characters')
       .refine((name) => !ctx.otherNames.some((other) => other.toLocaleLowerCase() === name.toLocaleLowerCase()), 'A holding with this name already exists'),
     type: holdingTypeFormSchema,
-    invested: moneyInputSchema({ minimum: 0, maximum: 10_000_000_000 }),
-    value: moneyInputSchema({ minimum: 0, maximum: 10_000_000_000 }),
+    customTypeName: customTypeNameFormSchema,
+    invested: moneyInputSchema({ minimum: 0, maximum: 10_000_000_000, optional: true }),
+    value: moneyInputSchema({ minimum: 0, maximum: 10_000_000_000, optional: true }),
     valuationMethod: valuationMethodFormSchema.default('manual'),
     ratePct: z.union([z.literal(''), optionalRate(100, 'Enter a rate between 0 and 100')])
       .default('').transform((value) => value === '' ? undefined : value),
     compounding: compoundingFormSchema.default('yearly'),
     maturityDate: z.string().trim().default('').transform((value) => value || undefined),
+    unitCount: z.union([
+      z.literal(''),
+      z.string().trim()
+        .refine((v) => /^\d+(\.\d{1,6})?$/.test(v), 'Enter a valid unit count')
+        .transform(Number)
+        .refine((v) => v >= 0 && v <= 10_000_000_000, 'Unit count is out of range'),
+    ]).default('').transform((val) => val === '' ? undefined : val),
+    latestPrice: z.union([
+      z.literal(''),
+      moneyInputSchema({ minimum: 0.0001, maximum: 10_000_000_000 }),
+    ]).default('').transform((val) => val === '' ? undefined : val),
+    priceAsOf: z.string().trim().default('').transform((val) => val || undefined),
   }).superRefine((value, context) => {
+    if (value.type === 'Custom' && !value.customTypeName) {
+      context.addIssue({ code: 'custom', path: ['customTypeName'], message: 'Enter a custom type name up to 30 characters' });
+    }
     if (ctx.entriesExist && !holdingCapabilities(value.type).entries) {
       context.addIssue({
         code: 'custom',
@@ -982,6 +1065,52 @@ export function makeHoldingFormSchema(ctx: { otherNames: string[]; entriesExist?
     if (value.valuationMethod === 'accrual' && value.ratePct === undefined) {
       context.addIssue({ code: 'custom', path: ['ratePct'], message: 'Enter an annual rate for accrual valuation' });
     }
+    if (value.valuationMethod === 'manual' && value.value === undefined) {
+      context.addIssue({ code: 'custom', path: ['value'], message: 'Enter a value' });
+    }
+    if (value.valuationMethod === 'unitsPrice') {
+      if (value.latestPrice === undefined) {
+        context.addIssue({ code: 'custom', path: ['latestPrice'], message: 'Enter unit price' });
+      }
+      if (value.unitCount === undefined && value.invested === undefined) {
+        context.addIssue({ code: 'custom', path: ['unitCount'], message: 'Enter units purchased or purchase amount' });
+      }
+    }
+  }).transform(({ customTypeName, value, invested, valuationMethod, ratePct, compounding, maturityDate, unitCount, latestPrice, priceAsOf, ...rest }) => {
+    let resolvedValue = value;
+    let resolvedInvested = invested;
+    let resolvedUnitCount = unitCount;
+
+    if (valuationMethod === 'unitsPrice') {
+      if (latestPrice !== undefined) {
+        if (resolvedUnitCount !== undefined && (resolvedInvested === undefined || resolvedInvested === 0)) {
+          resolvedInvested = Math.round(resolvedUnitCount * latestPrice * 100) / 100;
+        } else if (resolvedInvested !== undefined && resolvedUnitCount === undefined && latestPrice > 0) {
+          resolvedUnitCount = Math.round((resolvedInvested / latestPrice) * 1000000) / 1000000;
+        }
+        if (resolvedValue === undefined && resolvedUnitCount !== undefined) {
+          resolvedValue = Math.round(resolvedUnitCount * latestPrice * 100) / 100;
+        }
+      }
+    } else if (valuationMethod === 'balance' || valuationMethod === 'accrual') {
+      if (resolvedValue === undefined) {
+        resolvedValue = resolvedInvested;
+      }
+    }
+
+    return {
+      ...rest,
+      invested: resolvedInvested ?? 0,
+      value: resolvedValue ?? resolvedInvested ?? 0,
+      valuationMethod,
+      ratePct,
+      compounding,
+      maturityDate,
+      unitCount: resolvedUnitCount,
+      latestPrice,
+      priceAsOf: latestPrice !== undefined ? (priceAsOf || ctx.today) : undefined,
+      ...(rest.type === 'Custom' && customTypeName ? { customTypeName } : {}),
+    };
   });
 }
 

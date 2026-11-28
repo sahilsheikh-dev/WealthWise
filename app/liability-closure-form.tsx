@@ -5,6 +5,7 @@ import { Controller, useForm, useWatch } from 'react-hook-form';
 import { View } from 'react-native';
 
 import { DateField } from '../src/components/form/DateField';
+import { FieldTitle } from '../src/components/form/FieldTitle';
 import { FormScreen } from '../src/components/form/FormScreen';
 import { MoneyField } from '../src/components/form/MoneyField';
 import { ReadOnlyRow } from '../src/components/form/ReadOnlyRow';
@@ -22,12 +23,13 @@ import {
 import { formatAmount } from '../src/lib/amountDisplay';
 import { todayISO } from '../src/lib/clock';
 import { confirmAsync } from '../src/lib/confirm';
+import { closeRouteSafely, singleParam } from '../src/lib/routeParams';
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
 export default function LiabilityClosureFormScreen() {
   const params = useLocalSearchParams<{ liabilityId?: string }>();
-  const liabilityId = Array.isArray(params.liabilityId) ? params.liabilityId[0] : params.liabilityId;
+  const liabilityId = singleParam(params.liabilityId);
   const liability = useAppStore((state) => state.data.liabilities.find((entry) => entry.id === liabilityId));
   const actions = useAppActions();
   const today = useMemo(() => todayISO(), []);
@@ -96,7 +98,7 @@ export default function LiabilityClosureFormScreen() {
 
   if (!liability || liability.kind !== 'recurring' || liability.closure) {
     return (
-      <FormScreen title="Foreclosure" onClose={() => router.back()} isDirty={false} footer={null}>
+      <FormScreen title="Foreclosure" onClose={() => closeRouteSafely('/liabilities')} isDirty={false} footer={null}>
         <EmptyState title="Open recurring liability not found" />
       </FormScreen>
     );
@@ -134,25 +136,29 @@ export default function LiabilityClosureFormScreen() {
         accessibilityLabel="Loan closure date"
       />
       <Controller control={control} name="amountPaid" render={({ field }) => (
-        <MoneyField
-          label="Amount paid to lender"
-          value={field.value}
-          onChangeText={field.onChange}
-          onBlur={field.onBlur}
-          error={errors.amountPaid?.message}
-          accessibilityLabel="Amount paid to lender"
-        />
+        <FieldTitle title="Amount paid to lender">
+          <MoneyField
+            label="Amount paid to lender"
+            value={field.value}
+            onChangeText={field.onChange}
+            onBlur={field.onBlur}
+            error={errors.amountPaid?.message}
+            accessibilityLabel="Amount paid to lender"
+          />
+        </FieldTitle>
       )} />
       <Controller control={control} name="note" render={({ field }) => (
-        <TextField
-          label="Note (optional)"
-          accessibilityLabel="Loan closure note"
-          maxLength={200}
-          value={field.value}
-          onChangeText={field.onChange}
-          onBlur={field.onBlur}
-          error={errors.note?.message}
-        />
+        <FieldTitle title="Note (optional)">
+          <TextField
+            label="Note (optional)"
+            accessibilityLabel="Loan closure note"
+            maxLength={200}
+            value={field.value}
+            onChangeText={field.onChange}
+            onBlur={field.onBlur}
+            error={errors.note?.message}
+          />
+        </FieldTitle>
       )} />
       <ReadOnlyRow label="Outstanding on this date" value={formatAmount(outstanding, 'exact', 2)} />
     </FormScreen>

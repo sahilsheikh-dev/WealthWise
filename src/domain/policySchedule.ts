@@ -8,6 +8,7 @@ const MONTHS_PER_PAYMENT: Record<Policy['frequency'], number> = {
   quarterly: 3,
   'half-yearly': 6,
   yearly: 12,
+  once: 1,
   custom: 1,
 };
 
@@ -22,7 +23,11 @@ export function policySchedule(policy: Policy, asOf: string): PlanSchedule {
   if (policy.status !== 'active') return { rows: [], summary: summarizeSlots([]) };
   const lastDate = policy.endDate ?? '2100-12-31';
   let count = 0;
-  while (count < 1400 && dueDateAt(policy, count) <= lastDate) count += 1;
+  if (policy.frequency === 'once') {
+    count = policy.trackFrom <= lastDate ? 1 : 0;
+  } else {
+    while (count < 1400 && dueDateAt(policy, count) <= lastDate) count += 1;
+  }
   const slots = generateSlots(
     count,
     0,

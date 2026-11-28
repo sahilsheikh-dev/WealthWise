@@ -8,10 +8,13 @@ export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{ headerShown: false, tabBarShowLabel: false }}
-      tabBar={({ state, navigation }) => (
+      tabBar={({ state, navigateToTab }) => (
         <BottomTabBar
           activeTab={state.routes[state.index]?.name ?? null}
-          onSelect={(tab) => navigation.navigate(tab)}
+          onSelect={(tab) => {
+            const route = state.routes.find((r) => r.name === tab);
+            if (route) navigateToTab(route.key);
+          }}
         />
       )}>
       <Tabs.Screen name="index" options={{ title: 'Home' }} />

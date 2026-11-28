@@ -6,7 +6,7 @@ import { AmountText } from '../../src/components/AmountText';
 import { AppHeader } from '../../src/components/AppHeader';
 import { GoalProgressRow } from '../../src/components/GoalProgressRow';
 import { SortChip } from '../../src/components/SortChip';
-import { AppText, Card, ChipRow, EmptyState, ProgressBar, SearchField, Screen } from '../../src/components/ui';
+import { AppText, Card, Chip, ChipRow, EmptyState, ProgressBar, SearchField, Screen } from '../../src/components/ui';
 import { useAppData } from '../../src/data/useAppData';
 import { useSort } from '../../src/data/useSort';
 import { emergencyFundBaseline, monthsCovered } from '../../src/domain/ef';
@@ -15,7 +15,7 @@ import { ensureEfGoal, goalTotals, goalView } from '../../src/domain/goals';
 import { formatAmount } from '../../src/lib/amountDisplay';
 import { todayISO } from '../../src/lib/clock';
 import { formatDate } from '../../src/lib/format';
-import { DEFAULT_SORTS, SORT_OPTIONS } from '../../src/lib/sorting';
+import { SORT_OPTIONS } from '../../src/lib/sorting';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
 
@@ -26,6 +26,9 @@ export default function GoalsScreen() {
   const data = useAppData();
   const sorting = useSort('goals');
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<'All' | 'In progress' | 'Achieved'>('All');
+  const [yearFilter, setYearFilter] = useState<'All' | number>('All');
+  const [achievedExpanded, setAchievedExpanded] = useState(false);
   const [query, setQuery] = useState('');
   const asOf = todayISO();
   const emergencyBaseline = emergencyFundBaseline(data.transactions, data.settings.monthlySalary, asOf);
@@ -35,25 +38,146 @@ export default function GoalsScreen() {
     asOf,
   });
   const totals = goalTotals(goals, expenseBaseline, data, asOf);
+  const availableYears = Array.from(
+    new Set(goals.map((goal) => goal.year).filter((year) => typeof year === 'number' && Number.isFinite(year))),
+  ).sort((a, b) => a - b);
   const goalCreationOrder = new Map(data.goals.map((goal, index) => [goal.id, index]));
   const sortedGoals = sorting.sort(goals.map((goal) => {
     const view = goalView(goal, { expenseBaseline, data, asOf });
     return {
       ...goal,
       targetAmount: view.target,
+      savedAmount: view.saved,
       progress: view.pct,
       remaining: Math.max(0, view.target - view.saved),
       sortCreatedIndex: goalCreationOrder.get(goal.id) ?? data.goals.length,
     };
   }));
+  const filteredGoals = sortedGoals.filter((goal) => {
+    if (statusFilter === 'In progress' && goal.savedAmount >= goal.targetAmount) return false;
+    if (statusFilter === 'Achieved' && goal.savedAmount < goal.targetAmount) return false;
+    if (yearFilter !== 'All' && goal.year !== yearFilter) return false;
+    return true;
+  });
   const normalizedQuery = query.trim().toLowerCase();
   const visibleGoals = normalizedQuery
-    ? sortedGoals.filter((goal) =>
+    ? filteredGoals.filter((goal) =>
       `${goal.name} ${goal.auto === 'ef' ? 'Emergency fund' : ''}`.toLowerCase().includes(normalizedQuery),
     )
-    : sortedGoals;
-  const filterActive = sorting.spec.key !== DEFAULT_SORTS.goals.key
-    || sorting.spec.dir !== DEFAULT_SORTS.goals.dir;
+    : filteredGoals;
+  const pinnedGoals = visibleGoals.filter((goal) => goal.auto === 'ef');
+  const inProgressGoals = visibleGoals.filter((goal) =>
+    goal.auto !== 'ef' && goal.savedAmount < goal.targetAmount,
+  );
+  const achievedGoals = visibleGoals.filter((goal) =>
+    goal.auto !== 'ef' && goal.savedAmount >= goal.targetAmount,
+  );
+  const isAchievedExpanded = achievedExpanded || statusFilter === 'Achieved';
+
+  const renderGoalCard = (goal: (typeof sortedGoals)[number]) => {
+    const view = goalView(goal, { expenseBaseline, data, asOf });
+    const projection = goalProjection(goal, data, asOf);
+    const { target, saved, pct: goalPercent } = view;
+    const targetYearPassed = goal.year < Number(asOf.slice(0, 4)) && goalPercent < 100;
+    const coverMonths = goal.auto === 'ef' ? monthsCovered(saved, emergencyBaseline.amount) : null;
+    const sharedGoalCount = new Set(
+      goal.links.flatMap((link) =>
+        data.goals
+          .filter((other) => other.id !== goal.id && other.links.some((candidate) => candidate.instrumentId === link.instrumentId))
+          .map((other) => other.id)),
+    ).size;
+    return (
+      <Pressable
+        key={goal.id}
+        accessibilityRole="button"
+        accessibilityLabel={`Edit ${goal.name}, target ${formatAmount(target, 'exact', 1)}, saved ${formatAmount(saved, 'exact', 1)}, ${formatAmount(Math.max(0, target - saved), 'exact', 1)} left, ${goal.year}, ${goalPercent.toFixed(1)}% funded`}
+        accessibilityHint="Opens this goal for editing"
+        onPress={() => router.push({ pathname: '/goal-form', params: { id: goal.id } })}
+        style={[styles.goal, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <View style={styles.goalHeader}>
+          <View style={styles.nameBlock}>
+            <AppText weight="semibold" style={typography.name}>{goal.name}</AppText>
+            <AppText
+              style={[typography.meta, { color: colors.text3 }]}
+              accessibilityLabel={`Target ${formatAmount(target, 'exact', 1)} · ${goal.year}`}>
+              Target <AmountText value={target} tier="row" /> · {goal.year}{goal.auto ? ' · Synced from Emergency fund' : ''}
+            </AppText>
+            {targetYearPassed ? (
+              <AppText style={[typography.meta, { color: colors.err }]}>Target year has passed</AppText>
+            ) : null}
+            {goal.links.length > 0 ? (
+              <AppText style={[typography.meta, { color: colors.text3 }]}>
+                Tracking {goal.links.length} {goal.links.length === 1 ? 'asset' : 'assets'}
+              </AppText>
+            ) : null}
+            {sharedGoalCount > 0 ? (
+              <AppText style={[typography.meta, { color: colors.text3 }]}>
+                Also counted in {sharedGoalCount} other goal(s)
+              </AppText>
+            ) : null}
+          </View>
+          <AppText weight="bold" style={[styles.percentage, { color: colors.primary }]}>{goalPercent.toFixed(1)}%</AppText>
+        </View>
+        <View style={styles.amounts}>
+          <AppText
+            style={[typography.meta, { color: colors.ok }]}
+            accessibilityLabel={`${formatAmount(saved, 'exact', 1)} saved`}>
+            <AmountText value={saved} tier="row" /> saved
+          </AppText>
+          <AppText
+            style={[typography.meta, { color: colors.text3 }]}
+            accessibilityLabel={`${formatAmount(Math.max(0, target - saved), 'exact', 1)} left`}>
+            <AmountText value={Math.max(0, target - saved)} tier="row" /> left
+          </AppText>
+        </View>
+        {projection.projectedDate && projection.projectedDate !== 'Already reached' ? (
+          <View style={styles.projection}>
+            <AppText style={[typography.meta, { color: colors.text2 }]}>
+              Projected completion {formatDate(projection.projectedDate)}
+            </AppText>
+          </View>
+        ) : null}
+        {goal.auto === 'ef' ? (
+          <>
+            <AppText
+              style={[typography.meta, styles.minimum, { color: colors.text3 }]}
+              accessibilityLabel={`Minimum 3 months of cover: ${formatAmount(view.minimum ?? 0, 'exact', 1)}`}>
+              Minimum 3 months of cover: <AmountText value={view.minimum ?? 0} tier="row" />
+            </AppText>
+            {expenseBaseline > 0 ? (
+              <AppText
+                style={[typography.meta, { color: colors.text3 }]}
+                accessibilityLabel={emergencyBaseline.source === 'expenses'
+                  ? `Based on your average monthly expenses, ${formatAmount(expenseBaseline, 'exact', 1)}`
+                  : 'Based on your monthly income'}>
+                {emergencyBaseline.source === 'expenses'
+                  ? <>Based on your average monthly expenses: <AmountText value={expenseBaseline} tier="row" /></>
+                  : 'Based on your monthly income'}
+              </AppText>
+            ) : <AppText style={[typography.meta, { color: colors.text3 }]}>Add your monthly income to see cover</AppText>}
+            <View style={styles.emergencyActions}>
+              <AppText style={[typography.meta, { color: colors.text2 }]}>
+                {coverMonths === null ? '—' : `${Math.trunc(coverMonths * 10) / 10} mo of cover`}
+              </AppText>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Track emergency fund"
+                onPress={(event) => {
+                  event.stopPropagation?.();
+                  router.push('/emergency-fund');
+                }}>
+                <AppText style={[typography.meta, { color: colors.primary }]}>Track</AppText>
+              </Pressable>
+            </View>
+            {view.raised ? (
+              <AppText style={[typography.meta, { color: colors.text3 }]}>Raised to the 3-month minimum</AppText>
+            ) : null}
+          </>
+        ) : null}
+        <GoalProgressRow percent={goalPercent} />
+      </Pressable>
+    );
+  };
 
   return (
     <Screen>
@@ -65,7 +189,6 @@ export default function GoalsScreen() {
             label: 'Filter',
             onPress: () => setFilterPanelOpen((open) => !open),
             expanded: filterPanelOpen,
-            showIndicator: filterActive,
           },
           { icon: 'plus', label: 'New goal', onPress: () => router.push('/goal-form') },
         ]}
@@ -74,6 +197,32 @@ export default function GoalsScreen() {
         <View testID="goal-filter-panel">
           <ChipRow>
             <SortChip options={SORT_OPTIONS.goals} spec={sorting.spec} onChange={sorting.setSpec} />
+            <Chip
+              label="All"
+              selected={statusFilter === 'All' && yearFilter === 'All'}
+              onPress={() => {
+                setStatusFilter('All');
+                setYearFilter('All');
+              }}
+            />
+            <Chip
+              label="In progress"
+              selected={statusFilter === 'In progress'}
+              onPress={() => setStatusFilter((current) => (current === 'In progress' ? 'All' : 'In progress'))}
+            />
+            <Chip
+              label="Achieved"
+              selected={statusFilter === 'Achieved'}
+              onPress={() => setStatusFilter((current) => (current === 'Achieved' ? 'All' : 'Achieved'))}
+            />
+            {availableYears.map((year) => (
+              <Chip
+                key={year}
+                label={String(year)}
+                selected={yearFilter === year}
+                onPress={() => setYearFilter((current) => (current === year ? 'All' : year))}
+              />
+            ))}
           </ChipRow>
         </View>
       ) : null}
@@ -94,111 +243,29 @@ export default function GoalsScreen() {
         </AppText>
         <ProgressBar percent={totals.pct} />
       </Card>
-      {visibleGoals.map((goal) => {
-        const view = goalView(goal, { expenseBaseline, data, asOf });
-        const projection = goalProjection(goal, data, asOf);
-        const { target, saved, pct: goalPercent } = view;
-        const targetYearPassed = goal.year < Number(asOf.slice(0, 4)) && goalPercent < 100;
-        const coverMonths = goal.auto === 'ef' ? monthsCovered(saved, emergencyBaseline.amount) : null;
-        const sharedGoalCount = new Set(
-          goal.links.flatMap((link) =>
-            data.goals
-              .filter((other) => other.id !== goal.id && other.links.some((candidate) => candidate.instrumentId === link.instrumentId))
-              .map((other) => other.id)),
-        ).size;
-        return (
-          <Pressable
-            key={goal.id}
-            accessibilityRole="button"
-            accessibilityLabel={`Edit ${goal.name}, target ${formatAmount(target, 'exact', 1)}, saved ${formatAmount(saved, 'exact', 1)}, ${formatAmount(Math.max(0, target - saved), 'exact', 1)} left, ${goal.year}, ${goalPercent.toFixed(1)}% funded`}
-            accessibilityHint="Opens this goal for editing"
-            onPress={() => router.push({ pathname: '/goal-form', params: { id: goal.id } })}
-            style={[styles.goal, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={styles.goalHeader}>
-              <View style={styles.nameBlock}>
-                <AppText weight="semibold" style={typography.name}>{goal.name}</AppText>
-                <AppText
-                  style={[typography.meta, { color: colors.text3 }]}
-                  accessibilityLabel={`Target ${formatAmount(target, 'exact', 1)} · ${goal.year}`}>
-                  Target <AmountText value={target} tier="row" /> · {goal.year}{goal.auto ? ' · Synced from Emergency fund' : ''}
-                </AppText>
-                {targetYearPassed ? (
-                  <AppText style={[typography.meta, { color: colors.err }]}>Target year has passed</AppText>
-                ) : null}
-                    {goal.links.length > 0 ? (
-                      <AppText style={[typography.meta, { color: colors.text3 }]}>
-                        Tracking {goal.links.length} {goal.links.length === 1 ? 'asset' : 'assets'}
-                      </AppText>
-                    ) : null}
-                    {sharedGoalCount > 0 ? (
-                      <AppText style={[typography.meta, { color: colors.text3 }]}>
-                        Also counted in {sharedGoalCount} other goal(s)
-                      </AppText>
-                    ) : null}
-              </View>
-              <AppText weight="bold" style={[styles.percentage, { color: colors.primary }]}>{goalPercent.toFixed(1)}%</AppText>
-            </View>
-            <View style={styles.amounts}>
-              <AppText
-                style={[typography.meta, { color: colors.ok }]}
-                accessibilityLabel={`${formatAmount(saved, 'exact', 1)} saved`}>
-                <AmountText value={saved} tier="row" /> saved
-              </AppText>
-              <AppText
-                style={[typography.meta, { color: colors.text3 }]}
-                accessibilityLabel={`${formatAmount(Math.max(0, target - saved), 'exact', 1)} left`}>
-                <AmountText value={Math.max(0, target - saved)} tier="row" /> left
-              </AppText>
-            </View>
-            {projection.projectedDate && projection.projectedDate !== 'Already reached' ? (
-              <View style={styles.projection}>
-                <AppText style={[typography.meta, { color: colors.text2 }]}>
-                  Projected completion {formatDate(projection.projectedDate)}
-                </AppText>
-              </View>
-            ) : null}
-            {goal.auto === 'ef' ? (
-              <>
-                <AppText
-                  style={[typography.meta, styles.minimum, { color: colors.text3 }]}
-                  accessibilityLabel={`Minimum 3 months of cover: ${formatAmount(view.minimum ?? 0, 'exact', 1)}`}>
-                  Minimum 3 months of cover: <AmountText value={view.minimum ?? 0} tier="row" />
-                </AppText>
-                {expenseBaseline > 0 ? (
-                  <AppText
-                    style={[typography.meta, { color: colors.text3 }]}
-                    accessibilityLabel={emergencyBaseline.source === 'expenses'
-                      ? `Based on your average monthly expenses, ${formatAmount(expenseBaseline, 'exact', 1)}`
-                      : 'Based on your monthly income'}>
-                    {emergencyBaseline.source === 'expenses'
-                      ? <>Based on your average monthly expenses: <AmountText value={expenseBaseline} tier="row" /></>
-                      : 'Based on your monthly income'}
-                  </AppText>
-                ) : <AppText style={[typography.meta, { color: colors.text3 }]}>Add your monthly income to see cover</AppText>}
-                <View style={styles.emergencyActions}>
-                  <AppText style={[typography.meta, { color: colors.text2 }]}>
-                    {coverMonths === null ? '—' : `${Math.trunc(coverMonths * 10) / 10} mo of cover`}
-                  </AppText>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Track emergency fund"
-                    onPress={(event) => {
-                      event.stopPropagation?.();
-                      router.push('/emergency-fund');
-                    }}>
-                    <AppText style={[typography.meta, { color: colors.primary }]}>Track</AppText>
-                  </Pressable>
-                </View>
-                {view.raised ? (
-                  <AppText style={[typography.meta, { color: colors.text3 }]}>Raised to the 3-month minimum</AppText>
-                ) : null}
-              </>
-            ) : null}
-            <GoalProgressRow percent={goalPercent} />
-          </Pressable>
-        );
-      })}
-      {normalizedQuery && visibleGoals.length === 0 ? <EmptyState title="No matches" /> : null}
+      {pinnedGoals.map(renderGoalCard)}
+      {inProgressGoals.map(renderGoalCard)}
+      {achievedGoals.length > 0 ? (
+        <Pressable
+          testID="achieved-goals-toggle"
+          accessibilityRole="button"
+          accessibilityLabel={`Achieved (${achievedGoals.length})`}
+          accessibilityHint={isAchievedExpanded ? 'Hides achieved goals' : 'Shows achieved goals'}
+          accessibilityState={{ expanded: isAchievedExpanded }}
+          onPress={() => setAchievedExpanded((expanded) => !expanded)}
+          style={[styles.achievedToggle, { borderColor: colors.border }]}>
+          <AppText weight="semibold" style={[typography.label, { color: colors.text1 }]}>
+            Achieved ({achievedGoals.length})
+          </AppText>
+          <AppText style={[typography.meta, { color: colors.text3 }]}>
+            {isAchievedExpanded ? 'Hide' : 'Show'}
+          </AppText>
+        </Pressable>
+      ) : null}
+      {isAchievedExpanded ? achievedGoals.map(renderGoalCard) : null}
+      {(normalizedQuery || statusFilter !== 'All' || yearFilter !== 'All') && visibleGoals.length === 0 ? (
+        <EmptyState title="No matches" />
+      ) : null}
     </Screen>
   );
 }
@@ -213,6 +280,17 @@ const styles = StyleSheet.create({
   amounts: { marginTop: 8, flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
   projection: { marginTop: 8, gap: 3 },
   minimum: { marginTop: 7 },
+  achievedToggle: {
+    minHeight: 48,
+    marginHorizontal: 20,
+    marginTop: 10,
+    paddingHorizontal: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   sortRow: { marginHorizontal: 20, marginVertical: 8 },
   emergencyActions: { minHeight: 36, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
 });

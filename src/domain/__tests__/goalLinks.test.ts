@@ -68,6 +68,18 @@ function baseData() {
 }
 
 describe('goal asset links', () => {
+  it('exposes custom holding type labels for goal-link pickers', () => {
+    const custom: ManualHolding = {
+      ...manual,
+      id: 'custom-linked-holding',
+      type: 'Custom',
+      customTypeName: 'Fine art',
+    };
+    const data = { ...baseData(), holdings: [custom, plan] };
+    expect(linkableInstruments(data, '2026-10-12').find((item) => item.id === custom.id))
+      .toMatchObject({ typeLabel: 'Fine art' });
+  });
+
   it('lists all holdings and savings policies but never the automatic emergency fund', () => {
     const data = {
       ...baseData(),
@@ -292,7 +304,7 @@ describe('goal asset links', () => {
     expect(fixedDeposit.logs).toEqual([]);
     expect(recurringDeposit.type).toBe('Recurring deposit');
     expect(recurringDeposit.logs.length).toBeGreaterThan(0);
-    expect(goalSavedFor(emergency, data, '2026-10-12')).toBe(187_000);
+    expect(goalSavedFor(emergency, data, '2026-10-12')).toBe(2_000_000);
     expect(goalSavedFor(retirement, data, '2026-10-12')).toBeGreaterThan(0);
     expect(goalSavedFor(home, data, '2026-10-12')).toBeGreaterThan(0);
   });

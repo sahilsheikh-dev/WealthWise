@@ -1,10 +1,11 @@
 import { Feather } from '@expo/vector-icons';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { PanResponder, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 
 import { AmountText } from '../../src/components/AmountText';
 import { AppHeader } from '../../src/components/AppHeader';
+import { MonthYearPicker } from '../../src/components/MonthYearPicker';
 import { PendingItemActions } from '../../src/components/PendingItemActions';
 import { PendingItemRow } from '../../src/components/PendingItemRow';
 import { SortChip } from '../../src/components/SortChip';
@@ -20,11 +21,13 @@ import {
   StatPill,
   WarningBanner,
 } from '../../src/components/ui';
+import { metaStore } from '../../src/data/store';
 import { useUIStore } from '../../src/data/uiStore';
 import { useAppData } from '../../src/data/useAppData';
 import { useSort } from '../../src/data/useSort';
-import { availableBalance } from '../../src/domain/cashFlow';
 import { customBudgetCategories } from '../../src/domain/budget';
+import { budgetItemForTransaction } from '../../src/domain/budgetCategories';
+import { availableBalance } from '../../src/domain/cashFlow';
 import { shiftMonth } from '../../src/domain/dates';
 import { findUnlinkedEntries } from '../../src/domain/instruments';
 import { describeSource } from '../../src/domain/links';
@@ -34,8 +37,12 @@ import type { Transaction } from '../../src/domain/types';
 import { formatAmount } from '../../src/lib/amountDisplay';
 import { todayISO } from '../../src/lib/clock';
 import { formatDate, formatMonth } from '../../src/lib/format';
-import { DEFAULT_SORTS, SORT_OPTIONS } from '../../src/lib/sorting';
+import { SORT_OPTIONS } from '../../src/lib/sorting';
 import { swipeIntent } from '../../src/lib/swipe';
+import {
+  loadTransactionDetectionStatus,
+  type TransactionDetectionStatusInfo,
+} from '../../src/lib/transactionDetectionStatus';
 import { typography } from '../../src/theme/tokens';
 import { useTheme } from '../../src/theme/useTheme';
 
@@ -64,6 +71,24 @@ export default function TransactionsScreen() {
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const today = useMemo(() => todayISO(), []);
   const [touchingChips, setTouchingChips] = useState(false);
+  const [monthPickerOpen, setMonthPickerOpen] = useState(false);
+  const [detectionStatus, setDetectionStatus] = useState<TransactionDetectionStatusInfo | null>(null);
+  useEffect(() => {
+    let active = true;
+    const refreshDetection = () => {
+      void loadTransactionDetectionStatus(metaStore).then((status) => {
+        if (active) setDetectionStatus(status);
+      });
+    };
+    refreshDetection();
+    const unsub = typeof metaStore?.subscribe === 'function'
+      ? metaStore.subscribe(refreshDetection)
+      : () => undefined;
+    return () => {
+      active = false;
+      unsub();
+    };
+  }, []);
   useEffect(() => {
     if (params.month && /^\d{4}-(0[1-9]|1[0-2])$/.test(params.month)) setTxMonth(params.month);
   }, [params.month, setTxMonth]);
@@ -109,9 +134,6 @@ export default function TransactionsScreen() {
   );
   const groups = useMemo(() => groupByDate(rows), [rows]);
   const hasMonthTransactions = data.transactions.some((item) => item.date.startsWith(month));
-  const filterActive = filter !== 'all' || categoryFilter !== ''
-    || sorting.spec.key !== DEFAULT_SORTS.transactions.key
-    || sorting.spec.dir !== DEFAULT_SORTS.transactions.dir;
   return (
     <Screen scroll={false}>
       <View style={styles.gestureSurface} {...monthPanResponder.panHandlers}>
@@ -125,7 +147,6 @@ export default function TransactionsScreen() {
               label: 'Filter',
               onPress: () => setFilterPanelOpen((open) => !open),
               expanded: filterPanelOpen,
-              showIndicator: filterActive,
             },
             { icon: 'plus', label: 'Add transaction', onPress: () => router.push('/transaction-form') },
           ]}
@@ -173,9 +194,26 @@ export default function TransactionsScreen() {
               </View>
             </View>
           </View>
-          <View testID="available-balance-divider" style={[styles.balanceDivider, { backgroundColor: colors.border }]} />
           </Card>
         </View>
+        {detectionStatus && detectionStatus.status !== 'enabled' && detectionStatus.status !== 'unavailable' ? (
+          <Pressable
+            testID="transaction-detection-entry"
+            accessibilityRole="button"
+            accessibilityLabel={`Automatically detect transactions: ${detectionStatus.label}. ${detectionStatus.actionLabel}`}
+            onPress={() => router.push('/transaction-detection' as Href)}
+            style={[styles.unlinkedNotice, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <AppText>
+              Automatically detect transactions ({detectionStatus.label}).{' '}
+              {detectionStatus.pendingDraftCount > 0
+                ? `${detectionStatus.pendingDraftCount} draft${detectionStatus.pendingDraftCount === 1 ? '' : 's'} ready. `
+                : ''}
+              <AppText weight="semibold" style={{ color: colors.primary }}>
+                {detectionStatus.actionLabel}
+              </AppText>
+            </AppText>
+          </Pressable>
+        ) : null}
         {unlinkedCount > 0 ? (
           <Pressable
             testID="unlinked-entry-notice"
@@ -195,16 +233,22 @@ export default function TransactionsScreen() {
             <Feather name="chevron-left" size={18} color={colors.text2} />
           </Pressable>
           <Pressable
+            testID="transactions-month-selector"
             accessible
             accessibilityRole="adjustable"
             accessibilityLabel={`Selected month: ${formatMonth(month)}`}
+            accessibilityHint="Tap to jump to a month and year"
             accessibilityActions={[{ name: 'decrement', label: 'Previous month' }, { name: 'increment', label: 'Next month' }]}
+            onPress={() => setMonthPickerOpen(true)}
             onAccessibilityAction={({ nativeEvent }) => {
               if (nativeEvent.actionName === 'decrement') setTxMonth(shiftMonth(month, -1));
               if (nativeEvent.actionName === 'increment') setTxMonth(shiftMonth(month, 1));
             }}
             style={styles.monthAdjustable}>
-            <AppText weight="semibold" style={styles.monthLabel}>{formatMonth(month)}</AppText>
+            <View style={styles.monthPickerTrigger}>
+              <AppText weight="semibold" style={styles.monthLabel}>{formatMonth(month)}</AppText>
+              <Feather name="chevron-down" size={16} color={colors.text3} />
+            </View>
           </Pressable>
           <Pressable
             accessibilityRole="button"
@@ -313,14 +357,18 @@ export default function TransactionsScreen() {
                 const linked = item.source
                   ? describeSource(data, item.source)
                   : null;
-                const categoryLabel = transactionCategoryLabel(item.category, item.type, budgetCategories);
+                const linkedBudgetItem = budgetItemForTransaction(data, item);
+                const categoryLabel = transactionCategoryLabel(linkedBudgetItem?.name || item.category, item.type, budgetCategories);
+                const itemTitle = (item.note && (!linked || item.note !== `${linked.label} deposit`))
+                  ? item.note
+                  : (item.note || categoryLabel);
                 return (
                   <ListItem
                     key={item.id}
-                    title={item.note || categoryLabel}
+                    title={itemTitle}
                     subtitle={linked ? `${categoryLabel}\n→ ${linked.label}` : categoryLabel}
                     amount={`${tone.symbol}${formatAmount(item.amount, 'row', fontScale)}`}
-                    accessibilityLabel={`${item.note || categoryLabel}, ${categoryLabel}, ${tone.symbol}${formatAmount(item.amount, 'exact', 1)}`}
+                    accessibilityLabel={`${itemTitle}, ${categoryLabel}, ${tone.symbol}${formatAmount(item.amount, 'exact', 1)}`}
                     tone={tone.tone}
                     icon={item.type === 'income' ? 'arrow-down-left' : item.type === 'expense' ? 'arrow-up-right' : 'trending-up'}
                     onPress={() => router.push({ pathname: '/transaction-form', params: { id: item.id } })}
@@ -332,6 +380,15 @@ export default function TransactionsScreen() {
         </View>
       </ScrollView>
       </View>
+      <MonthYearPicker
+        visible={monthPickerOpen}
+        month={month}
+        onSelect={(nextMonth) => {
+          setTxMonth(nextMonth);
+          router.setParams({ month: nextMonth });
+        }}
+        onClose={() => setMonthPickerOpen(false)}
+      />
     </Screen>
   );
 }
@@ -345,6 +402,7 @@ const styles = StyleSheet.create({
   todayButton: { minWidth: 44, height: 44, paddingHorizontal: 10, alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth, borderRadius: 22 },
   monthLabel: { fontSize: 14 },
   monthAdjustable: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 },
+  monthPickerTrigger: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   metrics: { marginHorizontal: 20, marginTop: 8, flexDirection: 'row', gap: 7 },
   filterRow: { minHeight: 44, marginHorizontal: 20, marginTop: 10, flexDirection: 'row', alignItems: 'center', gap: 6 },
   filterScroller: { flex: 1, minWidth: 0 },
@@ -366,5 +424,4 @@ const styles = StyleSheet.create({
   balanceActions: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   broughtForwardChip: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, paddingHorizontal: 7, paddingVertical: 4 },
   balanceChipText: { fontSize: 10 },
-  balanceDivider: { height: StyleSheet.hairlineWidth },
 });

@@ -1,12 +1,14 @@
 import { addDays, addMonths, parseISO } from './dates';
 import { holdingContributions, holdingValue } from './portfolio';
 import { planValue, PERIODS_PER_YEAR } from './sip';
+import { financialTypeLabel } from './typeLabels';
 import type { AppData, Goal, GoalLink, ISODate, PlanHolding, Policy } from './types';
 
 export type LinkableInstrument = {
   id: string;
   name: string;
   kind: 'manual' | 'plan' | 'policy';
+  typeLabel?: string;
   value: number;
   invested: number;
 };
@@ -54,6 +56,9 @@ export function linkableInstruments(data: AppData, asOf: ISODate): LinkableInstr
     id: holding.id,
     name: holding.name,
     kind: holding.kind,
+    ...(holding.type === 'Custom'
+      ? { typeLabel: financialTypeLabel(holding.type, holding.customTypeName) }
+      : {}),
     value: holdingValue(holding, asOf),
     invested: holdingContributions(holding),
   }));

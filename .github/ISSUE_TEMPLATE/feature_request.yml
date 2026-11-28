@@ -1,0 +1,75 @@
+name: Feature request
+description: Suggest an enhancement or new capability for WealthWise
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### Privacy Reminder
+        WealthWise operates entirely offline. Do not include real personal financial data, account numbers, or credentials in feature proposals.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or User Need
+      description: What challenge or user need does this feature address?
+    validations:
+      required: true
+  - type: textarea
+    id: proposed_solution
+    attributes:
+      label: Proposed Behavior & Scope
+      description: Describe how the feature should behave, what is in/out of scope, and how users interact with it.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance Criteria
+      description: Measurable conditions required to consider this feature complete.
+      placeholder: |
+        - [ ] Pure domain logic tested without React/Expo imports
+        - [ ] UI/accessibility and six ordered repository gates pass
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: Prerequisite tasks, phases, or platform constraints (or write "None").
+    validations:
+      required: true
+  - type: dropdown
+    id: estimate
+    attributes:
+      label: Story-Point Estimate (Fibonacci)
+      description: Select a Fibonacci story-point estimate (1, 2, 3, 5, 8, 13) or mark Unavailable if evidence is insufficient.
+      options:
+        - "1 — small isolated enhancement"
+        - "2 — single-screen or single-module enhancement"
+        - "3 — feature with domain, UI, and tests"
+        - "5 — cross-layer feature with persistence/schema or native plugin"
+        - "8 — multi-screen subsystem"
+        - "13 — large multi-part phase"
+        - "Unavailable — insufficient evidence"
+    validations:
+      required: true
+  - type: textarea
+    id: estimate_basis
+    attributes:
+      label: Estimate Basis & Privacy-Safe Evidence
+      description: Brief rationale for the estimate and privacy-safe references.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Describe any alternative designs or workarounds you considered.
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Confirmation
+      options:
+        - label: I confirm this feature suggestion respects offline-first architecture and does not contain personal financial data.
+          required: true

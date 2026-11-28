@@ -48,7 +48,7 @@ function linkedTransaction(holding: Holding, entry: InvestmentEntry, id: string)
     amount: entry.amount,
     date: entry.date,
     category: entry.kind === 'Deposit' ? investCategoryFor(holding.type) : 'Withdrawal',
-    note: entryNote(holding, entry.kind),
+    note: entry.note ? entry.note : entryNote(holding, entry.kind),
     source: { kind: 'holding-entry', parentId: holding.id, entryId: entry.id },
   };
 }

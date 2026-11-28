@@ -2,6 +2,8 @@ import {
   budgetLineActual,
   customBudgetCategories,
   effectiveMonthBudget,
+  isIncomeDueInMonth,
+  plannedIncomeOf,
   plannedForMonth,
 } from './budget';
 import { monthEndDate } from './cashFlow';
@@ -19,7 +21,7 @@ export type PendingSource =
   | { kind: 'plan'; parentId: string; slotId: string }
   | { kind: 'liability'; parentId: string; slotId: string; paymentKind: 'EMI' | 'Payment' }
   | { kind: 'policy'; parentId: string; slotId: string }
-  | { kind: 'budget'; category: string; type: 'expense' | 'invest' }
+  | { kind: 'budget'; category: string; type: 'expense' | 'invest'; month: string; holdingId?: string }
   | { kind: 'income'; incomeId: string };
 
 export type PendingItem = {
@@ -191,6 +193,7 @@ function pendingItemsWithCache(
       );
     }
     for (const income of budget.incomes) {
+      if (!isIncomeDueInMonth(income, month)) continue;
       if (income.day === undefined) continue;
       const earned = earnedByCategory.get(income.category) ?? 0;
       const applied = Math.min(earned, income.amount);
@@ -212,20 +215,26 @@ function pendingItemsWithCache(
       });
     }
     for (const item of budget.items) {
+      const planItem = data.budgetPlan?.items.find((candidate) =>
+        candidate.id === item.id || candidate.name === item.name);
+      const holdingId = item.holdingId ?? planItem?.holdingId;
       const section = budget.sections.find((row) => row.id === item.sectionId);
       const manualInsurance = section?.system === 'insurance';
       if (item.name === 'EMI' || (isInsuranceBudgetCategory(item.name) && !manualInsurance)) continue;
       if (section?.system && !manualInsurance) continue;
       const type = section?.type === 'invest' ? 'invest' : 'expense';
       const category = item.name;
-      if (instrumentCategories.has(category) || representedCategories.has(category)) continue;
+      const linkedManualHolding = holdingId !== undefined
+        && data.holdings.some((holding) => holding.id === holdingId && holding.kind === 'manual');
+      if (!linkedManualHolding
+        && (instrumentCategories.has(category) || representedCategories.has(category))) continue;
       const plannedValue = plannedForMonth(
         virtual ? item : { ...item, frequency: 'monthly' },
         month,
       );
       const planned = item.mode === 'amount'
         ? plannedValue
-        : Math.round(plannedValue * budget.incomes.reduce((sum, income) => sum + income.amount, 0) / 100);
+        : Math.round(plannedValue * plannedIncomeOf(budget, month) / 100);
       const remaining = Math.max(0, planned - budgetLineActual(data, month, category, {
         excludePolicyPayments: true,
         customCategories: cache.customCategories ??= customBudgetCategories(data),
@@ -240,7 +249,13 @@ function pendingItemsWithCache(
         amount: remaining,
         ...(dueDate === undefined ? {} : { dueDate }),
         status: dueDate === undefined ? 'planned' : dueStatus(dueDate, month, today),
-        source: { kind: 'budget', category, type },
+        source: {
+          kind: 'budget',
+          category,
+          type,
+          month,
+          ...(holdingId === undefined ? {} : { holdingId }),
+        },
         actionable: true,
       });
     }

@@ -15,17 +15,41 @@ import { useUIStore } from './uiStore';
 
 export function useSort(list: SortList, defaultSpec: SortSpec = resolveDefault(list)) {
   const options = OPTIONS[list];
-  const [stored, setStored] = useState<SortSpec | null>(null);
+  const [stored, setStored] = useState<SortSpec | null>(() => {
+    const cached = metaStore?.getCachedMeta?.();
+    return resolveSortSpec(cached?.sortSpecs?.[list], options, defaultSpec);
+  });
 
   useEffect(() => {
     let active = true;
-    void metaStore.getMeta().then((meta) => {
+    if (metaStore?.getMeta) {
+      void metaStore.getMeta().then((meta) => {
+        if (!active) return;
+        const resolved = resolveSortSpec(meta?.sortSpecs?.[list], options, defaultSpec);
+        if (resolved) {
+          setStored((prev) => {
+            if (prev && prev.key === resolved.key && prev.dir === resolved.dir) {
+              return prev;
+            }
+            return resolved;
+          });
+        }
+      });
+    }
+    const unsubscribe = metaStore?.subscribe?.((meta) => {
       if (!active) return;
-      const resolved = resolveSortSpec(meta.sortSpecs?.[list], options, defaultSpec);
-      if (resolved) setStored(resolved);
+      const resolved = resolveSortSpec(meta?.sortSpecs?.[list], options, defaultSpec);
+      setStored((prev) => {
+        if (!prev && !resolved) return prev;
+        if (prev && resolved && prev.key === resolved.key && prev.dir === resolved.dir) {
+          return prev;
+        }
+        return resolved;
+      });
     });
     return () => {
       active = false;
+      unsubscribe?.();
     };
   }, [defaultSpec, list, options]);
 
@@ -36,10 +60,12 @@ export function useSort(list: SortList, defaultSpec: SortSpec = resolveDefault(l
     }
     const previous = stored;
     setStored(spec);
-    void metaStore.updateSortSpec(list, spec, options).catch((error: unknown) => {
-      setStored(previous);
-      useUIStore.getState().setActionToast({ message: friendlyError(error) });
-    });
+    if (metaStore?.updateSortSpec) {
+      void metaStore.updateSortSpec(list, spec, options).catch((error: unknown) => {
+        setStored(previous);
+        useUIStore.getState().setActionToast({ message: friendlyError(error) });
+      });
+    }
   }, [list, options, stored]);
 
   const sort = useCallback(<T extends object>(items: readonly T[]) =>

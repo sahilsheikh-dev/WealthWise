@@ -9,6 +9,11 @@ import { LOCK_SETTINGS_KEY } from '../lib/securitySettings';
 import { createAppStore } from './createAppStore';
 import { createMetaStore } from './metaStore';
 import { stateStorage } from './stateStorage';
+import {
+  isSQLiteFallbackActive,
+  SQLITE_FALLBACK_WARNING,
+  subscribeSQLiteFallback,
+} from './sqliteFallback';
 import { reminderScheduler } from '../lib/reminderRuntime';
 
 const asyncStorage: StateStorage = {
@@ -28,3 +33,12 @@ export const useAppStore = createAppStore(stateStorage, {
   clearUiMeta: metaStore.clearMeta,
   cancelReminders: () => reminderScheduler.cancel(),
 });
+
+function syncSQLiteFallbackWarning(): void {
+  if (isSQLiteFallbackActive()) {
+    useAppStore.getState().actions.reportStorageWarning(SQLITE_FALLBACK_WARNING);
+  }
+}
+
+syncSQLiteFallbackWarning();
+subscribeSQLiteFallback(syncSQLiteFallbackWarning);
