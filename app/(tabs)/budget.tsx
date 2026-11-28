@@ -6,6 +6,7 @@ import { Alert, PanResponder, Pressable, ScrollView, StyleSheet, View, useWindow
 import { AmountText } from '../../src/components/AmountText';
 import { AppHeader, type AppHeaderAction } from '../../src/components/AppHeader';
 import { PaceLine } from '../../src/components/BudgetCharts';
+import { MonthYearPicker } from '../../src/components/MonthYearPicker';
 import { SortChip } from '../../src/components/SortChip';
 import { AppText, Button, Card, Chip, ChipRow, EmptyState, Screen } from '../../src/components/ui';
 import { useAppStore } from '../../src/data/store';
@@ -99,6 +100,7 @@ export default function BudgetScreen() {
   const { month } = routeState;
   const setMonth = (value: string) => setRouteState((current) => ({ ...current, month: value }));
   const [touchingHeader, setTouchingHeader] = useState(false);
+  const [monthPickerOpen, setMonthPickerOpen] = useState(false);
   const [recurringIncomeExpanded, setRecurringIncomeExpanded] = useState(false);
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const sorting = useSort('budgetSpending');
@@ -411,7 +413,15 @@ export default function BudgetScreen() {
               onPress={() => setMonth(shiftMonth(month, -1))}>
               <Feather name="chevron-left" size={22} color={colors.text2} />
             </Pressable>
-            <AppText weight="semibold" style={typography.name}>{formatMonth(month)}</AppText>
+            <Pressable
+              testID="budget-month-selector"
+              accessibilityRole="button"
+              accessibilityLabel={`Selected month: ${formatMonth(month)}. Jump to month and year`}
+              onPress={() => setMonthPickerOpen(true)}
+              style={styles.monthSelectorButton}>
+              <AppText weight="semibold" style={typography.name}>{formatMonth(month)}</AppText>
+              <Feather name="chevron-down" size={16} color={colors.text3} />
+            </Pressable>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Next month"
@@ -798,6 +808,15 @@ export default function BudgetScreen() {
           )}
         </ScrollView>
       </View>
+      <MonthYearPicker
+        visible={monthPickerOpen}
+        month={month}
+        maxMonth={lastAllowedMonth}
+        onSelect={(nextMonth) => {
+          if (nextMonth <= lastAllowedMonth) setMonth(nextMonth);
+        }}
+        onClose={() => setMonthPickerOpen(false)}
+      />
     </Screen>
   );
 }
@@ -863,6 +882,7 @@ const styles = StyleSheet.create({
   content: { paddingBottom: 28, gap: 16 },
   filterPanel: { marginBottom: 8 },
   monthHeader: { marginHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 42 },
+  monthSelectorButton: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8 },
   todayButton: { minWidth: 44, minHeight: 44, paddingHorizontal: 10, alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth, borderRadius: 22 },
   disabled: { opacity: 0.45 },
   cardTitle: { marginBottom: 8 },

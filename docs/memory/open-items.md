@@ -2,6 +2,10 @@
 
 # Open items
 
+## P20-AA Month and year jump selectors for Transactions and Budget (Done; CR-185; #608; device check O91 Not run)
+
+- Subtask P20-AA (CR-185, 2026-11-28): Added `src/components/MonthYearPicker.tsx` and integrated month/year jump selectors into `app/(tabs)/transactions.tsx` and `app/(tabs)/budget.tsx`, preserving previous/next-month controls, sorting, filters, empty periods, and Budget's 24-month forward bound. Added `MonthYearJump.test.tsx`, updated `CHANGELOG.md` (`[Unreleased]`), and added physical-device check `O91` (`Not run`). Issue `#608`. Schema remains version 24.
+
 ## P25-B-R1 Confirm backup import after file selection (Done; CR-184; #605; device check O90 Not run)
 
 - Subtask P25-B-R1 (CR-184, 2026-11-28): Updated `app/backup.tsx` to prompt `Import backup` / `Cancel` after plain or decrypted backup validation with a clear data-replacement warning, keeping Cancel non-mutating and temp-file safe, and replacing `"Replace my data"` preview action wording with `"Import backup"`. Added `BackupImportConfirm.test.tsx`, updated `CHANGELOG.md` (`[Unreleased]`), and added physical-device check `O90` (`Not run`). Issue `#605`. Schema remains version 24.
