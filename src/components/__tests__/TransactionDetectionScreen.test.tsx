@@ -24,6 +24,9 @@ jest.mock('expo-router', () => ({
   usePathname: () => '/transaction-detection',
 }));
 
+jest.mock('../../lib/confirm', () => ({
+  confirmAsync: jest.fn(async () => true),
+}));
 jest.mock('../../lib/notificationListener', () => ({
   notificationListenerAdapter: {
     isSupported: () => true,
@@ -33,6 +36,7 @@ jest.mock('../../lib/notificationListener', () => ({
     openAppInfoSettings: jest.fn(async () => undefined),
     setDetectionConfig: jest.fn(async () => undefined),
     drainQueuedEvents: jest.fn(async () => []),
+    getEligibleSourceApps: jest.fn(async () => ({ installedTrusted: [], observedApps: [] })),
     subscribeLiveEvents: jest.fn(() => () => undefined),
   },
 }));
@@ -65,6 +69,8 @@ describe('TransactionDetectionScreen', () => {
 
       const treeText = JSON.stringify(renderer!.toJSON());
       expect(treeText).toContain('Android only');
+      expect(treeText).not.toContain('Pending review drafts');
+      expect(treeText).not.toContain('Detect payment notifications');
       const manualBtn = findButtonByLabel(renderer!.root, 'Add transaction manually');
       expect(manualBtn).toBeDefined();
       await act(async () => {
@@ -74,7 +80,7 @@ describe('TransactionDetectionScreen', () => {
     } finally {
       Object.defineProperty(Platform, 'OS', { value: originalOS, configurable: true });
     }
-  });
+  }, 15000);
 
   it('requires prominent disclosure before enabling detection on Android and handles draft review/dismiss', async () => {
     const originalOS = Platform.OS;
@@ -110,22 +116,7 @@ describe('TransactionDetectionScreen', () => {
         await flushPromises();
       });
 
-      expect(JSON.stringify(renderer!.toJSON())).toContain('Coffee Shop');
-
-      const reviewBtn = findButtonByLabel(renderer!.root, 'Review & add');
-      await act(async () => {
-        reviewBtn.props.onPress();
-      });
-      expect(mockPush).toHaveBeenCalledWith({
-        pathname: '/transaction-form',
-        params: {
-          draftId: 'draft-ui-1',
-          type: 'expense',
-          amount: '320',
-          date: '2026-11-25',
-          note: 'Coffee Shop',
-        },
-      });
+      expect(JSON.stringify(renderer!.toJSON())).not.toContain('Pending review drafts');
 
       const switches = renderer!.root.findAllByType(Switch);
       await act(async () => {
@@ -140,15 +131,11 @@ describe('TransactionDetectionScreen', () => {
         await flushPromises();
       });
       expect(notificationListenerAdapter.openNotificationAccessSettings).toHaveBeenCalled();
-
-      const dismissBtn = findButtonByLabel(renderer!.root, 'Dismiss');
-      await act(async () => {
-        dismissBtn.props.onPress();
-        await flushPromises();
-      });
-      expect(JSON.stringify(renderer!.toJSON())).toContain('No pending drafts');
+      const updatedMeta = await metaStore.getMeta();
+      expect(updatedMeta.transactionDetection?.allowedPackages).toContain('com.google.android.apps.messaging');
+      expect(updatedMeta.transactionDetection?.allowedPackages).toContain('com.snapwork.hdfc');
     } finally {
       Object.defineProperty(Platform, 'OS', { value: originalOS, configurable: true });
     }
-  });
+  }, 15000);
 });

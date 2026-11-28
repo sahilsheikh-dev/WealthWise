@@ -46,28 +46,28 @@ describe('shared bottom tab bar', () => {
     if (!renderer) throw new Error('Bottom tab bar did not render.');
     const root = renderer.root;
 
-    const tabs = ['index', 'transactions', 'goals', 'budget']
+    const tabs = ['index', 'goals', 'budget', 'transactions']
       .map((key) => root.findByProps({ testID: `bottom-tab-${key}` }));
     expect(tabs.map((tab) => tab.props.accessibilityLabel)).toEqual([
-      'Home', 'Transactions', 'Goals', 'Budget',
+      'Home', 'Goals', 'Budget', 'Transactions',
     ]);
     expect(tabs.map((tab) => tab.props.accessibilityState.selected)).toEqual([
-      false, false, false, true,
+      false, false, true, false,
     ]);
     expect(tabs.map((tab) => tab.props.testID)).toEqual([
-      'bottom-tab-index', 'bottom-tab-transactions', 'bottom-tab-goals', 'bottom-tab-budget',
+      'bottom-tab-index', 'bottom-tab-goals', 'bottom-tab-budget', 'bottom-tab-transactions',
     ]);
 
     const icons = root.findAll((node) => String(node.type) === 'feather');
-    expect(icons.map((icon) => icon.props.name)).toEqual(['home', 'repeat', 'target', 'pie-chart']);
+    expect(icons.map((icon) => icon.props.name)).toEqual(['home', 'target', 'pie-chart', 'repeat']);
     expect(icons.map((icon) => icon.props.color)).toEqual([
-      'inactive', 'inactive', 'inactive', 'primary',
+      'inactive', 'inactive', 'primary', 'inactive',
     ]);
-    const labels = ['index', 'transactions', 'goals', 'budget']
+    const labels = ['index', 'goals', 'budget', 'transactions']
       .map((key) => root.findByProps({ testID: `bottom-tab-label-${key}` }));
-    expect(labels.map((label) => label.props.children)).toEqual(['Home', 'Transactions', 'Goals', 'Budget']);
+    expect(labels.map((label) => label.props.children)).toEqual(['Home', 'Goals', 'Budget', 'Transactions']);
 
-    act(() => tabs[1]?.props.onPress());
+    act(() => tabs[3]?.props.onPress());
     expect(onSelect).toHaveBeenCalledWith('transactions');
   });
 
@@ -98,7 +98,7 @@ describe('shared bottom tab bar', () => {
 
   it.each([1, 1.3, 2])('keeps tab labels scalable without fixed-height clipping at font scale %s', (fontScale) => {
     const renderer = renderBar('transactions', 0);
-    const tabs = ['index', 'transactions', 'goals', 'budget']
+    const tabs = ['index', 'goals', 'budget', 'transactions']
       .map((key) => renderer.root.findByProps({ testID: `bottom-tab-${key}` }));
     expect(tabs).toHaveLength(4);
     for (const tab of tabs) {

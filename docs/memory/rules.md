@@ -165,7 +165,7 @@
 - No null-silencing `!` or `as` in `app/` or `src/components/`.
 - Format monetary values through `AmountText`/`formatAmount` with an explicit
   display tier.
-- Tabs remain Home, Transactions, Goals, Budget.
+- Tabs are Home, Goals, Budget, Transactions.
 - Add/Edit/Delete are Feather icon actions. Reuse the established
   `plus`/`edit-2`/`trash-2` naming through shared icon/action components; do not
   substitute text or emoji for these actions.
@@ -218,7 +218,7 @@ blob remains unchanged.
 
 | File | Git blob ID | Rule |
 |---|---|---|
-| `app/(tabs)/index.tsx` | `60737743e72c9f25aa7ee42c1432bedb34cf6ac9` | User-owned; updated under explicit `P35-C-R1` and `P35-C-R2` authorizations for Home gear and conditional auto-detection entry point. |
+| `app/(tabs)/index.tsx` | `6ab2e7107e67434dba4898cfe8e348bf3c6b4e70035e5b07ea9e0b9adf78f7cb` | User-owned; updated under explicit `P35-C-R1`, `P35-C-R2`, and `P35-C-R5` authorizations for Home gear and Android-only conditional auto-detection entry point. |
 | `app/(tabs)/budget.tsx` | `eca7607015cb3c8b85dfc7e0d4001235166742a2` | Updated only for authorized CR-108 Part 2 overview text removal and CR-125 / P20-X Budget category and item sorting; preserve Opening/Closing balance labels, Cash flow labels, removed controls, no bottom border on Insurance/Transactions balance sections, and Stop/Resume investment labels. |
 | `src/components/SortChip.tsx` | `837a675af94dd056532bc63fc4697efc905a5af3` | Leave unchanged. |
 | `src/lib/sorting.ts` | `7491663f0987d83d03f3ed72b01de5b376e3572d` | Leave unchanged. |

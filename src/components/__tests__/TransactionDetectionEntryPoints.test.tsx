@@ -69,7 +69,7 @@ jest.mock('../../data/store', () => ({
     { getState: () => ({ lastError: null }) },
   ),
   metaStore: {
-    getMeta: async () => ({}),
+    getMeta: jest.fn(async () => ({})),
     updateSortSpec: async () => ({}),
   },
 }));
@@ -152,16 +152,14 @@ describe('Home & Transactions auto-detection entry points', () => {
       notificationPermission: 'denied',
       pendingDraftCount: 0,
     });
+    let iosHomeTree!: TestRenderer.ReactTestRenderer;
     let iosTree!: TestRenderer.ReactTestRenderer;
     await act(async () => {
+      iosHomeTree = TestRenderer.create(<HomeScreen />);
       iosTree = TestRenderer.create(<TransactionsScreen />);
     });
-    const iosEntry = iosTree.root.findByProps({ testID: 'transaction-detection-entry' });
-    expect(iosEntry.props.accessibilityLabel).toContain('Unavailable on iOS');
-    await act(async () => {
-      iosEntry.props.onPress();
-    });
-    expect(router.push).toHaveBeenCalledWith('/transaction-detection');
+    expect(iosHomeTree.root.findAllByProps({ testID: 'home-transaction-detection-entry' })).toHaveLength(0);
+    expect(iosTree.root.findAllByProps({ testID: 'transaction-detection-entry' })).toHaveLength(0);
   }, 15000);
 
   it('hides Home and Transactions entry points while detection is enabled', async () => {
@@ -180,5 +178,55 @@ describe('Home & Transactions auto-detection entry points', () => {
     });
     expect(homeTree.root.findAllByProps({ testID: 'home-transaction-detection-entry' })).toHaveLength(0);
     expect(txTree.root.findAllByProps({ testID: 'transaction-detection-entry' })).toHaveLength(0);
+  });
+
+  it('renders Pending review drafts on Transactions on Android with Review & add and Discard', async () => {
+    const { Platform } = jest.requireActual('react-native') as typeof import('react-native');
+    const originalOS = Platform.OS;
+    Object.defineProperty(Platform, 'OS', { value: 'android', configurable: true });
+    const { metaStore } = jest.requireMock('../../data/store') as {
+      metaStore: { getMeta: jest.Mock };
+    };
+    metaStore.getMeta.mockResolvedValueOnce({
+      transactionDetection: {
+        enabled: true,
+        allowedPackages: ['com.google.android.apps.nbu.paisa.user'],
+        pendingDrafts: [
+          {
+            id: 'draft-tx-1',
+            type: 'expense',
+            amount: 240,
+            date: '2026-11-28',
+            suggestedNote: 'Tea House',
+            sourcePackage: 'com.google.android.apps.nbu.paisa.user',
+            confidence: 'high',
+            fingerprint: 'fp-tx-1',
+            createdAtMs: 1700000000000,
+            expiresAtMs: 1700604800000,
+          },
+        ],
+        seenFingerprints: [],
+      },
+    });
+    try {
+      let txTree!: TestRenderer.ReactTestRenderer;
+      await act(async () => {
+        txTree = TestRenderer.create(<TransactionsScreen />);
+      });
+      const section = txTree.root.findByProps({ testID: 'transactions-pending-drafts' });
+      expect(JSON.stringify(txTree.toJSON())).toContain('Tea House');
+      const reviewBtn = section.findByProps({ accessibilityLabel: 'Review & add' });
+      await act(async () => {
+        reviewBtn.props.onPress();
+      });
+      expect(router.push).toHaveBeenCalledWith(
+        expect.objectContaining({
+          pathname: '/transaction-form',
+          params: expect.objectContaining({ draftId: 'draft-tx-1', amount: '240' }),
+        }),
+      );
+    } finally {
+      Object.defineProperty(Platform, 'OS', { value: originalOS, configurable: true });
+    }
   });
 });

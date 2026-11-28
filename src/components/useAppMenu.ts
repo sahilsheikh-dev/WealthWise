@@ -23,7 +23,6 @@ const destinations: Record<string, string> = {
   'Backup and restore': '/backup',
   Reminders: '/reminders',
   Security: '/security',
-  Profile: '/profile-form',
   Theme: '/theme',
   About: '/about',
   'Erase all data': '/erase-data',

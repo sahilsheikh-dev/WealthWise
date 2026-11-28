@@ -66,10 +66,10 @@ describe('bottom tab layout', () => {
     const tabs = renderer.root.findAll((node) => String(node.type) === 'tabs')[0];
     if (!tabs) throw new Error('Expo Tabs did not render.');
     expect(renderer.root.findAll((node) => String(node.type) === 'screen').map((node) => node.props.name))
-      .toEqual(['index', 'transactions', 'goals', 'budget']);
+      .toEqual(['index', 'goals', 'budget', 'transactions']);
     expect(tabs.props.screenOptions).toEqual({ headerShown: false, tabBarShowLabel: false });
 
-    const routes = ['index', 'transactions', 'goals', 'budget'];
+    const routes = ['index', 'goals', 'budget', 'transactions'];
     for (const [index, activeTab] of routes.entries()) {
       const navigateToTab = jest.fn();
       let barRenderer: TestRenderer.ReactTestRenderer | undefined;

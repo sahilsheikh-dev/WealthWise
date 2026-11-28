@@ -23,6 +23,7 @@ const mockActions = {
   saveAndApplyBudgetPlan: jest.fn(),
   restoreBudgetPlanAndMonth: jest.fn(),
   markPaid: jest.fn(),
+  updateSettings: jest.fn(),
 };
 const mockMenuPress = jest.fn();
 let mockMenuItems: {
@@ -35,7 +36,6 @@ let mockMenuItems: {
   { label: 'Backup and restore', icon: 'download' as const, onPress: mockMenuPress },
   { label: 'Reminders', icon: 'calendar' as const, onPress: mockMenuPress },
   { label: 'Security', icon: 'lock' as const, onPress: mockMenuPress },
-  { label: 'Profile', icon: 'user' as const, onPress: mockMenuPress },
   { label: 'Theme', description: 'Current theme: Light', icon: 'sliders' as const, onPress: mockMenuPress },
   { label: 'About', icon: 'info' as const, onPress: mockMenuPress },
   { label: 'Erase all data', icon: 'trash-2' as const, destructive: true, onPress: mockMenuPress },
@@ -70,7 +70,8 @@ jest.mock('../../data/useAppData', () => ({
 }));
 jest.mock('../../data/store', () => ({
   useAppStore: Object.assign(
-    (selector: (state: { devActions: undefined }) => unknown) => selector({ devActions: undefined }),
+    (selector: (state: { data: typeof mockData; devActions: undefined }) => unknown) =>
+      selector({ data: mockData, devActions: undefined }),
     { getState: () => ({ lastError: null }) },
   ),
   metaStore: {
@@ -125,7 +126,6 @@ describe('Settings screen and Home gear entry point', () => {
       { label: 'Backup and restore', icon: 'download', onPress: mockMenuPress },
       { label: 'Reminders', icon: 'calendar', onPress: mockMenuPress },
       { label: 'Security', icon: 'lock', onPress: mockMenuPress },
-      { label: 'Profile', icon: 'user', onPress: mockMenuPress },
       { label: 'Theme', description: 'Current theme: Light', icon: 'sliders', onPress: mockMenuPress },
       { label: 'About', icon: 'info', onPress: mockMenuPress },
       { label: 'Erase all data', icon: 'trash-2', destructive: true, onPress: mockMenuPress },
@@ -162,7 +162,6 @@ describe('Settings screen and Home gear entry point', () => {
       'Backup and restore',
       'Reminders',
       'Security',
-      'Profile',
       'Theme, Current theme: Light',
       'About',
       'Load demo data (6 months)',
@@ -173,7 +172,40 @@ describe('Settings screen and Home gear entry point', () => {
         row.props.onPress();
       });
     }
-    expect(mockMenuPress).toHaveBeenCalledTimes(8);
+    expect(mockMenuPress).toHaveBeenCalledTimes(7);
+    expect(JSON.stringify(tree.toJSON())).not.toContain('Data & developer actions');
+  });
+
+  it('displays user name and income above Transaction detection and supports inline editing', async () => {
+    mockData.settings = { ...mockData.settings, name: 'Asha', monthlySalary: 75000 };
+    mockStatus = getTransactionDetectionStatus({
+      supported: true,
+      enabled: false,
+      listenerGranted: false,
+      notificationPermission: 'denied',
+      pendingDraftCount: 0,
+    });
+    let tree!: TestRenderer.ReactTestRenderer;
+    await act(async () => {
+      tree = TestRenderer.create(<SettingsScreen />);
+    });
+    const rendered = JSON.stringify(tree.toJSON());
+    expect(rendered.indexOf('Profile')).toBeGreaterThan(-1);
+    expect(rendered.indexOf('Transaction detection')).toBeGreaterThan(rendered.indexOf('Profile'));
+    expect(tree.root.findByProps({ testID: 'settings-profile-name' }).props.children).toBe('Asha');
+
+    await act(async () => {
+      tree.root.findByProps({ accessibilityLabel: 'Edit profile' }).props.onPress();
+    });
+    await act(async () => {
+      tree.root.findByProps({ accessibilityLabel: 'Your name' }).props.onChangeText('  Asha Rao  ');
+      tree.root.findByProps({ accessibilityLabel: 'Monthly take-home income' }).props.onChangeText('');
+    });
+    await act(async () => {
+      tree.root.findByProps({ accessibilityLabel: 'Save profile' }).props.onPress();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(mockActions.updateSettings).toHaveBeenCalledWith({ name: 'Asha Rao', monthlySalary: null });
   });
 
   it('shows accurate detection states in Settings and supports disabling detection', async () => {
@@ -224,9 +256,9 @@ describe('Settings screen and Home gear entry point', () => {
     await act(async () => {
       tree = TestRenderer.create(<SettingsScreen />);
     });
-    expect(tree.root.findByProps({ testID: 'settings-detection-status' }).props.children.join('')).toContain(
-      'Unavailable on iOS',
-    );
+    expect(tree.root.findAllByProps({ testID: 'settings-detection-status' })).toHaveLength(0);
+    expect(tree.root.findAllByProps({ accessibilityLabel: 'Automatically detect transactions' })).toHaveLength(0);
+    expect(JSON.stringify(tree.toJSON())).not.toContain('View Android-only details');
     supportedSpy.mockRestore();
     configSpy.mockRestore();
   });

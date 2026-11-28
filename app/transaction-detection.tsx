@@ -1,22 +1,18 @@
-import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { router } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
 import { AppState, Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { AmountText } from '../src/components/AmountText';
 import { AppHeader } from '../src/components/AppHeader';
 import { SwitchRow } from '../src/components/form/SwitchRow';
 import { TextField } from '../src/components/form/TextField';
-import { AppText, Button, Card, EmptyState, Screen, SectionTitle, WarningBanner } from '../src/components/ui';
+import { AppText, Button, Card, Screen, SearchField, SectionTitle, WarningBanner } from '../src/components/ui';
 import { DEFAULT_TRANSACTION_DETECTION, type PersistedTransactionDetection } from '../src/data/metaStore';
 import { metaStore } from '../src/data/store';
 import {
+  buildSourceAppPickerItems,
   DEFAULT_DETECTION_SOURCE_APPS,
-  type PendingTransactionDraft,
 } from '../src/domain/transactionDetection';
-import { formatDate } from '../src/lib/format';
-import { notificationListenerAdapter } from '../src/lib/notificationListener';
-import { singleParam } from '../src/lib/routeParams';
-import { removeTransactionDraft } from '../src/lib/transactionDetectionDrafts';
+import { notificationListenerAdapter, type EligibleSourceAppsResult } from '../src/lib/notificationListener';
 import { syncNativeDetectionConfig } from '../src/lib/transactionDetectionRuntime';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
@@ -24,8 +20,6 @@ import { useTheme } from '../src/theme/useTheme';
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
 export default function TransactionDetectionScreen() {
-  const params = useLocalSearchParams<{ draftId?: string }>();
-  const highlightedDraftId = singleParam(params.draftId);
   const { colors } = useTheme();
   const isAndroid = Platform.OS === 'android';
 
@@ -33,6 +27,11 @@ export default function TransactionDetectionScreen() {
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [disclosureOpen, setDisclosureOpen] = useState(false);
   const [customPackage, setCustomPackage] = useState('');
+  const [appQuery, setAppQuery] = useState('');
+  const [eligibleApps, setEligibleApps] = useState<EligibleSourceAppsResult>({
+    installedTrusted: [],
+    observedApps: [],
+  });
   const [statusError, setStatusError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -41,10 +40,12 @@ export default function TransactionDetectionScreen() {
       void Promise.all([
         metaStore.getMeta(),
         notificationListenerAdapter.isPermissionGranted(),
-      ]).then(([meta, granted]) => {
+        notificationListenerAdapter.getEligibleSourceApps(),
+      ]).then(([meta, granted, eligible]) => {
         if (!active) return;
         setDetection(meta.transactionDetection ?? DEFAULT_TRANSACTION_DETECTION);
         setPermissionGranted(granted);
+        setEligibleApps(eligible);
       });
     };
     sync();
@@ -88,7 +89,7 @@ export default function TransactionDetectionScreen() {
       disclosureAcceptedAt: new Date().toISOString(),
       allowedPackages: detection.allowedPackages.length > 0
         ? detection.allowedPackages
-        : DEFAULT_DETECTION_SOURCE_APPS.slice(0, 6).map((item) => item.packageName),
+        : DEFAULT_DETECTION_SOURCE_APPS.map((item) => item.packageName),
     };
     await saveDetection(next);
     if (!permissionGranted) {
@@ -112,22 +113,16 @@ export default function TransactionDetectionScreen() {
     void saveDetection({ ...detection, allowedPackages: [...current] });
   };
 
-  const openDraftReview = (draft: PendingTransactionDraft) => {
-    router.push({
-      pathname: '/transaction-form',
-      params: {
-        draftId: draft.id,
-        type: draft.type,
-        amount: String(draft.amount),
-        date: draft.date,
-        note: draft.suggestedNote,
-      },
-    });
-  };
-
-  const dismissDraft = (draftId: string) => {
-    void removeTransactionDraft(draftId);
-  };
+  const pickerItems = useMemo(
+    () =>
+      buildSourceAppPickerItems({
+        installedPackages: eligibleApps.installedTrusted,
+        observedApps: eligibleApps.observedApps,
+        allowedPackages: detection.allowedPackages,
+        query: appQuery,
+      }),
+    [appQuery, detection.allowedPackages, eligibleApps.installedTrusted, eligibleApps.observedApps],
+  );
 
   const statusLabel = !isAndroid
     ? 'Android only (not supported on iOS)'
@@ -172,7 +167,7 @@ export default function TransactionDetectionScreen() {
                 onValueChange={handleToggleEnabled}
               />
               <AppText style={[typography.meta, { color: colors.text3, marginTop: 4 }]}>
-                Parses payment alerts locally on-device into reviewable drafts. Never reads SMS history, never sends data over the network, and never creates transactions automatically.
+                Parses payment alerts locally on-device into reviewable drafts. Never reads SMS history, never sends data over the network, and never creates transactions automatically. If a transaction is missed, check that the bank/UPI or SMS app posts notifications with visible text (not muted or hidden on lock screen) and is selected below.
               </AppText>
               {detection.enabled && !permissionGranted ? (
                 <View style={styles.settingsActions}>
@@ -201,70 +196,40 @@ export default function TransactionDetectionScreen() {
           </>
         )}
 
-        <SectionTitle>Pending review drafts ({detection.pendingDrafts.length})</SectionTitle>
-        {detection.pendingDrafts.length === 0 ? (
-          <Card>
-            <EmptyState
-              title="No pending drafts"
-              subtitle="Detected transactions will appear here for your review and confirmation before any financial record is created."
-            />
-          </Card>
-        ) : (
-          detection.pendingDrafts.map((draft) => {
-            const highlighted = highlightedDraftId === draft.id;
-            return (
-              <Card
-                key={draft.id}
-                style={highlighted ? { borderColor: colors.primary, borderWidth: 1.5 } : undefined}
-              >
-                <View style={styles.draftHeader}>
-                  <View style={styles.draftInfo}>
-                    <AppText style={[typography.name, { color: colors.text1 }]}>
-                      {draft.suggestedNote}
-                    </AppText>
-                    <AppText style={[typography.meta, { color: colors.text3 }]}>
-                      {draft.type === 'income' ? 'Credit' : 'Debit'} · {formatDate(draft.date)} · {draft.sourcePackage}
-                    </AppText>
-                  </View>
-                  <AmountText
-                    value={draft.amount}
-                    tier="exact"
-                    tone={draft.type === 'income' ? 'ok' : 'err'}
-                    style={typography.amount}
-                  />
-                </View>
-                <View style={styles.draftActions}>
-                  <Button
-                    label="Review & add"
-                    variant="primary"
-                    onPress={() => openDraftReview(draft)}
-                  />
-                  <Button
-                    label="Dismiss"
-                    variant="soft"
-                    onPress={() => dismissDraft(draft.id)}
-                  />
-                </View>
-              </Card>
-            );
-          })
-        )}
-
         {isAndroid ? (
           <>
             <SectionTitle>Eligible source apps</SectionTitle>
             <Card>
               <AppText style={[typography.meta, { color: colors.text3, marginBottom: 8 }]}>
-                Only notifications from selected apps are inspected. Leave all unchecked only if you want to pause filtering; selecting specific apps is recommended.
+                Only notifications from selected apps are inspected. Android restricts broad installed-app visibility without QUERY_ALL_PACKAGES, so WealthWise shows installed apps from the verified payment catalogue plus apps observed by the notification listener.
               </AppText>
-              {DEFAULT_DETECTION_SOURCE_APPS.map((app) => (
-                <SwitchRow
-                  key={app.packageName}
-                  label={app.label}
-                  value={detection.allowedPackages.includes(app.packageName)}
-                  onValueChange={(checked) => toggleSourceApp(app.packageName, checked)}
-                />
-              ))}
+              <SearchField
+                value={appQuery}
+                onChangeText={setAppQuery}
+                placeholder="Search source apps"
+                accessibilityLabel="Search source apps"
+              />
+              <View style={styles.pickerList}>
+                {pickerItems.map((app) => (
+                  <View key={app.packageName} style={styles.pickerRow}>
+                    <SwitchRow
+                      label={`${app.label} · ${app.trusted ? 'Trusted' : 'Unverified'}`}
+                      value={app.selected}
+                      onValueChange={(checked) => toggleSourceApp(app.packageName, checked)}
+                    />
+                    <AppText style={[typography.meta, { color: colors.text3 }]}>
+                      {app.packageName}
+                      {app.installed ? ' · Installed' : ''}
+                      {app.observed ? ' · Observed' : ''}
+                    </AppText>
+                  </View>
+                ))}
+                {pickerItems.length === 0 ? (
+                  <AppText style={[typography.meta, { color: colors.text3 }]}>
+                    No matching source apps. You can add a package ID below.
+                  </AppText>
+                ) : null}
+              </View>
               <View style={styles.customPackageRow}>
                 <TextField
                   label="Add custom package name"
@@ -345,6 +310,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     marginTop: 12,
+  },
+  pickerList: {
+    marginTop: 10,
+    gap: 8,
+  },
+  pickerRow: {
+    gap: 2,
   },
   customPackageRow: {
     marginTop: 12,

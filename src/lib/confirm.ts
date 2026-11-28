@@ -83,7 +83,7 @@ export function createWebConfirmAdapter(confirm: (message: string) => boolean): 
   };
 }
 
-const adapter = Platform.OS === 'web'
+const adapter = Platform?.OS === 'web'
   ? createWebConfirmAdapter((message) => globalThis.confirm(message))
   : createNativeConfirmAdapter(Alert.alert);
 

@@ -121,7 +121,6 @@ describe('FormShell', () => {
       'app/policy-form.tsx',
       'app/investment-entry-form.tsx',
       'app/clear-dues.tsx',
-      'app/profile-form.tsx',
       'app/onboarding.tsx',
       'app/erase-data.tsx',
       'app/budget-section-form.tsx',

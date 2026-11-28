@@ -323,7 +323,7 @@ export default function HomeScreen() {
         </Card>
       ) : null}
 
-      {detectionStatus && detectionStatus.status !== 'enabled' ? (
+      {detectionStatus && detectionStatus.status !== 'enabled' && detectionStatus.status !== 'unavailable' ? (
         <Card>
           <Pressable
             testID="home-transaction-detection-entry"
