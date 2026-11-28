@@ -97,7 +97,7 @@ export default function TransactionDetectionScreen() {
       disclosureAcceptedAt: new Date().toISOString(),
       allowedPackages: detection.allowedPackages.length > 0
         ? detection.allowedPackages
-        : DEFAULT_DETECTION_SOURCE_APPS.slice(0, 6).map((item) => item.packageName),
+        : DEFAULT_DETECTION_SOURCE_APPS.map((item) => item.packageName),
     };
     await saveDetection(next);
     if (!permissionGranted) {
@@ -190,7 +190,7 @@ export default function TransactionDetectionScreen() {
                 onValueChange={handleToggleEnabled}
               />
               <AppText style={[typography.meta, { color: colors.text3, marginTop: 4 }]}>
-                Parses payment alerts locally on-device into reviewable drafts. Never reads SMS history, never sends data over the network, and never creates transactions automatically.
+                Parses payment alerts locally on-device into reviewable drafts. Never reads SMS history, never sends data over the network, and never creates transactions automatically. If a transaction is missed, check that the bank/UPI or SMS app posts notifications with visible text (not muted or hidden on lock screen) and is selected below.
               </AppText>
               {detection.enabled && !permissionGranted ? (
                 <View style={styles.settingsActions}>

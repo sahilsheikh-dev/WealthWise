@@ -118,7 +118,7 @@ export function NotificationResponseHandler() {
           );
         });
       } else {
-        router.push('/transaction-form' as Href);
+        router.push({ pathname: '/transaction-form', params: { reviewLatest: '1' } } as Href);
       }
     } else {
       const target = reminderTarget(response.data);
@@ -173,7 +173,15 @@ export function TransactionDetectionRuntime() {
     const drain = async () => {
       const events = await notificationListenerAdapter.drainQueuedEvents();
       if (events.length === 0) return;
-      await ingestDetectedNotifications(events);
+      const { addedDrafts } = await ingestDetectedNotifications(events);
+      const firstDraft = addedDrafts[0];
+      if (
+        firstDraft
+        && AppState.currentState === 'active'
+        && pathnameRef.current !== '/transaction-form'
+      ) {
+        router.push(buildDraftFormRoute(firstDraft) as Href);
+      }
     };
     void drain();
 

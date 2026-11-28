@@ -290,4 +290,64 @@ describe('P35-C-R3 direct draft modal review flow and source-app picker', () => 
     expect(lookalike?.trusted).toBe(false);
     expect(lookalike?.observed).toBe(true);
   });
+
+  it('opens /transaction-form directly when queued background events are drained while active', async () => {
+    const drainSpy = jest.spyOn(notificationListenerAdapter, 'drainQueuedEvents').mockResolvedValueOnce([
+      {
+        packageName: 'com.google.android.apps.nbu.paisa.user',
+        title: 'Paid ₹450 to Coffee House',
+        text: 'Debited ₹450 from A/C XX1234',
+        postedAtMs: 1700000000000,
+      },
+    ]);
+    mockPathname = '/(tabs)/transactions';
+    Object.defineProperty(AppState, 'currentState', { value: 'active', configurable: true });
+
+    await act(async () => {
+      TestRenderer.create(<TransactionDetectionRuntime />);
+    });
+    drainSpy.mockRestore();
+
+    expect(router.push).toHaveBeenCalledWith(
+      expect.objectContaining({
+        pathname: '/transaction-form',
+        params: expect.objectContaining({
+          type: 'expense',
+          amount: '450',
+          sourcePackage: 'com.google.android.apps.nbu.paisa.user',
+        }),
+      }),
+    );
+  });
+
+  it('hydrates the newest pending draft when opened via reviewLatest=1 from native notification', async () => {
+    const prevData = mockData;
+    const { buildDemoData } = jest.requireActual('../../mock/demoData') as typeof import('../../mock/demoData');
+    mockData = buildDemoData('2026-11-28');
+    mockParams = { reviewLatest: '1' };
+    try {
+      let tree!: TestRenderer.ReactTestRenderer;
+      await act(async () => {
+        tree = TestRenderer.create(<TransactionFormScreen />);
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      const treeText = JSON.stringify(tree.toJSON());
+      expect(treeText).toContain('Google Pay');
+      expect(treeText).toContain('Trusted');
+      expect(treeText).toContain('450');
+      expect(treeText).toContain('Coffee House');
+      const saveBtn = tree.root.findByProps({ accessibilityLabel: 'Save transaction' });
+      await act(async () => {
+        saveBtn.props.onPress();
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+      expect(JSON.stringify(tree.toJSON())).not.toContain('Fix ');
+      expect(mockAddTransaction).toHaveBeenCalledTimes(1);
+      expect(removeTransactionDraft).toHaveBeenCalledWith('draft-1');
+    } finally {
+      mockData = prevData;
+    }
+  });
 });

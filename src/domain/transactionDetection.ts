@@ -40,6 +40,11 @@ export const DEFAULT_DETECTION_SOURCE_APPS: readonly DetectionSourceApp[] = [
   { packageName: 'indwin.c3.shareapp', label: 'slice' },
   { packageName: 'com.google.android.apps.messaging', label: 'Google Messages' },
   { packageName: 'com.samsung.android.messaging', label: 'Samsung Messages' },
+  { packageName: 'com.android.mms', label: 'Android Messages (SMS)' },
+  { packageName: 'com.coloros.mms', label: 'OPPO / realme Messages' },
+  { packageName: 'com.oplus.mms', label: 'OnePlus / OPlus Messages' },
+  { packageName: 'com.oneplus.mms', label: 'OnePlus Messages' },
+  { packageName: 'com.miui.mms', label: 'Xiaomi Messages' },
   { packageName: 'com.snapwork.hdfc', label: 'HDFC Bank' },
   { packageName: 'com.csam.icici.bank.imobile', label: 'ICICI iMobile' },
   { packageName: 'com.sbi.lotusintouch', label: 'SBI YONO' },
@@ -170,7 +175,8 @@ const IGNORE_PATTERNS = [
   /\bapply\s+now\b/i,
   /\bcashback\s+up\s+to\b/i,
   /\bwin\s+up\s+to\b/i,
-  /\bdiscount\b/i,
+  /\b(?:avail|get|flat|up\s+to)\s+(?:\d+%\s+)?discount\b/i,
+  /\bdiscount\s+(?:code|coupon|offer)\b/i,
   /\bfailed\b/i,
   /\bdeclined\b/i,
   /\bunsuccessful\b/i,
@@ -180,11 +186,23 @@ const IGNORE_PATTERNS = [
   /\bpayment\s+request\b/i,
 ];
 
-const CREDIT_VERBS = /\b(?:credited|received|deposited|refund(?:ed)?|cashback\s+credited|added\s+to\s+your)\b/i;
-const DEBIT_VERBS = /\b(?:debited|spent|paid|sent|charged|withdrawn|purchased?|transferred|deducted)\b/i;
+const CREDIT_VERBS = /\b(?:credited|received(?:\s+from)?|deposited|refund(?:ed)?|cashback\s+credited|added\s+to(?:\s+your)?|money\s+received|payment\s+received)\b/i;
+const DEBIT_VERBS = /\b(?:debited|auto-?debited|spent|paid|sent|charged|withdrawn|purchased?|purchase\s+of|payment\s+of|transferred|deducted|recharged)\b/i;
 const BALANCE_ONLY = /\b(?:available\s+balance|avl\.?\s*bal|current\s+balance)\b/i;
 
-const AMOUNT_PATTERN = /(?:₹|rs\.?|inr|\$|usd)\s*([0-9]{1,3}(?:,[0-9]{2,3})*(?:\.[0-9]{1,2})?|[0-9]+(?:\.[0-9]{1,2})?)/i;
+const AMOUNT_BEFORE_PATTERN = /(?:₹|rs\.?:?|inr:?|rupees|\$|usd:?)\s*([0-9]{1,3}(?:,[0-9]{2,3})*(?:\.[0-9]{1,2})?|[0-9]+(?:\.[0-9]{1,2})?)/i;
+const AMOUNT_AFTER_PATTERN = /\b([0-9]{1,3}(?:,[0-9]{2,3})*(?:\.[0-9]{1,2})?|[0-9]+(?:\.[0-9]{1,2})?)\s*(?:₹|rs\.?|inr|rupees|\$|usd)\b/i;
+const AMOUNT_VERB_PATTERN = /\b(?:debited|auto-?debited|credited|paid|received|spent|transferred|withdrawn|deposited)\s+(?:by|of)\s+([0-9]{1,3}(?:,[0-9]{2,3})*(?:\.[0-9]{1,2})?|[0-9]+(?:\.[0-9]{1,2})?)\b/i;
+
+function extractAmount(combined: string): number | null {
+  const match =
+    combined.match(AMOUNT_BEFORE_PATTERN)
+    ?? combined.match(AMOUNT_AFTER_PATTERN)
+    ?? combined.match(AMOUNT_VERB_PATTERN);
+  if (!match?.[1]) return null;
+  const parsed = Number(match[1].replace(/,/g, ''));
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
 
 function fnv1a64Hex(input: string): string {
   let hash = 0xcbf29ce484222325n;
@@ -245,17 +263,28 @@ export function parseTransactionNotification(
   if (HIDDEN_PATTERNS.some((pattern) => pattern.test(title) || pattern.test(text))) return null;
   if (IGNORE_PATTERNS.some((pattern) => pattern.test(combined))) return null;
 
-  const isCredit = CREDIT_VERBS.test(combined);
-  const isDebit = DEBIT_VERBS.test(combined);
-  if ((isCredit && isDebit) || (!isCredit && !isDebit)) {
+  const creditMatch = CREDIT_VERBS.test(combined);
+  const debitMatch = DEBIT_VERBS.test(combined);
+  if (!creditMatch && !debitMatch) {
     if (BALANCE_ONLY.test(combined)) return null;
     return null;
   }
 
-  const amountMatch = combined.match(AMOUNT_PATTERN);
-  if (!amountMatch?.[1]) return null;
-  const parsedAmount = Number(amountMatch[1].replace(/,/g, ''));
-  if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) return null;
+  let isCredit = creditMatch;
+  if (creditMatch && debitMatch) {
+    const withoutCounterparty = combined
+      .replace(/\bcredited\s+to\s+(?:vpa|upi|beneficiary|[a-z0-9._-]+@[a-z]+)\b/gi, ' ')
+      .replace(/\b(?:sent|paid)\s+via\b/gi, ' ');
+    const cleanedCredit = CREDIT_VERBS.test(withoutCounterparty);
+    const cleanedDebit = DEBIT_VERBS.test(withoutCounterparty);
+    if ((cleanedCredit && cleanedDebit) || (!cleanedCredit && !cleanedDebit)) {
+      return null;
+    }
+    isCredit = cleanedCredit;
+  }
+
+  const parsedAmount = extractAmount(combined);
+  if (parsedAmount === null) return null;
 
   const type: 'expense' | 'income' = isCredit ? 'income' : 'expense';
   const postedAtMs = Number.isFinite(input.postedAtMs) && input.postedAtMs > 0 ? input.postedAtMs : nowMs;

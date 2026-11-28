@@ -78,6 +78,7 @@ export default function TransactionFormScreen() {
     date?: string;
     note?: string;
     draftId?: string;
+    reviewLatest?: string;
     sourcePackage?: string;
     pending?: string;
   }>();
@@ -92,7 +93,10 @@ export default function TransactionFormScreen() {
   const requestedAmount = Array.isArray(params.amount) ? params.amount[0] : params.amount;
   const requestedDate = Array.isArray(params.date) ? params.date[0] : params.date;
   const requestedNote = Array.isArray(params.note) ? params.note[0] : params.note;
-  const draftId = Array.isArray(params.draftId) ? params.draftId[0] : params.draftId;
+  const draftIdParam = Array.isArray(params.draftId) ? params.draftId[0] : params.draftId;
+  const reviewLatest = (Array.isArray(params.reviewLatest) ? params.reviewLatest[0] : params.reviewLatest) === '1';
+  const [hydratedDraftId, setHydratedDraftId] = useState<string | undefined>(draftIdParam);
+  const draftId = draftIdParam ?? hydratedDraftId;
   const sourcePackageParam = Array.isArray(params.sourcePackage) ? params.sourcePackage[0] : params.sourcePackage;
   const [hydratedSourcePackage, setHydratedSourcePackage] = useState<string | undefined>(sourcePackageParam);
   const effectiveSourcePackage = sourcePackageParam ?? hydratedSourcePackage;
@@ -405,14 +409,16 @@ export default function TransactionFormScreen() {
   };
 
   useEffect(() => {
-    if (!draftId || editing || requestedAmount) return;
+    if ((!draftIdParam && !reviewLatest) || editing || requestedAmount) return;
     let active = true;
     void metaStore.getMeta().then((meta) => {
       if (!active) return;
-      const draft = (meta.transactionDetection ?? DEFAULT_TRANSACTION_DETECTION).pendingDrafts.find(
-        (candidate) => candidate.id === draftId,
-      );
+      const pendingDrafts = (meta.transactionDetection ?? DEFAULT_TRANSACTION_DETECTION).pendingDrafts;
+      const draft = draftIdParam
+        ? pendingDrafts.find((candidate) => candidate.id === draftIdParam)
+        : pendingDrafts[0];
       if (!draft) return;
+      setHydratedDraftId(draft.id);
       setValue('type', draft.type, { shouldDirty: false });
       setValue('amount', String(draft.amount), { shouldDirty: false });
       setValue('date', draft.date, { shouldDirty: false });
@@ -422,7 +428,7 @@ export default function TransactionFormScreen() {
     return () => {
       active = false;
     };
-  }, [draftId, editing, requestedAmount, setValue]);
+  }, [draftIdParam, editing, requestedAmount, reviewLatest, setValue]);
 
   if (editing && !transaction) {
     return (
