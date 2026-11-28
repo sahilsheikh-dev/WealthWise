@@ -1,6 +1,8 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-25 | Updates: owner and AI agents -->
 
 # Status
+- **P20-AB / CR-190 (2026-11-28) — Replace Transactions missing-link three-dot menu with conditional link icon.**
+  Replaced `menuPlacement="leading"` and `menu={[{ label: 'Link missing transactions', ... }]}` on `AppHeader` in `app/(tabs)/transactions.tsx` with a conditional `link` action in `rightActions` opening `/link-missing` only while `unlinkedCount > 0` (hidden otherwise). Updated `TransactionsScreen.test.tsx`, `RouteRenderSmoke.test.tsx`, `CHANGELOG.md` (`[Unreleased]`), and added physical-device check `O98` (`Not run`). Issue `#629`. Schema remains version 24.
 - **P35-C-R6 / CR-190 (2026-11-28) — Inline Profile in Settings, remove Data & developer actions title, and move Pending review drafts to Transactions.**
   Removed `Data & developer actions` heading in `app/settings.tsx`, removed `app/profile-form.tsx` and its menu/router entries (`app/_layout.tsx`, `src/lib/routeKinds.ts`, `src/lib/appMenu.ts`, `src/components/useAppMenu.ts`), added inline Profile display & editing above Transaction detection in `app/settings.tsx` preserving existing `data.settings`, and moved `Pending review drafts` from `app/transaction-detection.tsx` to `app/(tabs)/transactions.tsx` (preserving `Review & add`, Save/Dismiss, and confirmed `Discard`). Updated tests, `CHANGELOG.md` (`[Unreleased]`), and added physical-device check `O97` (`Not run`). Issue `#626`. Schema remains version 24.
 - **CR-189 (2026-11-28) — Record owner-reported physical-device Pass for `O86`–`O91`, `O95`, and `O96`.**
