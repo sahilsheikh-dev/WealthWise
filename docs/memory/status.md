@@ -1,6 +1,8 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-25 | Updates: owner and AI agents -->
 
 # Status
+- **CR-189 (2026-11-28) — Record owner-reported physical-device Pass for `O86`–`O91`, `O95`, and `O96`.**
+  Marked `O86`, `O87`, `O88`, `O89`, `O90`, `O91`, `O95`, and `O96` as **Pass** in `docs/releases/device-test-checklist.md` under `## Next release device checks` (`realme Narzo 60 Pro 5g`, `15 Vanilla Ice Cream`, `sahilsheikh-dev`, `2026-11-28`); `O92`, `O93`, and `O94` remain `Not run`. Issue `#623`. Documentation only; schema remains version 24.
 - **P26-A-R1 / CR-188 (2026-11-28) — Reorder bottom tabs to Home, Goals, Budget, Transactions.**
   Updated `bottomTabs` in `src/components/ui.tsx` and `<Tabs.Screen>` order in `app/(tabs)/_layout.tsx` to **Home, Goals, Budget, Transactions** on Android and iOS while preserving tab behavior and navigation state. Updated `BottomTabBar.test.tsx`, `TabsLayout.test.tsx`, `docs/memory/rules.md`, `CHANGELOG.md` (`[Unreleased]`), and added physical-device check `O96` (`Not run`). Issue `#620`. Schema remains version 24.
 - **P35-C-R5 / CR-188 (2026-11-28) — Hide automatic transaction detection controls and entry points on iOS.**

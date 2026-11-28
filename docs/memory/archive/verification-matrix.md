@@ -6702,3 +6702,14 @@ Gradle build, version bump, or release preparation was performed.
   - Reason: `P35-C-R3` direct draft modal review & compliant source-app picker completed (`CR-186`, `#611`).
 - Ordered six gates: all run with actual exit codes recorded.
 
+
+### P35-C-R4 / CR-187 verification — Android detection reliability & parser coverage (2026-11-28)
+
+- **Implementation:** Updated `plugins/withNotificationListener.js`, `src/domain/transactionDetection.ts`, `src/components/ReminderRuntime.tsx`, `app/transaction-form.tsx`, `app/transaction-detection.tsx`, `PRIVACY.md`, and `CHANGELOG.md` (`[Unreleased]`).
+- **Physical-device check:** Added `O94` (`Not run`) to `docs/releases/device-test-checklist.md` under `## Next release device checks` (metadata: realme Narzo 60 Pro 5g, 15 Vanilla Ice Cream, sahilsheikh-dev, 2026-11-28).
+- **Replaced assertions (`progressLedger.test.ts`):**
+  - Old: `expectedIds` ended at `O93`, `Overall progress` allowed up to `89% (195/218)`, `P35` expected `6/6` / `6`, and `P35-C` expected `Revised by P35-C-R1, P35-C-R2 and P35-C-R3`.
+  - Replacement: Added `'O94'` to `expectedIds`, extended `Overall progress` to `89% (196/219)`, updated `P35` to `7/7` / `7`, updated `P35-C` status regex, and added `CR-187` test.
+  - Reason: `P35-C-R4` detection reliability & parser improvements completed (`CR-187`, `#614`).
+- Ordered six gates: all run with actual exit codes recorded.
+
