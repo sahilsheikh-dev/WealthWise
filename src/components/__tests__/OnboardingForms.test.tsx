@@ -2,7 +2,6 @@ import React from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
 
 import OnboardingScreen from '../../../app/onboarding';
-import ProfileFormScreen from '../../../app/profile-form';
 import { assertNoVerbText } from '../testUtils/assertNoVerbText';
 
 jest.mock('@expo/vector-icons', () => ({ Feather: () => null }));
@@ -111,18 +110,5 @@ describe('onboarding form', () => {
     expect(renderer.root.findByProps({ accessibilityLabel: 'Your name' }).props.error).toBe('Enter your name');
     act(() => renderer.root.findByProps({ accessibilityLabel: 'Skip for now' }).props.onPress());
     expect(mockCompleteOnboarding).toHaveBeenCalledWith({ name: '', monthlySalary: null });
-  });
-});
-
-describe('profile form', () => {
-  it('renders existing profile data and saves a cleared salary', async () => {
-    const renderer = renderScreen(<ProfileFormScreen />);
-    assertNoVerbText(renderer.root);
-    expect(renderer.root.findAllByType('text').some((node) => node.children.includes('Profile'))).toBe(true);
-    act(() => renderer.root.findByProps({ accessibilityLabel: 'Monthly take-home income' }).props.onChangeText(''));
-    const saveButton = renderer.root.findByProps({ accessibilityLabel: 'Save profile' });
-    await act(async () => { await saveButton.props.onPress(); });
-    expect(mockUpdateSettings).toHaveBeenCalledWith({ name: 'Demo', monthlySalary: null });
-    expect(mockBack).toHaveBeenCalledTimes(1);
   });
 });

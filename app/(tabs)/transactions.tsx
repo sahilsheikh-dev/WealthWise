@@ -1,7 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { PanResponder, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { PanResponder, Platform, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 
 import { AmountText } from '../../src/components/AmountText';
 import { AppHeader } from '../../src/components/AppHeader';
@@ -11,6 +11,7 @@ import { PendingItemRow } from '../../src/components/PendingItemRow';
 import { SortChip } from '../../src/components/SortChip';
 import {
   AppText,
+  Button,
   Card,
   Chip,
   ChipRow,
@@ -18,9 +19,11 @@ import {
   ListItem,
   Screen,
   SearchField,
+  SectionTitle,
   StatPill,
   WarningBanner,
 } from '../../src/components/ui';
+import { DEFAULT_TRANSACTION_DETECTION } from '../../src/data/metaStore';
 import { metaStore } from '../../src/data/store';
 import { useUIStore } from '../../src/data/uiStore';
 import { useAppData } from '../../src/data/useAppData';
@@ -33,12 +36,16 @@ import { findUnlinkedEntries } from '../../src/domain/instruments';
 import { describeSource } from '../../src/domain/links';
 import { pendingItems, pendingTransactionType } from '../../src/domain/pending';
 import { filterTransactions, groupByDate, monthSummary, transactionCategoryLabel } from '../../src/domain/transactions';
+import type { PendingTransactionDraft } from '../../src/domain/transactionDetection';
 import type { Transaction } from '../../src/domain/types';
 import { formatAmount } from '../../src/lib/amountDisplay';
 import { todayISO } from '../../src/lib/clock';
+import { confirmAsync } from '../../src/lib/confirm';
 import { formatDate, formatMonth } from '../../src/lib/format';
 import { SORT_OPTIONS } from '../../src/lib/sorting';
 import { swipeIntent } from '../../src/lib/swipe';
+import { removeTransactionDraft } from '../../src/lib/transactionDetectionDrafts';
+import { buildDraftFormRoute } from '../../src/lib/transactionDetectionRuntime';
 import {
   loadTransactionDetectionStatus,
   type TransactionDetectionStatusInfo,
@@ -73,9 +80,15 @@ export default function TransactionsScreen() {
   const [touchingChips, setTouchingChips] = useState(false);
   const [monthPickerOpen, setMonthPickerOpen] = useState(false);
   const [detectionStatus, setDetectionStatus] = useState<TransactionDetectionStatusInfo | null>(null);
+  const [pendingDrafts, setPendingDrafts] = useState<PendingTransactionDraft[]>([]);
   useEffect(() => {
     let active = true;
     const refreshDetection = () => {
+      if (typeof metaStore?.getMeta === 'function') {
+        void metaStore.getMeta().then((meta) => {
+          if (active) setPendingDrafts(meta?.transactionDetection?.pendingDrafts ?? []);
+        });
+      }
       void loadTransactionDetectionStatus(metaStore).then((status) => {
         if (active) setDetectionStatus(status);
       });
@@ -89,6 +102,17 @@ export default function TransactionsScreen() {
       unsub();
     };
   }, []);
+
+  const discardDraft = (draftId: string) => {
+    void confirmAsync({
+      title: 'Discard detected draft?',
+      message: 'Remove this draft without creating a transaction?',
+      confirmLabel: 'Discard',
+      destructive: true,
+    }).then((confirmed) => {
+      if (confirmed) void removeTransactionDraft(draftId);
+    });
+  };
   useEffect(() => {
     if (params.month && /^\d{4}-(0[1-9]|1[0-2])$/.test(params.month)) setTxMonth(params.month);
   }, [params.month, setTxMonth]);
@@ -213,6 +237,43 @@ export default function TransactionsScreen() {
               </AppText>
             </AppText>
           </Pressable>
+        ) : null}
+        {Platform?.OS === 'android' && pendingDrafts.length > 0 ? (
+          <View testID="transactions-pending-drafts" style={styles.draftsSection}>
+            <SectionTitle>Pending review drafts ({pendingDrafts.length})</SectionTitle>
+            {pendingDrafts.map((draft) => (
+              <Card key={draft.id}>
+                <View style={styles.draftHeader}>
+                  <View style={styles.draftInfo}>
+                    <AppText style={[typography.name, { color: colors.text1 }]}>
+                      {draft.suggestedNote}
+                    </AppText>
+                    <AppText style={[typography.meta, { color: colors.text3 }]}>
+                      {draft.type === 'income' ? 'Credit' : 'Debit'} · {formatDate(draft.date)} · {draft.sourcePackage}
+                    </AppText>
+                  </View>
+                  <AmountText
+                    value={draft.amount}
+                    tier="exact"
+                    tone={draft.type === 'income' ? 'ok' : 'err'}
+                    style={typography.amount}
+                  />
+                </View>
+                <View style={styles.draftActions}>
+                  <Button
+                    label="Review & add"
+                    variant="primary"
+                    onPress={() => router.push(buildDraftFormRoute(draft) as Href)}
+                  />
+                  <Button
+                    label="Discard"
+                    variant="soft"
+                    onPress={() => discardDraft(draft.id)}
+                  />
+                </View>
+              </Card>
+            ))}
+          </View>
         ) : null}
         {unlinkedCount > 0 ? (
           <Pressable
@@ -416,6 +477,10 @@ const styles = StyleSheet.create({
   pendingList: { paddingTop: 4, gap: 4 },
   dateGroup: { marginTop: 14, marginBottom: 3, fontSize: 11 },
   cashCard: { marginHorizontal: 20, marginTop: 0, minHeight: 56, padding: 12, justifyContent: 'center', gap: 8 },
+  draftsSection: { marginHorizontal: 20, marginTop: 8, gap: 8 },
+  draftHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
+  draftInfo: { flex: 1, gap: 2 },
+  draftActions: { flexDirection: 'row', gap: 8, marginTop: 12 },
   unlinkedNotice: { minHeight: 44, marginHorizontal: 20, marginTop: 8, paddingHorizontal: 12, paddingVertical: 8, borderWidth: StyleSheet.hairlineWidth, borderRadius: 12, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' },
   balanceSummary: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 8 },
   balanceTitle: { flex: 1, minWidth: 0 },
