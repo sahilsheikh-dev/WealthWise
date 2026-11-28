@@ -6690,3 +6690,15 @@ Gradle build, version bump, or release preparation was performed.
   - Reason: `npx expo install` aligned `expo` to `~58.1.0`.
 - Ordered six gates: all run with actual exit codes recorded.
 
+
+### P35-C-R3 / CR-186 verification — direct draft modal review & compliant source-app picker (2026-11-28)
+
+- **Implementation:** Updated `ReminderRuntime.tsx`, `app/transaction-form.tsx`, `src/lib/transactionDetectionRuntime.ts`, `src/domain/transactionDetection.ts`, `src/lib/notificationListener.ts`, `plugins/withNotificationListener.js`, `app/transaction-detection.tsx`, `PRIVACY.md`, and `CHANGELOG.md` (`[Unreleased]`).
+- **Tests:** Added `src/components/__tests__/TransactionDraftReviewFlow.test.tsx` and updated `src/components/__tests__/TransactionDetectionScreen.test.tsx`.
+- **Physical-device checks:** Added `O92` and `O93` (`Not run`) to `docs/releases/device-test-checklist.md` under `## Next release device checks` (metadata: realme Narzo 60 Pro 5g, 15 Vanilla Ice Cream, sahilsheikh-dev, 2026-11-28).
+- **Replaced assertions (`TransactionDetectionScreen.test.tsx`, `progressLedger.test.ts`):**
+  - Old: `TransactionDetectionScreen.test.tsx` expected `Review & add` without `sourcePackage` and inbox button `Dismiss`; `progressLedger.test.ts` `expectedIds` ended at `O91`, `Overall progress` allowed up to `89% (194/217)`, `P35` expected `5/5` / `5`, and `P35-C` expected `Revised by P35-C-R1 and P35-C-R2`.
+  - Replacement: Updated `TransactionDetectionScreen.test.tsx` to expect `sourcePackage` and confirmed `Discard`; added `'O92'`, `'O93'` to `expectedIds`, extended `Overall progress` to `89% (195/218)`, updated `P35` to `6/6` / `6`, updated `P35-C` status regex, and added `CR-186` test.
+  - Reason: `P35-C-R3` direct draft modal review & compliant source-app picker completed (`CR-186`, `#611`).
+- Ordered six gates: all run with actual exit codes recorded.
+

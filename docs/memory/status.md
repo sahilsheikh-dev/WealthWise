@@ -1,6 +1,8 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-25 | Updates: owner and AI agents -->
 
 # Status
+- **P26-A-R1 / CR-188 (2026-11-28) — Reorder bottom tabs to Home, Goals, Budget, Transactions.**
+  Updated `bottomTabs` in `src/components/ui.tsx` and `<Tabs.Screen>` order in `app/(tabs)/_layout.tsx` to **Home, Goals, Budget, Transactions** on Android and iOS while preserving tab behavior and navigation state. Updated `BottomTabBar.test.tsx`, `TabsLayout.test.tsx`, `docs/memory/rules.md`, `CHANGELOG.md` (`[Unreleased]`), and added physical-device check `O96` (`Not run`). Issue `#620`. Schema remains version 24.
 - **P35-C-R5 / CR-188 (2026-11-28) — Hide automatic transaction detection controls and entry points on iOS.**
   Hidden transaction-detection controls and entry points on iOS across `app/settings.tsx`, `app/(tabs)/index.tsx` (explicitly authorized; hash updated in `rules.md`), `app/(tabs)/transactions.tsx`, and `TransactionDetectionRuntime`, and kept `/transaction-detection` on iOS as a graceful Android-only manual-entry fallback (`app/transaction-detection.tsx`), while preserving Android behavior. Updated `SettingsScreen.test.tsx`, `TransactionDetectionEntryPoints.test.tsx`, `TransactionDetectionScreen.test.tsx`, `CHANGELOG.md` (`[Unreleased]`), and added physical-device check `O95` (`Not run`). Issue `#617`. Schema remains version 24.
 - **P35-C-R4 / CR-187 (2026-11-28) — Improve Android transaction-detection reliability and parser coverage.**
