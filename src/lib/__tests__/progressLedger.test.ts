@@ -2666,7 +2666,7 @@ describe('permanent progress ledger', () => {
     expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-169 |'))).toHaveLength(1);
     expect(register.split('\n').filter((line) => line.startsWith('| CR-169 |'))).toHaveLength(1);
     expect(matrix).toContain('CR-169');
-    expect(pkg.dependencies.expo).toMatch(/^\^?58\./);
+    expect(pkg.dependencies.expo).toMatch(/^[~^]?58\./);
     expect(pkg.dependencies['expo-router']).toMatch(/^~?58\./);
     expect(decisionsSection).toContain('Resolved by Expo SDK 58 upgrade');
     expect(checklist).toMatch(/\|\s*O85\s*\|[^|]+\|\s*Pass\s*\|/);
@@ -2937,5 +2937,16 @@ describe('permanent progress ledger', () => {
     expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-181 |'))).toHaveLength(1);
     expect(register.split('\n').filter((line) => line.startsWith('| CR-181 |'))).toHaveLength(1);
     expect(checklist).toContain('| O88 |');
+  });
+
+  it('records CR-182 Expo SDK 58 package alignment under cleanup', () => {
+    const promptLog = ledger.split('## 6. Prompt and session log')[1]?.split('## 7. Change-request register')[0] ?? '';
+    const register = ledger.split('## 7. Change-request register')[1]?.split('## 8. Known issues and risks')[0] ?? '';
+    const entities = ledger.split('## 13. Independent entities')[1] ?? '';
+
+    expect(promptLog.split('\n').filter((line) => line.startsWith('| CR-182 |'))).toHaveLength(1);
+    expect(register.split('\n').filter((line) => line.startsWith('| CR-182 |'))).toHaveLength(1);
+    expect(entities).toContain('| cleanup: SDK 58 package alignment |');
+    expect(entities).toContain('#599');
   });
 });

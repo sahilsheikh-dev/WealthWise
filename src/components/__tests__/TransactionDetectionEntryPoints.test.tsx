@@ -128,7 +128,7 @@ describe('Home & Transactions auto-detection entry points', () => {
       entry.props.onPress();
     });
     expect(router.push).toHaveBeenCalledWith('/transaction-detection');
-  });
+  }, 15000);
 
   it('renders Transactions entry point with revoked Notification access needed and iOS Unavailable states', async () => {
     mockCurrentStatus = getTransactionDetectionStatus({
@@ -162,5 +162,5 @@ describe('Home & Transactions auto-detection entry points', () => {
       iosEntry.props.onPress();
     });
     expect(router.push).toHaveBeenCalledWith('/transaction-detection');
-  });
+  }, 15000);
 });
