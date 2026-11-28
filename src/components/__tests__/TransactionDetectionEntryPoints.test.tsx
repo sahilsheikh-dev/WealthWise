@@ -163,4 +163,22 @@ describe('Home & Transactions auto-detection entry points', () => {
     });
     expect(router.push).toHaveBeenCalledWith('/transaction-detection');
   }, 15000);
+
+  it('hides Home and Transactions entry points while detection is enabled', async () => {
+    mockCurrentStatus = getTransactionDetectionStatus({
+      supported: true,
+      enabled: true,
+      listenerGranted: true,
+      notificationPermission: 'granted',
+      pendingDraftCount: 1,
+    });
+    let homeTree!: TestRenderer.ReactTestRenderer;
+    let txTree!: TestRenderer.ReactTestRenderer;
+    await act(async () => {
+      homeTree = TestRenderer.create(<HomeScreen />);
+      txTree = TestRenderer.create(<TransactionsScreen />);
+    });
+    expect(homeTree.root.findAllByProps({ testID: 'home-transaction-detection-entry' })).toHaveLength(0);
+    expect(txTree.root.findAllByProps({ testID: 'transaction-detection-entry' })).toHaveLength(0);
+  });
 });

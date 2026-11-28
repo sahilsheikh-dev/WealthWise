@@ -2,6 +2,10 @@
 
 # Open items
 
+## P35-C-R2 Add Settings screen and hide enabled detection entry points (Done; CR-183; #602; device check O89 Not run)
+
+- Subtask P35-C-R2 (CR-183, 2026-11-28): Added `app/settings.tsx` (`Settings` screen with all `useAppMenu()` items and `Automatically detect transactions` control), replaced Home header's three-dot menu with a `Settings` gear button (`app/(tabs)/index.tsx`), hid Home/Transactions auto-detection entry points while `status === 'enabled'`, added `SettingsScreen.test.tsx`, updated `TransactionDetectionEntryPoints.test.tsx` and `CHANGELOG.md` (`[Unreleased]`), and added physical-device check `O89` (`Not run`). Issue `#602`. Schema remains version 24.
+
 ## CR-182 Align Expo SDK 58 package versions (Done; cleanup; #599)
 
 - Subtask CR-182 (2026-11-28): Aligned `expo` (`~58.1.0`), `expo-crypto` (`~58.0.9`), `expo-file-system` (`~58.0.15`), `expo-notifications` (`~58.1.10`), `expo-router` (`~58.0.33`), `expo-sharing` (`~58.0.24`), `expo-splash-screen` (`~58.0.15`), and `jest-expo` (`~58.0.16` in `devDependencies`) under `cleanup` lifecycle (`#599`), preserving `.npmrc` (`legacy-peer-deps=true`). `npx expo install --check` (`0`) and `npx expo-doctor` (`20/20`, `0`) pass. Schema remains version 24.

@@ -5,6 +5,7 @@ const appRoot = join(process.cwd(), 'app');
 const noDefaultMenuScreens = new Set([
   'app/erase-data.tsx',
   'app/(tabs)/budget.tsx',
+  'app/(tabs)/index.tsx',
   'app/emergency-fund.tsx',
 ]);
 
