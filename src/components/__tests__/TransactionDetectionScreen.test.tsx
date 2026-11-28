@@ -116,23 +116,7 @@ describe('TransactionDetectionScreen', () => {
         await flushPromises();
       });
 
-      expect(JSON.stringify(renderer!.toJSON())).toContain('Coffee Shop');
-
-      const reviewBtn = findButtonByLabel(renderer!.root, 'Review & add');
-      await act(async () => {
-        reviewBtn.props.onPress();
-      });
-      expect(mockPush).toHaveBeenCalledWith({
-        pathname: '/transaction-form',
-        params: {
-          draftId: 'draft-ui-1',
-          type: 'expense',
-          amount: '320',
-          date: '2026-11-25',
-          note: 'Coffee Shop',
-          sourcePackage: 'com.google.android.apps.nbu.paisa.user',
-        },
-      });
+      expect(JSON.stringify(renderer!.toJSON())).not.toContain('Pending review drafts');
 
       const switches = renderer!.root.findAllByType(Switch);
       await act(async () => {
@@ -150,13 +134,6 @@ describe('TransactionDetectionScreen', () => {
       const updatedMeta = await metaStore.getMeta();
       expect(updatedMeta.transactionDetection?.allowedPackages).toContain('com.google.android.apps.messaging');
       expect(updatedMeta.transactionDetection?.allowedPackages).toContain('com.snapwork.hdfc');
-
-      const discardBtn = findButtonByLabel(renderer!.root, 'Discard');
-      await act(async () => {
-        discardBtn.props.onPress();
-        await flushPromises();
-      });
-      expect(JSON.stringify(renderer!.toJSON())).toContain('No pending drafts');
     } finally {
       Object.defineProperty(Platform, 'OS', { value: originalOS, configurable: true });
     }

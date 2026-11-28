@@ -65,7 +65,6 @@ function AppContent() {
                 <Stack.Screen name="transaction-form" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="transaction-detection" />
                 <Stack.Screen name="link-missing" />
-                <Stack.Screen name="profile-form" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="theme" />
                 <Stack.Screen name="investment-form" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="investment-entry-form" options={{ presentation: 'modal' }} />

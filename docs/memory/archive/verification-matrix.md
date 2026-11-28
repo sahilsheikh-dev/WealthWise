@@ -2,6 +2,83 @@
 
 # Archived Verification Matrix (CR-149 and Earlier)
 
+### P26-A-R1 / CR-188 verification — reorder bottom tabs to Home, Goals, Budget, Transactions (2026-11-28)
+
+- **Implementation:** Reordered `bottomTabs` in `src/components/ui.tsx` and `<Tabs.Screen>` order in `app/(tabs)/_layout.tsx` to Home, Goals, Budget, Transactions; updated `docs/memory/rules.md` and `CHANGELOG.md` (`[Unreleased]`).
+- **Physical-device check:** Added `O96` (`Not run`) to `docs/releases/device-test-checklist.md` under `## Next release device checks`.
+- **Replaced assertions (`BottomTabBar.test.tsx`, `TabsLayout.test.tsx`, `progressLedger.test.ts`):**
+  - Old: `BottomTabBar.test.tsx` and `TabsLayout.test.tsx` expected `['index', 'transactions', 'goals', 'budget']`; `progressLedger.test.ts` `expectedIds` ended at `O95` and `Overall progress` allowed `197/220`.
+  - Replacement: `BottomTabBar.test.tsx` and `TabsLayout.test.tsx` assert `['index', 'goals', 'budget', 'transactions']`; `progressLedger.test.ts` adds `'O96'`, `198/221`, and `P26-A-R1` assertions.
+  - Reason: `P26-A-R1` sets the bottom tab order to Home, Goals, Budget, Transactions (`CR-188`, `#620`).
+- Ordered six gates: all run with actual exit codes recorded.
+
+### P35-C-R5 / CR-188 verification — hide transaction detection on iOS (2026-11-28)
+
+- **Implementation:** Updated `app/settings.tsx`, `app/(tabs)/index.tsx` (explicitly authorized; hash updated in `docs/memory/rules.md`), `app/(tabs)/transactions.tsx`, `app/transaction-detection.tsx`, `src/components/ReminderRuntime.tsx`, and `CHANGELOG.md` (`[Unreleased]`).
+- **Physical-device check:** Added `O95` (`Not run`) to `docs/releases/device-test-checklist.md` under `## Next release device checks`.
+- **Replaced assertions (`SettingsScreen.test.tsx`, `TransactionDetectionEntryPoints.test.tsx`, `progressLedger.test.ts`):**
+  - Old: `SettingsScreen.test.tsx` and `TransactionDetectionEntryPoints.test.tsx` asserted `Unavailable on iOS` controls in Settings and Transactions; `progressLedger.test.ts` `expectedIds` ended at `O94`, `Overall progress` allowed `196/219`, `P35` expected `7/7` / `7`, and `P35-C` expected `Revised by P35-C-R1, P35-C-R2, P35-C-R3 and P35-C-R4`.
+  - Replacement: `SettingsScreen.test.tsx` and `TransactionDetectionEntryPoints.test.tsx` assert iOS hides detection controls/entry points; `progressLedger.test.ts` adds `'O95'`, `197/220`, `8/8` / `8`, `P35-C-R5` status, and `CR-188` test.
+  - Reason: `P35-C-R5` hides Android-only transaction detection controls and entry points on iOS (`CR-188`, `#617`).
+- Ordered six gates: all run with actual exit codes recorded.
+
+### P35-C-R1 / CR-181 verification — Home & Transactions auto-detection entry points (2026-11-27)
+
+- **Implementation:** Added `src/lib/transactionDetectionStatus.ts` (`getTransactionDetectionStatus`, `loadTransactionDetectionStatus`) and `"Automatically detect transactions"` entry points on Home (`app/(tabs)/index.tsx`, explicitly authorized) and Transactions (`app/(tabs)/transactions.tsx`) routing to `/transaction-detection` and displaying `Unavailable on iOS`, `Not set up`, `Notification access needed`, `Notification permission needed`, or `Enabled`.
+- **Tests:** Added `src/lib/__tests__/transactionDetectionStatus.test.ts` and `src/components/__tests__/TransactionDetectionEntryPoints.test.tsx`.
+- **Physical-device check:** Added `O88` (`Not run`) to `docs/releases/device-test-checklist.md` under `## Next release device checks` (metadata: realme Narzo 60 Pro 5g, 15 Vanilla Ice Cream, sahilsheikh-dev, 2026-11-27).
+- **Replaced assertions (`progressLedger.test.ts`):**
+  - Old: `expectedIds` ended at `O87`, and `CR-178` asserted `P35` at `100% (3/3)` only.
+  - Replacement: Added `'O88'` to `expectedIds`, updated `CR-178` `P35` regex to allow `3/3` or `4/4`, and added `CR-181` test asserting `P35-C` is `Revised by P35-C-R1`, `P35-C-R1` is `| Done |`, `P35` is `100% (4/4)`, and `O88` is recorded.
+  - Reason: `P35-C-R1` Home & Transactions entry points completed (`CR-181`).
+- Ordered six gates: all run with actual exit codes recorded.
+
+### P35-C / CR-178 verification — Android notification-based transaction detection (2026-11-25)
+
+- **Implementation & privacy:** Added `plugins/withNotificationListener.js` (`BIND_NOTIFICATION_LISTENER_SERVICE`, zero SMS permissions), `src/domain/transactionDetection.ts` (local credit/debit parsing, OTP/promo/hidden rejection, non-reversible deduplication, 7-day expiry, `incomeCategoriesForTransaction`), `metaStore.ts` `transactionDetection` state (schema remains v24), `app/transaction-detection.tsx`, `app/transaction-form.tsx` draft prefill + dynamic categories, `TransactionDetectionRuntime`, `PRIVACY.md`, and `CHANGELOG.md` (`[Unreleased]`).
+- **Physical-device check:** Added `O86` (`Not run`) to `docs/releases/device-test-checklist.md` under `## Next release device checks` (metadata: realme Narzo 60 Pro 5g, 15 Vanilla Ice Cream, sahilsheikh-dev, 2026-11-25). Requires an installable native Android build.
+- **Replaced assertions (`progressLedger.test.ts`):**
+  - Old: `P35-C` was in `plannedPartIds` (`| Planned |`), `Overall progress` allowed up to `89% (188/212)`, `CR-177` asserted `P35` at `67% (2/3)` only, and `expectedIds` ended at `O85`.
+  - Replacement: Removed `P35-C` from `plannedPartIds`, added `CR-178` test asserting `P35-C` is `| Done |`, `P35` is `100% (3/3)`, `O86` is `Not run`, and `PRIVACY.md` documents `BIND_NOTIFICATION_LISTENER_SERVICE`, updated `CR-177` `P35` regex to allow `67% (2/3)` or `100% (3/3)`, added `'O86'` to `expectedIds`, and extended `Overall progress` regex to allow `89% (189/212)`.
+  - Reason: `P35-C` implementation completed (`#442`, `CR-178`).
+- Ordered six gates: all run with actual exit codes recorded.
+
+### P35-B / CR-177 verification — scope validation and implementation design (2026-11-25)
+
+- **Design specification:** Stored outside Git at `/tmp/wealthwise/reports/p35-b-implementation-design.md`. Confirmed Android-only `NotificationListenerService`, zero SMS permissions, `metaStore` draft queue/dedup/7-day expiry (schema v24), dynamic categorization, prominent disclosure, and foreground/background review UX.
+- **Replaced assertions (`progressLedger.test.ts`):**
+  - Old: `P35-B` was in `plannedPartIds` (`| Planned |`), `Overall progress` allowed up to `88% (187/212)`, and `CR-176` asserted `P35` at `33% (1/3)` only.
+  - Replacement: Removed `P35-B` from `plannedPartIds`, added `CR-177` test asserting `P35-B` is `| Done |` and `P35` is `67% (2/3)`, updated `CR-176` `P35` bar regex to allow `33% (1/3)`, `67% (2/3)`, or `100% (3/3)`, and extended `Overall progress` regex to allow `89% (188/212)`.
+  - Reason: `P35-B` scope validation and design completed (`#441`, `CR-177`).
+- Ordered six gates: all run with actual exit codes recorded.
+
+### P35-A / CR-176 verification — SMS and notification transaction detection research (2026-11-25)
+
+- **Research report:** Stored outside Git at `/tmp/wealthwise/reports/p35-a-transaction-detection-research.md` (accessed 2026-11-25). Evaluated Android `READ_SMS`/`RECEIVE_SMS` vs `NotificationListenerService`, Google Play Prominent Disclosure & Restricted Settings, iOS `ILMessageFilterExtension` limits, local-only parsing without raw-message storage, and reviewable draft queue.
+- **Replaced assertions (`progressLedger.test.ts`):**
+  - Old: `P35-A` was in `plannedPartIds` (`| Planned |`), `Overall progress` allowed up to `88% (186/212)`, `branchLabels` excluded `P35`, and `Phase branch index` expected `37` rows.
+  - Replacement: Removed `P35-A` from `plannedPartIds`, added `CR-176` test asserting `P35-A` is `| Done |` and `P35` is `33% (1/3)`, extended `Overall progress` regex to allow `88% (187/212)`, and updated `branchLabels` (`P35`), `Phase branch index` row count (`38`), and `number === 35` branch-index check (`phase/35-transaction-auto-detect`, `—`, `—`, `3`).
+  - Reason: `P35-A` research completed (`#440`, `CR-176`) on canonical branch `phase/35-transaction-auto-detect`.
+- Ordered six gates: all run with actual exit codes recorded.
+
+### P34-A / CR-175 verification — quick-capture research and plan (2026-11-25)
+
+- **Research report:** Stored outside Git at `/tmp/wealthwise/reports/p34-a-quick-capture-research.md` (accessed 2026-11-25). Evaluated app shortcuts, Android Quick Settings `TileService`, notification actions, foreground shake, double-tap back, and hardware key combinations for Expo SDK 58 / React Native `0.88.1`.
+- **Replaced assertions (`progressLedger.test.ts`):**
+  - Old: `P34-A` was in `plannedPartIds` (`| Planned |`), `Overall progress` allowed up to `87% (185/212)`, `branchLabels` excluded `P34`, and `Phase branch index` expected `36` rows.
+  - Replacement: Removed `P34-A` from `plannedPartIds`, added `CR-175` test asserting `P34-A` is `| Done |` and `P34` is `33% (1/3)`, extended `Overall progress` regex to allow `88% (186/212)`, and updated `branchLabels` (`P34`), `Phase branch index` row count (`37`), and `number === 34` branch-index check (`phase/34-quick-capture`, `—`, `—`, `3`).
+  - Reason: `P34-A` research completed (`#437`, `CR-175`) on canonical branch `phase/34-quick-capture`.
+- Ordered six gates: all run with actual exit codes recorded.
+
+### P28-F-R8 / CR-174 verification — prepare WealthWise v1.4.0 release candidate (2026-11-25)
+
+- **Version & release-note alignment:** Bumped `app.json`, `package.json`, and `package-lock.json` to `1.4.0`. Moved owner-approved `docs/releases/drafts/v1.4.0.md` to `docs/releases/published/v1.4.0.md`, added all 13 owner-supplied screenshots under `docs/releases/screenshots/v1.4.0/`, updated `CHANGELOG.md` (`[1.4.0] - 2026-11-25`), `README.md` (Download block, What's new, and 13-screenshot gallery), and `docs/releases/published/v1.3.0.md` Download block (`Version: v1.3.0` and versioned APK URL).
+- **Device checklist rearrangement:** Moved verified checks `O77`–`O85` into `## v1.4.0 device checks` below `## v1.3.0 device checks` in `docs/releases/device-test-checklist.md`, leaving `## Next release device checks` empty with `App version: TBD`.
+- **Replaced assertions (`releaseDownloadDocs.test.ts` & `progressLedger.test.ts`):**
+  - `releaseDownloadDocs.test.ts`: Old: aligned-version check expected `docs/releases/published/v1.3.0.md` / `'1.3.0'`. Replacement: expects `docs/releases/published/v1.4.0.md` / `'1.4.0'` and includes `v1.4.0` in `releases`, `releaseFiles`, `screenshotSets` (13 screens), and `markdownByVersion`. Reason: `v1.4.0` is the approved candidate version.
+  - `progressLedger.test.ts`: Added `'v1.4.0 device checks'` to `expectedSections`. Reason: `O77`–`O85` moved into `## v1.4.0 device checks` for the `v1.4.0` release candidate.
+- Ordered six gates: all run with actual exit codes recorded.
+
 ### CR-149 verification — community and project health deliverables (P31-A, P31-B, P31-C, P31-D) (2026-11-24)
 
 - Delivered complete documentation-only deliverables for Phase P31:

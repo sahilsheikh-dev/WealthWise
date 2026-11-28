@@ -1,33 +1,25 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { AppState, Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { AmountText } from '../src/components/AmountText';
 import { AppHeader } from '../src/components/AppHeader';
 import { SwitchRow } from '../src/components/form/SwitchRow';
 import { TextField } from '../src/components/form/TextField';
-import { AppText, Button, Card, EmptyState, Screen, SearchField, SectionTitle, WarningBanner } from '../src/components/ui';
+import { AppText, Button, Card, Screen, SearchField, SectionTitle, WarningBanner } from '../src/components/ui';
 import { DEFAULT_TRANSACTION_DETECTION, type PersistedTransactionDetection } from '../src/data/metaStore';
 import { metaStore } from '../src/data/store';
 import {
   buildSourceAppPickerItems,
   DEFAULT_DETECTION_SOURCE_APPS,
-  type PendingTransactionDraft,
 } from '../src/domain/transactionDetection';
-import { confirmAsync } from '../src/lib/confirm';
-import { formatDate } from '../src/lib/format';
 import { notificationListenerAdapter, type EligibleSourceAppsResult } from '../src/lib/notificationListener';
-import { singleParam } from '../src/lib/routeParams';
-import { removeTransactionDraft } from '../src/lib/transactionDetectionDrafts';
-import { buildDraftFormRoute, syncNativeDetectionConfig } from '../src/lib/transactionDetectionRuntime';
+import { syncNativeDetectionConfig } from '../src/lib/transactionDetectionRuntime';
 import { typography } from '../src/theme/tokens';
 import { useTheme } from '../src/theme/useTheme';
 
 export { ScreenErrorBoundary as ErrorBoundary } from '../src/components/ScreenErrorBoundary';
 
 export default function TransactionDetectionScreen() {
-  const params = useLocalSearchParams<{ draftId?: string }>();
-  const highlightedDraftId = singleParam(params.draftId);
   const { colors } = useTheme();
   const isAndroid = Platform.OS === 'android';
 
@@ -121,21 +113,6 @@ export default function TransactionDetectionScreen() {
     void saveDetection({ ...detection, allowedPackages: [...current] });
   };
 
-  const openDraftReview = (draft: PendingTransactionDraft) => {
-    router.push(buildDraftFormRoute(draft));
-  };
-
-  const discardDraft = (draftId: string) => {
-    void confirmAsync({
-      title: 'Discard detected draft?',
-      message: 'Remove this draft without creating a transaction?',
-      confirmLabel: 'Discard',
-      destructive: true,
-    }).then((confirmed) => {
-      if (confirmed) void removeTransactionDraft(draftId);
-    });
-  };
-
   const pickerItems = useMemo(
     () =>
       buildSourceAppPickerItems({
@@ -218,59 +195,6 @@ export default function TransactionDetectionScreen() {
             </Card>
           </>
         )}
-
-        {isAndroid ? (
-          <>
-            <SectionTitle>Pending review drafts ({detection.pendingDrafts.length})</SectionTitle>
-        {detection.pendingDrafts.length === 0 ? (
-          <Card>
-            <EmptyState
-              title="No pending drafts"
-              subtitle="Detected transactions will appear here for your review and confirmation before any financial record is created."
-            />
-          </Card>
-        ) : (
-          detection.pendingDrafts.map((draft) => {
-            const highlighted = highlightedDraftId === draft.id;
-            return (
-              <Card
-                key={draft.id}
-                style={highlighted ? { borderColor: colors.primary, borderWidth: 1.5 } : undefined}
-              >
-                <View style={styles.draftHeader}>
-                  <View style={styles.draftInfo}>
-                    <AppText style={[typography.name, { color: colors.text1 }]}>
-                      {draft.suggestedNote}
-                    </AppText>
-                    <AppText style={[typography.meta, { color: colors.text3 }]}>
-                      {draft.type === 'income' ? 'Credit' : 'Debit'} · {formatDate(draft.date)} · {draft.sourcePackage}
-                    </AppText>
-                  </View>
-                  <AmountText
-                    value={draft.amount}
-                    tier="exact"
-                    tone={draft.type === 'income' ? 'ok' : 'err'}
-                    style={typography.amount}
-                  />
-                </View>
-                <View style={styles.draftActions}>
-                  <Button
-                    label="Review & add"
-                    variant="primary"
-                    onPress={() => openDraftReview(draft)}
-                  />
-                  <Button
-                    label="Discard"
-                    variant="soft"
-                    onPress={() => discardDraft(draft.id)}
-                  />
-                </View>
-              </Card>
-            );
-          })
-        )}
-          </>
-        ) : null}
 
         {isAndroid ? (
           <>

@@ -33,7 +33,6 @@ import LinkMissingScreen from '../../../app/link-missing';
 import OnboardingScreen from '../../../app/onboarding';
 import PolicyFormScreen from '../../../app/policy-form';
 import PaymentConfirmScreen from '../../../app/payment-confirm';
-import ProfileFormScreen from '../../../app/profile-form';
 import RemindersScreen from '../../../app/reminders';
 import SecurityScreen from '../../../app/security';
 import ThemeScreen from '../../../app/theme';
@@ -827,7 +826,6 @@ describe('route render smoke audit', () => {
     ['Theme', React.createElement(ThemeScreen)],
     ['Link missing', React.createElement(LinkMissingScreen)],
     ['Onboarding', React.createElement(OnboardingScreen)],
-    ['Profile form', React.createElement(ProfileFormScreen)],
     ['Goal form create', React.createElement(GoalFormScreen)],
     ['Goal form edit', React.createElement(GoalFormScreen)],
     ['Transaction form create', React.createElement(TransactionFormScreen)],
@@ -1133,7 +1131,6 @@ describe('route render smoke audit', () => {
       throw new Error('Demo data is missing a route-form edit fixture.');
     }
     const forms: [string, Record<string, string>, React.ReactElement][] = [
-      ['Profile', {}, React.createElement(ProfileFormScreen)],
       ['Goal create', {}, React.createElement(GoalFormScreen)],
       ['Goal edit', { id: goal.id }, React.createElement(GoalFormScreen)],
       ['Transaction create from Budget', {
