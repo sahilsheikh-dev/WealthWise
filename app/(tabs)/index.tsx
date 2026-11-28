@@ -165,7 +165,13 @@ export default function HomeScreen() {
   };
   return (
     <Screen>
-      <AppHeader title={`${greetingFor(currentHour())}, ${data.settings.name || 'Welcome'}`} />
+      <AppHeader
+        title={`${greetingFor(currentHour())}, ${data.settings.name || 'Welcome'}`}
+        showDefaultMenu={false}
+        rightActions={[
+          { icon: 'settings', label: 'Settings', onPress: () => router.push('/settings' as Href) },
+        ]}
+      />
       <Card>
         <AppText style={[typography.label, { color: colors.text3 }]}>Net Worth</AppText>
         <AmountText value={summary.netWorth} tier="hero" tone={summary.netWorth < 0 ? 'err' : 'primary'} weight="bold" style={[typography.big, styles.netWorth]} />
@@ -317,7 +323,7 @@ export default function HomeScreen() {
         </Card>
       ) : null}
 
-      {detectionStatus ? (
+      {detectionStatus && detectionStatus.status !== 'enabled' ? (
         <Card>
           <Pressable
             testID="home-transaction-detection-entry"

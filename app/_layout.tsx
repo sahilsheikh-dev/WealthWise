@@ -79,6 +79,7 @@ function AppContent() {
                 <Stack.Screen name="reminders" />
                 <Stack.Screen name="payment-confirm" />
                 <Stack.Screen name="security" />
+                <Stack.Screen name="settings" />
                 <Stack.Screen name="erase-data" />
                 <Stack.Screen name="clear-dues" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="budget-section-form" options={{ presentation: 'modal' }} />
