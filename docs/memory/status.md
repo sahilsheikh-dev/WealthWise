@@ -1,6 +1,8 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-25 | Updates: owner and AI agents -->
 
 # Status
+- **P35-C-R7 / CR-191 (2026-11-28) — Replace Edit profile button in Settings with top-right edit icon.**
+  Replaced the `Edit profile` `Button` in `app/settings.tsx` with a top-right `edit-2` `IconButton` inside the Profile summary card to edit name and monthly income inline. Updated `SettingsScreen.test.tsx`, `CHANGELOG.md` (`[Unreleased]`), and added physical-device check `O99` (`Not run`). Issue `#632`. Schema remains version 24.
 - **P20-AB / CR-190 (2026-11-28) — Replace Transactions missing-link three-dot menu with conditional link icon.**
   Replaced `menuPlacement="leading"` and `menu={[{ label: 'Link missing transactions', ... }]}` on `AppHeader` in `app/(tabs)/transactions.tsx` with a conditional `link` action in `rightActions` opening `/link-missing` only while `unlinkedCount > 0` (hidden otherwise). Updated `TransactionsScreen.test.tsx`, `RouteRenderSmoke.test.tsx`, `CHANGELOG.md` (`[Unreleased]`), and added physical-device check `O98` (`Not run`). Issue `#629`. Schema remains version 24.
 - **P35-C-R6 / CR-190 (2026-11-28) — Inline Profile in Settings, remove Data & developer actions title, and move Pending review drafts to Transactions.**

@@ -192,10 +192,13 @@ describe('Settings screen and Home gear entry point', () => {
     const rendered = JSON.stringify(tree.toJSON());
     expect(rendered.indexOf('Profile')).toBeGreaterThan(-1);
     expect(rendered.indexOf('Transaction detection')).toBeGreaterThan(rendered.indexOf('Profile'));
+    expect(rendered).not.toContain('"children":["Edit profile"]');
     expect(tree.root.findByProps({ testID: 'settings-profile-name' }).props.children).toBe('Asha');
 
+    const editProfileIcon = tree.root.findByProps({ icon: 'edit-2', label: 'Edit profile' });
+    expect(editProfileIcon).toBeTruthy();
     await act(async () => {
-      tree.root.findByProps({ accessibilityLabel: 'Edit profile' }).props.onPress();
+      editProfileIcon.props.onPress();
     });
     await act(async () => {
       tree.root.findByProps({ accessibilityLabel: 'Your name' }).props.onChangeText('  Asha Rao  ');

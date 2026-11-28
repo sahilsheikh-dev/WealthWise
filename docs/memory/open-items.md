@@ -2,6 +2,10 @@
 
 # Open items
 
+## P35-C-R7 Settings Profile top-right edit icon (Done; CR-191; #632; device check O99 Not run)
+
+- Subtask P35-C-R7 (CR-191, 2026-11-28): Replaced the `Edit profile` `Button` in `app/settings.tsx` with a top-right `edit-2` `IconButton` inside the Profile summary card for inline name and monthly income editing. Updated `SettingsScreen.test.tsx`, `CHANGELOG.md` (`[Unreleased]`), and added physical-device check `O99` (`Not run`). Issue `#632`. Schema remains version 24.
+
 ## P20-AB Transactions header missing-link icon (Done; CR-190; #629; device check O98 Not run)
 
 - Subtask P20-AB (CR-190, 2026-11-28): Replaced the Transactions header three-dot `menu` for missing linked transactions with a conditional `link` icon in `rightActions` (`app/(tabs)/transactions.tsx`) opening `/link-missing` only while `unlinkedCount > 0` and hidden otherwise. Updated `TransactionsScreen.test.tsx`, `RouteRenderSmoke.test.tsx`, `CHANGELOG.md` (`[Unreleased]`), and added physical-device check `O98` (`Not run`). Issue `#629`. Schema remains version 24.
