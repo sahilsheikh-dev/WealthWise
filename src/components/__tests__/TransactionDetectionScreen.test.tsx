@@ -69,6 +69,8 @@ describe('TransactionDetectionScreen', () => {
 
       const treeText = JSON.stringify(renderer!.toJSON());
       expect(treeText).toContain('Android only');
+      expect(treeText).not.toContain('Pending review drafts');
+      expect(treeText).not.toContain('Detect payment notifications');
       const manualBtn = findButtonByLabel(renderer!.root, 'Add transaction manually');
       expect(manualBtn).toBeDefined();
       await act(async () => {

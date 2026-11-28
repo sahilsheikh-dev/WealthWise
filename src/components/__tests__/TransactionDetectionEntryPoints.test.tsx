@@ -152,16 +152,14 @@ describe('Home & Transactions auto-detection entry points', () => {
       notificationPermission: 'denied',
       pendingDraftCount: 0,
     });
+    let iosHomeTree!: TestRenderer.ReactTestRenderer;
     let iosTree!: TestRenderer.ReactTestRenderer;
     await act(async () => {
+      iosHomeTree = TestRenderer.create(<HomeScreen />);
       iosTree = TestRenderer.create(<TransactionsScreen />);
     });
-    const iosEntry = iosTree.root.findByProps({ testID: 'transaction-detection-entry' });
-    expect(iosEntry.props.accessibilityLabel).toContain('Unavailable on iOS');
-    await act(async () => {
-      iosEntry.props.onPress();
-    });
-    expect(router.push).toHaveBeenCalledWith('/transaction-detection');
+    expect(iosHomeTree.root.findAllByProps({ testID: 'home-transaction-detection-entry' })).toHaveLength(0);
+    expect(iosTree.root.findAllByProps({ testID: 'transaction-detection-entry' })).toHaveLength(0);
   }, 15000);
 
   it('hides Home and Transactions entry points while detection is enabled', async () => {

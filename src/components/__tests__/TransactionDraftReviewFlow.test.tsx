@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import React from 'react';
-import { AppState } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import TestRenderer, { act } from 'react-test-renderer';
 
 import TransactionFormScreen from '../../../app/transaction-form';
@@ -151,8 +151,11 @@ jest.mock('../../theme/useTheme', () => ({
 }));
 
 describe('P35-C-R3 direct draft modal review flow and source-app picker', () => {
+  const originalPlatformOS = Platform.OS;
+
   beforeEach(() => {
     jest.clearAllMocks();
+    Object.defineProperty(Platform, 'OS', { value: 'android', configurable: true });
     mockLastError = null;
     mockPathname = '/(tabs)/transactions';
     mockCanGoBack = true;
@@ -160,6 +163,10 @@ describe('P35-C-R3 direct draft modal review flow and source-app picker', () => 
     mockListenerCallback = null;
     mockResponseCallback = null;
     mockData = { ...emptyAppData('2026-11-28'), transactions: [] };
+  });
+
+  afterAll(() => {
+    Object.defineProperty(Platform, 'OS', { value: originalPlatformOS, configurable: true });
   });
 
   it('opens /transaction-form directly on foreground detection and avoids stacking when already on /transaction-form', async () => {

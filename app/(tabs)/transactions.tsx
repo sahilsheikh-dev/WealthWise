@@ -196,7 +196,7 @@ export default function TransactionsScreen() {
           </View>
           </Card>
         </View>
-        {detectionStatus && detectionStatus.status !== 'enabled' ? (
+        {detectionStatus && detectionStatus.status !== 'enabled' && detectionStatus.status !== 'unavailable' ? (
           <Pressable
             testID="transaction-detection-entry"
             accessibilityRole="button"

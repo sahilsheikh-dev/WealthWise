@@ -219,7 +219,9 @@ export default function TransactionDetectionScreen() {
           </>
         )}
 
-        <SectionTitle>Pending review drafts ({detection.pendingDrafts.length})</SectionTitle>
+        {isAndroid ? (
+          <>
+            <SectionTitle>Pending review drafts ({detection.pendingDrafts.length})</SectionTitle>
         {detection.pendingDrafts.length === 0 ? (
           <Card>
             <EmptyState
@@ -267,6 +269,8 @@ export default function TransactionDetectionScreen() {
             );
           })
         )}
+          </>
+        ) : null}
 
         {isAndroid ? (
           <>
