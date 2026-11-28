@@ -354,7 +354,7 @@ describe('permanent progress ledger', () => {
     expect(register).toContain('| CR-117 |');
     expect(promptLog.split('\n').filter((line) => line.startsWith('| P20-U-R1 |'))).toHaveLength(1);
     expect(roadmap).toContain('P20-U-R1');
-    expect(branchIndex).toMatch(/\| P20 \| `phase\/20-budget` \| `phase-20-complete` \| `eed40750f68bebc9168907f79f74a67c1f301b83` \| (?:43|44|45|46|47|48|49|50|51|52) \|/);
+    expect(branchIndex).toMatch(/\| P20 \| `phase\/20-budget` \| `phase-20-complete` \| `eed40750f68bebc9168907f79f74a67c1f301b83` \| (?:43|44|45|46|47|48|49|50|51|52|53) \|/);
 
     // Entity checks: CR-115 belongs in documentation entity under Section 13
     expect(independentEntities).toContain('| CR-115 |');
@@ -760,8 +760,8 @@ describe('permanent progress ledger', () => {
         expect(count?.done).toBe(0);
         expect(count?.total).toBe(4);
       } else if (phase === 20) {
-        expect(count?.done).toBe(52);
-        expect(count?.total).toBe(52);
+        expect(count?.done).toBe(53);
+        expect(count?.total).toBe(53);
         expect(dashboard.split('\n').find((line) => line.startsWith('| P20-A-R2 |')))
           .toContain('Revised by P20-A-R2-R1 and P20-A-R3');
         expect(dashboard.split('\n').find((line) => line.startsWith('| P20-A-R3 |')))
