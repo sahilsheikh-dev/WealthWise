@@ -15,6 +15,7 @@ Update this file for every release: add the new version heading and confirmed re
 - Revised transaction-detection review flow to open `/transaction-form` directly as a modal over the current screen on foreground detection or background notification tap, preserving Save/Dismiss/confirmed Discard semantics, and replaced the source-app list with a Play-policy-compliant searchable picker using scoped `<queries>` for verified payment apps and observed listener apps (without `QUERY_ALL_PACKAGES`).
 
 ### Fixes
+- Made the `Save` and `Cancel` buttons in Settings inline Profile editing (`app/settings.tsx`) equal half-width (`flex: 1` each) covering the full row (`P35-C-R8`).
 - Replaced the `Edit profile` button in Settings (`app/settings.tsx`) with a top-right `edit-2` icon inside the Profile card (`P35-C-R7`).
 - Replaced the Transactions header three-dot menu for missing linked transactions with a conditional header `link` icon opening `/link-missing` only while at least one missing-link transaction is available (`P20-AB`).
 - Updated Settings (`app/settings.tsx`) and Transactions (`app/(tabs)/transactions.tsx`): removed the `Data & developer actions` section title, removed the separate Profile modal route (`app/profile-form.tsx`) while displaying and inline-editing user name and monthly income above Transaction detection in Settings without discarding data, and moved `Pending review drafts` from `Transaction detection` to `Transactions` (`P35-C-R6`).

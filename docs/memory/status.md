@@ -1,6 +1,8 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-25 | Updates: owner and AI agents -->
 
 # Status
+- **P35-C-R8 / CR-192 (2026-11-28) — Make Settings Save/Cancel buttons equal half-width and record UI action-icon/button-sizing rules.**
+  Added `flex: 1` (`profileActionButton`) to both `Cancel` and `Save` buttons in `app/settings.tsx` so each covers half of the full row width, and added standing UI rules in `AGENTS.md`, `docs/memory/rules.md`, and `docs/PROGRESS.md` (defaulting edit/add/delete operations to top-right icons unless a button is explicitly requested, equal `flex: 1` width for horizontal text-button rows, intrinsic sizing for icon buttons, and text-size-based row rearrangement). Updated `SettingsScreen.test.tsx`, `CHANGELOG.md` (`[Unreleased]`), and added physical-device check `O100` (`Not run`). Issue `#635`. Schema remains version 24.
 - **P35-C-R7 / CR-191 (2026-11-28) — Replace Edit profile button in Settings with top-right edit icon.**
   Replaced the `Edit profile` `Button` in `app/settings.tsx` with a top-right `edit-2` `IconButton` inside the Profile summary card to edit name and monthly income inline. Updated `SettingsScreen.test.tsx`, `CHANGELOG.md` (`[Unreleased]`), and added physical-device check `O99` (`Not run`). Issue `#632`. Schema remains version 24.
 - **P20-AB / CR-190 (2026-11-28) — Replace Transactions missing-link three-dot menu with conditional link icon.**
