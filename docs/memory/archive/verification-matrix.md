@@ -79,6 +79,31 @@
   - `progressLedger.test.ts`: Added `'v1.4.0 device checks'` to `expectedSections`. Reason: `O77`–`O85` moved into `## v1.4.0 device checks` for the `v1.4.0` release candidate.
 - Ordered six gates: all run with actual exit codes recorded.
 
+### P40-B / CR-173 verification — archive completed-phase narrative (2026-11-25)
+
+- **Archive structure (`docs/memory/archive/`):** Created [README.md](memory/archive/README.md) plus 6 section archives (`architecture-and-decisions.md`, `phase-history.md`, `prompt-and-session-log.md`, `change-request-register.md`, `verification-matrix.md`, `session-and-release-log.md`), keeping `docs/PROGRESS.md` as the canonical current ledger (`~2,045` lines, `~365 KB`, down from `13,495` lines / `1,443,604` bytes) with active dashboard, standing rules, open items, current roadmap, recent CR/verification records, branch index, and independent entities.
+- **Test-first & full-coverage preservation (`progressLedger.test.ts`):** Added the failing `P40-B` archive validation test first, then added `loadLedgerWithArchives()` so all 82 ledger tests (including all historical assertions across `P1`–`P43` and `CR-1`–`CR-173`) run against `docs/PROGRESS.md` + `docs/memory/archive/*`.
+- **Replaced assertions (`progressLedger.test.ts`):**
+  - Old: `P40-B` asserted as `| Planned |` in `CR-109` test and `plannedPartIds`; `Overall progress` up to `87% (184/212)`.
+  - Replacement: `P40-B` asserted as `| Done |`, removed from `plannedPartIds`, and `Overall progress` allows `87% (185/212)`.
+  - Reason: `P40-B` completed (issue `#462`), completing `P40` (`2/2`).
+- Ordered six gates: all run with actual exit codes recorded.
+
+### P40-A / CR-172 verification — documentation size and read-cost audit (2026-11-25)
+
+- **Method & assumptions:** Exact UTF-8 line, byte, character, and whitespace-word counts measured from disk at `develop` `f8b8a71`; estimated token cost uses `Math.round(chars / 4)` (~4 chars/token BPE heuristic).
+- **Measured totals:** `17,359` lines, `1,751,606` bytes, `237,480` words, `~436,456` tokens across:
+  - `AGENTS.md`: `319` lines, `21,941` bytes, `~5,477` tokens (always-on startup cost).
+  - `docs/PROGRESS.md`: `13,495` lines, `1,443,604` bytes, `~359,592` tokens (`78.8%` concentrated in sections `## 10` `575,212` bytes, `## 6` `233,125` bytes, `## 4` `162,669` bytes, and `## 11` `139,441` bytes).
+  - `docs/memory/*` (9 files): `3,545` lines, `286,061` bytes, `~71,388` tokens (led by `open-items.md` `116,809` bytes and `status.md` `109,468` bytes).
+- **Parsing-test coverage:** 5 Jest suites (`progressLedger.test.ts`, `memoryDocs.test.ts`, `branchingDocs.test.ts`, `releaseDownloadDocs.test.ts`, `commitMessage.test.ts`) totaling `3,291` lines, `96` `it()` blocks, and `1,312` `expect()` assertions (`progressLedger`, `memoryDocs`, and `branchingDocs` execute in `3.096 s`).
+- **Detailed report:** Written outside Git at `/tmp/wealthwise/reports/p40-a-doc-size-audit.md` (issue `#461`).
+- **Replaced assertions (`progressLedger.test.ts`):**
+  - Old: `P40-A` in the `Planned` roadmap list; `branchLabels` without `'P40'`; `expect(rows).toHaveLength(35)` in phase branch index; `Overall progress` up to `86% (183/212)`.
+  - Replacement: `P40-A` removed from `Planned` list (now `Done`, `P40-B` remains `Planned`); `'P40'` added to `branchLabels`; `expect(rows).toHaveLength(36)`; `Overall progress` allows `87% (184/212)`.
+  - Reason: `P40-A` completed and `phase/40-agent-context-hygiene` added to Section 12 (Phase branch index).
+- Ordered six gates: all run with actual exit codes recorded.
+
 ### CR-149 verification — community and project health deliverables (P31-A, P31-B, P31-C, P31-D) (2026-11-24)
 
 - Delivered complete documentation-only deliverables for Phase P31:

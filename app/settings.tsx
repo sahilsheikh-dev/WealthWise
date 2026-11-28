@@ -12,6 +12,7 @@ import { FieldTitle } from '../src/components/form/FieldTitle';
 import { MoneyField } from '../src/components/form/MoneyField';
 import { SwitchRow } from '../src/components/form/SwitchRow';
 import { TextField } from '../src/components/form/TextField';
+import { IconButton } from '../src/components/IconButton';
 import { AppText, Button, Card, Screen, SectionTitle } from '../src/components/ui';
 import { useAppMenu } from '../src/components/useAppMenu';
 import { DEFAULT_TRANSACTION_DETECTION, type BackupMeta } from '../src/data/metaStore';
@@ -219,11 +220,9 @@ export default function SettingsScreen() {
                 )}
               </View>
             </View>
-            <Button
-              label="Edit profile"
+            <IconButton
               icon="edit-2"
-              variant="soft"
-              accessibilityLabel="Edit profile"
+              label="Edit profile"
               onPress={startProfileEdit}
             />
           </View>
@@ -345,8 +344,8 @@ function SettingsRow({
 
 const styles = StyleSheet.create({
   sectionCard: { gap: 10 },
-  profileSummary: { gap: 10 },
-  profileFields: { gap: 8 },
+  profileSummary: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
+  profileFields: { flex: 1, minWidth: 0, gap: 8 },
   profileField: { gap: 2 },
   profileForm: { gap: 10 },
   profileActions: { flexDirection: 'row', gap: 8 },
