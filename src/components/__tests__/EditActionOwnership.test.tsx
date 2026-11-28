@@ -39,6 +39,7 @@ describe('edit action ownership', () => {
       [join(root, 'app/investment-entries.tsx'), ["icon: 'edit-2'"]],
       [join(root, 'app/liability-payments.tsx'), ["icon: 'edit-2'"]],
       [join(root, 'app/liabilities.tsx'), ['icon="edit-2"']],
+      [join(root, 'app/settings.tsx'), ['icon="edit-2"']],
     ]);
     const violations = ['app', 'src/components']
       .flatMap((directory) => sourceFiles(join(root, directory)))

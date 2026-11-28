@@ -1,6 +1,8 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-25 | Updates: owner and AI agents -->
 
 # Status
+- **P35-C-R6 / CR-190 (2026-11-28) — Inline Profile in Settings, remove Data & developer actions title, and move Pending review drafts to Transactions.**
+  Removed `Data & developer actions` heading in `app/settings.tsx`, removed `app/profile-form.tsx` and its menu/router entries (`app/_layout.tsx`, `src/lib/routeKinds.ts`, `src/lib/appMenu.ts`, `src/components/useAppMenu.ts`), added inline Profile display & editing above Transaction detection in `app/settings.tsx` preserving existing `data.settings`, and moved `Pending review drafts` from `app/transaction-detection.tsx` to `app/(tabs)/transactions.tsx` (preserving `Review & add`, Save/Dismiss, and confirmed `Discard`). Updated tests, `CHANGELOG.md` (`[Unreleased]`), and added physical-device check `O97` (`Not run`). Issue `#626`. Schema remains version 24.
 - **CR-189 (2026-11-28) — Record owner-reported physical-device Pass for `O86`–`O91`, `O95`, and `O96`.**
   Marked `O86`, `O87`, `O88`, `O89`, `O90`, `O91`, `O95`, and `O96` as **Pass** in `docs/releases/device-test-checklist.md` under `## Next release device checks` (`realme Narzo 60 Pro 5g`, `15 Vanilla Ice Cream`, `sahilsheikh-dev`, `2026-11-28`); `O92`, `O93`, and `O94` remain `Not run`. Issue `#623`. Documentation only; schema remains version 24.
 - **P26-A-R1 / CR-188 (2026-11-28) — Reorder bottom tabs to Home, Goals, Budget, Transactions.**
