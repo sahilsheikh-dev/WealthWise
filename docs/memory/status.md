@@ -1,6 +1,8 @@
 <!-- Purpose: Snapshot of current project/task state and verification. | Last updated: 2026-11-25 | Updates: owner and AI agents -->
 
 # Status
+- **P25-B-R1 / CR-184 (2026-11-28) — Confirm backup import after file selection.**
+  Updated `app/backup.tsx` (`confirmAndImportBackup`) so selecting and validating a plain backup or unlocking/validating an encrypted backup prompts `Import backup` / `Cancel` with a clear data-replacement warning before mutating app data, preserving current data and temporary-file cleanup on Cancel and updating preview button wording to `Import backup`. Added `BackupImportConfirm.test.tsx`, updated `CHANGELOG.md` (`[Unreleased]`), and added physical-device check `O90` (`Not run`). Issue `#605`. Schema remains version 24.
 - **P35-C-R2 / CR-183 (2026-11-28) — Add Settings screen, move Home menu options, and hide enabled auto-detection entry points.**
   Added dedicated `Settings` screen (`app/settings.tsx`, registered in `app/_layout.tsx` and `src/lib/routeKinds.ts`), replaced Home header's three-dot menu with an accessible `Settings` gear button (`app/(tabs)/index.tsx`), moved all `useAppMenu()` items and the `Automatically detect transactions` control (with live Notification Access vs `POST_NOTIFICATIONS` status and iOS notice) into Settings, and hid Home/Transactions auto-detection entry points while `status === 'enabled'`. Added `SettingsScreen.test.tsx`, updated `TransactionDetectionEntryPoints.test.tsx` and `CHANGELOG.md` (`[Unreleased]`), and added physical-device check `O89` (`Not run`). Issue `#602`. Schema remains version 24.
 - **CR-182 (2026-11-28) — Align Expo SDK 58 package versions (`cleanup`).**
