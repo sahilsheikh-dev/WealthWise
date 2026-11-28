@@ -2,6 +2,10 @@
 
 # Open items
 
+## P35-C-R4 Improve Android transaction-detection reliability and parser coverage (Done; CR-187; #614; device check O94 Not run)
+
+- Subtask P35-C-R4 (CR-187, 2026-11-28): Fixed backgrounded `emitIfActive()` dropping events in `plugins/withNotificationListener.js` (`onHostResume`/`onHostPause`), added `EXTRA_BIG_TEXT` / `EXTRA_TEXT_LINES` / `EXTRA_MESSAGES` extraction, OEM SMS packages, `reviewLatest=1` draft hydration (`app/transaction-form.tsx`), active-drain routing (`ReminderRuntime.tsx`), full default source-app selection + troubleshooting note (`app/transaction-detection.tsx`), and broadened domain parsing (`src/domain/transactionDetection.ts`) without `READ_SMS` or `QUERY_ALL_PACKAGES`. Updated `PRIVACY.md`, `CHANGELOG.md` (`[Unreleased]`), tests, and added physical-device check `O94` (`Not run`). Issue `#614`. Schema remains version 24.
+
 ## P35-C-R3 Direct draft modal review flow and compliant source-app picker (Done; CR-186; #611; device checks O92, O93 Not run)
 
 - Subtask P35-C-R3 (CR-186, 2026-11-28): Updated `ReminderRuntime.tsx`, `app/transaction-form.tsx`, `plugins/withNotificationListener.js`, `src/domain/transactionDetection.ts`, `src/lib/notificationListener.ts`, `app/transaction-detection.tsx`, and `PRIVACY.md` so foreground detections and background notification taps open `/transaction-form` directly (Save/Dismiss/Discard semantics, no stacked modals) and the Add app picker uses scoped `<queries>` + observed listener apps without `QUERY_ALL_PACKAGES` (`Trusted` only for verified catalogue packages). Added `TransactionDraftReviewFlow.test.tsx`, updated `TransactionDetectionScreen.test.tsx` and `CHANGELOG.md` (`[Unreleased]`), and added physical-device checks `O92` and `O93` (`Not run`). Issue `#611`. Schema remains version 24.
