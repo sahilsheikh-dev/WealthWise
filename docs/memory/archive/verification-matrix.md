@@ -6631,3 +6631,17 @@ Gradle build, version bump, or release preparation was performed.
 - Integration and build: Task PR #210 and phase PR #211 merged to `develop` at candidate commit `afeb987`; `release/v1.3.0` created; EAS build `c2ec9414-ae63-44cc-b34a-0f67f6cb51cb` completed with profile `android-apk` and Android `versionCode` 4. The 107,030,213-byte APK artifact was downloaded, byte-verified privately, and uploaded to the `v1.3.0` draft as `WealthWise-android-latest-v1.3.0.apk`. Build records integrated via PR #212 and #213 (`58d9a26`). Per owner instruction, `README.md` (v1.3.0 Download block and 8-screenshot gallery), release notes, release history, and `AGENTS.md`/`rules.md` release rules were updated to align all candidate assets and docs for v1.3.0. Publication approved and completed on 2026-11-22; release/v1.3.0 merged to main via PR #216 (341dbcb); tag v1.3.0 created at 51523b8; GitHub Release v1.3.0 published as Latest by sahilsheikh-dev; post-publication sync PR #217 (97c6d02) merged to develop.
 - Six gates: all pass exit 0.
 
+
+### CR-141 verification — reconcile documentation for completed v1.3.0 publication (2026-11-23)
+
+- Reconciled documentation across release-history.md, docs/releases/README.md, open-items.md, status.md, and PROGRESS.md to accurately record completed v1.3.0 publication.
+- Verifiable release facts documented: PR #216 merged release/v1.3.0 to main (341dbcb), tag v1.3.0 points to 51523b8, GitHub Release published as Latest by sahilsheikh-dev, APK artifact (107,030,213 bytes) verified HTTP 200, and PR #217 back-merged main to develop (97c6d02).
+- Ordered six gates pass with exit 0.
+
+### CR-142 verification — reconcile planned and unimplemented roadmap items (2026-11-23)
+
+- Reconciled open-items.md and status.md to remove stale historical references indicating P21-F or P43-B were unimplemented.
+- Documented verified facts: P21-F (Emergency Fund target editing) was completed and released in v1.3.0 with device checks O65–O68 Pass; P43-B (non-release tag cleanup) was completed under CR-131; O77 is Pass.
+- Formally established the authoritative list of 12 active planned/unimplemented roadmap areas: P7 (Google Drive Cloud Backup), P31 (Project health/community), P33 (Widgets), P34 (Quick capture), P35 (SMS/notification transaction detection), P36 (Notes), P37 (Tutorials), P38 (Skeleton loaders), P39 (Security/privacy audit), P40 (Context hygiene/archival), P43-E (GitHub issue inventory), P44 (Spending heat map).
+- Ordered six gates pass with exit 0.
+

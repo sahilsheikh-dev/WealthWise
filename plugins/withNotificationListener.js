@@ -19,6 +19,11 @@ const TRUSTED_PAYMENT_PACKAGES = [
   'indwin.c3.shareapp',
   'com.google.android.apps.messaging',
   'com.samsung.android.messaging',
+  'com.android.mms',
+  'com.coloros.mms',
+  'com.oplus.mms',
+  'com.oneplus.mms',
+  'com.miui.mms',
   'com.snapwork.hdfc',
   'com.csam.icici.bank.imobile',
   'com.sbi.lotusintouch',
@@ -71,10 +76,27 @@ class ${SERVICE_CLASS} : NotificationListenerService() {
     }
 
     val extras = notification.extras ?: return
-    val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()?.trim() ?: ""
-    val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()?.trim()
-      ?: extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString()?.trim()
-      ?: ""
+    val title = listOf(
+      extras.getCharSequence(Notification.EXTRA_TITLE),
+      extras.getCharSequence(Notification.EXTRA_TITLE_BIG),
+      extras.getCharSequence(Notification.EXTRA_CONVERSATION_TITLE),
+    ).firstNotNullOfOrNull { it?.toString()?.trim()?.takeIf { s -> s.isNotEmpty() } } ?: ""
+
+    val bigText = extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString()?.trim()?.takeIf { it.isNotEmpty() }
+    val shortText = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()?.trim()?.takeIf { it.isNotEmpty() }
+    val textLines = extras.getCharSequenceArray(Notification.EXTRA_TEXT_LINES)
+      ?.mapNotNull { it?.toString()?.trim()?.takeIf { s -> s.isNotEmpty() } }
+      ?.joinToString(" ")
+      ?.takeIf { it.isNotEmpty() }
+    val messageText = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+      extras.getParcelableArray(Notification.EXTRA_MESSAGES)
+        ?.mapNotNull { parcelable ->
+          (parcelable as? android.os.Bundle)?.getCharSequence("text")?.toString()?.trim()?.takeIf { it.isNotEmpty() }
+        }
+        ?.joinToString(" ")
+        ?.takeIf { it.isNotEmpty() }
+    } else null
+    val text = bigText ?: shortText ?: textLines ?: messageText ?: ""
     if (title.isEmpty() && text.isEmpty()) return
 
     val payload = JSONObject().apply {
@@ -102,7 +124,10 @@ class ${SERVICE_CLASS} : NotificationListenerService() {
     private const val MAX_OBSERVED_APPS = 40
     private const val CHANNEL_ID = "transaction-drafts"
     private const val REVIEW_NOTIFICATION_ID = 35001
-    private val CANDIDATE_REGEX = Regex("(?:₹|rs\\\\.?|inr|\\\\$|usd)\\\\s*[0-9]", RegexOption.IGNORE_CASE)
+    private val CANDIDATE_REGEX = Regex(
+      "(?:₹|rs\\\\.?:?|inr:?|rupees|\\\\$|usd:?)\\\\s*[0-9]|[0-9][0-9,]*(?:\\\\.[0-9]{1,2})?\\\\s*(?:₹|rs\\\\.?|inr|rupees|\\\\$|usd)\\\\b|\\\\b(?:debited|credited|paid|received|spent|transferred|withdrawn|deposited)\\\\s+(?:by|of)\\\\s+[0-9]",
+      RegexOption.IGNORE_CASE,
+    )
     private val IGNORE_REGEX = Regex("\\\\b(?:otp|one[- ]?time\\\\s+password|verification\\\\s+code|do\\\\s+not\\\\s+share)\\\\b", RegexOption.IGNORE_CASE)
 
     private fun recordObservedApp(context: Context, prefs: android.content.SharedPreferences, pkg: String) {
@@ -159,7 +184,7 @@ class ${SERVICE_CLASS} : NotificationListenerService() {
         manager.createNotificationChannel(channel)
       }
 
-      val reviewIntent = Intent(Intent.ACTION_VIEW, Uri.parse("wealthwise://transaction-form")).apply {
+      val reviewIntent = Intent(Intent.ACTION_VIEW, Uri.parse("wealthwise://transaction-form?reviewLatest=1")).apply {
         setPackage(context.packageName)
         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
       }
@@ -196,6 +221,7 @@ import android.net.Uri
 import android.provider.Settings
 import androidx.core.app.NotificationManagerCompat
 import com.facebook.react.bridge.Arguments
+import com.facebook.react.bridge.LifecycleEventListener
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
@@ -206,16 +232,31 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 class ${MODULE_CLASS}(private val reactContext: ReactApplicationContext) :
-  ReactContextBaseJavaModule(reactContext) {
+  ReactContextBaseJavaModule(reactContext), LifecycleEventListener {
 
   init {
     activeContext = reactContext
+    reactContext.addLifecycleEventListener(this)
   }
 
   override fun getName(): String = "WealthWiseNotificationListener"
 
+  override fun onHostResume() {
+    isHostResumed = true
+  }
+
+  override fun onHostPause() {
+    isHostResumed = false
+  }
+
+  override fun onHostDestroy() {
+    isHostResumed = false
+  }
+
   override fun invalidate() {
     super.invalidate()
+    reactContext.removeLifecycleEventListener(this)
+    isHostResumed = false
     if (activeContext === reactContext) {
       activeContext = null
     }
@@ -348,8 +389,11 @@ class ${MODULE_CLASS}(private val reactContext: ReactApplicationContext) :
   companion object {
     @Volatile
     private var activeContext: ReactApplicationContext? = null
+    @Volatile
+    private var isHostResumed: Boolean = false
 
     fun emitIfActive(payload: JSONObject): Boolean {
+      if (!isHostResumed) return false
       val ctx = activeContext ?: return false
       if (!ctx.hasActiveReactInstance()) return false
       val map = Arguments.createMap().apply {
