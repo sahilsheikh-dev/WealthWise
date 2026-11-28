@@ -12,12 +12,32 @@ export type DetectionSourceApp = {
   label: string;
 };
 
+export type ObservedSourceApp = {
+  packageName: string;
+  label: string;
+  iconUri?: string;
+};
+
+export type SourceAppPickerItem = {
+  packageName: string;
+  label: string;
+  trusted: boolean;
+  installed: boolean;
+  observed: boolean;
+  selected: boolean;
+  iconUri?: string;
+};
+
 export const DEFAULT_DETECTION_SOURCE_APPS: readonly DetectionSourceApp[] = [
   { packageName: 'com.google.android.apps.nbu.paisa.user', label: 'Google Pay' },
   { packageName: 'com.phonepe.app', label: 'PhonePe' },
   { packageName: 'net.one97.paytm', label: 'Paytm' },
   { packageName: 'in.org.npci.upiapp', label: 'BHIM' },
   { packageName: 'in.amazon.mShop.android.shopping', label: 'Amazon Pay' },
+  { packageName: 'com.dreamplug.androidapp', label: 'CRED' },
+  { packageName: 'money.jupiter', label: 'Jupiter' },
+  { packageName: 'com.epifi.paisa', label: 'Fi Money' },
+  { packageName: 'indwin.c3.shareapp', label: 'slice' },
   { packageName: 'com.google.android.apps.messaging', label: 'Google Messages' },
   { packageName: 'com.samsung.android.messaging', label: 'Samsung Messages' },
   { packageName: 'com.snapwork.hdfc', label: 'HDFC Bank' },
@@ -26,6 +46,85 @@ export const DEFAULT_DETECTION_SOURCE_APPS: readonly DetectionSourceApp[] = [
   { packageName: 'com.axis.mobile', label: 'Axis Mobile' },
   { packageName: 'com.msf.kbank.mobile', label: 'Kotak Mobile Banking' },
 ];
+
+export const TRUSTED_PACKAGE_SET: ReadonlySet<string> = new Set(
+  DEFAULT_DETECTION_SOURCE_APPS.map((item) => item.packageName),
+);
+
+export function isTrustedSourcePackage(packageName: string): boolean {
+  return TRUSTED_PACKAGE_SET.has(packageName.trim());
+}
+
+export function sourceAppLabel(packageName: string): string {
+  const match = DEFAULT_DETECTION_SOURCE_APPS.find((item) => item.packageName === packageName);
+  return match?.label ?? packageName;
+}
+
+export function buildSourceAppPickerItems(input: {
+  installedPackages: readonly string[];
+  observedApps: readonly ObservedSourceApp[];
+  allowedPackages: readonly string[];
+  query: string;
+}): SourceAppPickerItem[] {
+  const installedSet = new Set(input.installedPackages);
+  const selectedSet = new Set(input.allowedPackages);
+  const observedMap = new Map(input.observedApps.map((app) => [app.packageName, app]));
+  const itemsByPkg = new Map<string, SourceAppPickerItem>();
+
+  for (const app of DEFAULT_DETECTION_SOURCE_APPS) {
+    const observed = observedMap.get(app.packageName);
+    itemsByPkg.set(app.packageName, {
+      packageName: app.packageName,
+      label: app.label,
+      trusted: true,
+      installed: installedSet.has(app.packageName) || observed !== undefined,
+      observed: observed !== undefined,
+      selected: selectedSet.has(app.packageName),
+      iconUri: observed?.iconUri,
+    });
+  }
+
+  for (const observed of input.observedApps) {
+    if (itemsByPkg.has(observed.packageName)) continue;
+    itemsByPkg.set(observed.packageName, {
+      packageName: observed.packageName,
+      label: observed.label.trim() || observed.packageName,
+      trusted: isTrustedSourcePackage(observed.packageName),
+      installed: true,
+      observed: true,
+      selected: selectedSet.has(observed.packageName),
+      iconUri: observed.iconUri,
+    });
+  }
+
+  for (const pkg of input.allowedPackages) {
+    if (itemsByPkg.has(pkg)) continue;
+    itemsByPkg.set(pkg, {
+      packageName: pkg,
+      label: pkg,
+      trusted: isTrustedSourcePackage(pkg),
+      installed: installedSet.has(pkg),
+      observed: false,
+      selected: true,
+    });
+  }
+
+  const trimmedQuery = input.query.trim().toLowerCase();
+  const all = [...itemsByPkg.values()].filter((item) => {
+    if (!trimmedQuery) return true;
+    return (
+      item.label.toLowerCase().includes(trimmedQuery) ||
+      item.packageName.toLowerCase().includes(trimmedQuery)
+    );
+  });
+
+  return all.sort((a, b) => {
+    if (a.selected !== b.selected) return a.selected ? -1 : 1;
+    if (a.installed !== b.installed) return a.installed ? -1 : 1;
+    if (a.trusted !== b.trusted) return a.trusted ? -1 : 1;
+    return a.label.localeCompare(b.label);
+  });
+}
 
 export type RawDetectedNotification = {
   packageName: string;
