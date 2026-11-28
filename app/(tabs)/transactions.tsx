@@ -164,8 +164,10 @@ export default function TransactionsScreen() {
       <ScrollView testID="transactions-content-scroll" style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <AppHeader
           title="Transactions"
-          menuPlacement="leading"
           rightActions={[
+            ...(unlinkedCount > 0
+              ? [{ icon: 'link' as const, label: 'Link missing transactions', onPress: () => router.push('/link-missing') }]
+              : []),
             {
               icon: 'filter',
               label: 'Filter',
@@ -173,9 +175,6 @@ export default function TransactionsScreen() {
               expanded: filterPanelOpen,
             },
             { icon: 'plus', label: 'Add transaction', onPress: () => router.push('/transaction-form') },
-          ]}
-          menu={[
-            { label: 'Link missing transactions', icon: 'link', onPress: () => router.push('/link-missing') },
           ]}
         />
         {filterPanelOpen ? (

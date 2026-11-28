@@ -2,6 +2,10 @@
 
 # Open items
 
+## P20-AB Transactions header missing-link icon (Done; CR-190; #629; device check O98 Not run)
+
+- Subtask P20-AB (CR-190, 2026-11-28): Replaced the Transactions header three-dot `menu` for missing linked transactions with a conditional `link` icon in `rightActions` (`app/(tabs)/transactions.tsx`) opening `/link-missing` only while `unlinkedCount > 0` and hidden otherwise. Updated `TransactionsScreen.test.tsx`, `RouteRenderSmoke.test.tsx`, `CHANGELOG.md` (`[Unreleased]`), and added physical-device check `O98` (`Not run`). Issue `#629`. Schema remains version 24.
+
 ## P35-C-R6 Inline Profile in Settings and Pending review drafts in Transactions (Done; CR-190; #626; device check O97 Not run)
 
 - Subtask P35-C-R6 (CR-190, 2026-11-28): Removed `Data & developer actions` title from `app/settings.tsx`, removed `app/profile-form.tsx` and its navigation/menu entries, added inline Profile display and editing above Transaction detection in `app/settings.tsx` preserving `data.settings`, and moved `Pending review drafts` from `app/transaction-detection.tsx` to `app/(tabs)/transactions.tsx`. Updated tests, `CHANGELOG.md` (`[Unreleased]`), and added physical-device check `O97` (`Not run`). Issue `#626`. Schema remains version 24.

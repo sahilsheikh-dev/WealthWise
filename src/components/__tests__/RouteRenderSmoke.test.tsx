@@ -4158,7 +4158,8 @@ describe('route render smoke audit', () => {
               : 'Add a liability');
       expect(headerActionLabels).toContain('Filter');
       if (name === 'Transactions') {
-        expect(headerActionLabels?.slice(0, 2)).toEqual(['More options', 'Filter']);
+        expect(headerActionLabels).not.toContain('More options');
+        expect(headerActionLabels?.slice(0, 2)).toEqual(['Filter', 'Add transaction']);
       }
     } else {
       expect(renderer.root.findAll((node) =>
