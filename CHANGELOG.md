@@ -10,6 +10,7 @@ Update this file for every release: add the new version heading and confirmed re
 - Added "Automatically detect transactions" setup and live status entry points on Home and Transactions, showing accurate setup/permission states (`Not set up`, `Notification access needed`, `Notification permission needed`, `Enabled`, or `Unavailable on iOS`) and routing directly to `Transaction detection`.
 - Added a dedicated `Settings` screen (`app/settings.tsx`) reached from a gear button in the Home header (replacing the three-dot menu), moved all global menu options and the transaction auto-detection control there, and hid non-Settings auto-detection entry points while detection is enabled.
 - Added an `Import backup` / `Cancel` confirmation prompt immediately after selecting and validating/decrypting a backup file in `Backup and restore` (`app/backup.tsx`), warning that importing replaces current app data and updating preview action wording to `Import backup`.
+- Added month and year jump selectors (`MonthYearPicker`) to Transactions (`app/(tabs)/transactions.tsx`) and Budget (`app/(tabs)/budget.tsx`), allowing direct period selection while preserving previous/next-month controls, sorting, filters, empty states, and Budget's 24-month forward bound.
 
 ### Fixes
 - Fixed `undefined is not a function` when allowing payment reminders from the first-launch prompt or Reminders screen by removing unbound `this.ensureChannel()` calls in `reminderNotificationAdapter`, ensuring Android creates the `reminders` channel before requesting `POST_NOTIFICATIONS`.
