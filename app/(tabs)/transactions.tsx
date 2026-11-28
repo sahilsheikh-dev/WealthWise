@@ -194,26 +194,24 @@ export default function TransactionsScreen() {
           </View>
           </Card>
         </View>
-        <Pressable
-          testID="transaction-detection-entry"
-          accessibilityRole="button"
-          accessibilityLabel={
-            detectionStatus
-              ? `Automatically detect transactions: ${detectionStatus.label}. ${detectionStatus.actionLabel}`
-              : 'Automatically detect transactions'
-          }
-          onPress={() => router.push('/transaction-detection' as Href)}
-          style={[styles.unlinkedNotice, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <AppText>
-            Automatically detect transactions ({detectionStatus?.label ?? 'Not set up'}).{' '}
-            {detectionStatus && detectionStatus.pendingDraftCount > 0
-              ? `${detectionStatus.pendingDraftCount} draft${detectionStatus.pendingDraftCount === 1 ? '' : 's'} ready. `
-              : ''}
-            <AppText weight="semibold" style={{ color: colors.primary }}>
-              {detectionStatus?.actionLabel ?? 'Set up'}
+        {detectionStatus && detectionStatus.status !== 'enabled' ? (
+          <Pressable
+            testID="transaction-detection-entry"
+            accessibilityRole="button"
+            accessibilityLabel={`Automatically detect transactions: ${detectionStatus.label}. ${detectionStatus.actionLabel}`}
+            onPress={() => router.push('/transaction-detection' as Href)}
+            style={[styles.unlinkedNotice, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <AppText>
+              Automatically detect transactions ({detectionStatus.label}).{' '}
+              {detectionStatus.pendingDraftCount > 0
+                ? `${detectionStatus.pendingDraftCount} draft${detectionStatus.pendingDraftCount === 1 ? '' : 's'} ready. `
+                : ''}
+              <AppText weight="semibold" style={{ color: colors.primary }}>
+                {detectionStatus.actionLabel}
+              </AppText>
             </AppText>
-          </AppText>
-        </Pressable>
+          </Pressable>
+        ) : null}
         {unlinkedCount > 0 ? (
           <Pressable
             testID="unlinked-entry-notice"
